@@ -83,8 +83,8 @@ test("test_alpha_is_premultiplied_with_its_flag", () => {
   const project = parseAep(BASE, { platform: "windows" }).project;
   const ours = asInstance(project.importFile(new ImportOptions(ASSETS.div("exr", "rgba_full.exr"))), FootageItem);
   const sspc = ours.mainSource._sspc;
-  expect(pyEq([sspc.alpha_mode_raw, sspc._alpha_flags], [ae.alpha_mode_raw, ae._alpha_flags])).toBe(true);
-  expect(pyEq([ae.alpha_mode_raw, ae._alpha_flags], [1, 1])).toBe(true);
+  expect(pyEq([sspc.alphaModeRaw, sspc._alphaFlags], [ae.alphaModeRaw, ae._alphaFlags])).toBe(true);
+  expect(pyEq([ae.alphaModeRaw, ae._alphaFlags], [1, 1])).toBe(true);
 });
 
 test("test_reload_refreshes_the_exr_header", () => {

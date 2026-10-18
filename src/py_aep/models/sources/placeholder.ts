@@ -79,14 +79,14 @@ export class PlaceholderSource extends FootageSource {
     const sspc = new SspcChunk({
       width,
       height,
-      alpha_mode_raw: 3,
-      layer_index: 0xfffffffe,
+      alphaModeRaw: 3,
+      layerIndex: 0xfffffffe,
     });
-    sspc.footage_missing_at_save = true;
-    sspc.native_frame_rate = frameRate;
+    sspc.footageMissingAtSave = true;
+    sspc.nativeFrameRate = frameRate;
     sspc.duration = duration;
 
-    const opti = new PlaceholderOptiChunk({ placeholder_name: name });
+    const opti = new PlaceholderOptiChunk({ placeholderName: name });
 
     return new this({ _sspc: sspc, _opti: opti });
   }
@@ -101,11 +101,11 @@ export class PlaceholderSource extends FootageSource {
   }
 
   _resolveName(rawName: string): string {
-    return this._opti.placeholder_name;
+    return this._opti.placeholderName;
   }
 
   _storeName(value: string): void {
     validateOptiName(value);
-    this._opti.placeholder_name = value;
+    this._opti.placeholderName = value;
   }
 }

@@ -122,18 +122,18 @@ export class FolderItem extends Item {
     // AE labels new folders with the "Folder Label Index 2" preference
     // (factory 2, probed in AE 2026).
     const idta = new IdtaChunk({
-      item_type: 1,
-      item_id: newId,
+      itemType: 1,
+      itemId: newId,
       label: labelIndex(project._preferences, "Folder Label Index 2", 2),
     });
     const nameUtf8 = new Utf8Chunk({ value: name });
     const sfdt = new SfdtChunk({});
-    const sfdr = new ListChunk({ list_type: "Sfdr" });
+    const sfdr = new ListChunk({ listType: "Sfdr" });
 
     const itemList = new ListChunk({
-      list_type: "Item",
+      listType: "Item",
       chunks: [
-        ...buildItemIdChunks(newId, project._head.ae_version_major),
+        ...buildItemIdChunks(newId, project._head.aeVersionMajor),
         idta,
         nameUtf8,
         sfdt,
@@ -253,7 +253,7 @@ export class FolderItem extends Item {
     // 2026 for both script addComp and SVG import). Match that ordering.
     const block = [comp._itemList, ...comp._viewData];
     const container = this._childrenContainer;
-    const insertAt = container?.length > 0 && container[0].chunk_type === "fdta" ? 1 : 0;
+    const insertAt = container?.length > 0 && container[0].chunkType === "fdta" ? 1 : 0;
     container.splice(insertAt, 0, ...block);
 
     // Register in project and parent

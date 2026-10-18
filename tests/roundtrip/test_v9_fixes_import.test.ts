@@ -72,8 +72,8 @@ function _pinBytes(source: FileSource): Map<string, Uint8Array> {
   // Every Pin chunk but the random `pgui` id.
   const out = new Map<string, Uint8Array>();
   for (const [index, c] of source._pin.chunks.entries()) {
-    if (c.chunk_type !== "pgui") {
-      out.set(`${index}:${pyOr(getattr(c, "list_type", null), c.chunk_type)}`, c.tobytes());
+    if (c.chunkType !== "pgui") {
+      out.set(`${index}:${pyOr(getattr(c, "listType", null), c.chunkType)}`, c.tobytes());
     }
   }
   return out;
@@ -229,7 +229,7 @@ test.each([
   const path = tmpPath.div("bad.ai");
   path.writeBytes(data);
   const item = _import(_project(), path);
-  expect(_fileSource(item)._opti.text_document_layers).toBe(0);
+  expect(_fileSource(item)._opti.textDocumentLayers).toBe(0);
 });
 
 // --- C1 / C12: reload --------------------------------------------------
@@ -278,7 +278,7 @@ test("test_reload_restamps_the_source_mtime", () => {
   const item = _import(_project(), path);
   utimesSync(fspath(path), 1_700_000_000, 1_700_000_000);
   _fileSource(item).reload();
-  expect(_fileSource(item)._sspc.source_modified).toBe(1_700_000_000);
+  expect(_fileSource(item)._sspc.sourceModified).toBe(1_700_000_000);
 });
 
 test("test_sequence_reload_keeps_the_unreduced_duration", () => {
@@ -286,9 +286,9 @@ test("test_sequence_reload_keeps_the_unreduced_duration", () => {
   // import and every AE-authored sequence write it.
   const item = _import(_project(), ASSETS.div("dpx_seq.0001.dpx"), { sequence: true });
   const sspc = _fileSource(item)._sspc;
-  const before = [sspc.duration_dividend, sspc.duration_divisor];
+  const before = [sspc.durationDividend, sspc.durationDivisor];
   _fileSource(item).reload();
-  expect(pyEq([sspc.duration_dividend, sspc.duration_divisor], before)).toBe(true);
+  expect(pyEq([sspc.durationDividend, sspc.durationDivisor], before)).toBe(true);
   expect(pyEq(before, [3, 30])).toBe(true);
 });
 
@@ -385,7 +385,7 @@ test("test_layer_ids_without_lyid_number_from_two", () => {
   _import(project, path, { importAs: ImportAsType.COMP });
   const ids = new Map(
     _layerFootage(project, path.name).map(
-      (item) => [String(_fileSource(item).layerName), _fileSource(item)._sspc.layer_id] as const,
+      (item) => [String(_fileSource(item).layerName), _fileSource(item)._sspc.layerId] as const,
     ),
   );
   expect(pyEq(ids, new Map([["a", 2], ["b", 3]]))).toBe(true);
@@ -404,9 +404,9 @@ test("test_photoshop_layer_count_above_255", () => {
   );
   const project = _project();
   const merged = _import(project, path);
-  expect(_fileSource(merged)._opti.psd_layer_count).toBe(300);
+  expect(_fileSource(merged)._opti.psdLayerCount).toBe(300);
   const layer = _import(project, path, { layerIndex: 0 });
-  expect(_fileSource(layer)._opti.psd_layer_count).toBe(300);
+  expect(_fileSource(layer)._opti.psdLayerCount).toBe(300);
 });
 
 test("test_long_photoshop_layer_name_is_cut_to_255_bytes", () => {
@@ -440,7 +440,7 @@ test.each([
   const index = listLayers(ASSETS.div(asset)).indexOf(layerName);
   const item = _import(_project(), ASSETS.div(asset), { layerIndex: index, layerDimensions: "layer" });
   expect(pyEq([item.width, item.height], size)).toBe(true);
-  expect(_fileSource(item)._sspc.full_frame).toBe(false);
+  expect(_fileSource(item)._sspc.fullFrame).toBe(false);
 });
 
 test("test_replace_current_value_keeps_an_empty_cropped_layer", () => {
@@ -549,7 +549,7 @@ test.each([
     expect(opti[0x1E]).toBe(channels);
     expect(bytes_.intFromBytes(opti.slice(0x28, 0x2A), "little")).toBe(8);
     expect(bytes_.intFromBytes(opti.slice(0x30, 0x32), "little")).toBe(layers);
-    expect(source._sspc.data_size).toBe(dataSize);
+    expect(source._sspc.dataSize).toBe(dataSize);
   },
 );
 
@@ -561,14 +561,14 @@ function _clrs(source: FileSource): Map<string, Uint8Array | string | number> {
   const chunks = clrs.chunks;
   const out = new Map<string, Uint8Array | string | number>();
   for (const [index, chunk] of chunks.entries()) {
-    if (["epid", "apid"].includes(chunk.chunk_type)) {
-      out.set(chunk.chunk_type, chunk.data);
-    } else if (chunk.chunk_type === "empd") {
+    if (["epid", "apid"].includes(chunk.chunkType)) {
+      out.set(chunk.chunkType, chunk.data);
+    } else if (chunk.chunkType === "empd") {
       out.set("empd", asInstance(at(chunks, index + 1), Utf8Chunk).value);
-    } else if (chunk.chunk_type === "ipws") {
+    } else if (chunk.chunkType === "ipws") {
       out.set("ipws", asInstance(chunk, IpwsChunk).value);
-    } else if (["mcsp", "ocsp"].includes(chunk.chunk_type)) {
-      out.set(chunk.chunk_type, asInstance(at(chunks, index + 1), Utf8Chunk).value);
+    } else if (["mcsp", "ocsp"].includes(chunk.chunkType)) {
+      out.set(chunk.chunkType, asInstance(at(chunks, index + 1), Utf8Chunk).value);
     }
   }
   return out;

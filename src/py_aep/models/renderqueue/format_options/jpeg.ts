@@ -63,7 +63,7 @@ descriptor(
 descriptor(
   JpegFormatOptions,
   "formatType",
-  ChunkField.enum(JpegFormatType, "_body", "format_type", {
+  ChunkField.enum(JpegFormatType, "_body", "formatType", {
     allowOutOfEnumValues: true,
   }),
 );

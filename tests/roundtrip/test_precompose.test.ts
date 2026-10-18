@@ -111,7 +111,7 @@ describe("TestPrecomposeMove", () => {
     const newComp = comp.precompose([0, 1], "PC par");
     const child = _next(newComp.layers, (ly) => ly.name === "ChildLayer");
     const null_ = _next(newComp.layers, (ly) => ly.name === "ParentNull");
-    expect(child._ldta.parent_id).toBe(null_.id);
+    expect(child._ldta.parentId).toBe(null_.id);
 
     const out = tmpPath.div("par.aep");
     app.project.save(out);
@@ -126,7 +126,7 @@ describe("TestPrecomposeMove", () => {
     const app = _fresh("layer/layer_misc.aep");
     const comp = getComp(app.project, "parent");
     const newComp = comp.precompose([0], "PC orphan");
-    expect(newComp.layers[0]._ldta.parent_id).toBe(0);
+    expect(newComp.layers[0]._ldta.parentId).toBe(0);
   });
 
   test("test_parent_moved_stayer_retargets_to_replacement", () => {
@@ -135,7 +135,7 @@ describe("TestPrecomposeMove", () => {
     comp.precompose([1], "PC repl");
     const child = _next(comp.layers, (ly) => ly.name === "ChildLayer");
     const repl = _next(comp.layers, (ly) => ly.name === "PC repl");
-    expect(child._ldta.parent_id).toBe(repl.id);
+    expect(child._ldta.parentId).toBe(repl.id);
   });
 
   test("test_matte_pair_moved_together", () => {
@@ -144,7 +144,7 @@ describe("TestPrecomposeMove", () => {
     const newComp = comp.precompose([0, 1], "PC matte");
     const user = _next(newComp.layers, (ly) => ly.name === "Gray Solid 2");
     const matte = _next(newComp.layers, (ly) => ly.name === "Gray Solid 1");
-    expect(user._ldta.matte_layer_id).toBe(matte.id);
+    expect(user._ldta.matteLayerId).toBe(matte.id);
   });
 
   test("test_matte_stays_copied_into_precomp", () => {
@@ -156,14 +156,14 @@ describe("TestPrecomposeMove", () => {
     // stays untouched in the parent comp.
     expect(pyEq(newComp.layers.map((ly) => ly.name), ["Gray Solid 2", "Gray Solid 1"])).toBe(true);
     const [user, copy] = newComp.layers;
-    expect(user._ldta.matte_layer_id).toBe(copy.id);
+    expect(user._ldta.matteLayerId).toBe(copy.id);
     expect(pyEq(comp.layers.map((ly) => ly.name), ["PC copy", "Gray Solid 1"])).toBe(true);
 
     const out = tmpPath.div("mattecopy.aep");
     app.project.save(out);
     const nc2 = getComp(parseAep(String(out)).project, "PC copy");
     const [user2, copy2] = nc2.layers;
-    expect(user2._ldta.matte_layer_id).toBe(copy2.id);
+    expect(user2._ldta.matteLayerId).toBe(copy2.id);
   });
 
   test("test_matte_moved_user_retargets_to_replacement", () => {
@@ -172,7 +172,7 @@ describe("TestPrecomposeMove", () => {
     comp.precompose([1], "PC target");
     const user = _next(comp.layers, (ly) => ly.name === "Gray Solid 2");
     const repl = _next(comp.layers, (ly) => ly.name === "PC target");
-    expect(user._ldta.matte_layer_id).toBe(repl.id);
+    expect(user._ldta.matteLayerId).toBe(repl.id);
     // The replacement keeps serving as matte, so it inherits the
     // moved matte layer's video-off state.
     expect(repl.enabled).toBe(false);

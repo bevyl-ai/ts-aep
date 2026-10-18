@@ -290,7 +290,7 @@ export function propertyControllerPlan(prop: Property, comp: CompItem): Property
   if (resolved == null) return null;
   const [nodes, layer] = resolved;
   if (layer.containingComp !== comp) return null;
-  if (_alreadyAdded(comp, layer._ldta.layer_id, nodes)) return null;
+  if (_alreadyAdded(comp, layer._ldta.layerId, nodes)) return null;
   return new PropertyControllerPlan(controllerType, nodes, _pathJson(nodes), layer);
 }
 
@@ -363,5 +363,5 @@ export function canAddLayer(layer: AVLayer, comp: CompItem): boolean {
   // controllers (slider/checkbox/...) on the same layer coexist with a
   // Media Replacement in AE.
   const [nodes] = mediaControllerPath();
-  return !_alreadyAdded(comp, layer._ldta.layer_id, nodes);
+  return !_alreadyAdded(comp, layer._ldta.layerId, nodes);
 }

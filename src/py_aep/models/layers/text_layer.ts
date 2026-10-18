@@ -58,7 +58,7 @@ export class TextLayer extends AVLayer {
     } = kw;
     const textPropsTdmn = new TdmnChunk({ value: "ADBE Text Properties" });
     const textPropsTdgp = new ListChunk({
-      list_type: "tdgp",
+      listType: "tdgp",
       chunks: [
         new TdsbChunk({}),
         TdsnChunk.new_(),
@@ -79,7 +79,7 @@ export class TextLayer extends AVLayer {
       rootTdgpExtra: [textPropsTdmn, textPropsTdgp],
       effectParamDefs: effect_param_defs,
     });
-    layer._ldta.layer_type = LayerType.TEXT;
+    layer._ldta.layerType = LayerType.TEXT;
     // The base factory named the layer from the AV type it started with.
     layer._matchName = getitem(
       layer.constructor._LAYER_MATCH_NAMES,

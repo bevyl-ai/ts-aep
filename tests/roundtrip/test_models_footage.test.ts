@@ -356,7 +356,7 @@ describe("TestPlaceholderConformFrameRate", () => {
     const reparsed = parseAep(out).project.footages.find((f) => f.id === item.id);
     if (reparsed == null) throw new StopIteration();
     const sspc = reparsed.mainSource._sspc;
-    expect(pyEq([sspc.native_frame_rate, sspc.conform_frame_rate], [25.0, 0.0])).toBe(true);
+    expect(pyEq([sspc.nativeFrameRate, sspc.conformFrameRate], [25.0, 0.0])).toBe(true);
     expect(reparsed.mainSource.conformFrameRate).toBe(25.0);
     expect(reparsed.frameRate).toBe(25.0);
     expect(reparsed.duration).toBe(10.0);
@@ -372,7 +372,7 @@ describe("TestPlaceholderConformFrameRate", () => {
     // py_aep used to store a placeholder's conform in the conform slot;
     // AE 2026 opens such a file at the conform rate, still 10 s long.
     const [, item] = _placeholder();
-    item.mainSource._sspc.conform_frame_rate = 25.0;
+    item.mainSource._sspc.conformFrameRate = 25.0;
     expect(item.mainSource.conformFrameRate).toBe(25.0);
     expect(item.frameRate).toBe(25.0);
     expect(item.duration).toBe(10.0);
@@ -685,7 +685,7 @@ describe("TestRoundtripMediaColorSpace", () => {
     const source2 = _firstSource(parseAep(out).project);
     expect(source2.mediaColorSpace).toBe("Apple RGB");
     // apid is the catalogued ICC profile ID (matches AE ground truth).
-    const apid = asInstance(source2._clrs, ListChunk).chunks.find((c) => c.chunk_type === "apid");
+    const apid = asInstance(source2._clrs, ListChunk).chunks.find((c) => c.chunkType === "apid");
     if (apid == null) throw new StopIteration();
     expect(pyEq(apid.data, profileIdForName("Apple RGB"))).toBe(true);
   });
@@ -732,7 +732,7 @@ describe("TestRoundtripFootageItemName", () => {
     project.save(out);
     const reparsed = parseAep(out).project.footages.find((f) => f.id === solid.id);
     if (reparsed == null) throw new StopIteration();
-    expect(pyEq(reparsed.mainSource._opti.solid_name, "Opti Backed")).toBe(true);
+    expect(pyEq(reparsed.mainSource._opti.solidName, "Opti Backed")).toBe(true);
     expect(pyEq(asInstance(reparsed._nameUtf8, Utf8Chunk).value, "")).toBe(true);
   });
 
@@ -747,7 +747,7 @@ describe("TestRoundtripFootageItemName", () => {
     const reparsed = parseAep(out).project.footages.find((f) => f.id === placeholder.id);
     if (reparsed == null) throw new StopIteration();
     expect(pyEq(reparsed.name, "Renamed Placeholder")).toBe(true);
-    expect(pyEq(reparsed.mainSource._opti.placeholder_name, "Renamed Placeholder")).toBe(true);
+    expect(pyEq(reparsed.mainSource._opti.placeholderName, "Renamed Placeholder")).toBe(true);
     expect(pyEq(asInstance(reparsed._nameUtf8, Utf8Chunk).value, "")).toBe(true);
   });
 

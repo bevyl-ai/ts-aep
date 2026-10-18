@@ -126,13 +126,13 @@ describe("TestComment", () => {
     const project = parseProjectFresh(SAMPLES.div("versions", "ae2026", "complete.aep"));
     const layer = _next(project.compositions, (c) => c.name === "DropFrame_Comp").layers[0];
     layer.comment = "probe comment";
-    expect(layer._ldta.has_comment).toBe(true);
+    expect(layer._ldta.hasComment).toBe(true);
     const out = tmpPath.div("comment.aep");
     project.save(out);
     const again = parseAep(out).project;
     const reread = _next(again.compositions, (c) => c.name === "DropFrame_Comp").layers[0];
     expect(reread.comment).toBe("probe comment");
-    expect(reread._ldta.has_comment).toBe(true);
+    expect(reread._ldta.hasComment).toBe(true);
   });
 
   test("test_emptying_drops_chunk_and_flag", () => {
@@ -142,9 +142,9 @@ describe("TestComment", () => {
     expect(layer.comment).toBe("Parent null for shapes");
     layer.comment = "";
     expect(layer._cmta == null).toBe(true);
-    expect(!layer._ldta.has_comment).toBe(true);
+    expect(!layer._ldta.hasComment).toBe(true);
     expect(
-      layer._layerList.chunks.every((c) => getattr(c, "chunk_type", "") !== "cmta"),
+      layer._layerList.chunks.every((c) => getattr(c, "chunkType", "") !== "cmta"),
     ).toBe(true);
   });
 
@@ -152,7 +152,7 @@ describe("TestComment", () => {
     const project = parseProjectFresh(SAMPLES.div("versions", "ae2026", "complete.aep"));
     const comp = _next(project.compositions, (c) => c.name === "Main_Comp");
     const layer = _next(comp.layers, (ly) => ly.name === "Null_Controller");
-    layer._ldta.has_comment = false;
+    layer._ldta.hasComment = false;
     expect(layer.comment).toBe("");
   });
 });
@@ -281,7 +281,7 @@ describe("TestCopyToComp", () => {
     const dst = _next(project.compositions, (c) => c.name === "PC_D24");
     const copy = asInstance(src.copyToComp(dst), LightLayer);
     expect(copy.lightSource == null).toBe(true);
-    expect(copy._ldta.source_id).toBe(0xffffffff);
+    expect(copy._ldta.sourceId).toBe(0xffffffff);
     {
       const [comp, light] = _layer(parseProjectFresh(REPARENT), "PC_SRC", "env_light");
       expect(getattr(asInstance(light.copyToComp(comp), LightLayer).lightSource, "name")).toBe("env_src");
@@ -301,11 +301,11 @@ describe("TestLightSource", () => {
       const [comp, envLayer] = _layer(project, "PC_SRC", "env_light");
       const env = asInstance(envLayer, LightLayer);
       expect(contains(REPARENT_TRUTH.light[target].env, "ERR")).toBe(true);
-      const before = env._ldta.source_id;
+      const before = env._ldta.sourceId;
       raises(ValueError, () => {
         env.lightSource = _next(comp.layers, (ly) => ly.name === target);
       });
-      expect(env._ldta.source_id).toBe(before);
+      expect(env._ldta.sourceId).toBe(before);
     },
   );
 

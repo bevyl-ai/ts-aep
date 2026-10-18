@@ -249,8 +249,8 @@ export function psdLayerFootage(
     layer.vectorMask != null,
     {
       channels: info.pixelChannels,
-      color_mode: info.colorMode,
-      layer_channels: layerChannels,
+      colorMode: info.colorMode,
+      layerChannels: layerChannels,
     },
   );
   const dataSize = pixelBufferSize(
@@ -507,7 +507,7 @@ export function _syncPremultiplied(sspc: SspcChunk): void {
    * crystal.fbx).
    */
   sspc.premultiplied =
-    sspc.alpha_mode_raw === 1 || sspc.source_format_type === FORMAT_3D_MODEL_SCENE;
+    sspc.alphaModeRaw === 1 || sspc.sourceFormatType === FORMAT_3D_MODEL_SCENE;
 }
 
 // `sspc` kind bytes (0xC8-0xC9) for a PSD single-layer binding: byte 0xC9
@@ -647,7 +647,7 @@ export class FileSource extends FootageSource {
   get _isAlphabetical(): boolean {
     return (
       this._targetIsFolder &&
-      this._sspc.start_frame === UNDEFINED_FRAME &&
+      this._sspc.startFrame === UNDEFINED_FRAME &&
       this._fileNames?.length > 0
     );
   }
@@ -693,7 +693,7 @@ export class FileSource extends FootageSource {
 
   /** `true` for an imported 3D model scene (e.g. an `.fbx`). */
   get _is3dModelScene(): boolean {
-    return this._sspc.source_format_type === FORMAT_3D_MODEL_SCENE;
+    return this._sspc.sourceFormatType === FORMAT_3D_MODEL_SCENE;
   }
 
   /**
@@ -702,7 +702,7 @@ export class FileSource extends FootageSource {
    * Read-only.
    */
   get missingFootagePath(): string {
-    if (this._sspc.footage_missing_at_save) return this._file;
+    if (this._sspc.footageMissingAtSave) return this._file;
     return "";
   }
 
@@ -745,12 +745,12 @@ export class FileSource extends FootageSource {
    * round-trip stays byte-identical.
    */
   get _startFrame(): number {
-    return this._derivedFrame(this._sspc.start_frame, 0);
+    return this._derivedFrame(this._sspc.startFrame, 0);
   }
 
   /** Last frame of an image sequence. See `_startFrame`. */
   get _endFrame(): number {
-    return this._derivedFrame(this._sspc.end_frame, -1);
+    return this._derivedFrame(this._sspc.endFrame, -1);
   }
 
   _derivedFrame(stored: number, index: number): number {
@@ -791,8 +791,8 @@ export class FileSource extends FootageSource {
     // from the Utf8 prefix/extension chunks stored before opti.
     if (
       !this._fileNames?.length &&
-      _sspc.frame_padding > 0 &&
-      _sspc.start_frame !== UNDEFINED_FRAME
+      _sspc.framePadding > 0 &&
+      _sspc.startFrame !== UNDEFINED_FRAME
     ) {
       let utf8BeforeOpti: Utf8Chunk[];
       try {
@@ -806,27 +806,27 @@ export class FileSource extends FootageSource {
         const extension = utf8BeforeOpti[utf8BeforeOpti.length - 1].value;
         if (prefix || extension) {
           const firstFrame =
-            `${prefix}${format(_sspc.start_frame, `0${_sspc.frame_padding}d`)}` +
+            `${prefix}${format(_sspc.startFrame, `0${_sspc.framePadding}d`)}` +
             `${extension}`;
           this._file = _joinSequenceFrame(this._file, firstFrame);
         }
       }
     }
 
-    if (getattr(_opti, "asset_type", "") === "8BPS") {
+    if (getattr(_opti, "assetType", "") === "8BPS") {
       const psdOpti = _opti;
       this._fileAttributes = new Map<string, number | string>([
-        ["psd_layer_index", psdOpti.psd_layer_index],
-        ["psd_group_name", psdOpti.psd_group_name || ""],
-        ["psd_layer_count", psdOpti.psd_layer_count],
-        ["psd_canvas_width", psdOpti.psd_canvas_width],
-        ["psd_canvas_height", psdOpti.psd_canvas_height],
-        ["psd_bit_depth", psdOpti.psd_bit_depth],
-        ["psd_channels", psdOpti.psd_channels],
-        ["psd_layer_top", psdOpti.psd_layer_top],
-        ["psd_layer_left", psdOpti.psd_layer_left],
-        ["psd_layer_bottom", psdOpti.psd_layer_bottom],
-        ["psd_layer_right", psdOpti.psd_layer_right],
+        ["psd_layer_index", psdOpti.psdLayerIndex],
+        ["psd_group_name", psdOpti.psdGroupName || ""],
+        ["psd_layer_count", psdOpti.psdLayerCount],
+        ["psd_canvas_width", psdOpti.psdCanvasWidth],
+        ["psd_canvas_height", psdOpti.psdCanvasHeight],
+        ["psd_bit_depth", psdOpti.psdBitDepth],
+        ["psd_channels", psdOpti.psdChannels],
+        ["psd_layer_top", psdOpti.psdLayerTop],
+        ["psd_layer_left", psdOpti.psdLayerLeft],
+        ["psd_layer_bottom", psdOpti.psdLayerBottom],
+        ["psd_layer_right", psdOpti.psdLayerRight],
       ]);
     } else {
       this._fileAttributes = new Map();
@@ -943,30 +943,30 @@ export class FileSource extends FootageSource {
       reservedC8 = source_format === "TEXT" ? b("\x00\x00") : b("\x00\x02");
     }
     const sspc = new SspcChunk({
-      source_format_type: source_format,
+      sourceFormatType: source_format,
       width,
       height,
-      alpha_mode_raw: _alphaModeRaw(has_alpha, alpha_premultiplied),
-      is_synthetic_a: 0,
-      is_synthetic_b: 0,
-      is_synthetic_c: 0,
-      full_frame,
-      reserved_c8: reservedC8,
-      data_size,
+      alphaModeRaw: _alphaModeRaw(has_alpha, alpha_premultiplied),
+      isSyntheticA: 0,
+      isSyntheticB: 0,
+      isSyntheticC: 0,
+      fullFrame: full_frame,
+      reservedC8: reservedC8,
+      dataSize: data_size,
       depth,
-      reserved_40: b("\x01\x01"), // every file source (AE 2026)
+      reserved40: b("\x01\x01"), // every file source (AE 2026)
     });
     _syncPremultiplied(sspc);
     if (media_flag) {
-      sspc.media_format = true;
-      sspc.media_file = !isSequence;
+      sspc.mediaFormat = true;
+      sspc.mediaFile = !isSequence;
     }
-    if (layer_id != null) sspc.layer_id = layer_id;
-    if (layer_index != null) sspc.layer_index = layer_index;
-    sspc.native_frame_rate = frame_rate;
+    if (layer_id != null) sspc.layerId = layer_id;
+    if (layer_index != null) sspc.layerIndex = layer_index;
+    sspc.nativeFrameRate = frame_rate;
     sspc.duration = duration;
-    sspc.pixel_aspect = pixel_aspect;
-    sspc.audio_sample_rate = audio_sample_rate;
+    sspc.pixelAspect = pixel_aspect;
+    sspc.audioSampleRate = audio_sample_rate;
     // AE stamps the source's last-modified time and re-reads the media
     // whenever it does not match, taking the dimensions from the format
     // plugin instead of the ones cached here. For an OpenEXR frame whose
@@ -974,12 +974,12 @@ export class FileSource extends FootageSource {
     // answer (the plugin reports the data window, AE's importer records
     // the display window), so an unstamped sequence silently changes size
     // when AE opens the project. AE stamps a sequence with its folder.
-    sspc.from_file = true;
+    sspc.fromFile = true;
     // Media that is not on this machine stays unstamped, which is the
     // "re-read me" state AE itself writes for missing footage.
     const stampTarget = isSequence ? path.parent : path;
     try {
-      sspc.source_modified = int(stampTarget.stat().mtimeMs / 1000);
+      sspc.sourceModified = int(stampTarget.stat().mtimeMs / 1000);
     } catch (e) {
       if (!_isOsError(e)) throw e;
     }
@@ -988,25 +988,25 @@ export class FileSource extends FootageSource {
       // StVc list, below) instead of numbering them. AE 2026 writes the
       // frame numbers undefined, no padding, these flags and a set byte
       // 0x74.
-      sspc.start_frame = UNDEFINED_FRAME;
-      sspc.end_frame = UNDEFINED_FRAME;
-      sspc._reserved_a8 = b("\x00\x00\x00\x01");
-      sspc._reserved_b8 = b("\x00");
-      sspc._reserved_ba = b("\x00\x00");
-      sspc._source_stamp = concat(b("\x01"), bytes_.slice(sspc._source_stamp, 1));
+      sspc.startFrame = UNDEFINED_FRAME;
+      sspc.endFrame = UNDEFINED_FRAME;
+      sspc._reservedA8 = b("\x00\x00\x00\x01");
+      sspc._reservedB8 = b("\x00");
+      sspc._reservedBa = b("\x00\x00");
+      sspc._sourceStamp = concat(b("\x01"), bytes_.slice(sspc._sourceStamp, 1));
     } else if (isSequence) {
-      sspc.start_frame = start_frame;
-      sspc.end_frame = end_frame;
-      sspc.frame_padding = frame_padding;
+      sspc.startFrame = start_frame;
+      sspc.endFrame = end_frame;
+      sspc.framePadding = frame_padding;
       // AE tags image sequences with these flags; without them it
       // treats the folder reference as missing footage on open.
       // (Values reverse-engineered from AE 2026 sequence imports.)
       // Byte 0xB8 marks zero-padded frame numbers: 0 for p410.png
       // or s1.png ... s12.png, 1 for z_0410.png or frame_001.png.
-      sspc._reserved_a8 = b("\x00\x00\x00\x02");
+      sspc._reservedA8 = b("\x00\x00\x00\x02");
       const zeroPadded = str(start_frame).length < frame_padding;
-      sspc._reserved_b8 = zeroPadded ? b("\x01") : b("\x00");
-      sspc._reserved_ba = b("\x01\x01");
+      sspc._reservedB8 = zeroPadded ? b("\x01") : b("\x00");
+      sspc._reservedBa = b("\x01\x01");
     }
     if (isSequence) {
       _storeFramesOverRate(sspc, round(duration * frame_rate), frame_rate);
@@ -1017,15 +1017,15 @@ export class FileSource extends FootageSource {
     // file_attributes immediately, not just after a save/reparse.
     let opti: OptiChunk;
     if (opti_data?.length > 0) {
-      opti = OptiChunk.read(new BytesIO(opti_data), opti_data.length, { chunk_type: "opti" });
+      opti = OptiChunk.read(new BytesIO(opti_data), opti_data.length, { chunkType: "opti" });
     } else {
-      opti = new OptiChunk({ chunk_type: "opti" });
+      opti = new OptiChunk({ chunkType: "opti" });
     }
 
     const fullpath = platformPath(isSequence ? String(path.parent) : String(path), {
       windows,
     });
-    const pathChunks: Chunk[] = [buildAls2List(fullpath, { target_is_folder: isSequence })];
+    const pathChunks: Chunk[] = [buildAls2List(fullpath, { targetIsFolder: isSequence })];
     if (sequence_files != null) {
       pathChunks.push(buildStvcList(sequence_files));
     } else if (isSequence) {
@@ -1042,15 +1042,15 @@ export class FileSource extends FootageSource {
       color_mode,
     );
     const pin = buildPinList(sspc, opti, {
-      path_chunks: pathChunks,
-      embedded_profile_name,
-      embedded_profile: embedded,
-      assigned_profile: assigned,
+      pathChunks: pathChunks,
+      embeddedProfileName: embedded_profile_name,
+      embeddedProfile: embedded,
+      assignedProfile: assigned,
       // AE color-manages every file it imports; the ones whose space it
       // only names (a CMYK .ai, a grayscale TIFF...) or does not know
       // (DPX/Cineon) keep the working space, and so does a solid.
-      color_managed: embedded_profile_name == null && !_UNPROFILED_FORMATS.has(source_format),
-      layer_name,
+      colorManaged: embedded_profile_name == null && !_UNPROFILED_FORMATS.has(source_format),
+      layerName: layer_name,
     });
     const clrs = findByListType(pin.chunks, "CLRS");
     const linl = findByType(clrs.chunks, "linl");
@@ -1470,7 +1470,7 @@ export class FileSource extends FootageSource {
     });
     source._rateFromMedia = info.duration !== 0;
     if (hasRange) {
-      source._sspc.frame_range_set = true;
+      source._sspc.frameRangeSet = true;
     }
     return source;
   }
@@ -1531,7 +1531,7 @@ export class FileSource extends FootageSource {
     const sspc = this._sspc;
     // AE keeps the source's importer across a reload: the rebuilt `opti`
     // names the stored code (a BMP imported on Windows stays `STIL`).
-    fmt = _replace(fmt, { sourceFormat: sspc.source_format_type });
+    fmt = _replace(fmt, { sourceFormat: sspc.sourceFormatType });
     if (this._targetIsFolder) {
       // Sequence: re-scan sibling frames. The stored native rate is
       // kept as the fallback for rate-less formats (reload does not
@@ -1541,26 +1541,26 @@ export class FileSource extends FootageSource {
       // the rebuild would widen the sequence to every sibling frame
       // while the marker still claimed a range. The range bounds are
       // the stored start/end frames.
-      const rangeStart = sspc.frame_range_set ? this._startFrame : 0;
-      const rangeEnd = sspc.frame_range_set ? this._endFrame : 0;
+      const rangeStart = sspc.frameRangeSet ? this._startFrame : 0;
+      const rangeEnd = sspc.frameRangeSet ? this._endFrame : 0;
       const alphabetical = this._isAlphabetical;
       const fresh = FileSource._buildSequence(
         path,
         fmt,
         alphabetical,
-        pyOr(sspc.native_frame_rate, 30.0),
+        pyOr(sspc.nativeFrameRate, 30.0),
         { windows: this._windows, rangeStart: rangeStart, rangeEnd: rangeEnd },
       );
       // The duration as frames over rate, unreduced, as the import writes
       // it (the float setter would store 3/30 as 1/10).
       this._adoptMeasured(
         fresh,
-        "start_frame",
-        "end_frame",
-        "frame_padding",
-        "native_frame_rate",
-        "duration_dividend",
-        "duration_divisor",
+        "startFrame",
+        "endFrame",
+        "framePadding",
+        "nativeFrameRate",
+        "durationDividend",
+        "durationDivisor",
       );
       if (alphabetical) {
         // An alphabetical sequence re-lists its folder by name.
@@ -1579,14 +1579,14 @@ export class FileSource extends FootageSource {
       // does, and everything is measured before anything is written.
       const fresh = FileSource._fromLayer(
         path,
-        layerIndexForStored(path, sspc.layer_index),
+        layerIndexForStored(path, sspc.layerIndex),
         {
-          dimensions: sspc.full_frame ? null : "layer",
+          dimensions: sspc.fullFrame ? null : "layer",
           layerStyles: this.layerStyles,
           windows: this._windows,
         },
       );
-      this._adoptMeasured(fresh, "pixel_aspect", "layer_id");
+      this._adoptMeasured(fresh, "pixelAspect", "layerId");
     } else {
       const data = fmt.opti === "text" ? path.readBytes() : null;
       const info = _platformMediaInfo(probeMedia(path, data), fmt, {
@@ -1595,25 +1595,25 @@ export class FileSource extends FootageSource {
       sspc.width = info.width;
       sspc.height = info.height;
       sspc.depth = info.depth;
-      sspc.alpha_mode_raw = _alphaModeRaw(info.hasAlpha, fmt.alphaPremultiplied);
-      sspc.native_frame_rate = info.frameRate;
+      sspc.alphaModeRaw = _alphaModeRaw(info.hasAlpha, fmt.alphaPremultiplied);
+      sspc.nativeFrameRate = info.frameRate;
       sspc.duration = info.duration;
-      sspc.pixel_aspect = info.pixelAspect;
-      sspc.audio_sample_rate = info.audioSampleRate;
+      sspc.pixelAspect = info.pixelAspect;
+      sspc.audioSampleRate = info.audioSampleRate;
       // AE refreshes the cached source size (probed on a PNG: the file
       // size, 3614 -> 223874 across the reload fixture pair).
-      sspc.data_size = _stillDataSize(fmt, info, path);
+      sspc.dataSize = _stillDataSize(fmt, info, path);
       const optiData = _optiData(fmt, info, path, { sequence: false, data });
       let newOpti: OptiChunk;
       if (optiData?.length > 0) {
-        newOpti = OptiChunk.read(new BytesIO(optiData), optiData.length, { chunk_type: "opti" });
+        newOpti = OptiChunk.read(new BytesIO(optiData), optiData.length, { chunkType: "opti" });
       } else {
-        newOpti = new OptiChunk({ chunk_type: "opti" });
+        newOpti = new OptiChunk({ chunkType: "opti" });
       }
       this._swapOpti(newOpti);
       // AE 2026 restamps the source with the file's current mtime on a
       // reload; a stale stamp makes it re-read the media at every open.
-      sspc.source_modified = int(path.stat().mtimeMs / 1000);
+      sspc.sourceModified = int(path.stat().mtimeMs / 1000);
       // Only AI/EPS/PDF carry a re-readable embedded profile. Other
       // formats keep the record they already have: AE writes `empd`
       // for PNG/MOV/MPEG too, and a reload that only re-reads the
@@ -1626,7 +1626,7 @@ export class FileSource extends FootageSource {
 
     const idta = getattr(owner, "_idta", null);
     if (owner != null && idta != null) {
-      idta._flags_17 = this._idtaFlags17();
+      idta._flags17 = this._idtaFlags17();
       // AE 2026 restamps the item with the reloaded file's mtime too.
       owner._syncModifiedTime();
     }
@@ -1648,11 +1648,11 @@ export class FileSource extends FootageSource {
   _adoptMeasured(fresh: FileSource, ...fields: string[]): void {
     const sspc = this._sspc;
     const freshSspc = fresh._sspc;
-    for (const name of ["width", "height", "depth", "alpha_mode_raw", ...fields]) {
+    for (const name of ["width", "height", "depth", "alphaModeRaw", ...fields]) {
       setattr(sspc, name, getattr(freshSspc, name));
     }
-    sspc.data_size = freshSspc.data_size;
-    sspc._source_stamp = freshSspc._source_stamp;
+    sspc.dataSize = freshSspc.dataSize;
+    sspc._sourceStamp = freshSspc._sourceStamp;
     this._swapOpti(fresh._opti);
   }
 
@@ -1664,7 +1664,7 @@ export class FileSource extends FootageSource {
     if (this._clrs == null) return;
     const chunks = this._clrs.chunks;
     for (const [index, chunk] of chunks.entries()) {
-      if (chunk.chunk_type === "empd") {
+      if (chunk.chunkType === "empd") {
         if (name == null) {
           chunks.splice(index, 2);
         } else {
@@ -1674,7 +1674,7 @@ export class FileSource extends FootageSource {
       }
     }
     if (name != null) {
-      const apidIndex = chunks.findIndex((ch) => ch.chunk_type === "apid");
+      const apidIndex = chunks.findIndex((ch) => ch.chunkType === "apid");
       const insertAt = apidIndex >= 0 ? apidIndex + 1 : 0;
       chunks.splice(insertAt, 0, new Utf8Chunk({ value: name }));
       chunks.splice(insertAt, 0, new EmpdChunk());
@@ -1704,14 +1704,14 @@ export class FileSource extends FootageSource {
    * py_aep extension: ExtendScript exposes no layer-selection API.
    */
   get layerName(): string {
-    const psdLayer = getattr(this._opti, "psd_group_name", "");
+    const psdLayer = getattr(this._opti, "psdGroupName", "");
     if (pyBool(psdLayer)) return str(psdLayer);
     // AI/EPS/PDF: a `TEXT` opti carries the layer name as a typed
     // `TextOptiChunk` field (0x44). The name alone marks the binding -
     // the 0x3D byte next to it is the layer's visibility, and AE writes
     // it 0 for a hidden layer's (still layer-bound) footage.
     const opti = this._opti;
-    if (opti instanceof TextOptiChunk) return opti.text_layer_name;
+    if (opti instanceof TextOptiChunk) return opti.textLayerName;
     return "";
   }
 
@@ -1730,8 +1730,8 @@ export class FileSource extends FootageSource {
    * value is whatever the byte says.
    */
   get layerStyles(): string | null {
-    if (this._sspc.source_format_type !== "8BPS" || !this.layerName) return null;
-    return _C9_TO_LAYER_STYLES.get(this._sspc._reserved_c8[1]) ?? null;
+    if (this._sspc.sourceFormatType !== "8BPS" || !this.layerName) return null;
+    return _C9_TO_LAYER_STYLES.get(this._sspc._reservedC8[1]) ?? null;
   }
 
   /**
@@ -1797,7 +1797,7 @@ export class FileSource extends FootageSource {
 
     if (!prefix && !extension) return "";
 
-    const framePadding = this._sspc.frame_padding;
+    const framePadding = this._sspc.framePadding;
     const frameRange =
       `[${format(startFrame, `0${framePadding}d`)}` +
       `-${format(endFrame, `0${framePadding}d`)}]`;

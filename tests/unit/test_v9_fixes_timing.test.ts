@@ -69,9 +69,9 @@ describe("TestTimebaseRule", () => {
       const [timebase, unitsPerFrame] = getitem(_AE_TIMEBASES, rate);
       expect(pyEq(frameGrid(rate), [timebase, unitsPerFrame])).toBe(true);
       const cdta = new CdtaChunk();
-      cdta.frame_rate = rate;
-      expect(cdta.internal_timebase).toBe(timebase);
-      expect(cdta.time_scale * 256).toBe(unitsPerFrame);
+      cdta.frameRate = rate;
+      expect(cdta.internalTimebase).toBe(timebase);
+      expect(cdta.timeScale * 256).toBe(unitsPerFrame);
     },
   );
 });
@@ -84,7 +84,7 @@ function _f32Ratio(value: number): [number, number] {
 
 function _cdta(rate: number): CdtaChunk {
   const cdta = new CdtaChunk();
-  cdta.frame_rate = rate;
+  cdta.frameRate = rate;
   return cdta;
 }
 
@@ -125,9 +125,9 @@ describe("TestFrameGridFollowsTheRate", () => {
     // time scale 3.125); AE derives the grid from the rate on open and
     // reported displayStartFrame 120 for a 5 s start there.
     const cdta = _cdta(24);
-    cdta.internal_timebase = 23976;
-    cdta.time_scale_integer = 3;
-    cdta.time_scale_fractional = 32;
+    cdta.internalTimebase = 23976;
+    cdta.timeScaleInteger = 3;
+    cdta.timeScaleFractional = 32;
     expect(_frameNumber(cdta, 5 * 23976, 23976)).toBe(120);
   });
 });
@@ -139,30 +139,30 @@ describe("TestFrameGridFollowsTheRate", () => {
 describe("TestFixedPointRates", () => {
   test("test_cdta", () => {
     const cdta = new CdtaChunk();
-    cdta.frame_rate = 23.99999999;
-    expect(pyEq([cdta.frame_rate_integer, cdta.frame_rate_fractional], [24, 0])).toBe(true);
+    cdta.frameRate = 23.99999999;
+    expect(pyEq([cdta.frameRateInteger, cdta.frameRateFractional], [24, 0])).toBe(true);
     expect(cdta.tobytes().length).toBe(new CdtaChunk().tobytes().length);
   });
 
   test("test_render_settings", () => {
     const item = new RenderSettingsItem();
-    item.frame_rate = 29.9999999;
-    expect(pyEq([item.frame_rate_integer, item.frame_rate_fractional], [30, 0])).toBe(true);
+    item.frameRate = 29.9999999;
+    expect(pyEq([item.frameRateInteger, item.frameRateFractional], [30, 0])).toBe(true);
   });
 
   test("test_output_module", () => {
     const roou = new RouuChunk();
-    roou.frame_rate = 1.99999999;
-    expect(pyEq([roou.frame_rate_integer, roou.frame_rate_fractional], [2, 0])).toBe(true);
+    roou.frameRate = 1.99999999;
+    expect(pyEq([roou.frameRateInteger, roou.frameRateFractional], [2, 0])).toBe(true);
   });
 
   test("test_footage_rates", () => {
     const sspc = new SspcChunk();
-    sspc.native_frame_rate = 23.99999999;
-    sspc.conform_frame_rate = 29.9999999;
-    expect(sspc.native_frame_rate).toBe(24.0);
-    expect(sspc.conform_frame_rate).toBe(30.0);
-    expect(sspc.display_frame_rate).toBe(30.0);
+    sspc.nativeFrameRate = 23.99999999;
+    sspc.conformFrameRate = 29.9999999;
+    expect(sspc.nativeFrameRate).toBe(24.0);
+    expect(sspc.conformFrameRate).toBe(30.0);
+    expect(sspc.displayFrameRate).toBe(30.0);
     expect(pyBool(sspc.tobytes())).toBe(true);
   });
 });
@@ -171,11 +171,11 @@ describe("TestSignedWorkAreaStart", () => {
   test("test_negative_start_reads_signed", () => {
     // AE 2026 stores -1 frame (-1024/24576) for a zero-length comp.
     const cdta = new CdtaChunk();
-    cdta.work_area_start_dividend = -1024;
-    cdta.work_area_start_divisor = 24576;
+    cdta.workAreaStartDividend = -1024;
+    cdta.workAreaStartDivisor = 24576;
     const again = asInstance(CdtaChunk.frombytes(cdta.tobytes()), CdtaChunk);
     expect(again instanceof CdtaChunk).toBe(true);
-    expect(approx(again.work_area_start, -1 / 24)).toBe(true);
+    expect(approx(again.workAreaStart, -1 / 24)).toBe(true);
   });
 });
 
@@ -219,6 +219,6 @@ describe("TestStretchEncoding", () => {
   ])("test_float32_ratio[%#]", (percent: number, ratio: [number, number]) => {
     const ldta = new LdtaChunk();
     ldta.stretch = percent;
-    expect(pyEq([ldta.stretch_dividend, ldta.stretch_divisor], ratio)).toBe(true);
+    expect(pyEq([ldta.stretchDividend, ldta.stretchDivisor], ratio)).toBe(true);
   });
 });

@@ -17,7 +17,7 @@ import { asInstance } from "../helpers.ts";
 
 function _read(chunkType: string, body: Uint8Array): Chunk {
   const cls = getitem(CHUNK_TYPES, chunkType);
-  const chunk = cls.read(new BytesIO(body), len(body), { chunk_type: chunkType });
+  const chunk = cls.read(new BytesIO(body), len(body), { chunkType: chunkType });
   const out = new BytesIO();
   chunk.write(out);
   pyAssert(pyEq(out.getvalue(), body));
@@ -74,15 +74,15 @@ describe("TestLdtaDoubles", () => {
     struct.packInto(">IIId", body, 0x8c, 1, 0x01000000, 1, 36.0);
     const chunk = _read("ldta", body);
     pyAssert(chunk instanceof LdtaChunk);
-    expect(chunk._reserved_70).toBe(1.5);
-    expect(chunk._reserved_78).toBe(-2.25);
+    expect(chunk._reserved70).toBe(1.5);
+    expect(chunk._reserved78).toBe(-2.25);
     expect(
       pyEq(
-        [chunk._reserved_8c, chunk._reserved_90, chunk._reserved_94],
+        [chunk._reserved8c, chunk._reserved90, chunk._reserved94],
         [1, 0x01000000, 1],
       ),
     ).toBe(true);
-    expect(chunk._reserved_98).toBe(36.0);
+    expect(chunk._reserved98).toBe(36.0);
   });
 });
 
@@ -99,10 +99,10 @@ describe("TestTdb4Layout", () => {
     struct.packInto(">dddd", body, 0x54, 0.0, 0.16666666667, 0.0, 0.5);
     const chunk = _read("tdb4", body);
     pyAssert(chunk instanceof Tdb4Chunk);
-    expect(chunk._reserved_48).toBe(0xa800);
-    expect(pyEq([chunk._reserved_4c, chunk._reserved_4d], [3, 1])).toBe(true);
-    expect(chunk._reserved_5c).toBe(0.16666666667);
-    expect(chunk._reserved_6c).toBe(0.5);
+    expect(chunk._reserved48).toBe(0xa800);
+    expect(pyEq([chunk._reserved4c, chunk._reserved4d], [3, 1])).toBe(true);
+    expect(chunk._reserved5c).toBe(0.16666666667);
+    expect(chunk._reserved6c).toBe(0.5);
   });
 });
 
@@ -114,12 +114,12 @@ describe("TestTdsbRatioLink", () => {
   test("test_unlinked", () => {
     const chunk = _read("tdsb", b("\x00\x00\x20\x01"));
     pyAssert(chunk instanceof TdsbChunk);
-    expect(chunk.ratio_unlinked).toBe(true);
+    expect(chunk.ratioUnlinked).toBe(true);
   });
 
   test("test_linked", () => {
     const chunk = _read("tdsb", b("\x00\x00\x00\x01"));
     pyAssert(chunk instanceof TdsbChunk);
-    expect(chunk.ratio_unlinked).toBe(false);
+    expect(chunk.ratioUnlinked).toBe(false);
   });
 });

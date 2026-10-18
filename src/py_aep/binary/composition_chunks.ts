@@ -116,205 +116,205 @@ export function rescaleTicks(ticks: number, old: number, new_: number): number {
  * Binary fields stay raw except for sentinel-aware work-area end helpers.
  */
 export class CdtaChunk extends Chunk {
-  declare chunk_type: string;
+  declare chunkType: string;
 
   // -- Resolution (bytes 0-3) --------------------------------------------
 
   /** Horizontal resolution factor. */
-  declare resolution_factor_h: number;
+  declare resolutionFactorH: number;
 
   /** Vertical resolution factor. */
-  declare resolution_factor_v: number;
+  declare resolutionFactorV: number;
 
   // -- Time scale (bytes 4-7) --------------------------------------------
-  declare _reserved_04: Uint8Array;
+  declare _reserved04: Uint8Array;
 
   /** Integer part of time scale. */
-  declare time_scale_integer: number;
+  declare timeScaleInteger: number;
 
   /** Fractional part (1/256th units). Non-zero for NTSC-style rates. */
-  declare time_scale_fractional: number;
+  declare timeScaleFractional: number;
 
   // -- Timebase (bytes 8-19) ---------------------------------------------
 
   /** frame_rate * 256 * time_scale. E.g. 24576 for 24fps/ts=4. */
-  declare internal_timebase: number;
-  declare _reserved_0c: Uint8Array;
+  declare internalTimebase: number;
+  declare _reserved0c: Uint8Array;
 
   /** Always 600. */
-  declare standard_timebase: number;
+  declare standardTimebase: number;
 
   // -- Time / work area / duration (bytes 20-51) -------------------------
-  declare time_dividend: number;
-  declare time_divisor: number;
+  declare timeDividend: number;
+  declare timeDivisor: number;
 
   /** Signed: AE 2026 stores -1 frame for a zero-length composition. */
-  declare work_area_start_dividend: number;
-  declare work_area_start_divisor: number;
-  declare work_area_end_dividend: number;
-  declare work_area_end_divisor: number;
-  declare duration_dividend: number;
-  declare duration_divisor: number;
+  declare workAreaStartDividend: number;
+  declare workAreaStartDivisor: number;
+  declare workAreaEndDividend: number;
+  declare workAreaEndDivisor: number;
+  declare durationDividend: number;
+  declare durationDivisor: number;
 
   // -- Background color (bytes 52-54) ------------------------------------
-  declare bg_color_r: number;
-  declare bg_color_g: number;
-  declare bg_color_b: number;
+  declare bgColorR: number;
+  declare bgColorG: number;
+  declare bgColorB: number;
 
   // -- Reserved (bytes 55-137, 83 bytes) ---------------------------------
-  declare _reserved_37: Uint8Array;
+  declare _reserved37: Uint8Array;
 
   // -- Comp flags (bytes 138-139, 2 flag bytes) --------------------------
 
   /** Byte 138: bit 7 = draft3d. */
-  declare _comp_flags_0: number;
+  declare _compFlags0: number;
 
   /** Byte 139: composition toggle flags. */
-  declare _comp_flags_1: number;
+  declare _compFlags1: number;
 
   // -- Dimensions (bytes 140-143) ----------------------------------------
   declare width: number;
   declare height: number;
 
   // -- Pixel ratio (bytes 144-155) ---------------------------------------
-  declare pixel_aspect_dividend: number;
-  declare pixel_aspect_divisor: number;
-  declare _reserved_98: Uint8Array;
+  declare pixelAspectDividend: number;
+  declare pixelAspectDivisor: number;
+  declare _reserved98: Uint8Array;
 
   // -- Frame rate (bytes 156-163) ----------------------------------------
-  declare frame_rate_integer: number;
+  declare frameRateInteger: number;
 
   /** Fractional part (1/65536th units). */
-  declare frame_rate_fractional: number;
-  declare _reserved_a0: Uint8Array;
+  declare frameRateFractional: number;
+  declare _reservedA0: Uint8Array;
 
   // -- Display start time (bytes 164-171) --------------------------------
 
   /** Signed. Negative = timeline starts before frame 0. */
-  declare display_start_time_dividend: number;
-  declare display_start_time_divisor: number;
+  declare displayStartTimeDividend: number;
+  declare displayStartTimeDivisor: number;
 
   // -- Shutter (bytes 172-187) -------------------------------------------
-  declare _reserved_ac: Uint8Array;
-  declare shutter_angle: number;
+  declare _reservedAc: Uint8Array;
+  declare shutterAngle: number;
 
   /** Always 360 (0x0168) big-endian. */
-  declare _reserved_b0: number;
-  declare shutter_phase: number;
+  declare _reservedB0: number;
+  declare shutterPhase: number;
 
   /** Always 360 (0x0168) big-endian. */
-  declare _reserved_b8: number;
+  declare _reservedB8: number;
 
   // -- Trailing reserved (bytes 188-203) ---------------------------------
-  declare _reserved_bc: Uint8Array;
-  declare motion_blur_adaptive_sample_limit: number;
-  declare motion_blur_samples_per_frame: number;
+  declare _reservedBc: Uint8Array;
+  declare motionBlurAdaptiveSampleLimit: number;
+  declare motionBlurSamplesPerFrame: number;
 
   // -- BitField descriptors (not attrs fields) ---------------------------
   declare draft3d: boolean;
-  declare preserve_nested_resolution: boolean;
-  declare preserve_nested_frame_rate: boolean;
-  declare frame_blending: boolean;
-  declare motion_blur: boolean;
-  declare hide_shy_layers: boolean;
+  declare preserveNestedResolution: boolean;
+  declare preserveNestedFrameRate: boolean;
+  declare frameBlending: boolean;
+  declare motionBlur: boolean;
+  declare hideShyLayers: boolean;
 
   // -- Assembled properties ----------------------------------------------
   // Combine raw integer+fractional or dividend/divisor pairs into floats.
   // Used by model ChunkField descriptors for direct read/write.
 
   /** Frame rate assembled from integer + fractional/65536. */
-  get frame_rate(): number {
-    return this.frame_rate_integer + this.frame_rate_fractional / 65536.0;
+  get frameRate(): number {
+    return this.frameRateInteger + this.frameRateFractional / 65536.0;
   }
 
-  set frame_rate(value: number) {
-    [this.frame_rate_integer, this.frame_rate_fractional] = toFixed1616(value);
-    this._update_timebase(value);
+  set frameRate(value: number) {
+    [this.frameRateInteger, this.frameRateFractional] = toFixed1616(value);
+    this._updateTimebase(value);
   }
 
   /** Time scale assembled from integer + fractional/256. */
-  get time_scale(): number {
-    return this.time_scale_integer + this.time_scale_fractional / 256.0;
+  get timeScale(): number {
+    return this.timeScaleInteger + this.timeScaleFractional / 256.0;
   }
 
   /**
    * Recalculate internal_timebase and time_scale (units per frame /
    * 256) for a new frame rate (see `frame_grid`).
    */
-  _update_timebase(fps: number): void {
+  _updateTimebase(fps: number): void {
     const [internalTimebase, unitsPerFrame] = frameGrid(fps);
-    this.internal_timebase = internalTimebase;
-    [this.time_scale_integer, this.time_scale_fractional] = divmod(unitsPerFrame, 256);
+    this.internalTimebase = internalTimebase;
+    [this.timeScaleInteger, this.timeScaleFractional] = divmod(unitsPerFrame, 256);
   }
 
   /** Pixel aspect ratio from dividend/divisor. */
-  get pixel_aspect(): number {
-    return this.pixel_aspect_dividend / this.pixel_aspect_divisor;
+  get pixelAspect(): number {
+    return this.pixelAspectDividend / this.pixelAspectDivisor;
   }
 
-  set pixel_aspect(value: number) {
-    [this.pixel_aspect_dividend, this.pixel_aspect_divisor] = toDividendDivisor(value);
+  set pixelAspect(value: number) {
+    [this.pixelAspectDividend, this.pixelAspectDivisor] = toDividendDivisor(value);
   }
 
   /** Duration in seconds from dividend/divisor. */
   get duration(): number {
-    return this.duration_dividend / this.duration_divisor;
+    return this.durationDividend / this.durationDivisor;
   }
 
   /** Display start time in seconds from dividend/divisor. */
-  get display_start_time(): number {
-    return this.display_start_time_dividend / this.display_start_time_divisor;
+  get displayStartTime(): number {
+    return this.displayStartTimeDividend / this.displayStartTimeDivisor;
   }
 
-  set display_start_time(value: number) {
-    [this.display_start_time_dividend, this.display_start_time_divisor] = toFloat32Ratio(value);
+  set displayStartTime(value: number) {
+    [this.displayStartTimeDividend, this.displayStartTimeDivisor] = toFloat32Ratio(value);
   }
 
   /** Work area start in seconds from dividend/divisor. */
-  get work_area_start(): number {
-    return this.work_area_start_dividend / this.work_area_start_divisor;
+  get workAreaStart(): number {
+    return this.workAreaStartDividend / this.workAreaStartDivisor;
   }
 
   /** Current time in seconds from dividend/divisor. */
-  get time_seconds(): number {
-    return this.time_dividend / this.time_divisor;
+  get timeSeconds(): number {
+    return this.timeDividend / this.timeDivisor;
   }
 
   /** Absolute work area end in seconds. */
-  get work_area_end_absolute(): number {
-    if (this.work_area_end_dividend === WORK_AREA_TO_END) {
-      return this.display_start_time + this.duration;
+  get workAreaEndAbsolute(): number {
+    if (this.workAreaEndDividend === WORK_AREA_TO_END) {
+      return this.displayStartTime + this.duration;
     }
-    return this.display_start_time + this.work_area_end_dividend / this.work_area_end_divisor;
+    return this.displayStartTime + this.workAreaEndDividend / this.workAreaEndDivisor;
   }
 
   /** Absolute work area end in frames. */
-  get frame_work_area_end_absolute(): number {
-    if (this.work_area_end_dividend === WORK_AREA_TO_END) {
-      return (this.display_start_time + this.duration) * this.frame_rate;
+  get frameWorkAreaEndAbsolute(): number {
+    if (this.workAreaEndDividend === WORK_AREA_TO_END) {
+      return (this.displayStartTime + this.duration) * this.frameRate;
     }
-    return this.work_area_end_absolute * this.frame_rate;
+    return this.workAreaEndAbsolute * this.frameRate;
   }
 
   /** Background color as [R, G, B] in 0.0-1.0 range. */
-  get bg_color(): number[] {
-    return [this.bg_color_r / 255, this.bg_color_g / 255, this.bg_color_b / 255];
+  get bgColor(): number[] {
+    return [this.bgColorR / 255, this.bgColorG / 255, this.bgColorB / 255];
   }
 
-  set bg_color(value: number[]) {
-    this.bg_color_r = round(value[0] * 255);
-    this.bg_color_g = round(value[1] * 255);
-    this.bg_color_b = round(value[2] * 255);
+  set bgColor(value: number[]) {
+    this.bgColorR = round(value[0] * 255);
+    this.bgColorG = round(value[1] * 255);
+    this.bgColorB = round(value[2] * 255);
   }
 
   /** Resolution factor as [horizontal, vertical]. */
-  get resolution_factor(): number[] {
-    return [this.resolution_factor_h, this.resolution_factor_v];
+  get resolutionFactor(): number[] {
+    return [this.resolutionFactorH, this.resolutionFactorV];
   }
 
-  set resolution_factor(value: number[]) {
-    this.resolution_factor_h = value[0];
-    this.resolution_factor_v = value[1];
+  set resolutionFactor(value: number[]) {
+    this.resolutionFactorH = value[0];
+    this.resolutionFactorV = value[1];
   }
 
   /**
@@ -322,72 +322,72 @@ export class CdtaChunk extends Chunk {
    * product is rounded: truncating it loses a frame at 23.976 fps, where
    * the stored rate is only 16.16-accurate (51.999995 for 52 frames).
    */
-  get frame_duration(): number {
-    return round(this.duration * this.frame_rate);
+  get frameDuration(): number {
+    return round(this.duration * this.frameRate);
   }
 
   /** Work area duration in seconds. */
-  get work_area_duration(): number {
-    if (this.work_area_end_dividend === WORK_AREA_TO_END) {
-      return this.duration - this.work_area_start;
+  get workAreaDuration(): number {
+    if (this.workAreaEndDividend === WORK_AREA_TO_END) {
+      return this.duration - this.workAreaStart;
     }
-    return this.work_area_end_dividend / this.work_area_end_divisor - this.work_area_start;
+    return this.workAreaEndDividend / this.workAreaEndDivisor - this.workAreaStart;
   }
 
   /** Work area duration in frames, rounded like `frame_duration`. */
-  get work_area_duration_frame(): number {
-    return round(this.work_area_duration * this.frame_rate);
+  get workAreaDurationFrame(): number {
+    return round(this.workAreaDuration * this.frameRate);
   }
 }
 define(CdtaChunk, {
-  chunk_type: field({ default: "cdta" }),
-  resolution_factor_h: u2Field({ default: 1 }),
-  resolution_factor_v: u2Field({ default: 1 }),
-  _reserved_04: bytesField(1, { repr: false }),
-  time_scale_integer: u2Field({ default: 4 }),
-  time_scale_fractional: u1Field(),
-  internal_timebase: u4Field({ default: 24576 }),
-  _reserved_0c: bytesField(4, { repr: false }),
-  standard_timebase: u4Field({ default: 600 }),
-  time_dividend: s4Field({ default: 1 }),
-  time_divisor: u4Field({ default: 1 }),
-  work_area_start_dividend: s4Field({ default: 1 }),
-  work_area_start_divisor: u4Field({ default: 1 }),
-  work_area_end_dividend: u4Field({ default: WORK_AREA_TO_END }),
-  work_area_end_divisor: u4Field({ default: 1 }),
-  duration_dividend: u4Field({ default: 1 }),
-  duration_divisor: u4Field({ default: 1 }),
-  bg_color_r: u1Field(),
-  bg_color_g: u1Field(),
-  bg_color_b: u1Field(),
-  _reserved_37: bytesField(83, { repr: false }),
-  _comp_flags_0: u1Field({ repr: false }),
-  _comp_flags_1: u1Field({ repr: false }),
+  chunkType: field({ default: "cdta" }),
+  resolutionFactorH: u2Field({ default: 1 }),
+  resolutionFactorV: u2Field({ default: 1 }),
+  _reserved04: bytesField(1, { repr: false }),
+  timeScaleInteger: u2Field({ default: 4 }),
+  timeScaleFractional: u1Field(),
+  internalTimebase: u4Field({ default: 24576 }),
+  _reserved0c: bytesField(4, { repr: false }),
+  standardTimebase: u4Field({ default: 600 }),
+  timeDividend: s4Field({ default: 1 }),
+  timeDivisor: u4Field({ default: 1 }),
+  workAreaStartDividend: s4Field({ default: 1 }),
+  workAreaStartDivisor: u4Field({ default: 1 }),
+  workAreaEndDividend: u4Field({ default: WORK_AREA_TO_END }),
+  workAreaEndDivisor: u4Field({ default: 1 }),
+  durationDividend: u4Field({ default: 1 }),
+  durationDivisor: u4Field({ default: 1 }),
+  bgColorR: u1Field(),
+  bgColorG: u1Field(),
+  bgColorB: u1Field(),
+  _reserved37: bytesField(83, { repr: false }),
+  _compFlags0: u1Field({ repr: false }),
+  _compFlags1: u1Field({ repr: false }),
   width: u2Field(),
   height: u2Field(),
-  pixel_aspect_dividend: u4Field({ default: 1 }),
-  pixel_aspect_divisor: u4Field({ default: 1 }),
-  _reserved_98: bytesField(4, { repr: false }),
-  frame_rate_integer: u2Field(),
-  frame_rate_fractional: u2Field(),
-  _reserved_a0: bytesField(4, { repr: false }),
-  display_start_time_dividend: s4Field({ default: 1 }),
-  display_start_time_divisor: u4Field({ default: 1 }),
-  _reserved_ac: bytesField(2, { repr: false }),
-  shutter_angle: u2Field({ default: 180 }),
-  _reserved_b0: u4Field({ default: 360, repr: false }),
-  shutter_phase: s4Field(),
-  _reserved_b8: u4Field({ default: 360, repr: false }),
-  _reserved_bc: bytesField(8, { repr: false }),
-  motion_blur_adaptive_sample_limit: s4Field({ default: 128 }),
-  motion_blur_samples_per_frame: s4Field({ default: 16 }),
+  pixelAspectDividend: u4Field({ default: 1 }),
+  pixelAspectDivisor: u4Field({ default: 1 }),
+  _reserved98: bytesField(4, { repr: false }),
+  frameRateInteger: u2Field(),
+  frameRateFractional: u2Field(),
+  _reservedA0: bytesField(4, { repr: false }),
+  displayStartTimeDividend: s4Field({ default: 1 }),
+  displayStartTimeDivisor: u4Field({ default: 1 }),
+  _reservedAc: bytesField(2, { repr: false }),
+  shutterAngle: u2Field({ default: 180 }),
+  _reservedB0: u4Field({ default: 360, repr: false }),
+  shutterPhase: s4Field(),
+  _reservedB8: u4Field({ default: 360, repr: false }),
+  _reservedBc: bytesField(8, { repr: false }),
+  motionBlurAdaptiveSampleLimit: s4Field({ default: 128 }),
+  motionBlurSamplesPerFrame: s4Field({ default: 16 }),
 });
-descriptor(CdtaChunk, "draft3d", new BitField("_comp_flags_0", 7));
-descriptor(CdtaChunk, "preserve_nested_resolution", new BitField("_comp_flags_1", 7));
-descriptor(CdtaChunk, "preserve_nested_frame_rate", new BitField("_comp_flags_1", 5));
-descriptor(CdtaChunk, "frame_blending", new BitField("_comp_flags_1", 4));
-descriptor(CdtaChunk, "motion_blur", new BitField("_comp_flags_1", 3));
-descriptor(CdtaChunk, "hide_shy_layers", new BitField("_comp_flags_1", 0));
+descriptor(CdtaChunk, "draft3d", new BitField("_compFlags0", 7));
+descriptor(CdtaChunk, "preserveNestedResolution", new BitField("_compFlags1", 7));
+descriptor(CdtaChunk, "preserveNestedFrameRate", new BitField("_compFlags1", 5));
+descriptor(CdtaChunk, "frameBlending", new BitField("_compFlags1", 4));
+descriptor(CdtaChunk, "motionBlur", new BitField("_compFlags1", 3));
+descriptor(CdtaChunk, "hideShyLayers", new BitField("_compFlags1", 0));
 register("cdta")(CdtaChunk);
 
 // ---------------------------------------------------------------------------
@@ -396,11 +396,11 @@ register("cdta")(CdtaChunk);
 
 /** CpS2 entry count chunk, little-endian inside the big-endian file. */
 export class CsctChunk extends Chunk {
-  declare chunk_type: string;
+  declare chunkType: string;
   declare value: number;
 }
 define(CsctChunk, {
-  chunk_type: field({ default: "CsCt" }),
+  chunkType: field({ default: "CsCt" }),
   value: u4Field({ default: 1, endian: "<" }),
 });
 register("CsCt")(CsctChunk);
@@ -419,28 +419,28 @@ register("CsCt")(CsctChunk);
 export class CompPresetItem extends FmtItem {
   declare width: number;
   declare height: number;
-  declare frame_rate_integer: number;
+  declare frameRateInteger: number;
 
   /** Fractional part (1/65536th units). */
-  declare frame_rate_fractional: number;
-  declare pixel_aspect_dividend: number;
-  declare pixel_aspect_divisor: number;
+  declare frameRateFractional: number;
+  declare pixelAspectDividend: number;
+  declare pixelAspectDivisor: number;
 
   /** Frame rate assembled from integer + fractional/65536. */
-  get frame_rate(): number {
-    return this.frame_rate_integer + this.frame_rate_fractional / 65536.0;
+  get frameRate(): number {
+    return this.frameRateInteger + this.frameRateFractional / 65536.0;
   }
 
   /** Pixel aspect ratio assembled from dividend/divisor. */
-  get pixel_aspect(): number {
-    return this.pixel_aspect_dividend / this.pixel_aspect_divisor;
+  get pixelAspect(): number {
+    return this.pixelAspectDividend / this.pixelAspectDivisor;
   }
 }
 define(CompPresetItem, {
   width: u2Field(),
   height: u2Field(),
-  frame_rate_integer: u2Field(),
-  frame_rate_fractional: u2Field(),
-  pixel_aspect_dividend: u4Field({ default: 1 }),
-  pixel_aspect_divisor: u4Field({ default: 1 }),
+  frameRateInteger: u2Field(),
+  frameRateFractional: u2Field(),
+  pixelAspectDividend: u4Field({ default: 1 }),
+  pixelAspectDivisor: u4Field({ default: 1 }),
 });

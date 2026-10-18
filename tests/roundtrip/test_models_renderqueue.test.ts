@@ -169,8 +169,8 @@ describe("TestRoundtripStatus", () => {
     const project = parseAep(SAMPLES_DIR.div("render_settings.aep")).project;
     const rqi = getRqi(project, "base");
     // Prime with non-zero values via underlying chunk body
-    rqi._ldat.start_time = 1000000;
-    rqi._ldat.elapsed_seconds = 42;
+    rqi._ldat.startTime = 1000000;
+    rqi._ldat.elapsedSeconds = 42;
 
     rqi.status = RQItemStatus.QUEUED;
     expect(rqi.startTime == null).toBe(true);
@@ -539,13 +539,13 @@ describe("TestRoundtripSkipFrames", () => {
     expect(rqi.skipFrames).toBe(0);
     rqi.skipFrames = 1;
     expect(rqi.skipFrames).toBe(1);
-    expect(rqi.outputModules[0]._roou.frame_rate).toBe(15.0);
+    expect(rqi.outputModules[0]._roou.frameRate).toBe(15.0);
 
     const out = tmpPath.div("skip1.aep");
     project.save(out);
     const rqi2 = getRqi(parseAep(out).project, "skip_frames_0");
     expect(rqi2.skipFrames).toBe(0);
-    expect(rqi2.outputModules[0]._roou.frame_rate).toBe(15.0);
+    expect(rqi2.outputModules[0]._roou.frameRate).toBe(15.0);
   });
 
   test("test_set_skip_frames_back_to_0", () => {
@@ -553,7 +553,7 @@ describe("TestRoundtripSkipFrames", () => {
     const rqi = getRqi(project, "skip_frames_1");
     rqi.skipFrames = 1;
     rqi.skipFrames = 0;
-    expect(rqi.outputModules[0]._roou.frame_rate).toBe(30.0);
+    expect(rqi.outputModules[0]._roou.frameRate).toBe(30.0);
   });
 
   test.each([1, 2, 3].map((n) => [n]))("test_set_skip_frames_writes_after_effects_bytes[%#]", (n: number) => {
@@ -580,10 +580,10 @@ describe("TestRoundtripSkipFrames", () => {
     const project = parseAep(SAMPLES_DIR.div("skip_frames.aep")).project;
     const rqi = getRqi(project, "skip_frames_1");
     rqi.skipFrames = 1;
-    const stored = rqi.outputModules[0]._roou.frame_rate;
+    const stored = rqi.outputModules[0]._roou.frameRate;
     rqi.comp.frameRate = rqi.comp.frameRate * 2.5;
     expect(rqi.skipFrames).toBe(1);
-    expect(rqi.outputModules[0]._roou.frame_rate).toBe(stored);
+    expect(rqi.outputModules[0]._roou.frameRate).toBe(stored);
   });
 
   test("test_use_this_frame_rate_keeps_skip_frames", () => {
@@ -593,7 +593,7 @@ describe("TestRoundtripSkipFrames", () => {
     rqi.skipFrames = 2;
     rqi.settings.set("Use this frame rate", 24);
     expect(rqi.skipFrames).toBe(2);
-    expect(rqi.outputModules[0]._roou.frame_rate).toBe(8.0);
+    expect(rqi.outputModules[0]._roou.frameRate).toBe(8.0);
   });
 
   test("test_frame_rate_setting_keeps_skip_frames", () => {
@@ -602,7 +602,7 @@ describe("TestRoundtripSkipFrames", () => {
     rqi.skipFrames = 2;
     rqi.settings.set("Frame Rate", FrameRateSetting.USE_COMP_FRAME_RATE);
     expect(rqi.skipFrames).toBe(2);
-    expect(rqi.outputModules[0]._roou.frame_rate).toBe(8.0); // 24 fps comp
+    expect(rqi.outputModules[0]._roou.frameRate).toBe(8.0); // 24 fps comp
   });
 
   test.each([12.5, 29.97, 60.0].map((fps) => [fps]))("test_new_item_stores_render_frame_rate[%#]", (fps: number) => {
@@ -612,9 +612,9 @@ describe("TestRoundtripSkipFrames", () => {
     const app = parseAep(SAMPLES_DIR.div("custom.aep"));
     const comp = app.project.rootFolder.addComp("C", 64, 36, 1.0, 1.0, fps);
     const rqi = renderQueueOf(app.project).add(comp);
-    expect(approx(rqi.outputModules[0]._roou.frame_rate, fps, { abs: 1 / 65536 })).toBe(true);
+    expect(approx(rqi.outputModules[0]._roou.frameRate, fps, { abs: 1 / 65536 })).toBe(true);
     expect(rqi.skipFrames).toBe(0);
-    expect(rqi.add()._roou.frame_rate).toBe(rqi.outputModules[0]._roou.frame_rate);
+    expect(rqi.add()._roou.frameRate).toBe(rqi.outputModules[0]._roou.frameRate);
   });
 });
 
@@ -640,7 +640,7 @@ describe("TestRoundtripRouuFrameRateAndDepth", () => {
     // keeps the bytes when it saves.
     const body = new Uint8Array(new RouuChunk().tobytes());
     body.set(b("\xff\xe0"), 0x46);
-    const rouu = asInstance(RouuChunk.frombytes(new Uint8Array(body), { chunk_type: "Roou" }), RouuChunk);
+    const rouu = asInstance(RouuChunk.frombytes(new Uint8Array(body), { chunkType: "Roou" }), RouuChunk);
     expect(rouu instanceof RouuChunk).toBe(true);
     expect(rouu.depth).toBe(OutputColorDepth.FLOATING_POINT_GRAY);
     expect(OutputColorDepth.FLOATING_POINT_GRAY).toBe(-32);
@@ -649,9 +649,9 @@ describe("TestRoundtripRouuFrameRateAndDepth", () => {
 
   test("test_frame_rate_setter_writes_16_16", () => {
     const rouu = new RouuChunk();
-    rouu.frame_rate = 29.97;
+    rouu.frameRate = 29.97;
     expect(pyEq(bytes_.slice(rouu.tobytes(), 0x42, 0x48), bytes_.fromhex("001DF8520020"))).toBe(true);
-    rouu.frame_rate = 7.5;
+    rouu.frameRate = 7.5;
     expect(pyEq(bytes_.slice(rouu.tobytes(), 0x42, 0x46), bytes_.fromhex("00078000"))).toBe(true);
   });
 
@@ -664,7 +664,7 @@ describe("TestRoundtripRouuFrameRateAndDepth", () => {
       concat(bytes_.intToBytes(70000, 4, "big"), bytes_.intToBytes(66616, 4, "big")),
       0x22,
     );
-    const rouu = asInstance(RouuChunk.frombytes(new Uint8Array(body), { chunk_type: "Roou" }), RouuChunk);
+    const rouu = asInstance(RouuChunk.frombytes(new Uint8Array(body), { chunkType: "Roou" }), RouuChunk);
     expect(rouu instanceof RouuChunk).toBe(true);
     expect(rouu.width).toBe(70000);
     expect(rouu.height).toBe(66616);
@@ -1240,20 +1240,20 @@ describe("TestRQItemRemove", () => {
     /** Removing all items empties the render queue, roundtrips. */
     const app = parseAep(SAMPLES_DIR.div("2_rqitems.aep"));
     const rq = renderQueueOf(app.project);
-    expect(rq._arsi.queue_nonempty).toBe(1);
+    expect(rq._arsi.queueNonempty).toBe(1);
 
     rq.items[1].remove();
     rq.items[0].remove();
     expect(len(rq.items)).toBe(0);
     // Emptying the queue clears the ARsi non-empty marker AE set.
-    expect(rq._arsi.queue_nonempty).toBe(0);
+    expect(rq._arsi.queueNonempty).toBe(0);
 
     const out = tmpPath.div("out.aep");
     app.project.save(out);
     const app2 = parseAep(out);
     const rq2 = renderQueueOf(app2.project);
     expect(len(rq2.items)).toBe(0);
-    expect(rq2._arsi.queue_nonempty).toBe(0);
+    expect(rq2._arsi.queueNonempty).toBe(0);
   });
 
   test("test_remove_item_with_comment", () => {
@@ -1425,10 +1425,10 @@ describe("TestRQAddWithoutPreferences", () => {
     // hdrm, Utf8x3. The Ropt is the 602-byte TIFF format options.
     const app = parseAep(SAMPLES_DIR.div("custom.aep"));
     const rqi = renderQueueOf(app.project).add(app.project.compositions[0]);
-    const lomTypes = rqi._lom.chunks.map((c) => pyOr(getattr(c, "list_type", null), c.chunk_type));
+    const lomTypes = rqi._lom.chunks.map((c) => pyOr(getattr(c, "listType", null), c.chunkType));
     expect(contains(lomTypes, "Als2")).toBe(false);
     expect(pyEq(lomTypes, ["Roou", "Ropt", "hdrm", "Utf8", "Utf8", "Utf8"])).toBe(true);
-    const ropt = rqi._lom.chunks.find((c) => c.chunk_type === "Ropt");
+    const ropt = rqi._lom.chunks.find((c) => c.chunkType === "Ropt");
     if (ropt === undefined) throw new StopIteration();
     expect(ropt instanceof TiffRoptChunk).toBe(true);
     const buf = new BytesIO();
@@ -1512,27 +1512,27 @@ describe("TestRQAddWithoutPreferences", () => {
     // (values captured from After Effects 26). The reserved-region values
     // are the bytes AE writes; without them AE reports "missing data".
     const rouu = new RouuChunk();
-    expect(rouu.format_id).toBe("TIF ");
+    expect(rouu.formatId).toBe("TIF ");
     expect(rouu.depth).toBe(32);
-    expect(rouu.audio_encoding).toBe(0xffff);
-    expect(rouu.audio_channels).toBe(0);
+    expect(rouu.audioEncoding).toBe(0xffff);
+    expect(rouu.audioChannels).toBe(0);
     // The full image-sequence body is 154 bytes (114 typed + 40 trailing).
     expect(len(rouu.tobytes())).toBe(154);
 
     const rs = new RenderSettingsItem();
-    expect(pyEq(rs._reserved_00, b("\x00\x01\x00\x00\x00\x00\x00"))).toBe(true);
-    expect(pyEq(rs._reserved_06, b("\x00\x03\x00\x00"))).toBe(true);
+    expect(pyEq(rs._reserved00, b("\x00\x01\x00\x00\x00\x00\x00"))).toBe(true);
+    expect(pyEq(rs._reserved06, b("\x00\x03\x00\x00"))).toBe(true);
     expect(
-      pyEq(rs._reserved_39, concat(b("\xff\xff\xff\xff\x00\xb4"), bytes_.repeat(b("\x00"), 8))),
+      pyEq(rs._reserved39, concat(b("\xff\xff\xff\xff\x00\xb4"), bytes_.repeat(b("\x00"), 8))),
     ).toBe(true);
-    expect(pyEq(rs._reserved_45, b("\x00\x00\x00\x02\xff\xff"))).toBe(true);
-    expect(pyEq(rs._reserved_end, bytes_.repeat(b("\x00"), 16))).toBe(true);
-    expect(rs.item_id).toBe(2);
+    expect(pyEq(rs._reserved45, b("\x00\x00\x00\x02\xff\xff"))).toBe(true);
+    expect(pyEq(rs._reservedEnd, bytes_.repeat(b("\x00"), 16))).toBe(true);
+    expect(rs.itemId).toBe(2);
     expect(pyEq(rs._remaining, concat(b("\x00\x00\x00\x0f"), bytes_.repeat(b("\x00"), 16)))).toBe(true);
 
     const om = new OutputModuleSettingsItem();
-    expect(om.convert_to_linear_light).toBe(2);
-    expect(om.output_color_space_working).toBe(1);
+    expect(om.convertToLinearLight).toBe(2);
+    expect(om.outputColorSpaceWorking).toBe(1);
     expect(om.channels).toBe(1);
   });
 
@@ -1544,7 +1544,7 @@ describe("TestRQAddWithoutPreferences", () => {
     const data = buf.getvalue();
     expect(len(data)).toBe(602);
     expect(pyEq(bytes_.slice(data, 0, 4), b("TIF "))).toBe(true);
-    expect(new TiffRoptChunk().chunk_size).toBe(602);
+    expect(new TiffRoptChunk().chunkSize).toBe(602);
   });
 
   test("test_ropt_variant_defaults_are_valid_chunks", () => {
@@ -1563,7 +1563,7 @@ describe("TestRQAddWithoutPreferences", () => {
       pyAssert(len(data) === size, repr(code));
       pyAssert(pyEq(bytes_.slice(data, 0, 4), code), repr(code));
       // RoptChunk dispatch re-parses the bytes to the same variant + bytes
-      const parsed = RoptChunk.frombytes(data, { chunk_type: "Ropt" });
+      const parsed = RoptChunk.frombytes(data, { chunkType: "Ropt" });
       pyAssert(parsed instanceof cls, repr(code));
       pyAssert(pyEq(parsed.tobytes(), data), repr(code));
     }
@@ -1578,7 +1578,7 @@ describe("TestRQAddWithoutPreferences", () => {
     const arsi = asInstance(recursiveFind(rq._lrdr.chunks, "ARsi")[0], ArsiChunk);
     expect(arsi instanceof ArsiChunk).toBe(true);
     expect(len(arsi.tobytes())).toBe(1872);
-    expect(arsi.queue_nonempty).toBe(rq.numItems ? 1 : 0);
+    expect(arsi.queueNonempty).toBe(rq.numItems ? 1 : 0);
   });
 
   test("test_parse_id_hex_section_is_bounded", () => {
@@ -1658,7 +1658,7 @@ describe.skipIf(!pyBool(AE_PREFS_DIR))("TestRenderQueueAdd", () => {
     const rq = renderQueueOf(app.project);
     const comp = app.project.compositions[0];
     const rqi = rq.add(comp);
-    expect(rqi._ldat.time_span_source).toBe(int(TimeSpanSource.WORK_AREA_ONLY));
+    expect(rqi._ldat.timeSpanSource).toBe(int(TimeSpanSource.WORK_AREA_ONLY));
   });
 
   test("test_add_has_one_output_module", () => {
@@ -1730,20 +1730,20 @@ describe("TestOMRemoveIdenticalModules", () => {
     const rqi = renderQueueOf(app.project).items[0];
     const [om0, om1] = rqi.outputModules;
     // Distinguish the two modules by a per-module Roou value.
-    om0._roou.starting_number = 7;
-    om1._roou.starting_number = 99;
+    om0._roou.startingNumber = 7;
+    om1._roou.startingNumber = 99;
 
     om1.remove();
     expect(len(rqi.outputModules)).toBe(1);
     // The surviving module is module 0, with its chunks intact.
     expect(rqi.outputModules[0]).toBe(om0);
-    expect(rqi.outputModules[0]._roou.starting_number).toBe(7);
+    expect(rqi.outputModules[0]._roou.startingNumber).toBe(7);
 
     const out = tmpPath.div("out.aep");
     app.project.save(out);
     const rqi2 = renderQueueOf(parseAep(out).project).items[0];
     expect(len(rqi2.outputModules)).toBe(1);
-    expect(rqi2.outputModules[0]._roou.starting_number).toBe(7);
+    expect(rqi2.outputModules[0]._roou.startingNumber).toBe(7);
   });
 });
 
@@ -1758,13 +1758,13 @@ describe.skipIf(!pyBool(AE_PREFS_DIR))("TestOMApplyTemplate", () => {
     const om0FoBefore = om0.formatOptions;
     if (om0FoBefore == null) throw new AssertionError_("output module 0 has no format_options");
     const om0RoptBefore = om0FoBefore._body.tobytes();
-    const om0FormatBefore = om0._roou.format_id;
+    const om0FormatBefore = om0._roou.formatId;
 
     om1.applyTemplate("TIFF Sequence with Alpha");
 
     // Module 1 switched to TIFF; module 0 still H.264 with the same Ropt.
-    expect(om1._roou.format_id).toBe("TIF ");
-    expect(om0._roou.format_id).toBe(om0FormatBefore);
+    expect(om1._roou.formatId).toBe("TIF ");
+    expect(om0._roou.formatId).toBe(om0FormatBefore);
     const om0FoAfter = om0.formatOptions;
     if (om0FoAfter == null) throw new AssertionError_("output module 0 has no format_options");
     expect(pyEq(om0FoAfter._body.tobytes(), om0RoptBefore)).toBe(true);
@@ -1870,8 +1870,8 @@ describe("TestRenderQueueMissingScaffolding", () => {
     const lrdr = findByListType(rifx.chunks, "LRdr");
     lrdr.chunks = lrdr.chunks.filter(
       (c) =>
-        c.chunk_type !== "Rout" &&
-        !(c instanceof ListChunk && ["LItm", "LSIf"].includes(c.list_type)),
+        c.chunkType !== "Rout" &&
+        !(c instanceof ListChunk && ["LItm", "LSIf"].includes(c.listType)),
     );
     const out = tmpPath.div("stripped.aep");
     const f = new BytesIO();
@@ -1912,7 +1912,7 @@ describe("TestRenderQueueNoLRdr", () => {
   function _stripLrdr(tmpPath: Path): Path {
     const src = SAMPLES_DIR.div("empty.aep");
     const [rifx, xmp] = readAep(new BytesIO(src.readBytes()));
-    rifx.chunks = rifx.chunks.filter((c) => !(c instanceof ListChunk && c.list_type === "LRdr"));
+    rifx.chunks = rifx.chunks.filter((c) => !(c instanceof ListChunk && c.listType === "LRdr"));
     const out = tmpPath.div("no_lrdr.aep");
     const f = new BytesIO();
     writeAep(f, rifx, xmp);
@@ -1978,8 +1978,8 @@ describe("TestRoundtripOutputColorSpace", () => {
     const om2 = renderQueueOf(parseAep(out).project).items[0].outputModules[0];
     expect(om2.outputColorSpace).toBe(name);
     // output_profile_id is the catalogued ID (matches AE ground truth).
-    expect(pyEq(om2._omLdat.output_profile_id, profileIdForName(name))).toBe(true);
-    expect(om2._omLdat.output_color_space_working).toBe(0);
+    expect(pyEq(om2._omLdat.outputProfileId, profileIdForName(name))).toBe(true);
+    expect(om2._omLdat.outputColorSpaceWorking).toBe(0);
   });
 
   test("test_set_working_color_space", () => {
@@ -1987,14 +1987,14 @@ describe("TestRoundtripOutputColorSpace", () => {
     const project = parseAep(ADOBE_SAMPLE).project;
     const om = renderQueueOf(project).items[0].outputModules[0];
     om.outputColorSpace = "ARRI LogC3 Wide Color Gamut - EI 800";
-    expect(om._omLdat.output_color_space_working).toBe(0);
+    expect(om._omLdat.outputColorSpaceWorking).toBe(0);
     om.outputColorSpace = "Working Color Space";
 
     const out = tmpPath.div("modified.aep");
     project.save(out);
     const project2 = parseAep(out).project;
     const om2 = renderQueueOf(project2).items[0].outputModules[0];
-    expect(om2._omLdat.output_color_space_working).toBe(1);
+    expect(om2._omLdat.outputColorSpaceWorking).toBe(1);
     // "Working Color Space" resolves to the project's working space name.
     expect(om2.outputColorSpace).toBe(project2.workingSpace);
   });
@@ -2017,15 +2017,15 @@ describe("TestRoundtripOutputColorSpace", () => {
     // "ACEScc yo" - AE's own Guid for it is the committed aces_acescc_yo id.
     om.outputColorSpace = "ACEScc yo";
     const expected = bytes_.fromhex("596cbde737d61ec5a84b8008888dd03f");
-    expect(pyEq(om._omLdat.output_profile_id, expected)).toBe(true);
-    expect(om._omLdat.output_color_space_working).toBe(0);
+    expect(pyEq(om._omLdat.outputProfileId, expected)).toBe(true);
+    expect(om._omLdat.outputColorSpaceWorking).toBe(0);
     // the id reverse-maps back to the color-space name (read/write symmetry).
     expect(om.outputColorSpace).toBe("ACEScc yo");
 
     const out = tmpPath.div("modified.aep");
     project.save(out);
     const om2 = renderQueueOf(parseAep(out).project).items[0].outputModules[0];
-    expect(pyEq(om2._omLdat.output_profile_id, expected)).toBe(true);
+    expect(pyEq(om2._omLdat.outputProfileId, expected)).toBe(true);
     expect(om2.outputColorSpace).toBe("ACEScc yo");
   });
 

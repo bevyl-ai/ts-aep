@@ -283,8 +283,8 @@ export class Item {
     if (this._ldat != null) return;
     this._ldat = new LdatChunk({
       items: [],
-      item_type: LdatItemType.gide,
-      item_size: 16,
+      itemType: LdatItemType.gide,
+      itemSize: 16,
     });
     if (this._lhd3 == null) {
       [this._gide, this._lhd3, this._inner] = buildGideList();
@@ -367,7 +367,7 @@ descriptor(
   "label",
   ChunkField.enum(Label, "_idta", "label", { default: Label.NONE }),
 );
-descriptor(Item, "id", new ChunkField("_idta", "item_id", { readOnly: true, default: 0 }));
+descriptor(Item, "id", new ChunkField("_idta", "itemId", { readOnly: true, default: 0 }));
 descriptor(Item, "name", new ChunkField("_nameUtf8", "value", { validate: validateName }));
 
 // `@requires_version(16)` on add_guide, remove_guide and remove_all_guides:

@@ -241,9 +241,9 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
   _settleTemporalContinuous(): void {
     const bezier = KeyframeInterpolationType.BEZIER;
     if (this.inInterpolationType !== bezier && this.outInterpolationType !== bezier) {
-      this._ldatItem.temporal_continuous = false;
+      this._ldatItem.temporalContinuous = false;
     } else if (this.temporalAutoBezier) {
-      this._ldatItem.temporal_continuous = true;
+      this._ldatItem.temporalContinuous = true;
     }
   }
 
@@ -282,7 +282,7 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
     // The raw byte, deliberately not the `temporal_continuous` setter:
     // its hook ties the out speed to the in speed, and the derived ease
     // written below is per-side.
-    this._ldatItem.temporal_continuous = true;
+    this._ldatItem.temporalContinuous = true;
     this._forceBezierBothSides();
     const speeds = this._autoTemporalSpeeds();
     if (speeds == null) return;
@@ -323,7 +323,7 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
     // Continuous and auto-bezier are exclusive modes: AE 2026 clears
     // temporal auto-bezier here (the raw byte - its setter would
     // re-derive the ease).
-    this._ldatItem.temporal_auto_bezier = false;
+    this._ldatItem.temporalAutoBezier = false;
     this._forceBezierBothSides();
     this._ensureEase();
     const [incoming, outgoing] = [this._inTemporalEase, this._outTemporalEase];
@@ -375,7 +375,7 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
    * keyframe type carries no value (e.g. markers).
    */
   _extractRawValue(): number[] | number | null {
-    const kfData = this._ldatItem.kf_data;
+    const kfData = this._ldatItem.kfData;
     if (!("value" in kfData)) return null;
     const values: number[] = [...kfData.value];
     if (values.length === 1) return values[0];
@@ -392,18 +392,18 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
    * carries no ease data (e.g. markers).
    */
   _createEase(): [KeyframeEase[], KeyframeEase[]] {
-    const kfData = this._ldatItem.kf_data;
-    if (!("in_speed" in kfData)) return [[], []];
+    const kfData = this._ldatItem.kfData;
+    if (!("inSpeed" in kfData)) return [[], []];
 
     const factor = this._property != null ? this._property._speedFactor : 1.0;
 
     let inEase: KeyframeEase[];
     let outEase: KeyframeEase[];
     if (kfData instanceof KfMultiDimensional) {
-      inEase = Array.from({ length: kfData.in_speed.length }, (_, i) =>
+      inEase = Array.from({ length: kfData.inSpeed.length }, (_, i) =>
         KeyframeEase._fromBinary(kfData, i, "in", factor),
       );
-      outEase = Array.from({ length: kfData.out_speed.length }, (_, i) =>
+      outEase = Array.from({ length: kfData.outSpeed.length }, (_, i) =>
         KeyframeEase._fromBinary(kfData, i, "out", factor),
       );
     } else {
@@ -432,24 +432,24 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
    * - If the property value type is neither of these types, returns `null`.
    */
   get inSpatialTangent(): number[] | null {
-    const kfData = this._ldatItem.kf_data;
-    if (!("in_spatial_tangents" in kfData)) return null;
+    const kfData = this._ldatItem.kfData;
+    if (!("inSpatialTangents" in kfData)) return null;
     if (this.spatialAutoBezier) {
       const derived = this._autoSpatialTangents();
       if (derived != null) {
         return this._rescaleTangent(derived[1], { invert: false });
       }
     }
-    return this._rescaleTangent([...kfData.in_spatial_tangents], { invert: false });
+    return this._rescaleTangent([...kfData.inSpatialTangents], { invert: false });
   }
 
   set inSpatialTangent(value: number[] | null) {
     if (value == null || this.inSpatialTangent == null) return;
     validateSequence({ length: this.inSpatialTangent.length })(value);
-    const kfData = this._ldatItem.kf_data;
+    const kfData = this._ldatItem.kfData;
     this._leaveSpatialAutoBezier();
-    if ("in_spatial_tangents" in kfData) {
-      kfData.in_spatial_tangents = this._rescaleTangent(value, { invert: true });
+    if ("inSpatialTangents" in kfData) {
+      kfData.inSpatialTangents = this._rescaleTangent(value, { invert: true });
       this._retimeRovingRuns();
     }
   }
@@ -466,24 +466,24 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
    * - If the property value type is neither of these types, returns `null`.
    */
   get outSpatialTangent(): number[] | null {
-    const kfData = this._ldatItem.kf_data;
-    if (!("out_spatial_tangents" in kfData)) return null;
+    const kfData = this._ldatItem.kfData;
+    if (!("outSpatialTangents" in kfData)) return null;
     if (this.spatialAutoBezier) {
       const derived = this._autoSpatialTangents();
       if (derived != null) {
         return this._rescaleTangent(derived[0], { invert: false });
       }
     }
-    return this._rescaleTangent([...kfData.out_spatial_tangents], { invert: false });
+    return this._rescaleTangent([...kfData.outSpatialTangents], { invert: false });
   }
 
   set outSpatialTangent(value: number[] | null) {
     if (value == null || this.outSpatialTangent == null) return;
     validateSequence({ length: this.outSpatialTangent.length })(value);
-    const kfData = this._ldatItem.kf_data;
+    const kfData = this._ldatItem.kfData;
     this._leaveSpatialAutoBezier();
-    if (value != null && "out_spatial_tangents" in kfData) {
-      kfData.out_spatial_tangents = this._rescaleTangent(value, { invert: true });
+    if (value != null && "outSpatialTangents" in kfData) {
+      kfData.outSpatialTangents = this._rescaleTangent(value, { invert: true });
       this._retimeRovingRuns();
     }
   }
@@ -497,13 +497,13 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
    */
   _leaveSpatialAutoBezier(): void {
     // Only a spatial keyframe's KfPosition carries the flag.
-    const kfData = this._ldatItem.kf_data;
-    if (!(kfData instanceof KfPosition && kfData.spatial_auto_bezier)) return;
+    const kfData = this._ldatItem.kfData;
+    if (!(kfData instanceof KfPosition && kfData.spatialAutoBezier)) return;
     const derived = this._autoSpatialTangents();
     if (derived != null) {
-      [kfData.out_spatial_tangents, kfData.in_spatial_tangents] = derived;
+      [kfData.outSpatialTangents, kfData.inSpatialTangents] = derived;
     }
-    kfData.spatial_auto_bezier = false;
+    kfData.spatialAutoBezier = false;
   }
 
   /**
@@ -532,10 +532,10 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
    * return. Returns `null` when the keyframe carries no spatial data.
    */
   _autoSpatialTangents(): [number[], number[]] | null {
-    if (!("in_spatial_tangents" in this._ldatItem.kf_data)) return null;
+    if (!("inSpatialTangents" in this._ldatItem.kfData)) return null;
     const [window, index] = this._neighbourWindow();
     // The neighbours are keys of the same spatial property.
-    const values = window.map((kf) => [...(kf._ldatItem.kf_data as KfPosition).value]);
+    const values = window.map((kf) => [...(kf._ldatItem.kfData as KfPosition).value]);
     return autoSpatialTangents(values, index);
   }
 
@@ -749,7 +749,7 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
    * mismatch is a genuine dimension error from the caller and is raised.
    */
   _writeKfValue(raw: number[] | number | null): void {
-    const kfData = this._ldatItem.kf_data;
+    const kfData = this._ldatItem.kfData;
     if (!("value" in kfData)) return;
     let new_: number[] | null = typeof raw === "number" ? [raw] : null;
     if (new_ == null && Array.isArray(raw)) new_ = raw;
@@ -819,7 +819,7 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
    * two halves of AE's one call.
    */
   _onEaseWritten(direction: "in" | "out"): void {
-    this._ldatItem.temporal_auto_bezier = false;
+    this._ldatItem.temporalAutoBezier = false;
     const bezier = KeyframeInterpolationType.BEZIER;
     const name = `${direction}InterpolationType` as const;
     if (getattr(this, name) !== bezier) {
@@ -1058,8 +1058,8 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
    * `ThreeD_SPATIAL`, the value is `false`.
    */
   get spatialAutoBezier(): boolean {
-    const kfData = this._ldatItem.kf_data;
-    return getattr(kfData, "spatial_auto_bezier", false);
+    const kfData = this._ldatItem.kfData;
+    return getattr(kfData, "spatialAutoBezier", false);
   }
 
   set spatialAutoBezier(value: boolean) {
@@ -1068,11 +1068,11 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
     // for it; the getter tolerantly reads False there, but a write must not
     // silently vanish (ExtendScript's setSpatialAutoBezierAtKey errors).
     validateBool(value);
-    const kfData = this._ldatItem.kf_data;
-    if (!("spatial_auto_bezier" in kfData)) {
+    const kfData = this._ldatItem.kfData;
+    if (!("spatialAutoBezier" in kfData)) {
       throw new ValueError("spatialAutoBezier can only be set on spatial keyframes");
     }
-    kfData.spatial_auto_bezier = value;
+    kfData.spatialAutoBezier = value;
     if (!value) {
       // AE keeps the tangents it derived: turning auto-bezier off does
       // not restore whatever was there before.
@@ -1082,12 +1082,12 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
     // derived tangents into the chunk. AE recomputes them on read anyway,
     // but it also WRITES them, and a later edit that clears the flag
     // leaves whatever is stored in force.
-    if ("spatial_continuous" in kfData) {
-      kfData.spatial_continuous = true;
+    if ("spatialContinuous" in kfData) {
+      kfData.spatialContinuous = true;
     }
     const derived = this._autoSpatialTangents();
     if (derived != null) {
-      [kfData.out_spatial_tangents, kfData.in_spatial_tangents] = derived;
+      [kfData.outSpatialTangents, kfData.inSpatialTangents] = derived;
     }
   }
 
@@ -1097,18 +1097,18 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
    * `false`.
    */
   get spatialContinuous(): boolean {
-    const kfData = this._ldatItem.kf_data;
-    return getattr(kfData, "spatial_continuous", false);
+    const kfData = this._ldatItem.kfData;
+    return getattr(kfData, "spatialContinuous", false);
   }
 
   set spatialContinuous(value: boolean) {
     // See spatial_auto_bezier: non-spatial kf_data has no such slot.
     validateBool(value);
-    const kfData = this._ldatItem.kf_data;
-    if (!("spatial_continuous" in kfData)) {
+    const kfData = this._ldatItem.kfData;
+    if (!("spatialContinuous" in kfData)) {
       throw new ValueError("spatialContinuous can only be set on spatial keyframes");
     }
-    kfData.spatial_continuous = value;
+    kfData.spatialContinuous = value;
   }
 
   /**
@@ -1139,7 +1139,7 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
    * keys only ascend on this axis (see {@link time}).
    */
   get _layerTime(): number {
-    return this._ldatItem.time_units / this._timebase;
+    return this._ldatItem.timeUnits / this._timebase;
   }
 
   /**
@@ -1149,7 +1149,7 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
    * owning layer's start. Read-only; assign to {@link time} instead.
    */
   get timeUnits(): number {
-    return this._ldatItem.time_units;
+    return this._ldatItem.timeUnits;
   }
 
   /** Move this keyframe to `units`, re-sorting the property if needed. */
@@ -1159,7 +1159,7 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
     if (prop != null) {
       prop._guardKeyframeMove(this, units);
     }
-    this._ldatItem.time_units = units;
+    this._ldatItem.timeUnits = units;
     if (prop != null) {
       prop._repositionKeyframe(this);
       prop._redistributeRovingKeyframes();
@@ -1237,7 +1237,7 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
 descriptor(
   Keyframe,
   "inInterpolationType",
-  ChunkField.enum(KeyframeInterpolationType, "_ldatItem", "in_interpolation_type", {
+  ChunkField.enum(KeyframeInterpolationType, "_ldatItem", "inInterpolationType", {
     validate: _validateInterpolationType,
     postSet: "_onInterpolationTypeSet",
   }),
@@ -1248,7 +1248,7 @@ descriptor(Keyframe, "label", ChunkField.enum(Label, "_ldatItem", "label"));
 descriptor(
   Keyframe,
   "outInterpolationType",
-  ChunkField.enum(KeyframeInterpolationType, "_ldatItem", "out_interpolation_type", {
+  ChunkField.enum(KeyframeInterpolationType, "_ldatItem", "outInterpolationType", {
     validate: _validateInterpolationType,
     postSet: "_onInterpolationTypeSet",
   }),
@@ -1266,7 +1266,7 @@ descriptor(
 descriptor(
   Keyframe,
   "temporalAutoBezier",
-  ChunkField.bool("_ldatItem", "temporal_auto_bezier", {
+  ChunkField.bool("_ldatItem", "temporalAutoBezier", {
     postSet: "_onTemporalAutoBezierSet",
   }),
 );
@@ -1274,7 +1274,7 @@ descriptor(
 descriptor(
   Keyframe,
   "temporalContinuous",
-  ChunkField.bool("_ldatItem", "temporal_continuous", {
+  ChunkField.bool("_ldatItem", "temporalContinuous", {
     postSet: "_onTemporalContinuousSet",
   }),
 );

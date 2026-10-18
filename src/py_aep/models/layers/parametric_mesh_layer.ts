@@ -92,19 +92,19 @@ export class ParametricMeshLayer extends AVLayer {
       containingComp: containing_comp,
       effectParamDefs: effect_param_defs,
     });
-    layer._ldta.layer_type = LayerType.PARAMETRIC_MESH;
+    layer._ldta.layerType = LayerType.PARAMETRIC_MESH;
     layer._ldta.label = labelIndex(containing_comp._project._preferences, "Parametrics Label Index", 9);
-    layer._ldta.three_d_layer = true;
-    layer._ldta.collapse_transformation = true;
+    layer._ldta.threeDLayer = true;
+    layer._ldta.collapseTransformation = true;
     // AE writes flags2=0x83 for mesh layers: effects are not applicable.
-    layer._ldta.effects_active = false;
+    layer._ldta.effectsActive = false;
     // AE expresses the layer's time fields in the comp's internal
     // timebase (e.g. 23976 for 29.97 fps), not a reduced rational.
-    const timeBase = containing_comp._cdta.internal_timebase;
-    layer._ldta.start_time_divisor = timeBase;
-    layer._ldta.in_point_divisor = timeBase;
-    layer._ldta.out_point_dividend = round(duration * timeBase);
-    layer._ldta.out_point_divisor = timeBase;
+    const timeBase = containing_comp._cdta.internalTimebase;
+    layer._ldta.startTimeDivisor = timeBase;
+    layer._ldta.inPointDivisor = timeBase;
+    layer._ldta.outPointDividend = round(duration * timeBase);
+    layer._ldta.outPointDivisor = timeBase;
     layer.parametricMeshType = mesh_type;
     // AE writes the active mesh type's option/bevel groups expanded
     // (tdsb=1) while the other mesh groups stay collapsed (tdsb=3, the
@@ -113,7 +113,7 @@ export class ParametricMeshLayer extends AVLayer {
     const activeGroups = _PARAMETRIC_MESH_ACTIVE_GROUPS.get(ParametricMeshType.toBinary(mesh_type)) ?? [];
     for (const child of layer.properties) {
       if (activeGroups.includes(child.matchName) && child._tdsb != null) {
-        child._tdsb._enable_flags = 1;
+        child._tdsb._enableFlags = 1;
       }
     }
     return layer;
@@ -124,7 +124,7 @@ export class ParametricMeshLayer extends AVLayer {
     // Plain instance attributes, read as own properties (Python's
     // `__dict__`): `getattr` on a missing one would search the layer's
     // properties for that name.
-    const optionsCls = OPTION_TYPES.get(this._ldta.light_and_mesh_type) ?? null;
+    const optionsCls = OPTION_TYPES.get(this._ldta.lightAndMeshType) ?? null;
     const oldOptions = Object.hasOwn(this, "parametricMeshOptions") ? this.parametricMeshOptions : null;
     if (_typeOf(oldOptions) !== optionsCls) {
       Reflect.deleteProperty(this, "parametricMeshOptions");
@@ -133,7 +133,7 @@ export class ParametricMeshLayer extends AVLayer {
       }
     }
 
-    const bevelCls = BEVEL_OPTION_TYPES.get(this._ldta.light_and_mesh_type) ?? null;
+    const bevelCls = BEVEL_OPTION_TYPES.get(this._ldta.lightAndMeshType) ?? null;
     const oldBevel = Object.hasOwn(this, "parametricBevelOptions") ? this.parametricBevelOptions : null;
     if (_typeOf(oldBevel) !== bevelCls) {
       Reflect.deleteProperty(this, "parametricBevelOptions");
@@ -161,7 +161,7 @@ export class ParametricMeshLayer extends AVLayer {
 descriptor(
   ParametricMeshLayer,
   "parametricMeshType",
-  ChunkField.enum(ParametricMeshType, "_ldta", "light_and_mesh_type", {
+  ChunkField.enum(ParametricMeshType, "_ldta", "lightAndMeshType", {
     postSet: (obj: ParametricMeshLayer) => obj._updateOptions(),
   }),
 );

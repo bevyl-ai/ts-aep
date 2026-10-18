@@ -55,7 +55,7 @@ export class ShapeLayer extends AVLayer {
       containingComp: containing_comp,
       effectParamDefs: effect_param_defs,
     });
-    layer._ldta.layer_type = LayerType.SHAPE;
+    layer._ldta.layerType = LayerType.SHAPE;
     // The base factory named the layer from the AV type it started with.
     layer._matchName = getitem(
       layer.constructor._LAYER_MATCH_NAMES,
@@ -66,7 +66,7 @@ export class ShapeLayer extends AVLayer {
       "Shape Label Index 2",
       8,
     );
-    layer._ldta.collapse_transformation = true;
+    layer._ldta.collapseTransformation = true;
     return layer;
   }
 }

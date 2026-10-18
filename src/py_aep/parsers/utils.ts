@@ -19,7 +19,7 @@ export function getMatchNameRuns(rootChunk: ListChunk): [string, Chunk[]][] {
   if (pyBool(rootChunk)) {
     let skipToNextTdmnFlag = true;
     for (const chunk of rootChunk.chunks) {
-      if (chunk.chunk_type === "tdmn" && chunk instanceof TdmnChunk) {
+      if (chunk.chunkType === "tdmn" && chunk instanceof TdmnChunk) {
         const matchName = chunk.value;
         if (matchName === "ADBE Group End") {
           skipToNextTdmnFlag = true;
@@ -30,7 +30,7 @@ export function getMatchNameRuns(rootChunk: ListChunk): [string, Chunk[]][] {
           runs.push([matchName, []]);
         }
         runs[runs.length - 1][1].push(chunk);
-      } else if (!skipToNextTdmnFlag && !_SKIP_CHUNK_TYPES.includes(chunk.chunk_type)) {
+      } else if (!skipToNextTdmnFlag && !_SKIP_CHUNK_TYPES.includes(chunk.chunkType)) {
         runs[runs.length - 1][1].push(chunk);
       }
     }

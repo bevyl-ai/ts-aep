@@ -28,7 +28,7 @@ export function parseFormatOptions(chunks: Chunk[]): FormatOptions | null {
   const roptChunk = findByTypeOrNull(chunks, "Ropt");
   if (roptChunk === null) return null;
 
-  const formatCode = roptChunk.format_code;
+  const formatCode = roptChunk.formatCode;
 
   if (formatCode === "sDPX") {
     return new CineonFormatOptions({ _body: roptChunk });

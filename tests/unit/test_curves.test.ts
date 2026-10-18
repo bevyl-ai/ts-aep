@@ -36,8 +36,8 @@ function _blob(
 }
 
 function _curves(data: Uint8Array): Curves {
-  const arbp = new Chunk({ chunk_type: "aRbp", data });
-  return Curves._fromBinary(CurvesArbpChunk.from_arbp(arbp));
+  const arbp = new Chunk({ chunkType: "aRbp", data });
+  return Curves._fromBinary(CurvesArbpChunk.fromArbp(arbp));
 }
 
 test("test_decodes_points_in_channel_order", () => {
@@ -146,6 +146,6 @@ test.each(evaluateRejectsRows)("test_evaluate_rejects_bad_input[%#]", (channel, 
 
 test("test_rejects_other_sizes", () => {
   raises(ValueError, () =>
-    CurvesArbpChunk.from_arbp(new Chunk({ chunk_type: "aRbp", data: bytes_.repeat(b("\x00"), 16) })),
+    CurvesArbpChunk.fromArbp(new Chunk({ chunkType: "aRbp", data: bytes_.repeat(b("\x00"), 16) })),
   );
 });

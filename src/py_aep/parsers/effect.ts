@@ -489,7 +489,7 @@ export const _ITEM_CONTAINERS: ReadonlySet<string> = new Set(["Fold", "Item", "S
 export function* _effectInstances(chunks: Chunk[]): Generator<[string, ListChunk]> {
   for (const chunk of chunks) {
     if (!(chunk instanceof ListChunk)) continue;
-    const listType = chunk.list_type;
+    const listType = chunk.listType;
     if (_ITEM_CONTAINERS.has(listType)) {
       yield* _effectInstances(chunk.chunks);
     } else if (listType === "Layr") {
@@ -525,7 +525,7 @@ export function _projectParamDefs(composition: CompItem, matchName: string): Map
   const project = composition._project;
   for (const [name, sspc] of _effectInstances(project._rifx.chunks)) {
     if (name === matchName && _heldDefinitions(sspc) != null) {
-      return parseEffectParamDefs(sspc.chunks, project._nnhd._system_code_page);
+      return parseEffectParamDefs(sspc.chunks, project._nnhd._systemCodePage);
     }
   }
   return new Map();
@@ -602,7 +602,7 @@ export const parseEffect = _suppressMaterialization().decorate(function parse_ef
   try {
     paramDefs = parseEffectParamDefs(
       sspcChildChunks,
-      composition._project._nnhd._system_code_page,
+      composition._project._nnhd._systemCodePage,
     );
   } catch (e) {
     if (!(e instanceof ChunkNotFoundError)) throw e;
@@ -689,14 +689,14 @@ export function _pardExtractor(
 // Python's `@_pard_extractor(...)` decorator is applied as a registration call
 // directly after each definition, which keeps the registration order.
 export function _extractAngle(body: AnglePardChunk, result: ParamDef): void {
-  result.lastValue = body.last_value;
+  result.lastValue = body.lastValue;
   if (body.default_ != null) result.default = _intify(body.default_);
   result.propertyValueType = PropertyValueType.OneD;
 }
 _pardExtractor(PropertyControlType.ANGLE)(_extractAngle);
 
 export function _extractBoolean(body: BooleanPardChunk, result: ParamDef): void {
-  result.lastValue = body.last_value;
+  result.lastValue = body.lastValue;
   result.defaultValue = body.default_;
   result.minValue = 0;
   result.maxValue = 1;
@@ -707,11 +707,11 @@ export function _extractColor(body: ColorPardChunk, result: ParamDef): void {
   // pard stores colors as [A, R, G, B] in 0-255 range;
   // ExtendScript uses [R, G, B, A] in 0-1 range.
   {
-    const [a, r, g, b] = body.last_color;
+    const [a, r, g, b] = body.lastColor;
     result.lastValue = [r / 255.0, g / 255.0, b / 255.0, a / 255.0];
   }
   {
-    const [a, r, g, b] = body.default_color;
+    const [a, r, g, b] = body.defaultColor;
     result.defaultValue = [r / 255.0, g / 255.0, b / 255.0, a / 255.0];
   }
   result.minValue = -3921568.62745098;
@@ -721,11 +721,11 @@ export function _extractColor(body: ColorPardChunk, result: ParamDef): void {
 _pardExtractor(PropertyControlType.COLOR)(_extractColor);
 
 export function _extractEnum(body: EnumPardChunk, result: ParamDef): void {
-  result.lastValue = body.last_value;
-  result.nbOptions = body.nb_options;
+  result.lastValue = body.lastValue;
+  result.nbOptions = body.nbOptions;
   result.defaultValue = body.default_;
   result.minValue = 1;
-  result.maxValue = body.nb_options;
+  result.maxValue = body.nbOptions;
 }
 _pardExtractor(PropertyControlType.ENUM)(_extractEnum);
 
@@ -737,39 +737,39 @@ export function _intify(value: number): number {
 
 export function _extractInteger(body: IntegerPardChunk, result: ParamDef): void {
   if (body.default_ != null) result.default = body.default_;
-  result.minValue = body.valid_min;
-  result.maxValue = body.valid_max;
+  result.minValue = body.validMin;
+  result.maxValue = body.validMax;
 }
 _pardExtractor(PropertyControlType.INTEGER)(_extractInteger);
 
 export function _extractScalar(body: ScalarPardChunk, result: ParamDef): void {
-  result.lastValue = body.last_value;
+  result.lastValue = body.lastValue;
   if (body.default_ != null) result.default = _intify(body.default_);
-  result.minValue = _intify(body.valid_min);
-  result.maxValue = _intify(body.valid_max);
-  result.sliderMin = body.slider_min;
-  result.sliderMax = body.slider_max;
+  result.minValue = _intify(body.validMin);
+  result.maxValue = _intify(body.validMax);
+  result.sliderMin = body.sliderMin;
+  result.sliderMax = body.sliderMax;
 }
 _pardExtractor(PropertyControlType.SCALAR)(_extractScalar);
 
 export function _extractSlider(body: SliderPardChunk, result: ParamDef): void {
-  result.lastValue = body.last_value;
+  result.lastValue = body.lastValue;
   if (body.default_ != null && Number.isFinite(body.default_)) {
     result.default = _intify(body.default_);
   }
   // Non-finite bounds mean the side is unbounded.
-  if (Number.isFinite(body.valid_min)) result.minValue = _intify(body.valid_min);
-  if (Number.isFinite(body.valid_max)) result.maxValue = _intify(body.valid_max);
-  if (Number.isFinite(body.slider_min)) result.sliderMin = body.slider_min;
-  if (Number.isFinite(body.slider_max)) result.sliderMax = body.slider_max;
+  if (Number.isFinite(body.validMin)) result.minValue = _intify(body.validMin);
+  if (Number.isFinite(body.validMax)) result.maxValue = _intify(body.validMax);
+  if (Number.isFinite(body.sliderMin)) result.sliderMin = body.sliderMin;
+  if (Number.isFinite(body.sliderMax)) result.sliderMax = body.sliderMax;
   // PF_ValueDisplayFlag_PERCENT is the only display flag AE serializes
   // reliably for float sliders; it maps to unitsText "percent".
-  if (body.displays_percent) result.unitsText = "percent";
+  if (body.displaysPercent) result.unitsText = "percent";
 }
 _pardExtractor(PropertyControlType.SLIDER)(_extractSlider);
 
 export function _extractThreeD(body: ThreeDPardChunk, result: ParamDef): void {
-  result.lastValue = [body.last_value_x, body.last_value_y, body.last_value_z];
+  result.lastValue = [body.lastValueX, body.lastValueY, body.lastValueZ];
   // Percent of the layer size; `_point_default_pixels` converts it.
   result.defaultValue = body.default_;
   result.propertyValueType = PropertyValueType.ThreeD_SPATIAL;
@@ -777,7 +777,7 @@ export function _extractThreeD(body: ThreeDPardChunk, result: ParamDef): void {
 _pardExtractor(PropertyControlType.THREE_D)(_extractThreeD);
 
 export function _extractTwoD(body: TwoDPardChunk, result: ParamDef): void {
-  result.lastValue = [body.last_value_x, body.last_value_y];
+  result.lastValue = [body.lastValueX, body.lastValueY];
   result.defaultValue = body.default_;
   result.propertyValueType = PropertyValueType.TwoD_SPATIAL;
 }
@@ -817,15 +817,15 @@ export function _parseEffectParameterDef(
 ): ParamDef {
   const pardChunk = findByType(parameterChunks, "pard");
 
-  const controlType = PropertyControlType.of(pardChunk.property_control_type);
+  const controlType = PropertyControlType.of(pardChunk.propertyControlType);
 
   const result: ParamDef = {
     name: _decodePardName(pardChunk.name, codePage),
     propertyControlType: controlType,
     // PF param flags bit 1 = CANNOT_TIME_VARY (the tdb4 byte is
     // unreliable for effect parameters).
-    canVaryOverTime: !and(pardChunk.param_flags, 0x02),
-    expressionsDisabled: pardChunk.expressions_disabled,
+    canVaryOverTime: !and(pardChunk.paramFlags, 0x02),
+    expressionsDisabled: pardChunk.expressionsDisabled,
   };
 
   const extractor = _PARD_EXTRACTORS.get(controlType);

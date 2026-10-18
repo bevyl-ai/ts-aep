@@ -149,7 +149,7 @@ export function parseProperties(
     }
     if (firstChunk == null) continue;
 
-    const listType = firstChunk.list_type;
+    const listType = firstChunk.listType;
     const handler = _PROPERTY_PARSERS.get(listType);
     if (handler != null) {
       properties.push(
@@ -486,7 +486,7 @@ export const _parseMaskAtom = _suppressMaterialization().decorate(function _pars
   const chunksByMn = getChunksByMatchName(tdgpChunk);
   const maskShapeChunks = chunksByMn.get("ADBE Mask Shape") ?? [];
   for (const chunk of maskShapeChunks) {
-    if (chunk instanceof ListChunk && chunk.list_type === "om-s") {
+    if (chunk instanceof ListChunk && chunk.listType === "om-s") {
       const tdbs = findByListTypeOrNull(chunk.chunks, "tdbs");
       const tdsb = tdbs === null ? null : findByTypeOrNull(tdbs.chunks, "tdsb");
       if (tdsb !== null) maskShapeTdsb = tdsb;

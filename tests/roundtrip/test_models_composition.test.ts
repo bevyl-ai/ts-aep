@@ -108,7 +108,7 @@ describe("TestRoundtripRenderer", () => {
     project.save(out);
 
     const comp2 = at(parseAep(out).project.compositions, 0);
-    expect(pyEq(comp2._prin.display_name, "Advanced 3D")).toBe(true);
+    expect(pyEq(comp2._prin.displayName, "Advanced 3D")).toBe(true);
     const opts = comp2.rendererOptions;
     expect(opts instanceof AdvancedRendererOptions).toBe(true);
     // Advanced 3D defaults, not Classic leftovers read as Quality.
@@ -672,7 +672,7 @@ describe("TestRoundtripDuration", () => {
       const out = tmpPath.div("snapped.aep");
       project.save(out);
       const cdta = getComp(parseAep(out).project, "snapped")._cdta;
-      expect(pyEq([cdta.duration_dividend, cdta.duration_divisor], [dividend, divisor])).toBe(true);
+      expect(pyEq([cdta.durationDividend, cdta.durationDivisor], [dividend, divisor])).toBe(true);
     },
   );
 
@@ -699,7 +699,7 @@ describe("TestRoundtripDuration", () => {
     // AE 2026: addComp with 52.5 frames of duration makes a 53-frame comp.
     const project = parseProjectFresh(SAMPLES_DIR.div("comp_misc.aep"));
     const comp = project.rootFolder.addComp("half", 100, 100, 1.0, 52.5 / 24, 24.0);
-    expect(pyEq([comp._cdta.duration_dividend, comp._cdta.duration_divisor], [54272, 24576])).toBe(true);
+    expect(pyEq([comp._cdta.durationDividend, comp._cdta.durationDivisor], [54272, 24576])).toBe(true);
   });
 
   test("test_frame_duration_validation_rejects_non_int", () => {
@@ -741,7 +741,7 @@ describe("TestRoundtripDuration", () => {
     comp.frameDuration = 2000;
     expect(comp.frameDuration).toBe(2000);
     // Stored in timebase units, like AE's own durations.
-    expect(pyEq([comp._cdta.duration_dividend, comp._cdta.duration_divisor], [2000 * 1024, 24576])).toBe(true);
+    expect(pyEq([comp._cdta.durationDividend, comp._cdta.durationDivisor], [2000 * 1024, 24576])).toBe(true);
   });
 });
 
@@ -768,9 +768,9 @@ describe("TestCompTimeWrites", () => {
     const comp = _comp();
     comp.workAreaStart = frames / 24;
     const cdta = comp._cdta;
-    expect(pyEq([cdta.work_area_start_dividend, cdta.work_area_start_divisor], [units, 24576])).toBe(true);
+    expect(pyEq([cdta.workAreaStartDividend, cdta.workAreaStartDivisor], [units, 24576])).toBe(true);
     // A work area that ran to the end of the comp still does.
-    expect(pyEq([cdta.work_area_end_dividend, cdta.work_area_end_divisor], [0xFFFFFFFF, 24576])).toBe(true);
+    expect(pyEq([cdta.workAreaEndDividend, cdta.workAreaEndDivisor], [0xFFFFFFFF, 24576])).toBe(true);
   });
 
   test.each([
@@ -784,7 +784,7 @@ describe("TestCompTimeWrites", () => {
     comp.workAreaStart = 12 / 24;
     comp.workAreaDuration = frames / 24;
     const cdta = comp._cdta;
-    expect(pyEq([cdta.work_area_end_dividend, cdta.work_area_end_divisor], [end, 24576])).toBe(true);
+    expect(pyEq([cdta.workAreaEndDividend, cdta.workAreaEndDivisor], [end, 24576])).toBe(true);
   });
 
   test("test_work_area_start_keeps_the_duration", () => {
@@ -792,7 +792,7 @@ describe("TestCompTimeWrites", () => {
     comp.workAreaDuration = 5.0;
     comp.workAreaStart = 1.0;
     expect(comp.workAreaDuration).toBe(5.0);
-    expect(comp._cdta.work_area_end_dividend).toBe(6 * 24576);
+    expect(comp._cdta.workAreaEndDividend).toBe(6 * 24576);
   });
 
   test("test_work_area_start_past_the_end", () => {
@@ -802,7 +802,7 @@ describe("TestCompTimeWrites", () => {
     comp.workAreaDuration = 5.0;
     comp.workAreaStart = 8.0;
     expect(comp.workAreaStart).toBe(8.0);
-    expect(comp._cdta.work_area_end_dividend).toBe(0xFFFFFFFF);
+    expect(comp._cdta.workAreaEndDividend).toBe(0xFFFFFFFF);
     expect(comp.workAreaDuration).toBe(2.0);
   });
 
@@ -813,7 +813,7 @@ describe("TestCompTimeWrites", () => {
   ])("test_time[%#]", (frames: number, units: number) => {
     const comp = _comp();
     comp.time = frames / 24;
-    expect(pyEq([comp._cdta.time_dividend, comp._cdta.time_divisor], [units, 24576])).toBe(true);
+    expect(pyEq([comp._cdta.timeDividend, comp._cdta.timeDivisor], [units, 24576])).toBe(true);
   });
 
   test("test_time_may_precede_the_display_start", () => {
@@ -832,7 +832,7 @@ describe("TestCompTimeWrites", () => {
     const cdta = comp._cdta;
     expect(
       pyEq(
-        [cdta.work_area_start_dividend, cdta.work_area_end_dividend, cdta.time_dividend],
+        [cdta.workAreaStartDividend, cdta.workAreaEndDividend, cdta.timeDividend],
         [53000, 78000, 53000],
       ),
     ).toBe(true);
@@ -866,11 +866,11 @@ describe("TestCompTimeWrites", () => {
     comp.displayStartTime = seconds;
     const cdta = comp._cdta;
     expect(
-      pyEq([cdta.display_start_time_dividend, cdta.display_start_time_divisor], ratio),
+      pyEq([cdta.displayStartTimeDividend, cdta.displayStartTimeDivisor], ratio),
     ).toBe(true);
     // AE re-stores the work area start and current time over the
     // timebase alongside.
-    expect(pyEq([cdta.work_area_start_divisor, cdta.time_divisor], [24576, 24576])).toBe(true);
+    expect(pyEq([cdta.workAreaStartDivisor, cdta.timeDivisor], [24576, 24576])).toBe(true);
   });
 
   test.each<[number, number, [number, number]]>([
@@ -881,7 +881,7 @@ describe("TestCompTimeWrites", () => {
     comp.displayStartFrame = frames;
     const cdta = comp._cdta;
     expect(
-      pyEq([cdta.display_start_time_dividend, cdta.display_start_time_divisor], ratio),
+      pyEq([cdta.displayStartTimeDividend, cdta.displayStartTimeDivisor], ratio),
     ).toBe(true);
     expect(comp.displayStartFrame).toBe(frames);
   });
@@ -897,7 +897,7 @@ describe("TestCompTimeWrites", () => {
         [52, 25, 53],
       ),
     ).toBe(true);
-    expect(comp._cdta.work_area_start_dividend).toBe(52000);
+    expect(comp._cdta.workAreaStartDividend).toBe(52000);
   });
 });
 
@@ -1626,9 +1626,9 @@ describe("TestRoundtripFrameRateRetiming", () => {
     const project = parseProjectFresh(PROPERTY_SAMPLES_DIR.div("effect_point_speed.aep"));
     const comp = at(project.compositions, 0);
     expect(comp.frameRate).toBe(25.0);
-    expect(comp._cdta.internal_timebase).toBe(25600);
+    expect(comp._cdta.internalTimebase).toBe(25600);
     const before = new Map(
-      Array.from(_keyed(comp), (p) => [p.matchName, p.keyframes.map((k) => k._ldatItem.time_units)] as const),
+      Array.from(_keyed(comp), (p) => [p.matchName, p.keyframes.map((k) => k._ldatItem.timeUnits)] as const),
     );
 
     comp.frameRate = 30.0;
@@ -1636,10 +1636,10 @@ describe("TestRoundtripFrameRateRetiming", () => {
     project.save(out);
 
     const comp2 = at(parseAep(out).project.compositions, 0);
-    expect(comp2._cdta.internal_timebase).toBe(30720);
+    expect(comp2._cdta.internalTimebase).toBe(30720);
     for (const prop of _keyed(comp2)) {
       const expected = getitem(before, prop.matchName).map((u) => round((u * 30720) / 25600));
-      expect(pyEq(prop.keyframes.map((k) => k._ldatItem.time_units), expected)).toBe(true);
+      expect(pyEq(prop.keyframes.map((k) => k._ldatItem.timeUnits), expected)).toBe(true);
     }
   });
 
@@ -1654,7 +1654,7 @@ describe("TestRoundtripFrameRateRetiming", () => {
     const comp = at(project.compositions, 0);
     comp.frameRate = 30.0;
     const unitsAt30 = new Map(
-      Array.from(_keyed(comp), (p) => [p.matchName, p.keyframes.map((k) => k._ldatItem.time_units)] as const),
+      Array.from(_keyed(comp), (p) => [p.matchName, p.keyframes.map((k) => k._ldatItem.timeUnits)] as const),
     );
     const secondsAt30 = new Map(
       Array.from(_keyed(comp), (p) => [p.matchName, p.keyframes.map((k) => k.time)] as const),
@@ -1665,11 +1665,11 @@ describe("TestRoundtripFrameRateRetiming", () => {
     project.save(out);
 
     const comp2 = at(parseAep(out).project.compositions, 0);
-    expect(comp2._cdta.internal_timebase).toBe(30720);
+    expect(comp2._cdta.internalTimebase).toBe(30720);
     expect(comp2.timeScale).toBe(2.0);
     for (const prop of _keyed(comp2)) {
       const name = prop.matchName;
-      expect(pyEq(prop.keyframes.map((k) => k._ldatItem.time_units), getitem(unitsAt30, name))).toBe(true);
+      expect(pyEq(prop.keyframes.map((k) => k._ldatItem.timeUnits), getitem(unitsAt30, name))).toBe(true);
       expect(pyEq(prop.keyframes.map((k) => k.time), getitem(secondsAt30, name))).toBe(true);
     }
   });
@@ -1687,12 +1687,12 @@ describe("TestRoundtripFrameRateRetiming", () => {
     project.save(out);
 
     const comp2 = at(parseAep(out).project.compositions, 0);
-    const timebase = comp2._cdta.internal_timebase;
+    const timebase = comp2._cdta.internalTimebase;
     expect(timebase).toBe(30720);
     const stamps = new Set(
       [...comp2._walkProperties()]
         .filter((p) => p._tdb4 != null && p._isLive())
-        .map((p) => p._tdb4._time_base),
+        .map((p) => p._tdb4._timeBase),
     );
     expect(pyEq(stamps, new Set([timebase]))).toBe(true);
   });
@@ -1751,7 +1751,7 @@ describe("TestRoundtripFrameRateRetiming", () => {
     const project = parseProjectFresh(SAMPLES_DIR.div("duplicate.aep"));
     const outer = getComp(project, "DupSrc");
     const inner = getComp(project, "Inner");
-    const before = [inner.frameRate, inner.duration, inner._cdta.internal_timebase];
+    const before = [inner.frameRate, inner.duration, inner._cdta.internalTimebase];
 
     outer.frameRate = 60.0;
     const out = tmpPath.div("modified.aep");
@@ -1760,7 +1760,7 @@ describe("TestRoundtripFrameRateRetiming", () => {
     const inner2 = getComp(parseAep(out).project, "Inner");
     expect(
       pyEq(
-        [inner2.frameRate, inner2.duration, inner2._cdta.internal_timebase],
+        [inner2.frameRate, inner2.duration, inner2._cdta.internalTimebase],
         before,
       ),
     ).toBe(true);
@@ -1777,7 +1777,7 @@ describe("TestRoundtripFrameRateRetiming", () => {
     comp.duration = 253.0 / 24.0;
     const beforeDuration = comp.duration;
     const beforeUnits = Array.from(_keyed(comp)).flatMap((p) =>
-      p.keyframes.map((k) => k._ldatItem.time_units),
+      p.keyframes.map((k) => k._ldatItem.timeUnits),
     );
 
     comp.frameRate = comp.frameRate;
@@ -1785,7 +1785,7 @@ describe("TestRoundtripFrameRateRetiming", () => {
     expect(comp.duration).toBe(beforeDuration);
     expect(
       pyEq(
-        Array.from(_keyed(comp)).flatMap((p) => p.keyframes.map((k) => k._ldatItem.time_units)),
+        Array.from(_keyed(comp)).flatMap((p) => p.keyframes.map((k) => k._ldatItem.timeUnits)),
         beforeUnits,
       ),
     ).toBe(true);
@@ -1811,7 +1811,7 @@ describe("TestRoundtripFrameRateRetiming", () => {
       const out = tmpPath.div("retimed.aep");
       project.save(out);
       const cdta = getComp(parseAep(out).project, "retimed")._cdta;
-      expect(pyEq([cdta.duration_dividend, cdta.duration_divisor], [dividend, divisor])).toBe(true);
+      expect(pyEq([cdta.durationDividend, cdta.durationDivisor], [dividend, divisor])).toBe(true);
     },
   );
 
@@ -1830,9 +1830,9 @@ describe("TestRoundtripFrameRateRetiming", () => {
     comp.time = 12 / 24;
     comp.frameRate = 25.0;
     const cdta = comp._cdta;
-    expect(pyEq([cdta.work_area_start_dividend, cdta.work_area_start_divisor], [13312, 25600])).toBe(true);
-    expect(pyEq([cdta.work_area_end_dividend, cdta.work_area_end_divisor], [77824, 25600])).toBe(true);
-    expect(pyEq([cdta.time_dividend, cdta.time_divisor], [13312, 25600])).toBe(true);
+    expect(pyEq([cdta.workAreaStartDividend, cdta.workAreaStartDivisor], [13312, 25600])).toBe(true);
+    expect(pyEq([cdta.workAreaEndDividend, cdta.workAreaEndDivisor], [77824, 25600])).toBe(true);
+    expect(pyEq([cdta.timeDividend, cdta.timeDivisor], [13312, 25600])).toBe(true);
     expect(approx(comp.workAreaDuration, 2.52)).toBe(true);
     expect(comp.displayStartTime).toBe(0.5);
   });

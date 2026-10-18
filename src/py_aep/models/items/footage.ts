@@ -100,7 +100,7 @@ export class FootageItem extends AVItem {
 
   set pixelAspect(value: number) {
     validatePixelAspect(value);
-    this._mainSource._sspc.pixel_aspect = value;
+    this._mainSource._sspc.pixelAspect = value;
   }
 
   /**
@@ -328,16 +328,16 @@ export class FootageItem extends AVItem {
     }
 
     const idta = new IdtaChunk({
-      item_type: 7,
-      item_id: itemId,
+      itemType: 7,
+      itemId: itemId,
       label,
     });
-    idta.is_footage = true;
-    idta.is_solid = source instanceof SolidSource;
+    idta.isFootage = true;
+    idta.isSolid = source instanceof SolidSource;
     // A file source carries the footage-kind flags; solid/placeholder
     // sources keep the chunk default.
     if (source instanceof FileSource) {
-      idta._flags_17 = source._idtaFlags17();
+      idta._flags17 = source._idtaFlags17();
     }
     // AE leaves the item-level Utf8 empty; the display name resolves
     // from the source (solid / placeholder / file name).
@@ -348,9 +348,9 @@ export class FootageItem extends AVItem {
     const ftgi = new FtgiChunk({});
 
     const itemList = new ListChunk({
-      list_type: "Item",
+      listType: "Item",
       chunks: [
-        ...buildItemIdChunks(itemId, project._head.ae_version_major),
+        ...buildItemIdChunks(itemId, project._head.aeVersionMajor),
         idta,
         nameUtf8,
         pinList,
@@ -395,7 +395,7 @@ export class FootageItem extends AVItem {
     const source = this.useProxy ? this._proxySource : this._mainSource;
     if (source instanceof FileSource) {
       pyAssert(this._idta != null);
-      this._idta.modified_time = source._sspc.source_modified;
+      this._idta.modifiedTime = source._sspc.sourceModified;
     }
   }
 
@@ -569,7 +569,7 @@ export class FootageItem extends AVItem {
             "a single layer of a layered file",
         );
       }
-      layerIndex = layerIndexForStored(file, current._sspc.layer_index);
+      layerIndex = layerIndexForStored(file, current._sspc.layerIndex);
     }
     let dimensions: string | null;
     if (layerDimensions instanceof _CurrentValue) {
@@ -579,7 +579,7 @@ export class FootageItem extends AVItem {
       if (
         current instanceof FileSource &&
         current.layerName &&
-        !current._sspc.full_frame
+        !current._sspc.fullFrame
       ) {
         dimensions = "layer";
       }
@@ -657,10 +657,10 @@ export class FootageItem extends AVItem {
     source._joinProject(this._project);
 
     pyAssert(this._idta != null);
-    this._idta.is_footage = true;
-    this._idta.is_solid = isSolid;
+    this._idta.isFootage = true;
+    this._idta.isSolid = isSolid;
     if (source instanceof FileSource) {
-      this._idta._flags_17 = source._idtaFlags17();
+      this._idta._flags17 = source._idtaFlags17();
     }
     this._syncModifiedTime();
 

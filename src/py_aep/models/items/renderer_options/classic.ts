@@ -30,5 +30,5 @@ export class ClassicRendererOptions extends RendererOptionsBase {
 descriptor(
   ClassicRendererOptions,
   "shadowMapResolution",
-  ChunkField.enum(ShadowMapResolution, "_body", "shadow_map_resolution"),
+  ChunkField.enum(ShadowMapResolution, "_body", "shadowMapResolution"),
 );

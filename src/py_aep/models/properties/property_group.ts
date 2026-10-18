@@ -132,7 +132,7 @@ export function _insertBeforeGroupEnd(tdgp: ListChunk, chunk: Chunk): void {
    */
   for (let i = tdgp.chunks.length - 1; i >= 0; i--) {
     const c = tdgp.chunks[i];
-    if (c.chunk_type === "tdmn" && "value" in c && c.value === "ADBE Group End") {
+    if (c.chunkType === "tdmn" && "value" in c && c.value === "ADBE Group End") {
       tdgp.chunks.splice(i, 0, chunk);
       return;
     }
@@ -150,7 +150,7 @@ export function _setEffectInstanceName(sspc: ListChunk, name: string): void {
   const tdgp = _effectTdgp(sspc);
   if (tdgp == null) return;
   for (const [i, inner] of tdgp.chunks.entries()) {
-    if (inner.chunk_type === "tdsn") {
+    if (inner.chunkType === "tdsn") {
       tdgp.chunks[i] = TdsnChunk.new_(name);
       return;
     }
@@ -452,14 +452,14 @@ export class PropertyGroup extends PropertyBase {
   ): PropertyGroup {
     const { parentProperty: parent_property = null, synthetic = false, enableFlags: enable_flags = 1 } = kw;
     const _tdsb = new TdsbChunk({ synthetic });
-    _tdsb._enable_flags = enable_flags;
+    _tdsb._enableFlags = enable_flags;
     // AE writes the unnamed sentinel; the display name resolves
     // from auto_name on the model.
     const tdsn = TdsnChunk.new_(TDSN_SENTINEL, { synthetic });
     const nameUtf8 = tdsn.utf8;
     const groupEnd = new TdmnChunk({ value: "ADBE Group End", synthetic });
     const _tdgp = new ListChunk({
-      list_type: "tdgp",
+      listType: "tdgp",
       chunks: [_tdsb, tdsn, groupEnd],
       synthetic,
     });
@@ -587,7 +587,7 @@ export class PropertyGroup extends PropertyBase {
       this._nameUtf8.synthetic = false;
       // Also unflag tdsn container if present
       for (const c of tdgp.chunks) {
-        if (c.chunk_type === "tdsn") {
+        if (c.chunkType === "tdsn") {
           c.synthetic = false;
           break;
         }
@@ -595,7 +595,7 @@ export class PropertyGroup extends PropertyBase {
     }
     // Also flip the group end marker.
     for (const c of tdgp.chunks) {
-      if (c.chunk_type === "tdmn" && "value" in c && c.value === "ADBE Group End") {
+      if (c.chunkType === "tdmn" && "value" in c && c.value === "ADBE Group End") {
         c.synthetic = false;
         break;
       }
@@ -974,7 +974,7 @@ export class PropertyGroup extends PropertyBase {
     ] as const) {
       const existing = getattr(slot, attr);
       if (existing == null) {
-        const created = new TdumChunk({ chunk_type: chunkType, values: [bound] });
+        const created = new TdumChunk({ chunkType: chunkType, values: [bound] });
         tdbs.chunks.push(created);
         slot[attr] = created;
       } else {
@@ -1074,7 +1074,7 @@ export class PropertyGroup extends PropertyBase {
       (m): m is MaskPropertyGroup => m instanceof _maskPropertyGroup().MaskPropertyGroup,
     );
     const nextId = max(
-      existing.map((m) => m._mkif.mask_id),
+      existing.map((m) => m._mkif.maskId),
       null,
       0,
     ) + 1;
@@ -1106,10 +1106,10 @@ export class PropertyGroup extends PropertyBase {
       display,
       bytes_.fromhex(skeleton.part),
       {
-        tdsn_name: tdsnName,
-        time_base: comp._cdta.internal_timebase,
-        layer_id: this._containingLayer.id,
-        layer_param_name: skeleton.layerParam,
+        tdsnName: tdsnName,
+        timeBase: comp._cdta.internalTimebase,
+        layerId: this._containingLayer.id,
+        layerParamName: skeleton.layerParam,
       },
     );
     return this._attachEffect(tdmn, sspc, matchName);
@@ -1133,9 +1133,9 @@ export class PropertyGroup extends PropertyBase {
     const tdsnName = this._effectInstanceName(display, sameType);
 
     const [tdmn, sspc] = buildDropdownControl({
-      tdsn_name: tdsnName,
-      time_base: comp._cdta.internal_timebase,
-      layer_id: this._containingLayer.id,
+      tdsnName: tdsnName,
+      timeBase: comp._cdta.internalTimebase,
+      layerId: this._containingLayer.id,
     });
     return this._attachEffect(tdmn, sspc, tdmn.value);
   }
@@ -1188,7 +1188,7 @@ export class PropertyGroup extends PropertyBase {
     pyAssert(sspc instanceof ListChunk);
     rewriteOwnerTdpi(sspc, this._containingLayer.id);
     const comp = this._containingLayer.containingComp;
-    rewriteTimeBase(sspc, comp._cdta.internal_timebase);
+    rewriteTimeBase(sspc, comp._cdta.internalTimebase);
 
     // Name the instance: the first uses the unnamed tdsn sentinel
     // (so it shows the effect's fnam name); later ones get "Name N".
@@ -1198,7 +1198,7 @@ export class PropertyGroup extends PropertyBase {
 
     const engv =
       matchName === "ADBE FreePin3"
-        ? new Chunk({ chunk_type: "engv", data: _PUPPET_ENGINE_VERSION })
+        ? new Chunk({ chunkType: "engv", data: _PUPPET_ENGINE_VERSION })
         : null;
     const effect = this._attachEffect(
       new TdmnChunk({ value: matchName }),
@@ -1288,13 +1288,13 @@ export class PropertyGroup extends PropertyBase {
     const base = _VECTOR_CREATION_NAMES.get(matchName) || (MATCH_NAME_TO_AUTO_NAME.get(matchName) ?? matchName);
     const sameType = this.properties.filter((p) => p.matchName === matchName).length;
     const pathTimeBase =
-      matchName === "ADBE Vector Shape - Group" ? comp._cdta.internal_timebase : null;
+      matchName === "ADBE Vector Shape - Group" ? comp._cdta.internalTimebase : null;
     const [tdmn, tdgp] = buildVectorElement(
       matchName,
       this._freeNumberedName(base, sameType + 1),
       {
         subgroups: _VECTOR_SUBGROUPS.get(matchName) ?? [],
-        path_time_base: pathTimeBase,
+        pathTimeBase: pathTimeBase,
       },
     );
     return this._attachGroup(tdmn, tdgp, matchName);
@@ -1350,7 +1350,7 @@ export class PropertyGroup extends PropertyBase {
     const [tdmn, tdgp] = buildTextSelector(
       matchName,
       this._freeNumberedName(base, sameType + 1),
-      { has_advanced: matchName === "ADBE Text Selector" },
+      { hasAdvanced: matchName === "ADBE Text Selector" },
     );
     return this._attachGroup(tdmn, tdgp, matchName);
   }

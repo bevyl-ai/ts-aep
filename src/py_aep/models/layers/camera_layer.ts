@@ -98,18 +98,18 @@ export class CameraLayer extends Layer {
     const nameCps = Array.from(name);
     const layerName = nameCps.length > 31 ? nameCps.slice(0, 31).join("") : name;
     const ldta = new LdtaChunk({
-      layer_id,
+      layerId: layer_id,
       label: labelIndex(
         containing_comp._project._preferences,
         "Camera Label Index 2",
         4,
       ),
-      layer_type: LayerType.CAMERA,
-      layer_flags_2: 0x01,
-      layer_name: layerName,
+      layerType: LayerType.CAMERA,
+      layerFlags2: 0x01,
+      layerName: layerName,
     });
-    ldta.out_point = duration;
-    ldta.three_d_layer = true;
+    ldta.outPoint = duration;
+    ldta.threeDLayer = true;
     return super._new<CameraLayer>({
       ldta,
       name,

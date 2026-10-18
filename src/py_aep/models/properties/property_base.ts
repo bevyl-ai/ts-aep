@@ -104,7 +104,7 @@ export function _renumberMaskAutoNames(parent: PropertyGroup): void {
  * (AE 2026), so a later mask reusing the id is not picked up.
  */
 export function _clearMaskReferences(mask: MaskPropertyGroup): void {
-  const maskId = mask._mkif.mask_id;
+  const maskId = mask._mkif.maskId;
   for (const prop of mask._containingLayer._leafProperties()) {
     if (prop.propertyValueType !== PropertyValueType.MASK_INDEX) continue;
     const tdli = prop._tdliChunk();
@@ -132,8 +132,8 @@ export function _assignDuplicateMaskIdentity(
   const siblings = parent._properties
     .filter((m) => m._isMask && m !== newMask)
     .filter((m) => m instanceof _maskPropertyGroup().MaskPropertyGroup);
-  const newId = max(siblings.map((m) => m._mkif.mask_id), null, 0) + 1;
-  newMask._mkif.mask_id = newId;
+  const newId = max(siblings.map((m) => m._mkif.maskId), null, 0) + 1;
+  newMask._mkif.maskId = newId;
   // Python `$` also matches before a trailing newline; the lookahead mirrors that.
   const base = source.name.replace(/ \p{Nd}+(?=\n?$)/u, "");
   newMask.name = `${base} ${newId}`;
@@ -270,7 +270,7 @@ export class PropertyBase {
       pos = chunks.length;
       for (let i = chunks.length - 1; i >= 0; i--) {
         const c = chunks[i];
-        if (c.chunk_type === "tdmn" && "value" in c && pyEq(c.value, "ADBE Group End")) {
+        if (c.chunkType === "tdmn" && "value" in c && pyEq(c.value, "ADBE Group End")) {
           pos = i;
           break;
         }
@@ -539,7 +539,7 @@ export class PropertyBase {
 
     // Effect case: _tdgp is inside a LIST:sspc wrapper
     for (const c of parentTdgp.chunks) {
-      if (c instanceof ListChunk && c.list_type === "sspc" && c.chunks.some((inner) => inner === chunk)) {
+      if (c instanceof ListChunk && c.listType === "sspc" && c.chunks.some((inner) => inner === chunk)) {
         return c;
       }
     }
@@ -578,7 +578,7 @@ export class PropertyBase {
     _effect().rehomeEffectDefinitions(
       this._containingLayer.containingComp._project,
       removed
-        .filter((chunk): chunk is ListChunk => chunk instanceof ListChunk && chunk.list_type === "sspc")
+        .filter((chunk): chunk is ListChunk => chunk instanceof ListChunk && chunk.listType === "sspc")
         .map((chunk): [string, ListChunk] => [this.matchName, chunk]),
     );
     listRemove<PropertyBase>(parent.properties, this);
@@ -701,9 +701,9 @@ export class PropertyBase {
         tdmn,
         layer,
       );
-    } else if (listChunk.list_type === "tdbs") {
+    } else if (listChunk.listType === "tdbs") {
       result = _propertyValue().parseProperty(listChunk, this._matchName, comp, this._propertyDepth, tdmn);
-    } else if (listChunk.list_type === "sspc") {
+    } else if (listChunk.listType === "sspc") {
       result = _effect().parseEffect(
         listChunk,
         this._matchName,
@@ -713,7 +713,7 @@ export class PropertyBase {
         tdmn,
         layer,
       );
-    } else if (listChunk.list_type === "tdgp") {
+    } else if (listChunk.listType === "tdgp") {
       result = _property().parsePropertyGroup(
         listChunk,
         this._matchName,
@@ -724,7 +724,7 @@ export class PropertyBase {
         layer,
       );
     } else {
-      throw new ValueError(`Unexpected backing chunk type '${listChunk.list_type}'`);
+      throw new ValueError(`Unexpected backing chunk type '${listChunk.listType}'`);
     }
     // clone_chunk_tree strips synthetic chunks, so synthesized children
     // (e.g. Mask Feather/Opacity) are missing from the clone; re-arm

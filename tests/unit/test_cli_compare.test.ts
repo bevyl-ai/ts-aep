@@ -179,15 +179,15 @@ describe("TestFloatTolerance", () => {
   });
 
   test("test_shph_within_tolerance_suppressed", () => {
-    const c1 = new ShphChunk({ top_left_x: -29.75, top_left_y: -32.5 });
-    const c2 = new ShphChunk({ top_left_x: -29.7500012, top_left_y: -32.5 });
+    const c1 = new ShphChunk({ topLeftX: -29.75, topLeftY: -32.5 });
+    const c2 = new ShphChunk({ topLeftX: -29.7500012, topLeftY: -32.5 });
     expect(_onlyFloatDiff(c1, c2)).toBe(true);
   });
 
   /** Same floats but a different open/closed flag must NOT be suppressed. */
   test("test_nonfloat_bytes_still_reported", () => {
-    const c1 = new ShphChunk({ top_left_x: 1.0, bottom_right_x: 2.0 });
-    const c2 = new ShphChunk({ top_left_x: 1.0, bottom_right_x: 2.0 });
+    const c1 = new ShphChunk({ topLeftX: 1.0, bottomRightX: 2.0 });
+    const c2 = new ShphChunk({ topLeftX: 1.0, bottomRightX: 2.0 });
     c2.open = true;
     expect(_onlyFloatDiff(c1, c2)).toBe(false);
   });

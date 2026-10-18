@@ -62,14 +62,14 @@ export class OpenExrFormatOptions extends FormatOptionsBase {
    */
   get dwaCompressionLevel(): number | null {
     if (this.compression === OpenExrCompression.DWAA || this.compression === OpenExrCompression.DWAB) {
-      return this._body.dwa_compression_level;
+      return this._body.dwaCompressionLevel;
     }
     return null;
   }
 
   set dwaCompressionLevel(value: number) {
     validatePositiveNumber(value);
-    this._body.dwa_compression_level = value;
+    this._body.dwaCompressionLevel = value;
   }
 }
 
@@ -79,6 +79,6 @@ descriptor(
   ChunkField.enum(OpenExrCompression, "_body", "compression", { allowOutOfEnumValues: true }),
 );
 
-descriptor(OpenExrFormatOptions, "luminanceChroma", ChunkField.bool("_body", "luminance_chroma"));
+descriptor(OpenExrFormatOptions, "luminanceChroma", ChunkField.bool("_body", "luminanceChroma"));
 
-descriptor(OpenExrFormatOptions, "thirtyTwoBitFloat", ChunkField.bool("_body", "thirty_two_bit_float"));
+descriptor(OpenExrFormatOptions, "thirtyTwoBitFloat", ChunkField.bool("_body", "thirtyTwoBitFloat"));

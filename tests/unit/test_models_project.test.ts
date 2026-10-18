@@ -21,7 +21,7 @@ const COMP_SAMPLES_DIR = new Path(import.meta.path).parent.parent.parent.div(
 /** All ldta layer ids in the project, including viewer pseudo-layers. */
 function _allLdtaIds(project: Project): number[] {
   return project.compositions.flatMap((comp) =>
-    recursiveFind(comp._itemList.chunks, "ldta").map((ldta) => ldta.layer_id),
+    recursiveFind(comp._itemList.chunks, "ldta").map((ldta) => ldta.layerId),
   );
 }
 
@@ -35,9 +35,9 @@ describe("TestAllocateId", () => {
   test("test_first_call_returns_counter_value", (): void => {
     const project = parseAep(LAYER_SAMPLES_DIR.div("type.aep")).project;
     // In an AE-written file next_item_id is already > max(all ids).
-    const expected = project._head.next_item_id;
+    const expected = project._head.nextItemId;
     expect(project._allocateId()).toBe(expected);
-    expect(project._head.next_item_id).toBe(expected + 1);
+    expect(project._head.nextItemId).toBe(expected + 1);
   });
 
   test("test_successive_calls_increment", (): void => {
@@ -61,9 +61,9 @@ describe("TestAllocateId", () => {
     // (AE trusts the counter and would mint duplicate ids otherwise).
     const project = parseAep(COMP_SAMPLES_DIR.div("bgColor.aep")).project;
     const allIds = new Set([..._allLdtaIds(project), ...project.items.keys()]);
-    project._head.next_item_id = 2; // force drift
+    project._head.nextItemId = 2; // force drift
     expect(project._allocateId()).toBe(Math.max(...allIds) + 1);
-    expect(project._head.next_item_id).toBe(Math.max(...allIds) + 2);
+    expect(project._head.nextItemId).toBe(Math.max(...allIds) + 2);
   });
 
   test("test_new_layer_and_comp_ids_unique_project_wide", (): void => {
@@ -73,7 +73,7 @@ describe("TestAllocateId", () => {
     const allIds = [..._allLdtaIds(project), ...project.items.keys()];
     expect(allIds.length).toBe(new Set(allIds).size);
     // The persisted counter must remain above every live id.
-    expect(project._head.next_item_id).toBeGreaterThan(Math.max(...allIds));
+    expect(project._head.nextItemId).toBeGreaterThan(Math.max(...allIds));
   });
 });
 

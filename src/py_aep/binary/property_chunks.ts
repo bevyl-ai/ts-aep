@@ -44,12 +44,12 @@ import { findByType } from "./utils.ts";
  * through the raw byte fields.
  */
 export class TdsbChunk extends Chunk {
-  declare chunk_type: string;
+  declare chunkType: string;
   /** RotoBezier flag for mask shapes (byte 0). 1 = enabled. */
-  declare roto_bezier: boolean;
+  declare rotoBezier: boolean;
   declare _pad1: number;
-  declare _lock_flags: number;
-  declare _enable_flags: number;
+  declare _lockFlags: number;
+  declare _enableFlags: number;
 
   // -- Bit-level accessors (not attrs fields) ----------------------------
   /**
@@ -58,7 +58,7 @@ export class TdsbChunk extends Chunk {
    * projects only those two streams carry it, mostly on non-uniform
    * values.
    */
-  declare ratio_unlinked: boolean;
+  declare ratioUnlinked: boolean;
   /**
    * Whether a separation leader's dimensions are split.
    *
@@ -68,7 +68,7 @@ export class TdsbChunk extends Chunk {
    * against every AE-exported `dimensionsSeparated` in the sample corpus -
    * the lock bit agrees 288/288, the enable bit 285/288.
    */
-  declare dimensions_separated: boolean;
+  declare dimensionsSeparated: boolean;
   declare enabled: boolean;
   /**
    * The stream is hidden in the Timeline because it does not apply to
@@ -81,16 +81,16 @@ export class TdsbChunk extends Chunk {
   declare hidden: boolean;
 }
 define(TdsbChunk, {
-  chunk_type: field({ default: "tdsb" }),
-  roto_bezier: boolField(),
+  chunkType: field({ default: "tdsb" }),
+  rotoBezier: boolField(),
   _pad1: u1Field({ repr: false }),
-  _lock_flags: u1Field({ repr: false }),
-  _enable_flags: u1Field({ default: 1, repr: false }),
+  _lockFlags: u1Field({ repr: false }),
+  _enableFlags: u1Field({ default: 1, repr: false }),
 });
-descriptor(TdsbChunk, "ratio_unlinked", new BitField("_lock_flags", 5));
-descriptor(TdsbChunk, "dimensions_separated", new BitField("_lock_flags", 3));
-descriptor(TdsbChunk, "enabled", new BitField("_enable_flags", 0));
-descriptor(TdsbChunk, "hidden", new BitField("_enable_flags", 1));
+descriptor(TdsbChunk, "ratioUnlinked", new BitField("_lockFlags", 5));
+descriptor(TdsbChunk, "dimensionsSeparated", new BitField("_lockFlags", 3));
+descriptor(TdsbChunk, "enabled", new BitField("_enableFlags", 0));
+descriptor(TdsbChunk, "hidden", new BitField("_enableFlags", 1));
 register("tdsb")(TdsbChunk);
 
 // ---------------------------------------------------------------------------
@@ -135,15 +135,15 @@ register("tdsb")(TdsbChunk);
  * Property metadata chunk (124 bytes).
  */
 export class Tdb4Chunk extends Chunk {
-  declare chunk_type: string;
+  declare chunkType: string;
   declare _magic: number;
   declare dimensions: number;
   declare _pad1: number;
-  declare _spatial_static_flags: number;
+  declare _spatialStaticFlags: number;
   declare _pad2a: number;
-  declare _value_hint_type: number;
-  declare _value_hint_flag: number;
-  declare _cvot_flags: number;
+  declare _valueHintType: number;
+  declare _valueHintFlag: number;
+  declare _cvotFlags: number;
   /**
    * Keyframe time units per second for the OWNING LAYER.
    *
@@ -153,38 +153,38 @@ export class Tdb4Chunk extends Chunk {
    * 73728 (0x00012000), which does not fit in two bytes (measured on AE 2026
    * across 50 / 101 / 150 / 300 / -150 % stretch).
    */
-  declare _time_base: number;
+  declare _timeBase: number;
   /**
    * Tolerance AE fits a spatial segment's arc-length spline to, as a
    * squared distance in the measured space: 1e-4 for a value stored in
    * pixels, 6.25e-12 for a point stored normalized to its layer.
    */
-  declare _arc_accuracy: number;
+  declare _arcAccuracy: number;
   /**
    * X multiplier AE measures a motion path with (the first of four,
    * one per dimension): the containing comp's pixel aspect ratio for a
    * layer's spatial property, the layer's display aspect (width / height)
    * for a normalized point; 1.0 elsewhere.
    */
-  declare pixel_aspect: number;
-  declare _arc_multiplier_y: number;
-  declare _arc_multiplier_z: number;
-  declare _arc_multiplier_w: number;
+  declare pixelAspect: number;
+  declare _arcMultiplierY: number;
+  declare _arcMultiplierZ: number;
+  declare _arcMultiplierW: number;
   declare _pad4: number;
-  declare _no_value_flags: number;
+  declare _noValueFlags: number;
   declare _pad5: number;
-  declare _type_flags: number;
-  declare _property_category: number;
+  declare _typeFlags: number;
+  declare _propertyCategory: number;
   declare _pad6a: number;
   declare _pad6b: number;
   declare _pad6c: number;
   declare animated: boolean;
-  declare _pad_45: Uint8Array;
+  declare _pad45: Uint8Array;
   /** A time in timebase units, or 0x80000000, in the samples. */
-  declare _reserved_48: number;
-  declare _reserved_4c: number;
-  declare _reserved_4d: number;
-  declare _pad_4e: number;
+  declare _reserved48: number;
+  declare _reserved4c: number;
+  declare _reserved4d: number;
+  declare _pad4e: number;
   /**
    * Byte 0x4F, the keyframe record's key flags: non-zero (bit 0) on a
    * spatial stream. Kept as the whole byte, not a `bool`: After Effects
@@ -192,93 +192,93 @@ export class Tdb4Chunk extends Chunk {
    * projects, and coercing it to 1 changed those bytes as soon as their
    * layer was read.
    */
-  declare _spatial_marker: number | boolean;
-  declare _pad_50: number;
+  declare _spatialMarker: number | boolean;
+  declare _pad50: number;
   // Four doubles: 0.0 in the samples, 0x5C / 0x6C sometimes 0.16666666667.
-  declare _reserved_54: number;
-  declare _reserved_5c: number;
-  declare _reserved_64: number;
-  declare _reserved_6c: number;
+  declare _reserved54: number;
+  declare _reserved5c: number;
+  declare _reserved64: number;
+  declare _reserved6c: number;
   declare _pad9a: number;
   declare _pad9b: number;
-  declare _expr_flags: number;
+  declare _exprFlags: number;
   declare _pad10: number;
 
   // -- Bit-level accessors (not attrs fields) ----------------------------
-  declare is_spatial: boolean;
+  declare isSpatial: boolean;
   // `static` is a reserved word as a class member name, so the declaration
   // is quoted; `t.static` reads and writes it like any other property.
   declare "static": boolean;
-  declare can_vary_over_time: boolean;
-  declare no_value: boolean;
+  declare canVaryOverTime: boolean;
+  declare noValue: boolean;
   declare vector: boolean;
   declare integer: boolean;
   declare color: boolean;
-  declare expression_disabled: boolean;
+  declare expressionDisabled: boolean;
   // AE's expression-present marker: the high byte of `_pad10` (0x01000000),
   // set whenever an expression Utf8 is present (independent of enabled/
   // disabled). AE rejects a file with the marker set but no expression Utf8
   // as "missing data in file".
-  declare has_expression: boolean;
+  declare hasExpression: boolean;
 
-  get has_time_base(): boolean {
-    return this._time_base !== 0;
+  get hasTimeBase(): boolean {
+    return this._timeBase !== 0;
   }
 }
 define(Tdb4Chunk, {
-  chunk_type: field({ default: "tdb4" }),
+  chunkType: field({ default: "tdb4" }),
   _magic: u2Field({ default: 0xdb99, repr: false }),
   dimensions: u2Field({ default: 1 }),
   _pad1: u1Field({ repr: false }),
-  _spatial_static_flags: u1Field({ default: 1, repr: false }),
+  _spatialStaticFlags: u1Field({ default: 1, repr: false }),
   _pad2a: u2Field({ repr: false }),
-  _value_hint_type: u2Field({ repr: false }),
-  _value_hint_flag: u1Field({ repr: false }),
-  _cvot_flags: u1Field({ repr: false }),
-  _time_base: u4Field({ repr: false }),
-  _arc_accuracy: f8Field({ default: 0.0001, repr: false }),
-  pixel_aspect: f8Field({ default: 1.0, repr: false }),
-  _arc_multiplier_y: f8Field({ default: 1.0, repr: false }),
-  _arc_multiplier_z: f8Field({ default: 1.0, repr: false }),
-  _arc_multiplier_w: f8Field({ default: 1.0, repr: false }),
+  _valueHintType: u2Field({ repr: false }),
+  _valueHintFlag: u1Field({ repr: false }),
+  _cvotFlags: u1Field({ repr: false }),
+  _timeBase: u4Field({ repr: false }),
+  _arcAccuracy: f8Field({ default: 0.0001, repr: false }),
+  pixelAspect: f8Field({ default: 1.0, repr: false }),
+  _arcMultiplierY: f8Field({ default: 1.0, repr: false }),
+  _arcMultiplierZ: f8Field({ default: 1.0, repr: false }),
+  _arcMultiplierW: f8Field({ default: 1.0, repr: false }),
   _pad4: u1Field({ repr: false }),
-  _no_value_flags: u1Field({ repr: false }),
+  _noValueFlags: u1Field({ repr: false }),
   _pad5: u1Field({ repr: false }),
-  _type_flags: u1Field({ repr: false }),
-  _property_category: u1Field({ repr: false }),
+  _typeFlags: u1Field({ repr: false }),
+  _propertyCategory: u1Field({ repr: false }),
   _pad6a: u4Field({ repr: false }),
   _pad6b: u2Field({ repr: false }),
   _pad6c: u1Field({ repr: false }),
   animated: boolField(),
-  _pad_45: bytesField(3, { repr: false }),
-  _reserved_48: u4Field({ repr: false }),
-  _reserved_4c: u1Field({ repr: false }),
-  _reserved_4d: u1Field({ repr: false }),
-  _pad_4e: u1Field({ repr: false }),
-  _spatial_marker: u1Field({ repr: false }),
-  _pad_50: u4Field({ repr: false }),
-  _reserved_54: f8Field({ repr: false }),
-  _reserved_5c: f8Field({ repr: false }),
-  _reserved_64: f8Field({ repr: false }),
-  _reserved_6c: f8Field({ repr: false }),
+  _pad45: bytesField(3, { repr: false }),
+  _reserved48: u4Field({ repr: false }),
+  _reserved4c: u1Field({ repr: false }),
+  _reserved4d: u1Field({ repr: false }),
+  _pad4e: u1Field({ repr: false }),
+  _spatialMarker: u1Field({ repr: false }),
+  _pad50: u4Field({ repr: false }),
+  _reserved54: f8Field({ repr: false }),
+  _reserved5c: f8Field({ repr: false }),
+  _reserved64: f8Field({ repr: false }),
+  _reserved6c: f8Field({ repr: false }),
   _pad9a: u2Field({ repr: false }),
   _pad9b: u1Field({ repr: false }),
-  _expr_flags: u1Field({ repr: false }),
+  _exprFlags: u1Field({ repr: false }),
   _pad10: u4Field({ repr: false }),
 });
-descriptor(Tdb4Chunk, "is_spatial", new BitField("_spatial_static_flags", 3));
-descriptor(Tdb4Chunk, "static", new BitField("_spatial_static_flags", 0));
-descriptor(Tdb4Chunk, "can_vary_over_time", new BitField("_cvot_flags", 1));
-descriptor(Tdb4Chunk, "no_value", new BitField("_no_value_flags", 0));
-descriptor(Tdb4Chunk, "vector", new BitField("_type_flags", 3));
-descriptor(Tdb4Chunk, "integer", new BitField("_type_flags", 2));
-descriptor(Tdb4Chunk, "color", new BitField("_type_flags", 0));
-descriptor(Tdb4Chunk, "expression_disabled", new BitField("_expr_flags", 0));
+descriptor(Tdb4Chunk, "isSpatial", new BitField("_spatialStaticFlags", 3));
+descriptor(Tdb4Chunk, "static", new BitField("_spatialStaticFlags", 0));
+descriptor(Tdb4Chunk, "canVaryOverTime", new BitField("_cvotFlags", 1));
+descriptor(Tdb4Chunk, "noValue", new BitField("_noValueFlags", 0));
+descriptor(Tdb4Chunk, "vector", new BitField("_typeFlags", 3));
+descriptor(Tdb4Chunk, "integer", new BitField("_typeFlags", 2));
+descriptor(Tdb4Chunk, "color", new BitField("_typeFlags", 0));
+descriptor(Tdb4Chunk, "expressionDisabled", new BitField("_exprFlags", 0));
 // AE's expression-present marker: the high byte of `_pad10` (0x01000000),
 // set whenever an expression Utf8 is present (independent of enabled/
 // disabled). AE rejects a file with the marker set but no expression Utf8
 // as "missing data in file".
-descriptor(Tdb4Chunk, "has_expression", new BitField("_pad10", 24));
+descriptor(Tdb4Chunk, "hasExpression", new BitField("_pad10", 24));
 register("tdb4")(Tdb4Chunk);
 
 // ---------------------------------------------------------------------------
@@ -312,38 +312,38 @@ register("tdb4")(Tdb4Chunk);
 export function tdb4ApplyAnimatedTemplate(t: Tdb4Chunk, kw: { color: boolean; spatial: boolean }): void {
   const { color, spatial } = kw;
   t.animated = true;
-  t._cvot_flags = 0xff;
-  t._value_hint_flag = 0xff;
+  t._cvotFlags = 0xff;
+  t._valueHintFlag = 0xff;
   // Do NOT set _time_base here: it is the containing comp's
   // internal_timebase, which this layer cannot know. The caller stamps it
   // (Property._ensure_time_base). Hard-coding 24576 here wrote a 24 fps
   // timebase into every animated property of every non-24 fps comp.
   if (color) {
-    t._property_category = 0x01;
-    t._value_hint_type = 2;
-    t._spatial_static_flags = 6;
+    t._propertyCategory = 0x01;
+    t._valueHintType = 2;
+    t._spatialStaticFlags = 6;
     t._pad2a = 1;
   } else if (spatial) {
-    t._property_category = 0x09;
-    t._type_flags |= 0x08;
-    t._value_hint_type = 0xffff;
-    t._spatial_static_flags = 14;
+    t._propertyCategory = 0x09;
+    t._typeFlags |= 0x08;
+    t._valueHintType = 0xffff;
+    t._spatialStaticFlags = 14;
     t._pad2a = 3;
   } else {
-    t._property_category = 0x09;
-    t._type_flags |= 0x08;
-    t._value_hint_type = 1;
-    t._spatial_static_flags = 0;
+    t._propertyCategory = 0x09;
+    t._typeFlags |= 0x08;
+    t._valueHintType = 1;
+    t._spatialStaticFlags = 0;
     t._pad2a = 0;
   }
 }
 
 /** Zero the keyframe record a static stream keeps (0x48-0x73), as AE does on every animated stream. */
 export function tdb4ClearKeyframeRecord(t: Tdb4Chunk): void {
-  t._reserved_48 = t._reserved_4c = t._reserved_4d = t._pad_4e = 0;
-  t._spatial_marker = false;
-  t._pad_50 = 0;
-  t._reserved_54 = t._reserved_5c = t._reserved_64 = t._reserved_6c = 0;
+  t._reserved48 = t._reserved4c = t._reserved4d = t._pad4e = 0;
+  t._spatialMarker = false;
+  t._pad50 = 0;
+  t._reserved54 = t._reserved5c = t._reserved64 = t._reserved6c = 0;
 }
 
 /**
@@ -369,15 +369,15 @@ export function tdb4ClearKeyframeRecord(t: Tdb4Chunk): void {
  */
 export function tdb4ApplyStaticTemplate(
   t: Tdb4Chunk,
-  kw: { in_interpolation: number; out_interpolation: number; spatial_flags: number },
+  kw: { inInterpolation: number; outInterpolation: number; spatialFlags: number },
 ): void {
-  const { in_interpolation, out_interpolation, spatial_flags } = kw;
+  const { inInterpolation: in_interpolation, outInterpolation: out_interpolation, spatialFlags: spatial_flags } = kw;
   t.static = true;
   t.animated = false;
-  t._spatial_marker = (t._spatial_static_flags & 0x02) !== 0;
-  t._reserved_4c = in_interpolation;
-  t._reserved_4d = out_interpolation;
-  t._pad_50 = spatial_flags;
+  t._spatialMarker = (t._spatialStaticFlags & 0x02) !== 0;
+  t._reserved4c = in_interpolation;
+  t._reserved4d = out_interpolation;
+  t._pad50 = spatial_flags;
 }
 
 /**
@@ -390,10 +390,10 @@ export function tdb4ApplyStaticTemplate(
  */
 export function tdb4ApplyVfAxisTemplate(t: Tdb4Chunk): void {
   t.dimensions = 2;
-  t._value_hint_type = 1;
-  t._cvot_flags = 7;
-  t._type_flags = 8;
-  t._property_category = 9;
+  t._valueHintType = 1;
+  t._cvotFlags = 7;
+  t._typeFlags = 8;
+  t._propertyCategory = 9;
 }
 
 // ---------------------------------------------------------------------------
@@ -407,9 +407,9 @@ export function tdb4ApplyVfAxisTemplate(t: Tdb4Chunk): void {
  * orientation list), values are stored little-endian.
  */
 export class CdatChunk extends Chunk {
-  declare chunk_type: string;
+  declare chunkType: string;
   declare values: number[];
-  declare is_le: boolean;
+  declare isLe: boolean;
   /**
    * Trailing bytes after the values: empty, or 4 zero bytes for the empty
    * cdat AE writes in a text-document `tdbs`. Settable at construction.
@@ -421,25 +421,25 @@ export class CdatChunk extends Chunk {
     size: number,
     kw: ChunkReadKwargs = {},
   ): CdatChunk {
-    const { chunk_type = "", is_le = false } = kw;
+    const { chunkType: chunk_type = "", isLe: is_le = false } = kw;
     const count = floordiv(size, 8);
     if (count === 0) {
       const pad = size > 0 ? readBytes(fp, size) : b("");
-      return new this({ chunk_type, is_le, pad });
+      return new this({ chunkType: chunk_type, isLe: is_le, pad });
     }
     const fmt = `${is_le ? "<" : ">"}${count}d`;
     const raw = readBytes(fp, count * 8);
     const vals = struct.unpack(fmt, raw);
     const rest = size - count * 8;
     const pad = rest > 0 ? readBytes(fp, rest) : b("");
-    return new this({ chunk_type, values: vals, is_le, pad });
+    return new this({ chunkType: chunk_type, values: vals, isLe: is_le, pad });
   }
 
   write(fp: IO): number {
     let written = 0;
     if (this.values?.length > 0) {
       const count = this.values.length;
-      const fmt = `${this.is_le ? "<" : ">"}${count}d`;
+      const fmt = `${this.isLe ? "<" : ">"}${count}d`;
       const raw = struct.pack(fmt, ...this.values);
       written += writeBytes(fp, raw);
     }
@@ -450,9 +450,9 @@ export class CdatChunk extends Chunk {
   }
 }
 define(CdatChunk, {
-  chunk_type: field({ default: "cdat" }),
+  chunkType: field({ default: "cdat" }),
   values: field({ default: Factory(() => []) }),
-  is_le: field({ default: false }),
+  isLe: field({ default: false }),
   pad: field({ default: b("") }),
 });
 register("cdat")(CdatChunk);
@@ -474,16 +474,16 @@ register("cdat")(CdatChunk);
 export class TdumChunk extends Chunk {
   /** Stored values (floats for color/scalar, int cast to float for integer). */
   declare values: number[];
-  declare is_color: boolean;
-  declare is_integer: boolean;
+  declare isColor: boolean;
+  declare isInteger: boolean;
 
   static read(
     fp: IO,
     size: number,
     kw: ChunkReadKwargs = {},
   ): TdumChunk {
-    const { chunk_type = "", is_color = false } = kw;
-    let { is_integer = false } = kw;
+    const { chunkType: chunk_type = "", isColor: is_color = false } = kw;
+    let { isInteger: is_integer = false } = kw;
     const raw = readBytes(fp, size);
     let vals: number[];
     let trailing: Uint8Array;
@@ -502,10 +502,10 @@ export class TdumChunk extends Chunk {
       trailing = raw.slice(count * 8);
     }
     const instance = new this({
-      chunk_type,
+      chunkType: chunk_type,
       values: vals,
-      is_color,
-      is_integer,
+      isColor: is_color,
+      isInteger: is_integer,
     });
     if (trailing?.length > 0) {
       objectSetattr(instance, "_trailing", trailing);
@@ -515,9 +515,9 @@ export class TdumChunk extends Chunk {
 
   write(fp: IO): number {
     let raw: Uint8Array;
-    if (this.is_color) {
+    if (this.isColor) {
       raw = struct.pack(">4f", ...this.values);
-    } else if (this.is_integer) {
+    } else if (this.isInteger) {
       raw = struct.pack(">I", int(this.values[0]));
     } else {
       raw = struct.pack(`>${this.values.length}d`, ...this.values);
@@ -531,8 +531,8 @@ export class TdumChunk extends Chunk {
 }
 define(TdumChunk, {
   values: field({ default: Factory(() => []) }),
-  is_color: field({ default: false }),
-  is_integer: field({ default: false }),
+  isColor: field({ default: false }),
+  isInteger: field({ default: false }),
 });
 register("tdum", "tduM")(TdumChunk);
 
@@ -542,16 +542,16 @@ register("tdum", "tduM")(TdumChunk);
 
 /** Orientation keyframe data: N big-endian doubles (typically 3 for XYZ). */
 export class OtdaChunk extends Chunk {
-  declare chunk_type: string;
+  declare chunkType: string;
   declare values: number[];
 
   static read(fp: IO, size: number, kw: ChunkReadKwargs = {}): OtdaChunk {
-    const { chunk_type = "" } = kw;
+    const { chunkType: chunk_type = "" } = kw;
     const raw = readBytes(fp, size);
     const n = floordiv(size, 8);
     const vals = struct.unpack(`>${n}d`, raw.slice(0, n * 8));
     const trailing = raw.slice(n * 8);
-    const instance = new this({ chunk_type, values: vals });
+    const instance = new this({ chunkType: chunk_type, values: vals });
     if (trailing.length > 0) {
       objectSetattr(instance, "_trailing", trailing);
     }
@@ -568,7 +568,7 @@ export class OtdaChunk extends Chunk {
   }
 }
 define(OtdaChunk, {
-  chunk_type: field({ default: "otda" }),
+  chunkType: field({ default: "otda" }),
   values: field({ default: Factory(() => []) }),
 });
 register("otda")(OtdaChunk);
@@ -579,13 +579,13 @@ register("otda")(OtdaChunk);
 
 /** Fixed-width 40-byte null-padded match name chunk. */
 export class TdmnChunk extends _StringChunkBase {
-  declare chunk_type: string;
+  declare chunkType: string;
   static _ENCODING = "UTF-8";
 
   static read(fp: IO, size: number, kw: ChunkReadKwargs = {}): TdmnChunk {
-    const { chunk_type = "" } = kw;
+    const { chunkType: chunk_type = "" } = kw;
     const raw = readBytes(fp, size);
-    return new this({ chunk_type, value: decode(bytes_.rstrip(raw, b("\x00")), "UTF-8") });
+    return new this({ chunkType: chunk_type, value: decode(bytes_.rstrip(raw, b("\x00")), "UTF-8") });
   }
 
   write(fp: IO): number {
@@ -595,7 +595,7 @@ export class TdmnChunk extends _StringChunkBase {
   }
 }
 define(TdmnChunk, {
-  chunk_type: field({ default: "tdmn" }),
+  chunkType: field({ default: "tdmn" }),
 });
 register("tdmn")(TdmnChunk);
 
@@ -610,7 +610,7 @@ export const TDSN_SENTINEL = "-_0_/-";
  * name then resolves from the match name.
  */
 export class TdsnChunk extends ContainerChunk {
-  declare chunk_type: string;
+  declare chunkType: string;
 
   /** Build a tdsn wrapping `name`. */
   static new_(name = "", kw: { synthetic?: boolean } = {}): TdsnChunk {
@@ -621,13 +621,13 @@ export class TdsnChunk extends ContainerChunk {
     });
   }
 
-  static _legacy_value(text: string): string {
+  static _legacyValue(text: string): string {
     // An empty legacy name is an unnamed property: the name resolves from
     // the match name, as for the sentinel.
     return text || TDSN_SENTINEL;
   }
 
-  static _legacy_string(value: string): string {
+  static _legacyString(value: string): string {
     // And an unnamed property is written back as the empty name.
     return value === TDSN_SENTINEL ? "" : value;
   }
@@ -645,7 +645,7 @@ export class TdsnChunk extends ContainerChunk {
   }
 }
 define(TdsnChunk, {
-  chunk_type: field({ default: "tdsn" }),
+  chunkType: field({ default: "tdsn" }),
 });
 register("tdsn")(TdsnChunk);
 
@@ -659,10 +659,10 @@ register("tdsn")(TdsnChunk);
  * child degrades to the tag-derived name.
  */
 export class VfdnChunk extends TdsnChunk {
-  declare chunk_type: string;
+  declare chunkType: string;
 }
 define(VfdnChunk, {
-  chunk_type: field({ default: "vfdn" }),
+  chunkType: field({ default: "vfdn" }),
 });
 register("vfdn")(VfdnChunk);
 
@@ -683,19 +683,19 @@ export const CURVES_ARBP_SIZE = 4 + 5 * 256 + 5 * _CURVES_RECORD_SIZE;
  * junk) and an `i32` selected point (-1 for none).
  */
 export class CurvesRecordItem extends FmtItem {
-  declare _point_slots: Uint8Array;
+  declare _pointSlots: Uint8Array;
   declare count: number;
   declare selected: number;
 
   /** The live `(input, output)` points. */
   get points(): [number, number][] {
-    const values = struct.unpack(`>${2 * _CURVES_SLOTS}h`, this._point_slots);
+    const values = struct.unpack(`>${2 * _CURVES_SLOTS}h`, this._pointSlots);
     const count = Math.min(this.count, _CURVES_SLOTS);
     return Array.from({ length: count }, (_, i): [number, number] => [values[2 * i], values[2 * i + 1]]);
   }
 }
 define(CurvesRecordItem, {
-  _point_slots: bytesField(4 * _CURVES_SLOTS, { repr: false }),
+  _pointSlots: bytesField(4 * _CURVES_SLOTS, { repr: false }),
   count: u4Field(),
   selected: s4Field(),
 });
@@ -717,7 +717,7 @@ define(CurvesRecordItem, {
  * is read from it on demand, by `from_arbp`.
  */
 export class CurvesArbpChunk extends Chunk {
-  declare chunk_type: string;
+  declare chunkType: string;
   declare version: number;
   declare mode: number;
   declare maps: Uint8Array;
@@ -728,17 +728,17 @@ export class CurvesArbpChunk extends Chunk {
    *
    * @throws {@link ValueError} If the data is not 1644 bytes long.
    */
-  static from_arbp(arbp: Chunk): CurvesArbpChunk {
+  static fromArbp(arbp: Chunk): CurvesArbpChunk {
     if (arbp.data.length !== CURVES_ARBP_SIZE) {
       throw new ValueError(`a Curves aRbp is ${CURVES_ARBP_SIZE} bytes, not ${arbp.data.length}`);
     }
-    const chunk = this.read(new BytesIO(arbp.data), arbp.data.length, { chunk_type: "aRbp" });
+    const chunk = this.read(new BytesIO(arbp.data), arbp.data.length, { chunkType: "aRbp" });
     pyAssert(chunk instanceof this);
     return chunk;
   }
 }
 define(CurvesArbpChunk, {
-  chunk_type: field({ default: "aRbp" }),
+  chunkType: field({ default: "aRbp" }),
   version: u2Field(),
   mode: u2Field(),
   maps: bytesField(5 * 256, { repr: false }),

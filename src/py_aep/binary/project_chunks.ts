@@ -25,14 +25,14 @@ import { register } from "./registry.ts";
  * svap).
  */
 export class SvapChunk extends Chunk {
-  declare chunk_type: string;
+  declare chunkType: string;
   declare _prefix: Uint8Array;
-  declare build_number: number;
+  declare buildNumber: number;
 }
 define(SvapChunk, {
-  chunk_type: field({ default: "svap" }),
+  chunkType: field({ default: "svap" }),
   _prefix: bytesField(3, { default: b("\x0f\x10\x06"), repr: false }),
-  build_number: u1Field({ default: 0x43 }),
+  buildNumber: u1Field({ default: 0x43 }),
 });
 register("svap")(SvapChunk);
 
@@ -48,11 +48,11 @@ register("svap")(SvapChunk);
  * has no working space.
  */
 export class CpidChunk extends Chunk {
-  declare chunk_type: string;
+  declare chunkType: string;
   declare data: Uint8Array;
 }
 define(CpidChunk, {
-  chunk_type: field({ default: "cpid" }),
+  chunkType: field({ default: "cpid" }),
   data: field({ default: bytes_.repeat(b("\xff"), 16) }),
 });
 register("cpid")(CpidChunk);
@@ -68,13 +68,13 @@ register("cpid")(CpidChunk);
  * folder-state value that varies per file (AE rewrites it on save).
  */
 export class FdtaChunk extends Chunk {
-  declare chunk_type: string;
-  declare _reserved_00: Uint8Array;
+  declare chunkType: string;
+  declare _reserved00: Uint8Array;
   declare _tail: Uint8Array;
 }
 define(FdtaChunk, {
-  chunk_type: field({ default: "fdta" }),
-  _reserved_00: bytesField(10, { repr: false }),
+  chunkType: field({ default: "fdta" }),
+  _reserved00: bytesField(10, { repr: false }),
   _tail: bytesField(4, { default: b("\x1f\x44\x84\x00"), repr: false }),
 });
 register("fdta")(FdtaChunk);
@@ -85,7 +85,7 @@ register("fdta")(FdtaChunk);
 
 /** Render queue header (`LRdr/Rhed`, 20 bytes). */
 export class RhedChunk extends Chunk {
-  declare chunk_type: string;
+  declare chunkType: string;
   declare _a: number;
   declare _b: number;
   declare _c: number;
@@ -94,7 +94,7 @@ export class RhedChunk extends Chunk {
   declare _e: number;
 }
 define(RhedChunk, {
-  chunk_type: field({ default: "Rhed" }),
+  chunkType: field({ default: "Rhed" }),
   _a: u2Field({ default: 1, repr: false }),
   _b: u2Field({ default: 2, repr: false }),
   _c: u4Field({ repr: false }),
@@ -119,22 +119,22 @@ register("Rhed")(RhedChunk);
  * `"Default"` workspace name is 14 bytes in UTF-16-LE.
  */
 export class WsnsChunk extends Chunk {
-  declare chunk_type: string;
+  declare chunkType: string;
   declare value: number;
 }
 define(WsnsChunk, {
-  chunk_type: field({ default: "wsns" }),
+  chunkType: field({ default: "wsns" }),
   value: s2Field({ default: 14 }),
 });
 register("wsns")(WsnsChunk);
 
 /** Workspace name (variable length, UTF-16-LE). Fresh projects use `"Default"`. */
 export class WsnmChunk extends Chunk {
-  declare chunk_type: string;
+  declare chunkType: string;
   declare data: Uint8Array;
 }
 define(WsnmChunk, {
-  chunk_type: field({ default: "wsnm" }),
+  chunkType: field({ default: "wsnm" }),
   data: field({ default: encode("Default", "utf-16-le") }),
 });
 register("wsnm")(WsnmChunk);

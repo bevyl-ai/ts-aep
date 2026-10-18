@@ -248,7 +248,7 @@ describe("TestAddKey", () => {
     scale.setValueAtTime(1.0, [120.0, 120.0, 100.0]);
     expect(scale._animated).toBe(true);
     // tdum/tduM bound chunks were added on materialization.
-    const kinds = scale._tdbs.chunks.map((c) => getattr(c, "chunk_type", null));
+    const kinds = scale._tdbs.chunks.map((c) => getattr(c, "chunkType", null));
     expect(kinds.includes("tdum") && kinds.includes("tduM")).toBe(true);
     const app2 = _roundtrip(app, tmpPath);
     const scale2 = asInstance([...app2.project.compositions[0].layers[li].transform].find((p) => p.matchName === "ADBE Scale"), Property);
@@ -1057,15 +1057,15 @@ describe("TestParallelValueAliasing", () => {
       ["b", "2"],
     ]);
     expect(pyEq(k0.value.params, new Map())).toBe(true);
-    expect(k0.value._nmhd.num_params).toBe(0);
-    expect(k1.value._nmhd.num_params).toBe(2);
+    expect(k0.value._nmhd.numParams).toBe(0);
+    expect(k1.value._nmhd.numParams).toBe(2);
 
     const app2 = _roundtrip(app, tmpPath);
     const comp2 = getComp(app2.project, "layer_multiple_markers");
     const mp2 = comp2.layers[0].property("ADBE Marker");
     const byComment = new Map(mp2.keyframes.map((k) => [k.value.comment, k.value] as const));
     expect(pyEq(getitem(byComment, "first_only").params, new Map())).toBe(true);
-    expect(getitem(byComment, "first_only")._nmhd.num_params).toBe(0);
+    expect(getitem(byComment, "first_only")._nmhd.numParams).toBe(0);
     expect(
       pyEq(
         getitem(byComment, "shared").params,
@@ -1075,7 +1075,7 @@ describe("TestParallelValueAliasing", () => {
         ]),
       ),
     ).toBe(true);
-    expect(getitem(byComment, "shared")._nmhd.num_params).toBe(2);
+    expect(getitem(byComment, "shared")._nmhd.numParams).toBe(2);
   });
 
   test("test_gradient_set_value_at_time_not_aliased", () => {
@@ -1292,7 +1292,7 @@ describe("TestRoundtripSubFrameKeyframeTime", () => {
     // falls between units lands on the nearest one - AE requantizes
     // identically (it stored 0.99998697916667 for a 1.0 s request on a
     // layer with this start).
-    const halfUnit = 0.5 / comp2._cdta.internal_timebase;
+    const halfUnit = 0.5 / comp2._cdta.internalTimebase;
     expect(prop2.keyframes.some((k) => Math.abs(k.time - 2.0) <= halfUnit)).toBe(true);
   });
 });
@@ -1468,12 +1468,12 @@ describe("TestRoundtripAutoBezierWrites", () => {
     const keyframe = prop.keyframes[1];
     keyframe.inSpatialTangent = [-40.0, -10.0, 0.0];
     keyframe.outSpatialTangent = [70.0, 25.0, 0.0];
-    const stored = asInstance(keyframe._ldatItem.kf_data, KfPosition);
+    const stored = asInstance(keyframe._ldatItem.kfData, KfPosition);
 
     keyframe.spatialAutoBezier = true;
 
-    expect(approx([...stored.out_spatial_tangents], [100.0, 0.0, 0.0])).toBe(true);
-    expect(approx([...stored.in_spatial_tangents], [-100.0, 0.0, 0.0])).toBe(true);
+    expect(approx([...stored.outSpatialTangents], [100.0, 0.0, 0.0])).toBe(true);
+    expect(approx([...stored.inSpatialTangents], [-100.0, 0.0, 0.0])).toBe(true);
   });
 
   test("test_spatial_auto_bezier_forces_continuity", () => {
@@ -1492,8 +1492,8 @@ describe("TestRoundtripAutoBezierWrites", () => {
     const keyframe = prop.keyframes[1];
     keyframe.spatialAutoBezier = true;
     keyframe.spatialAutoBezier = false;
-    const stored = asInstance(keyframe._ldatItem.kf_data, KfPosition);
-    expect(approx([...stored.out_spatial_tangents], [100.0, 0.0, 0.0])).toBe(true);
+    const stored = asInstance(keyframe._ldatItem.kfData, KfPosition);
+    expect(approx([...stored.outSpatialTangents], [100.0, 0.0, 0.0])).toBe(true);
   });
 
   /**
@@ -1668,15 +1668,15 @@ describe("TestRoundtripAutoBezierWrites", () => {
         Property,
       );
       const keyframe = prop.keyframes[0];
-      const stored = asInstance(keyframe._ldatItem.kf_data, KfMultiDimensional);
-      const before = [[...stored.in_influence], [...stored.out_influence]];
+      const stored = asInstance(keyframe._ldatItem.kfData, KfMultiDimensional);
+      const before = [[...stored.inInfluence], [...stored.outInfluence]];
       expect(approx(before[1], [0.9])).toBe(true);
 
       keyframe.inInterpolationType = interpolation;
       keyframe.outInterpolationType = interpolation;
 
-      expect(approx([...stored.in_influence], before[0])).toBe(true);
-      expect(approx([...stored.out_influence], before[1])).toBe(true);
+      expect(approx([...stored.inInfluence], before[0])).toBe(true);
+      expect(approx([...stored.outInfluence], before[1])).toBe(true);
 
       keyframe.inInterpolationType = KeyframeInterpolationType.BEZIER;
       keyframe.outInterpolationType = KeyframeInterpolationType.BEZIER;
@@ -1690,8 +1690,8 @@ describe("TestRoundtripAutoBezierWrites", () => {
           .find((g) => pyBool(asInstance(g, Property).keyframes)),
         Property,
       );
-      const reloaded = asInstance(prop2.keyframes[0]._ldatItem.kf_data, KfMultiDimensional);
-      expect(approx([...reloaded.out_influence], before[1])).toBe(true);
+      const reloaded = asInstance(prop2.keyframes[0]._ldatItem.kfData, KfMultiDimensional);
+      expect(approx([...reloaded.outInfluence], before[1])).toBe(true);
     },
   );
 });

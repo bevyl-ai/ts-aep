@@ -32,7 +32,7 @@ import { LineOrientation, ParagraphJustification } from "../../src/py_aep/enums/
 
 function* btdkChunks(chunk: Chunk): Generator<ListChunk> {
   if (!(chunk instanceof ListChunk)) return;
-  if (chunk.list_type === "btdk") yield chunk;
+  if (chunk.listType === "btdk") yield chunk;
   for (const child of chunk.chunks ?? []) yield* btdkChunks(child);
 }
 

@@ -20,9 +20,9 @@ import type { Path } from "../../pyrt/index.ts";
  * @returns `LIST:<list_type>` for list chunks, otherwise the chunk type string.
  */
 export function chunkLabel(chunk: Chunk): string {
-  const chunkType = chunk.chunk_type;
-  if (chunkType === "LIST" && "list_type" in chunk) {
-    return `LIST:${chunk.list_type}`;
+  const chunkType = chunk.chunkType;
+  if (chunkType === "LIST" && "listType" in chunk) {
+    return `LIST:${chunk.listType}`;
   }
   return chunkType;
 }
@@ -79,7 +79,7 @@ export function* walkChunks(
     const identifier = chunkLabel(chunk);
     const currentPath = buildChunkPath(parentPath, identifier, counters);
 
-    const size = chunk.chunk_type !== "LIST" ? chunk.tobytes().length : 0;
+    const size = chunk.chunkType !== "LIST" ? chunk.tobytes().length : 0;
     const isList = chunk instanceof ListChunk && chunk.chunks != null;
     yield [currentPath, identifier, size, depth, isList];
 

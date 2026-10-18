@@ -47,7 +47,7 @@ export function _startTimeFromBinary(value: number): Date | null {
  */
 export function _nextItemId(rq: RenderQueue): number {
   return max(
-    rq.items.map((item) => item._ldat.item_id),
+    rq.items.map((item) => item._ldat.itemId),
     null,
     1,
   ) + 1;
@@ -61,7 +61,7 @@ export class _RenderSettingsView extends SettingsView<RenderSettingValues> {
   declare _owner: RenderQueueItem;
   set(key: string, value: SettingValue | null): void {
     super.set(key, value);
-    this._owner._ldat.settings_written = 1;
+    this._owner._ldat.settingsWritten = 1;
   }
 }
 
@@ -252,19 +252,19 @@ export class RenderQueueItem {
 
     // Create render settings with comp-specific values; the remaining
     // fields default to AE's factory "Best Settings" render template.
-    const rsItem = new RenderSettingsItem({ comp_id: comp.id });
+    const rsItem = new RenderSettingsItem({ compId: comp.id });
     // AE writes a fixed 30 in this "use this frame rate" slot for a fresh
     // item (the active setting is "use comp's frame rate", so it's an
     // unused placeholder); the real rate comes from the comp.
-    rsItem.frame_rate_integer = 30;
+    rsItem.frameRateInteger = 30;
     // Match a freshly-added AE item: status NEEDS_OUTPUT (no output file
     // yet) and time span = work area (the source stores zero dividend/
     // divisor; the span is derived from the comp's work area).
     rsItem.status = RQItemStatus.toBinary(RQItemStatus.NEEDS_OUTPUT);
-    rsItem.time_span_source = int(TimeSpanSource.WORK_AREA_ONLY);
-    rsItem.time_span_start_divisor = 0;
-    rsItem.time_span_duration_divisor = 0;
-    rsItem.item_id = _nextItemId(parent);
+    rsItem.timeSpanSource = int(TimeSpanSource.WORK_AREA_ONLY);
+    rsItem.timeSpanStartDivisor = 0;
+    rsItem.timeSpanDurationDivisor = 0;
+    rsItem.itemId = _nextItemId(parent);
 
     // When ae_preferences_dir was supplied, overlay the user's configured
     // default render-settings template. Only _TEMPLATE_FIELDS are copied,
@@ -273,7 +273,7 @@ export class RenderQueueItem {
       const templates = project._getRenderTemplates();
       const defaultIdx = project._defaultRenderTemplateIndex;
       if (defaultIdx != null && defaultIdx < templates.length) {
-        rsItem.copy_settings_from(templates[defaultIdx]);
+        rsItem.copySettingsFrom(templates[defaultIdx]);
       }
     }
 
@@ -281,7 +281,7 @@ export class RenderQueueItem {
       _ldat: rsItem,
       _litm: parent._litm,
       _listChunk: buildOmContainer(),
-      _lom: new ListChunk({ list_type: "LOm ", chunks: [] }),
+      _lom: new ListChunk({ listType: "LOm ", chunks: [] }),
       _rcom: null,
       _rcomUtf8: null,
       _routItems: buildRoutBlock(),
@@ -379,13 +379,13 @@ export class RenderQueueItem {
   _onStatusChanged(): void {
     const status = this.status;
     if (this.constructor._RESET_STATUSES.has(status)) {
-      this._ldat.start_time = 0;
-      this._ldat.elapsed_seconds = 0;
+      this._ldat.startTime = 0;
+      this._ldat.elapsedSeconds = 0;
     }
     if (status === RQItemStatus.NEEDS_OUTPUT || status === RQItemStatus.UNQUEUED) {
-      this._ldat.render_checked = false;
+      this._ldat.renderChecked = false;
     } else if (status !== RQItemStatus.WILL_CONTINUE) {
-      this._ldat.render_checked = true;
+      this._ldat.renderChecked = true;
     }
   }
 
@@ -418,7 +418,7 @@ export class RenderQueueItem {
     } else if (value) {
       const utf8Chunk = new Utf8Chunk({ value });
       const rcomChunk = new ContainerChunk({
-        chunk_type: "RCom",
+        chunkType: "RCom",
         chunks: [utf8Chunk],
       });
       const idx = this._litm.chunks.findIndex((c) => c === this._listChunk);
@@ -477,7 +477,7 @@ export class RenderQueueItem {
 
   /** Resolution as [x, y] divisors. */
   get _resolution(): number[] {
-    return [this._ldat.resolution_x, this._ldat.resolution_y];
+    return [this._ldat.resolutionX, this._ldat.resolutionY];
   }
 
   set _resolution(value: number[]) {
@@ -497,8 +497,8 @@ export class RenderQueueItem {
           `or both be positive, got [${value[0]}, ${value[1]}]`,
       );
     }
-    this._ldat.resolution_x = value[0];
-    this._ldat.resolution_y = value[1];
+    this._ldat.resolutionX = value[0];
+    this._ldat.resolutionY = value[1];
     for (const om of this.outputModules) {
       om._updateOutputDimensions();
     }
@@ -506,12 +506,12 @@ export class RenderQueueItem {
 
   /** Custom frame rate value. */
   get _useThisFrameRate(): number {
-    return this._ldat.frame_rate;
+    return this._ldat.frameRate;
   }
 
   set _useThisFrameRate(value: number) {
     _validateNumber({ min: 0.1, max: 999 })(value);
-    this._ldat.frame_rate = value;
+    this._ldat.frameRate = value;
     this._setOutputFrameRates();
   }
 
@@ -553,19 +553,19 @@ export class RenderQueueItem {
 
   /** Return (start, duration) in seconds based on time span source. */
   _resolvedTimeSpan(): [number, number] {
-    const source = TimeSpanSource.fromBinary(this._ldat.time_span_source);
+    const source = TimeSpanSource.fromBinary(this._ldat.timeSpanSource);
     if (source === TimeSpanSource.LENGTH_OF_COMP) {
       return [0.0, this.comp.duration];
     }
     if (source === TimeSpanSource.WORK_AREA_ONLY) {
       return [this.comp.workAreaStart, this.comp.workAreaDuration];
     }
-    return [this._ldat.time_span_start, this._ldat.time_span_duration];
+    return [this._ldat.timeSpanStart, this._ldat.timeSpanDuration];
   }
 
   /** Return (start, duration) in frames based on time span source. */
   _resolvedTimeSpanFrames(): [number, number] {
-    const source = TimeSpanSource.fromBinary(this._ldat.time_span_source);
+    const source = TimeSpanSource.fromBinary(this._ldat.timeSpanSource);
     const fr = this.comp.frameRate;
     if (source === TimeSpanSource.LENGTH_OF_COMP) {
       return [0, round(this.comp.duration * fr)];
@@ -641,9 +641,9 @@ export class RenderQueueItem {
         );
       }
     }
-    this._ldat.time_span_source = int(TimeSpanSource.CUSTOM);
-    this._ldat.time_span_start = newStart;
-    this._ldat.time_span_duration = newDuration;
+    this._ldat.timeSpanSource = int(TimeSpanSource.CUSTOM);
+    this._ldat.timeSpanStart = newStart;
+    this._ldat.timeSpanDuration = newDuration;
   }
 
   /**
@@ -782,7 +782,7 @@ export class RenderQueueItem {
    */
   get templates(): string[] {
     try {
-      return this._project._getRenderTemplates().map((t) => t.clean_template_name);
+      return this._project._getRenderTemplates().map((t) => t.cleanTemplateName);
     } catch (e) {
       if (!(e instanceof ValueError)) throw e;
       return [];
@@ -802,15 +802,15 @@ export class RenderQueueItem {
   applyTemplate(name: string): void {
     const rsItems = this._project._getRenderTemplates();
     for (const t of rsItems) {
-      if (t.clean_template_name === name) {
-        this._ldat.copy_settings_from(t);
+      if (t.cleanTemplateName === name) {
+        this._ldat.copySettingsFrom(t);
         for (const om of this._outputModules) {
           om._updateOutputDimensions();
         }
         return;
       }
     }
-    const names = rsItems.map((t) => t.clean_template_name);
+    const names = rsItems.map((t) => t.cleanTemplateName);
     throw new ValueError(`Template ${repr(name)} not found. Available: ${repr(names)}`);
   }
 
@@ -845,7 +845,7 @@ export class RenderQueueItem {
     // stale 1 back to 0 on save). The other ARsi state bytes are session
     // UI state with no fixed empty value, so they are left as-is.
     if (!rq._items?.length) {
-      rq._arsi.queue_nonempty = 0;
+      rq._arsi.queueNonempty = 0;
       // An empty queue's settings 'list' holds only an lhd3 (AE writes no
       // ldat). Re-hide the now-empty ldat so the written shape matches a
       // freshly-empty AE queue. add() flips it back on the next add.
@@ -871,7 +871,7 @@ export class RenderQueueItem {
     if (status === RQItemStatus.DONE || status === RQItemStatus.ERR_STOPPED) {
       newRsi.status = RQItemStatus.toBinary(RQItemStatus.QUEUED);
     }
-    newRsi.item_id = _nextItemId(rq);
+    newRsi.itemId = _nextItemId(rq);
 
     const newRoutItems = this._routItems.map((ri) => deepcopy(ri));
 
@@ -942,22 +942,22 @@ export class RenderQueueItem {
 
 // Field descriptors: each ChunkField assigned in the Python class body is installed on the
 // prototype after the class, so the `declare`d fields above read and write through it.
-descriptor(RenderQueueItem, "elapsedSeconds", new ChunkField("_ldat", "elapsed_seconds", { readOnly: true }));
+descriptor(RenderQueueItem, "elapsedSeconds", new ChunkField("_ldat", "elapsedSeconds", { readOnly: true }));
 
-descriptor(RenderQueueItem, "logType", ChunkField.enum(LogType, "_ldat", "log_type"));
+descriptor(RenderQueueItem, "logType", ChunkField.enum(LogType, "_ldat", "logType"));
 
-descriptor(RenderQueueItem, "name", new ChunkField("_ldat", "template_name"));
+descriptor(RenderQueueItem, "name", new ChunkField("_ldat", "templateName"));
 
 descriptor(
   RenderQueueItem,
   "queueItemNotify",
-  ChunkField.bool("_ldat", "queue_item_notify", { minVersion: 22 }),
+  ChunkField.bool("_ldat", "queueItemNotify", { minVersion: 22 }),
 );
 
 descriptor(
   RenderQueueItem,
   "startTime",
-  new ChunkField("_ldat", "start_time", {
+  new ChunkField("_ldat", "startTime", {
     transform: _startTimeFromBinary,
     readOnly: true,
   }),
@@ -969,36 +969,36 @@ descriptor(
   ChunkField.enum(RQItemStatus, "_ldat", "status", { postSet: "_onStatusChanged" }),
 );
 
-descriptor(RenderQueueItem, "_colorDepth", ChunkField.enum(ColorDepthSetting, "_ldat", "color_depth"));
+descriptor(RenderQueueItem, "_colorDepth", ChunkField.enum(ColorDepthSetting, "_ldat", "colorDepth"));
 
-descriptor(RenderQueueItem, "_diskCache", ChunkField.enum(DiskCacheSetting, "_ldat", "disk_cache"));
+descriptor(RenderQueueItem, "_diskCache", ChunkField.enum(DiskCacheSetting, "_ldat", "diskCache"));
 
 descriptor(RenderQueueItem, "_effects", ChunkField.enum(EffectsSetting, "_ldat", "effects"));
 
-descriptor(RenderQueueItem, "_fieldRender", ChunkField.enum(FieldRender, "_ldat", "field_render"));
+descriptor(RenderQueueItem, "_fieldRender", ChunkField.enum(FieldRender, "_ldat", "fieldRender"));
 
-descriptor(RenderQueueItem, "_frameBlending", ChunkField.enum(FrameBlendingSetting, "_ldat", "frame_blending"));
+descriptor(RenderQueueItem, "_frameBlending", ChunkField.enum(FrameBlendingSetting, "_ldat", "frameBlending"));
 
-descriptor(RenderQueueItem, "_guideLayers", ChunkField.enum(GuideLayers, "_ldat", "guide_layers"));
+descriptor(RenderQueueItem, "_guideLayers", ChunkField.enum(GuideLayers, "_ldat", "guideLayers"));
 
-descriptor(RenderQueueItem, "_motionBlur", ChunkField.enum(MotionBlurSetting, "_ldat", "motion_blur"));
+descriptor(RenderQueueItem, "_motionBlur", ChunkField.enum(MotionBlurSetting, "_ldat", "motionBlur"));
 
-descriptor(RenderQueueItem, "_proxyUse", ChunkField.enum(ProxyUseSetting, "_ldat", "proxy_use"));
+descriptor(RenderQueueItem, "_proxyUse", ChunkField.enum(ProxyUseSetting, "_ldat", "proxyUse"));
 
 descriptor(RenderQueueItem, "_pulldown", ChunkField.enum(PulldownSetting, "_ldat", "pulldown"));
 
 descriptor(RenderQueueItem, "_quality", ChunkField.enum(RenderQuality, "_ldat", "quality"));
 
-descriptor(RenderQueueItem, "_skipExistingFiles", ChunkField.bool("_ldat", "skip_existing_files"));
+descriptor(RenderQueueItem, "_skipExistingFiles", ChunkField.bool("_ldat", "skipExistingFiles"));
 
-descriptor(RenderQueueItem, "_soloSwitches", ChunkField.enum(SoloSwitchesSetting, "_ldat", "solo_switches"));
+descriptor(RenderQueueItem, "_soloSwitches", ChunkField.enum(SoloSwitchesSetting, "_ldat", "soloSwitches"));
 
-descriptor(RenderQueueItem, "_timeSpanSource", ChunkField.enum(TimeSpanSource, "_ldat", "time_span_source"));
+descriptor(RenderQueueItem, "_timeSpanSource", ChunkField.enum(TimeSpanSource, "_ldat", "timeSpanSource"));
 
 descriptor(
   RenderQueueItem,
   "_frameRateSetting",
-  ChunkField.enum(FrameRateSetting, "_ldat", "use_this_frame_rate", {
+  ChunkField.enum(FrameRateSetting, "_ldat", "useThisFrameRate", {
     postSet: "_setOutputFrameRates",
   }),
 );

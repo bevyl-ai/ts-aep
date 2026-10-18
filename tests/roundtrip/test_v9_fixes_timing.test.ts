@@ -69,7 +69,7 @@ describe("TestFrameRateChangeRetimesCompMarkers", () => {
     for (const c of [fresh, again]) {
       if (c.markerProperty == null) throw new Error("comp has no marker property");
       expect(pyEq(c.markerProperty.keyframes.map((k) => k.time), [3.0])).toBe(true);
-      expect(c.markerProperty._tdb4._time_base).toBe(25600);
+      expect(c.markerProperty._tdb4._timeBase).toBe(25600);
     }
   });
 
@@ -93,7 +93,7 @@ describe("TestDurationKeepsTimesInside", () => {
     comp.workAreaDuration = 3;
     comp.duration = 7;
     expect(pyEq([comp.workAreaStart, comp.workAreaDuration], [5.0, 2.0])).toBe(true);
-    expect(comp._cdta.work_area_end_dividend).toBe(0xffffffff);
+    expect(comp._cdta.workAreaEndDividend).toBe(0xffffffff);
   });
 
   test.each([true, false])("test_start_past_new_end_moves_to_last_frame[%#]", (pinned: boolean) => {
@@ -120,13 +120,13 @@ describe("TestDurationKeepsTimesInside", () => {
     comp.workAreaDuration = 3;
     comp.duration = 5;
     expect(pyEq([comp.workAreaStart, comp.workAreaDuration], [2.0, 3.0])).toBe(true);
-    expect(comp._cdta.work_area_end_dividend).toBe(0xffffffff);
+    expect(comp._cdta.workAreaEndDividend).toBe(0xffffffff);
   });
 
   test("test_time_restored_over_timebase", () => {
     const [_, comp] = _newComp();
     comp.duration = 20;
-    expect(comp._cdta.time_divisor).toBe(comp._cdta.internal_timebase);
+    expect(comp._cdta.timeDivisor).toBe(comp._cdta.internalTimebase);
   });
 });
 
@@ -154,7 +154,7 @@ describe("TestFrameRateChangeKeepsTimesInside", () => {
     comp.time = 239 / 24;
     comp.frameRate = 1;
     expect(comp.time).toBe(9.0);
-    expect(comp._cdta.work_area_end_dividend).toBe(0xffffffff);
+    expect(comp._cdta.workAreaEndDividend).toBe(0xffffffff);
   });
 });
 
@@ -220,9 +220,9 @@ describe("TestNewItemOutputPath", () => {
       expect(at(item.outputModules, 0).fileTemplate).toBe(template);
       expect(at(item.outputModules, 0).file).toBe("C:\\out\\c_[#####].tif");
       expect(item.status).toBe(RQItemStatus.QUEUED);
-      expect(pyBool(item._ldat.render_checked)).toBe(true);
+      expect(pyBool(item._ldat.renderChecked)).toBe(true);
       // AE ignores an output path record without this bit.
-      expect(pyBool(at(item.outputModules, 0)._omLdat.has_output_file)).toBe(true);
+      expect(pyBool(at(item.outputModules, 0)._omLdat.hasOutputFile)).toBe(true);
     }
   });
 });
@@ -324,10 +324,10 @@ describe("TestRenderQueueItemIds", () => {
     const first = rq.add(comp);
     const second = rq.add(comp);
     const dup = first.duplicate();
-    expect(pyEq([first._ldat.item_id, second._ldat.item_id, dup._ldat.item_id], [2, 3, 4])).toBe(true);
+    expect(pyEq([first._ldat.itemId, second._ldat.itemId, dup._ldat.itemId], [2, 3, 4])).toBe(true);
     expect(
       pyEq(
-        sorted(asInstance(_reparse(project, tmpPath).renderQueue, RenderQueue).items.map((i) => i._ldat.item_id)),
+        sorted(asInstance(_reparse(project, tmpPath).renderQueue, RenderQueue).items.map((i) => i._ldat.itemId)),
         [2, 3, 4],
       ),
     ).toBe(true);
@@ -336,10 +336,10 @@ describe("TestRenderQueueItemIds", () => {
   test("test_next_id_follows_the_highest", () => {
     const project = parseProjectFresh(SAMPLES.div("models", "renderqueue", "2_rqitems.aep"));
     const rq = asInstance(project.renderQueue, RenderQueue);
-    at(rq.items, 0)._ldat.item_id = 9;
-    at(rq.items, 1)._ldat.item_id = 3;
-    expect(rq.add(at(project.compositions, 0))._ldat.item_id).toBe(10);
-    expect(at(rq.items, 0).duplicate()._ldat.item_id).toBe(11);
+    at(rq.items, 0)._ldat.itemId = 9;
+    at(rq.items, 1)._ldat.itemId = 3;
+    expect(rq.add(at(project.compositions, 0))._ldat.itemId).toBe(10);
+    expect(at(rq.items, 0).duplicate()._ldat.itemId).toBe(11);
   });
 });
 
@@ -350,9 +350,9 @@ describe("TestSettingsWritten", () => {
     const item = rq.add(comp);
     item.skipFrames = 1;
     item.timeSpanStart = 1;
-    expect(item._ldat.settings_written).toBe(0);
+    expect(item._ldat.settingsWritten).toBe(0);
     item.settings.set("Quality", item.settings.get("Quality"));
-    expect(item._ldat.settings_written).toBe(1);
+    expect(item._ldat.settingsWritten).toBe(1);
   });
 });
 
@@ -439,7 +439,7 @@ function _ticks(layer: Layer): number[] {
 }
 
 function _startRatio(layer: Layer): [number, number] {
-  return [layer._ldta.start_time_dividend, layer._ldta.start_time_divisor];
+  return [layer._ldta.startTimeDividend, layer._ldta.startTimeDivisor];
 }
 
 
@@ -488,7 +488,7 @@ describe("TestStretchedLayerKeyTimes", () => {
     const again = at(at(_reparse(project, tmpPath).compositions, 0).layers, 0);
     for (const lyr of [layer, again]) {
       const prop = lyr.transform.opacity;
-      expect(prop._tdb4._time_base).toBe(115200);
+      expect(prop._tdb4._timeBase).toBe(115200);
       expect(pyEq(_startRatio(lyr), [149760, 115200])).toBe(true);
       expect(approx(at(prop.keyframes, 0).time, keyTime, { abs: 1e-12 })).toBe(true);
     }
@@ -545,7 +545,7 @@ describe("TestLayerStartTime", () => {
     layer.stretch = stretch;
     const base = layer.transform.property("ADBE Opacity")._layerTimebase;
     layer.startTime = ticks / base;
-    expect(layer._ldta.start_time_dividend).toBe(expected);
+    expect(layer._ldta.startTimeDividend).toBe(expected);
   });
 
   test("test_stretch_change_keeps_the_stored_start", () => {
@@ -615,7 +615,7 @@ describe("TestRetimeRoundsHalfUp", () => {
 });
 
 function _stretchRatio(layer: Layer): [number, number] {
-  return [layer._ldta.stretch_dividend, layer._ldta.stretch_divisor];
+  return [layer._ldta.stretchDividend, layer._ldta.stretchDivisor];
 }
 
 describe("TestStretchStorage", () => {
@@ -754,7 +754,7 @@ describe("TestFrameGridPastTheCap", () => {
     const tmpPath = makeTmpPath();
     const [project, comp] = _newComp(rate, 3.3);
     const cdta = comp._cdta;
-    expect(pyEq([cdta.internal_timebase, round(cdta.time_scale * 256)], grid)).toBe(true);
+    expect(pyEq([cdta.internalTimebase, round(cdta.timeScale * 256)], grid)).toBe(true);
     const got = new Map<string, number | number[]>([["dur0", comp.duration]]);
     comp.duration = 1.0001;
     got.set("dur", comp.duration);

@@ -48,15 +48,15 @@ export class AdvancedRendererOptions extends RendererOptionsBase {
    * Read / Write.
    */
   get castingBoxSize(): number {
-    return this._body.casting_box_size_x * this._comp.width;
+    return this._body.castingBoxSizeX * this._comp.width;
   }
 
   set castingBoxSize(value: number) {
     validateCastingBoxSize(value);
     const fraction = value / this._comp.width;
-    this._body.casting_box_size_x = fraction;
-    this._body.casting_box_size_y = fraction;
-    this._body.casting_box_size_z = fraction;
+    this._body.castingBoxSizeX = fraction;
+    this._body.castingBoxSizeY = fraction;
+    this._body.castingBoxSizeZ = fraction;
   }
 
   /** Centre of the shadow casting box as `[x, y, z]` in pixels, as shown
@@ -67,9 +67,9 @@ export class AdvancedRendererOptions extends RendererOptionsBase {
     const width = this._comp.width;
     const height = this._comp.height;
     return [
-      this._body.casting_box_center_x * width + width / 2,
-      this._body.casting_box_center_y * height + height / 2,
-      this._body.casting_box_center_z * width,
+      this._body.castingBoxCenterX * width + width / 2,
+      this._body.castingBoxCenterY * height + height / 2,
+      this._body.castingBoxCenterZ * width,
     ];
   }
 
@@ -78,9 +78,9 @@ export class AdvancedRendererOptions extends RendererOptionsBase {
     const width = this._comp.width;
     const height = this._comp.height;
     const [x, y, z] = value;
-    this._body.casting_box_center_x = (x - width / 2) / width;
-    this._body.casting_box_center_y = (y - height / 2) / height;
-    this._body.casting_box_center_z = z / width;
+    this._body.castingBoxCenterX = (x - width / 2) / width;
+    this._body.castingBoxCenterY = (y - height / 2) / height;
+    this._body.castingBoxCenterZ = z / width;
   }
 }
 

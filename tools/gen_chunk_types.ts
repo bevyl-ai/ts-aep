@@ -69,15 +69,15 @@ if (errors.length) {
 // --- struct field types -------------------------------------------------------
 
 const HELPER_FMT: Record<string, string> = {
-  u1_field: "B",
-  u2_field: "H",
-  u4_field: "I",
-  u8_field: "Q",
-  s2_field: "h",
-  s4_field: "i",
-  f4_field: "f",
-  f8_field: "d",
-  bool_field: "B",
+  u1Field: "B",
+  u2Field: "H",
+  u4Field: "I",
+  u8Field: "Q",
+  s2Field: "h",
+  s4Field: "i",
+  f4Field: "f",
+  f8Field: "d",
+  boolField: "B",
 };
 
 const files = fs.readdirSync(BINARY).filter((f) => f.endsWith(".ts") && f !== "chunk_types.ts");
@@ -143,7 +143,7 @@ const objProp = (obj: ts.ObjectLiteralExpression, name: string): ts.Expression |
 /** Type a struct format stands for. `encoding` decodes `s`/`p`/`c` to string; `coerce` replaces the unpacked type. */
 function typeOfFmt(fmt: string, encoding: string | null, coerce: string | null, optional: boolean): string {
   let base: string;
-  if (coerce === "py_bool") base = "boolean";
+  if (coerce === "pyBool") base = "boolean";
   else if (coerce) base = coerce;
   else {
     const m = /^(\d*)([a-zA-Z?])$/.exec(fmt);
@@ -174,10 +174,10 @@ function fieldType(init: ts.Expression): { type: string; refs: string[] } | null
   const encoding = encNode && ts.isStringLiteral(encNode) ? encNode.text : encNode ? "" : null;
   const coerceNode = opt && objProp(opt, "coerce");
   const coerce = coerceNode && ts.isIdentifier(coerceNode) ? coerceNode.text : null;
-  if (helper === "items_field") {
+  if (helper === "itemsField") {
     const cls = init.arguments[0];
     if (!cls || !ts.isIdentifier(cls)) {
-      errors.push("items_field() item class is not a name");
+      errors.push("itemsField() item class is not a name");
       return null;
     }
     const type = optional ? `${cls.text}[] | null` : `${cls.text}[]`;
@@ -186,23 +186,23 @@ function fieldType(init: ts.Expression): { type: string; refs: string[] } | null
   let fmt: string | null = null;
   let enc = encoding;
   let crc = coerce;
-  if (helper === "fmt_field") {
+  if (helper === "fmtField") {
     const a0 = init.arguments[0];
     if (!a0 || !ts.isStringLiteral(a0)) {
-      errors.push("fmt_field() format is not a string literal");
+      errors.push("fmtField() format is not a string literal");
       return null;
     }
     fmt = a0.text;
-  } else if (helper === "bytes_field") fmt = "s";
-  else if (helper === "str_field") {
+  } else if (helper === "bytesField") fmt = "s";
+  else if (helper === "strField") {
     fmt = "s";
     enc = enc || "utf-8";
-  } else if (helper === "ascii_field") {
+  } else if (helper === "asciiField") {
     fmt = "s";
     enc = "ascii";
-  } else if (helper === "bool_field") {
+  } else if (helper === "boolField") {
     fmt = "B";
-    crc = crc ?? "py_bool";
+    crc = crc ?? "pyBool";
   } else if (helper in HELPER_FMT) {
     const mapped = HELPER_FMT[helper];
     if (mapped == null) return null;
@@ -210,7 +210,7 @@ function fieldType(init: ts.Expression): { type: string; refs: string[] } | null
   }
   else return null;
   // An enum coerce names the enum type (`coerce: SomeEnum` -> `SomeEnum`).
-  const refs = crc && crc !== "py_bool" ? [crc] : [];
+  const refs = crc && crc !== "pyBool" ? [crc] : [];
   return { type: typeOfFmt(fmt, enc, crc, optional), refs };
 }
 

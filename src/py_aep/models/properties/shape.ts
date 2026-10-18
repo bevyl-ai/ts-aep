@@ -100,16 +100,16 @@ export class FeatherPoint {
   }
 }
 
-descriptor(FeatherPoint, "segLoc", new ChunkField("_fp", "seg_loc", { validate: validatePositiveInt }));
-descriptor(FeatherPoint, "relSegLoc", new ChunkField("_fp", "rel_seg_loc", { validate: validateNormalizedFloat }));
+descriptor(FeatherPoint, "segLoc", new ChunkField("_fp", "segLoc", { validate: validatePositiveInt }));
+descriptor(FeatherPoint, "relSegLoc", new ChunkField("_fp", "relSegLoc", { validate: validateNormalizedFloat }));
 descriptor(FeatherPoint, "radius", new ChunkField("_fp", "radius"));
 descriptor(
   FeatherPoint,
   "interp",
-  new ChunkField("_fp", "interp_raw", { transform: _interpTransform, reverse: _interpReverse }),
+  new ChunkField("_fp", "interpRaw", { transform: _interpTransform, reverse: _interpReverse }),
 );
 descriptor(FeatherPoint, "tension", new ChunkField("_fp", "tension", { validate: validateNormalizedFloat }));
-descriptor(FeatherPoint, "relCornerAngle", new ChunkField("_fp", "corner_angle"));
+descriptor(FeatherPoint, "relCornerAngle", new ChunkField("_fp", "cornerAngle"));
 
 /**
  * The Shape object encapsulates information describing a shape in a shape layer, or
@@ -282,10 +282,10 @@ export class Shape {
     const xs = all.map((p) => p[0]);
     const ys = all.map((p) => p[1]);
     const shph = this._shph;
-    shph.top_left_x = min(xs);
-    shph.top_left_y = min(ys);
-    shph.bottom_right_x = max(xs);
-    shph.bottom_right_y = max(ys);
+    shph.topLeftX = min(xs);
+    shph.topLeftY = min(ys);
+    shph.bottomRightX = max(xs);
+    shph.bottomRightY = max(ys);
     const total = this._points.length;
     for (let j = 0; j < count; j++) {
       const i = 3 * j;
@@ -369,7 +369,7 @@ export class Shape {
       vertices,
       this.closed,
       tensions,
-      truediv(prop._tdb4.pixel_aspect, width),
+      truediv(prop._tdb4.pixelAspect, width),
       truediv(1.0, height),
     );
   }
@@ -406,8 +406,8 @@ export class Shape {
     /** Convert a normalized [0,1] shape point to absolute coordinates. */
     const shph = this._shph;
     pyAssert(shph != null);
-    const x = shph.top_left_x * (1 - pt.x) + shph.bottom_right_x * pt.x;
-    const y = shph.top_left_y * (1 - pt.y) + shph.bottom_right_y * pt.y;
+    const x = shph.topLeftX * (1 - pt.x) + shph.bottomRightX * pt.x;
+    const y = shph.topLeftY * (1 - pt.y) + shph.bottomRightY * pt.y;
     return [x, y];
   }
 
@@ -415,10 +415,10 @@ export class Shape {
     /** Convert absolute coordinates back to normalized [0,1]. */
     const shph = this._shph;
     pyAssert(shph != null);
-    const dx = shph.bottom_right_x - shph.top_left_x;
-    const dy = shph.bottom_right_y - shph.top_left_y;
-    const nx = dx !== 0 ? truediv(x - shph.top_left_x, dx) : 0.0;
-    const ny = dy !== 0 ? truediv(y - shph.top_left_y, dy) : 0.0;
+    const dx = shph.bottomRightX - shph.topLeftX;
+    const dy = shph.bottomRightY - shph.topLeftY;
+    const nx = dx !== 0 ? truediv(x - shph.topLeftX, dx) : 0.0;
+    const ny = dy !== 0 ? truediv(y - shph.topLeftY, dy) : 0.0;
     return [nx, ny];
   }
 

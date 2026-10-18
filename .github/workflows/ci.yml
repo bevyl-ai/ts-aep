@@ -31,8 +31,9 @@ jobs:
       - name: Typecheck
         run: bun run typecheck
 
-      - name: Doc examples compile, TSDoc is clean
+      - name: Doc examples compile, TSDoc is clean, generated chunk types are current
         run: |
+          bun tools/gen_chunk_types.ts --check
           bun tools/doc_examples.ts | tail -1 | python3 -c "import json,sys; sys.exit(json.loads(sys.stdin.read())['errors'] != 0)"
           bun tools/tsdoc_lint.ts | python3 -c "import json,sys; sys.exit(json.loads(sys.stdin.read())['messages'] != 0)"
 

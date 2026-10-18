@@ -64,14 +64,14 @@ export function parseCompPresets(prefsFile: PrefsFile): CompPreset[] {
     if (name === "-" || data.length !== _PRESET_SIZE) continue;
     const item = CompPresetItem.frombytes(data);
     pyAssert(item instanceof CompPresetItem);
-    if (item.width === 0 || item.pixel_aspect_divisor === 0) continue;
+    if (item.width === 0 || item.pixelAspectDivisor === 0) continue;
     presets.push(
       new CompPreset(
         name,
         item.width,
         item.height,
-        item.pixel_aspect,
-        item.frame_rate,
+        item.pixelAspect,
+        item.frameRate,
       ),
     );
   }

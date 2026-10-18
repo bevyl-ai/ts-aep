@@ -332,7 +332,7 @@ describe("TestMarkerParams", () => {
     const marker2 = kf2.value;
     expect(pyEq(marker2.params, new Map([["k1", "v1"], ["k2", "v2"]]))).toBe(true);
     // AE ignores params unless NmHd carries the pair count.
-    expect(marker2._nmhd.num_params).toBe(2);
+    expect(marker2._nmhd.numParams).toBe(2);
   });
 
   test("test_params_grow_and_shrink_on_parsed_marker", () => {
@@ -348,7 +348,7 @@ describe("TestMarkerParams", () => {
     const marker2 = getFirstLayerMarker(project2, "layer_multiple_markers");
     expect(pyEq(marker2.params, new Map([["k1", "v1"], ["k2", "v2"]]))).toBe(true);
     // AE ignores params unless NmHd carries the pair count.
-    expect(marker2._nmhd.num_params).toBe(2);
+    expect(marker2._nmhd.numParams).toBe(2);
 
     marker2.params = new Map([["k1", "x"]]);
     const out2 = tmpPath.div("marker_params_shrink.aep");
@@ -356,14 +356,14 @@ describe("TestMarkerParams", () => {
     const project3 = parseProjectFresh(out2);
     const marker3 = getFirstLayerMarker(project3, "layer_multiple_markers");
     expect(pyEq(marker3.params, new Map([["k1", "x"]]))).toBe(true);
-    expect(marker3._nmhd.num_params).toBe(1);
+    expect(marker3._nmhd.numParams).toBe(1);
 
     marker3.params = new Map();
     const out3 = tmpPath.div("marker_params_clear.aep");
     project3.save(out3);
     const marker4 = getFirstLayerMarker(parseProjectFresh(out3), "layer_multiple_markers");
     expect(pyEq(marker4.params, new Map())).toBe(true);
-    expect(marker4._nmhd.num_params).toBe(0);
+    expect(marker4._nmhd.numParams).toBe(0);
   });
 
   test("test_params_set_after_keyframe_binding", () => {

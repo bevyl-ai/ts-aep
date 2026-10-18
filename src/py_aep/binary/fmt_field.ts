@@ -53,8 +53,8 @@ declare module "../../pyrt/attrs.ts" {
     readonly endian?: string;
     readonly coerce?: Coerce;
     readonly items?: boolean;
-    readonly item_cls?: typeof FmtItem;
-    readonly item_size?: number;
+    readonly itemCls?: typeof FmtItem;
+    readonly itemSize?: number;
   }
 }
 
@@ -62,7 +62,7 @@ declare module "../../pyrt/attrs.ts" {
 export type FmtAttribute = Attribute & { readonly metadata: { readonly fmt: string } };
 
 /** An `items_field`, which always stores the item class and size. */
-type ItemsAttribute = Attribute & { readonly metadata: { readonly item_cls: typeof FmtItem; readonly item_size: number } };
+type ItemsAttribute = Attribute & { readonly metadata: { readonly itemCls: typeof FmtItem; readonly itemSize: number } };
 
 function _isFmtField(f: Attribute): f is FmtAttribute {
   return f.metadata["fmt"] != null;
@@ -221,8 +221,8 @@ export function fmtField(fmt: string, kw: FmtFieldOptions = {}) {
 export function itemsField<T extends FmtItem>(itemCls: (new (kw: InitKwargs) => T) & typeof FmtItem, itemSize: number): FieldSpec<T[]> {
   const md = {
     items: true,
-    item_cls: itemCls,
-    item_size: itemSize,
+    itemCls: itemCls,
+    itemSize: itemSize,
   };
   return field({ default: Factory(() => []), metadata: md });
 }
@@ -329,7 +329,7 @@ export function _structInfoUncached(cls: Function): _StructInfo | null {
   for (const f of fields(cls)) {
     if (baseNames.has(f.name)) continue;
     if (_isItemsField(f)) {
-      itemsInfo = [_initName(f.name), f.metadata["item_cls"], f.metadata["item_size"]];
+      itemsInfo = [_initName(f.name), f.metadata["itemCls"], f.metadata["itemSize"]];
       continue;
     }
     if (_isFmtField(f)) {

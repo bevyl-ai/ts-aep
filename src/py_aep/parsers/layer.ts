@@ -50,7 +50,7 @@ export const parseLayer = _suppressMaterialization().decorate(function parse_lay
   const ldta = findByType(childChunks, "ldta");
   const nameUtf8 = findByType(childChunks, "Utf8");
 
-  const layerType = ldta.layer_type;
+  const layerType = ldta.layerType;
 
   let layerCls = _LAYER_CLASSES.get(layerType);
   if (layerCls === undefined) {

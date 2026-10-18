@@ -124,12 +124,12 @@ describe("TestSequenceFrameBoundsDerivation", () => {
       windows: true,
     });
     const sspc = source._sspc;
-    sspc.start_frame = UNDEFINED_FRAME;
-    sspc.end_frame = UNDEFINED_FRAME;
+    sspc.startFrame = UNDEFINED_FRAME;
+    sspc.endFrame = UNDEFINED_FRAME;
     source._pin.chunks.push(
       new ListChunk({
-        chunk_type: "LIST",
-        list_type: "StVc",
+        chunkType: "LIST",
+        listType: "StVc",
         chunks: names.map((name) => new Utf8Chunk({ value: name })),
       }),
     );
@@ -155,14 +155,14 @@ describe("TestSequenceFrameBoundsDerivation", () => {
     expect(source._endFrame).toBe(148);
     // The chunk keeps AE's undefined sentinel, so a save reproduces the
     // original bytes.
-    expect(source._sspc.start_frame).toBe(UNDEFINED_FRAME);
-    expect(source._sspc.end_frame).toBe(UNDEFINED_FRAME);
+    expect(source._sspc.startFrame).toBe(UNDEFINED_FRAME);
+    expect(source._sspc.endFrame).toBe(UNDEFINED_FRAME);
   });
 
   test("test_stored_bounds_win_over_derivation", () => {
     const source = _sequenceWithStvc(["render.0101.exr", "render.0148.exr"]);
-    source._sspc.start_frame = 7;
-    source._sspc.end_frame = 9;
+    source._sspc.startFrame = 7;
+    source._sspc.endFrame = 9;
     expect(pyEq([source._startFrame, source._endFrame], [7, 9])).toBe(true);
   });
 
@@ -180,8 +180,8 @@ describe("TestSequenceFrameBoundsDerivation", () => {
       framePadding: 4,
       windows: true,
     });
-    source._sspc.start_frame = UNDEFINED_FRAME;
-    source._sspc.end_frame = UNDEFINED_FRAME;
+    source._sspc.startFrame = UNDEFINED_FRAME;
+    source._sspc.endFrame = UNDEFINED_FRAME;
     expect(source._startFrame).toBe(UNDEFINED_FRAME);
     expect(source._endFrame).toBe(UNDEFINED_FRAME);
   });
@@ -211,7 +211,7 @@ describe("TestAlphaModeWrites", () => {
   ])("test_mode_byte_and_flag_bit_agree[%#]", (mode: AlphaMode, raw: number, premultiplied: boolean) => {
     const source = _pngSource();
     source.alphaMode = mode;
-    expect(source._sspc.alpha_mode_raw).toBe(raw);
+    expect(source._sspc.alphaModeRaw).toBe(raw);
     expect(source._sspc.premultiplied).toBe(premultiplied);
     expect(source.alphaMode).toBe(mode);
   });
@@ -241,7 +241,7 @@ describe("TestAlphaModeWrites", () => {
       "no alpha channel",
     );
     // The "no alpha channel" marker survives the rejected write.
-    expect(source._sspc.alpha_mode_raw).toBe(3);
+    expect(source._sspc.alphaModeRaw).toBe(3);
     expect(source.hasAlpha).toBe(false);
   });
 });
@@ -258,7 +258,7 @@ describe("TestSourceModifiedStamp", () => {
     const path = SAMPLES.parent.div("assets", "new_exr.0002.exr");
     const item = project.importFile(new ImportOptions(path));
     // NOTE(port): int() truncates to whole seconds, so ms-precision mtimeMs/1000 gives the same value as st_mtime
-    expect(asInstance(item, FootageItem).mainSource._sspc.source_modified).toBe(int(path.stat().mtimeMs / 1000));
+    expect(asInstance(item, FootageItem).mainSource._sspc.sourceModified).toBe(int(path.stat().mtimeMs / 1000));
   });
 
   test("test_sequence_carries_the_folder_mtime", () => {
@@ -268,7 +268,7 @@ describe("TestSourceModifiedStamp", () => {
     opts.sequence = true;
     const item = project.importFile(opts);
     // NOTE(port): int() truncates to whole seconds, so ms-precision mtimeMs/1000 gives the same value as st_mtime
-    expect(asInstance(item, FootageItem).mainSource._sspc.source_modified).toBe(int(path.parent.stat().mtimeMs / 1000));
+    expect(asInstance(item, FootageItem).mainSource._sspc.sourceModified).toBe(int(path.parent.stat().mtimeMs / 1000));
   });
 
   test("test_unreadable_media_stays_unstamped", () => {
@@ -280,7 +280,7 @@ describe("TestSourceModifiedStamp", () => {
       frameRate: 0.0,
       windows: true,
     });
-    expect(source._sspc.source_modified).toBe(0);
+    expect(source._sspc.sourceModified).toBe(0);
   });
 });
 
@@ -438,8 +438,8 @@ describe("TestWritableInterpretation", () => {
     const item = _import("image_with_alpha.png");
     item.pixelAspect = 1.5;
     expect(item.pixelAspect).toBe(1.5);
-    expect(item.mainSource._sspc.pixel_aspect_dividend).toBe(3);
-    expect(item.mainSource._sspc.pixel_aspect_divisor).toBe(2);
+    expect(item.mainSource._sspc.pixelAspectDividend).toBe(3);
+    expect(item.mainSource._sspc.pixelAspectDivisor).toBe(2);
   });
 
   test.each([0.0, -1.0, 0.001, 1000.0])("test_pixel_aspect_bounds[%#]", (value: number) => {
@@ -453,8 +453,8 @@ describe("TestWritableInterpretation", () => {
   test("test_conform_rate_on_a_movie_uses_the_conform_slot", () => {
     const item = _import("mov_480.mov");
     item.mainSource.conformFrameRate = 25.0;
-    expect(item.mainSource._sspc.conform_frame_rate).toBe(25.0);
-    expect(item.mainSource._sspc.native_frame_rate).toBe(30.0);
+    expect(item.mainSource._sspc.conformFrameRate).toBe(25.0);
+    expect(item.mainSource._sspc.nativeFrameRate).toBe(30.0);
     expect(item.mainSource.conformFrameRate).toBe(25.0);
   });
 
@@ -466,11 +466,11 @@ describe("TestWritableInterpretation", () => {
      */
     const item = _import("new_exr.0002.exr", true);
     const sspc = item.mainSource._sspc;
-    expect(sspc.native_frame_rate).toBe(30.0);
+    expect(sspc.nativeFrameRate).toBe(30.0);
     expect(approx(sspc.duration, 2 / 30)).toBe(true);
     item.mainSource.conformFrameRate = 25.0;
-    expect(sspc.conform_frame_rate).toBe(0.0);
-    expect(sspc.native_frame_rate).toBe(25.0);
+    expect(sspc.conformFrameRate).toBe(0.0);
+    expect(sspc.nativeFrameRate).toBe(25.0);
     expect(approx(sspc.duration, 2 / 25)).toBe(true);
     expect(item.mainSource.conformFrameRate).toBe(25.0);
     expect(item.frameRate).toBe(25.0);

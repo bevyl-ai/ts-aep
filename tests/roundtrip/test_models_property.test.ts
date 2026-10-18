@@ -781,15 +781,15 @@ describe("TestRoundtripExpressionCreate", () => {
     const project = parseAep(SAMPLES_DIR.div("is_modified_false.aep")).project;
     const prop = _findProperty(project.compositions[0].layers[0], "ADBE Rotate Z");
     pyAssert(prop != null);
-    expect(prop._tdb4.has_expression).toBe(false);
+    expect(prop._tdb4.hasExpression).toBe(false);
 
     prop.expression = "time * 90";
-    expect(prop._tdb4.has_expression).toBe(true);
+    expect(prop._tdb4.hasExpression).toBe(true);
 
     // Clearing removes the chunk and the marker again.
     prop.expression = "";
     expect(prop._expressionUtf8 == null).toBe(true);
-    expect(prop._tdb4.has_expression).toBe(false);
+    expect(prop._tdb4.hasExpression).toBe(false);
   });
 });
 
@@ -874,7 +874,7 @@ describe("TestRoundtripExpressionEnabled", () => {
 
     prop.expression = "100";
     expect(prop.expressionEnabled).toBe(true);
-    expect(prop._tdb4._expr_flags).toBe(0);
+    expect(prop._tdb4._exprFlags).toBe(0);
 
     const out = tmpPath.div("reenabled_expr.aep");
     project.save(out);
@@ -947,12 +947,12 @@ describe("TestKeyedEffectPointArcMetric", () => {
       effects.addProperty(matchName);
     }
     let point = asInstance(asInstance(effects.properties.at(-1), PropertyGroup).property(`${matchName}-0001`), Property);
-    expect(point._tdb4.pixel_aspect).toBe(1.0); // never keyed
+    expect(point._tdb4.pixelAspect).toBe(1.0); // never keyed
     for (const [time, value] of KEYS) {
       point.setValueAtTime(time, value);
     }
-    expect(point._tdb4.pixel_aspect).toBe(15.0);
-    expect(point._tdb4._arc_accuracy).toBe(NORMALIZED_ARC_ACCURACY);
+    expect(point._tdb4.pixelAspect).toBe(15.0);
+    expect(point._tdb4._arcAccuracy).toBe(NORMALIZED_ARC_ACCURACY);
     const out = tmpPath.div("keyed.aep");
     app.project.save(out);
     point = asInstance(
@@ -1239,7 +1239,7 @@ describe("TestMaskMutations", () => {
   /** Static method `_parade_chunk_types` in the Python class. */
   function _paradeChunkTypes(parade: PropertyGroup): string[] {
     pyAssert(parade._tdgp != null);
-    return parade._tdgp.chunks.map((c) => pyOr(getattr(c, "list_type", null), c.chunk_type));
+    return parade._tdgp.chunks.map((c) => pyOr(getattr(c, "listType", null), c.chunkType));
   }
 
   test("test_remove_mask_deletes_full_span", () => {
@@ -1294,8 +1294,8 @@ describe("TestMaskMutations", () => {
     // AE assigns the duplicate a fresh per-layer mask id (max+1) and the
     // matching "<base> <new_id>" name, not the source's id/name (verified
     // in AE 2026: duplicating "Mask 1" of ["Mask 1","Mask 2"] -> "Mask 3").
-    expect(original._mkif.mask_id).toBe(1);
-    expect(newProp._mkif.mask_id).toBe(3);
+    expect(original._mkif.maskId).toBe(1);
+    expect(newProp._mkif.maskId).toBe(3);
     expect(newProp.name).toBe("Mask 3");
     // The clone's mkif is an independent chunk.
     newProp.inverted = !original.inverted;
@@ -1337,7 +1337,7 @@ describe("TestMaskMutations", () => {
       "Mask 3",
       "Mask 2",
     ])).toBe(true);
-    const ids = asInstance(layer2.masks, PropertyGroup).properties.map((m: Property | PropertyGroup) => asInstance(m, MaskPropertyGroup)._mkif.mask_id);
+    const ids = asInstance(layer2.masks, PropertyGroup).properties.map((m: Property | PropertyGroup) => asInstance(m, MaskPropertyGroup)._mkif.maskId);
     expect(pyEq(ids, [1, 3, 2])).toBe(true);
     expect(new Set(ids).size === ids.length).toBe(true);
   });
@@ -1356,7 +1356,7 @@ describe("TestMaskMutations", () => {
     const newProp = asInstance(layer.masks, PropertyGroup).properties[0].duplicate();
     pyAssert(newProp instanceof MaskPropertyGroup);
     expect(newProp.name).toBe("Eyes 3");
-    expect(newProp._mkif.mask_id).toBe(3);
+    expect(newProp._mkif.maskId).toBe(3);
   });
 
   test("test_move_mask_roundtrip", () => {
@@ -1395,7 +1395,7 @@ describe("TestAddProperty", () => {
     expect(newMask.isMask).toBe(true);
     expect(newMask.maskMode).toBe(MaskMode.ADD);
     expect(newMask.inverted).toBe(false);
-    expect(newMask._mkif.mask_id).toBe(3);
+    expect(newMask._mkif.maskId).toBe(3);
   });
 
   test("test_add_mask_names_past_the_highest_mask_number", () => {
@@ -1409,7 +1409,7 @@ describe("TestAddProperty", () => {
     masks.properties[1].name = "stored";
     const newMask = masks.addProperty("ADBE Mask Atom");
     pyAssert(newMask instanceof MaskPropertyGroup);
-    expect(pyEq([newMask.name, newMask._mkif.mask_id], ["Mask 2", 3])).toBe(true);
+    expect(pyEq([newMask.name, newMask._mkif.maskId], ["Mask 2", 3])).toBe(true);
 
     const app2 = parseAep(AEP);
     const masks2 = app2.project.compositions[0].layers[0].masks;
@@ -1417,7 +1417,7 @@ describe("TestAddProperty", () => {
     masks2.properties[1].name = "Mask 3";
     const newMask2 = masks2.addProperty("ADBE Mask Atom");
     pyAssert(newMask2 instanceof MaskPropertyGroup);
-    expect(pyEq([newMask2.name, newMask2._mkif.mask_id], ["Mask 4", 3])).toBe(true);
+    expect(pyEq([newMask2.name, newMask2._mkif.maskId], ["Mask 4", 3])).toBe(true);
   });
 
   test("test_expression_on_path_less_mask_writes_default_path", () => {
@@ -1438,9 +1438,9 @@ describe("TestAddProperty", () => {
     pyAssert(layer2.masks != null);
     const mask2 = asInstance(asInstance(layer2.masks, PropertyGroup).properties.at(-1), MaskPropertyGroup);
     pyAssert(mask2._tdgp != null);
-    const oms = mask2._tdgp.chunks.find((c: Chunk) => getattr(c, "list_type", null) === "om-s");
+    const oms = mask2._tdgp.chunks.find((c: Chunk) => getattr(c, "listType", null) === "om-s");
     if (!(oms instanceof ListChunk)) throw new StopIteration();
-    expect(pyEq(oms.chunks.map((c: Chunk) => getattr(c, "list_type", null)), ["tdbs", "omks"])).toBe(true);
+    expect(pyEq(oms.chunks.map((c: Chunk) => getattr(c, "listType", null)), ["tdbs", "omks"])).toBe(true);
     const path = mask2.property("ADBE Mask Shape");
     expect(path.expression).toBe("value");
     const [w, h] = asInstance(layer2, AVLayer)._maskScale;
@@ -1482,7 +1482,7 @@ describe("TestAddProperty", () => {
     const newMask = asInstance(layer.masks, PropertyGroup).addProperty("ADBE Mask Atom");
     pyAssert(newMask instanceof MaskPropertyGroup);
     pyAssert(newMask._tdgp != null);
-    expect(pyEq(newMask._tdgp.chunks.map((c: Chunk) => pyOr(getattr(c, "list_type", null), c.chunk_type)), [
+    expect(pyEq(newMask._tdgp.chunks.map((c: Chunk) => pyOr(getattr(c, "listType", null), c.chunkType)), [
       "tdsb",
       "tdsn",
       "tdmn",
@@ -1509,7 +1509,7 @@ describe("TestAddProperty", () => {
     const mask3 = asInstance(layer2.masks, PropertyGroup).properties[2];
     pyAssert(mask3 instanceof MaskPropertyGroup);
     expect(mask3.maskMode).toBe(MaskMode.ADD);
-    expect(mask3._mkif.mask_id).toBe(3);
+    expect(mask3._mkif.maskId).toBe(3);
     expect(pyEq(mask3.properties.map((c: Property | PropertyGroup) => c.name), [
       "Mask Path",
       "Mask Feather",
@@ -1545,12 +1545,12 @@ describe("TestAddProperty", () => {
     const chunks = layer2._tdgp.chunks;
     const paradeIdx = chunks.findIndex(
       (c: Chunk, i: number) =>
-        c.chunk_type === "tdmn" &&
+        c.chunkType === "tdmn" &&
         getattr(c, "value", null) === "ADBE Mask Parade" &&
         !c.synthetic,
     );
     const transformIdx = chunks.findIndex(
-      (c: Chunk, i: number) => c.chunk_type === "tdmn" && getattr(c, "value", null) === "ADBE Transform Group",
+      (c: Chunk, i: number) => c.chunkType === "tdmn" && getattr(c, "value", null) === "ADBE Transform Group",
     );
     expect(paradeIdx >= 0).toBe(true); // `next(...)` raises StopIteration when nothing matches
     expect(transformIdx >= 0).toBe(true);
@@ -1602,18 +1602,18 @@ describe("TestAddProperty", () => {
     pyAssert(masks != null);
     const m3 = masks.addProperty("ADBE Mask Atom");
     pyAssert(m3 instanceof MaskPropertyGroup);
-    expect(m3._mkif.mask_id).toBe(3);
+    expect(m3._mkif.maskId).toBe(3);
     // Remove the middle mask, then add another: count+1 would reuse id 3.
     masks.properties[1].remove();
     const mNew = masks.addProperty("ADBE Mask Atom");
     pyAssert(mNew instanceof MaskPropertyGroup);
     const ids = masks.properties
       .filter((m: Property | PropertyGroup) => m instanceof MaskPropertyGroup)
-      .map((m: Property | PropertyGroup) => asInstance(m, MaskPropertyGroup)._mkif.mask_id);
+      .map((m: Property | PropertyGroup) => asInstance(m, MaskPropertyGroup)._mkif.maskId);
     const names = masks.properties.map((m: Property | PropertyGroup) => m.name);
     pyAssert(new Set(ids).size === ids.length, `duplicate mask ids: ${repr(ids)}`);
     pyAssert(new Set(names).size === names.length, `duplicate mask names: ${repr(names)}`);
-    expect(mNew._mkif.mask_id).toBe(4); // max(1, 3) + 1, not count(2) + 1
+    expect(mNew._mkif.maskId).toBe(4); // max(1, 3) + 1, not count(2) + 1
     expect(mNew.name).toBe("Mask 4");
   });
 
@@ -1677,7 +1677,7 @@ describe("TestAddProperty", () => {
     pyAssert(m2 instanceof MaskPropertyGroup);
     expect(m2.rotoBezier).toBe(false);
     pyAssert(m2._maskShapeTdsb != null);
-    expect(m2._maskShapeTdsb.roto_bezier).toBe(false);
+    expect(m2._maskShapeTdsb.rotoBezier).toBe(false);
   });
 
   test("test_materialize_mask_shape_preserves_handle", () => {
@@ -1975,12 +1975,12 @@ describe("TestAddEffect", () => {
     const chunks = layer2._tdgp.chunks;
     const paradeIdx = chunks.findIndex(
       (c: Chunk, i: number) =>
-        c.chunk_type === "tdmn" &&
+        c.chunkType === "tdmn" &&
         getattr(c, "value", null) === "ADBE Effect Parade" &&
         !c.synthetic,
     );
     const transformIdx = chunks.findIndex(
-      (c: Chunk, i: number) => c.chunk_type === "tdmn" && getattr(c, "value", null) === "ADBE Transform Group",
+      (c: Chunk, i: number) => c.chunkType === "tdmn" && getattr(c, "value", null) === "ADBE Transform Group",
     );
     expect(paradeIdx >= 0).toBe(true); // `next(...)` raises StopIteration when nothing matches
     expect(transformIdx >= 0).toBe(true);
@@ -2101,9 +2101,9 @@ describe("TestAddEffect", () => {
         "ADBE Slider Control",
         skeleton["name"],
         bytes_.fromhex(skeleton["part"]),
-        { tdsn_name: "-_0_/-", time_base: 24576, layer_id: 1 },
+        { tdsnName: "-_0_/-", timeBase: 24576, layerId: 1 },
       );
-      const pgui = asInstance(_next(sspc.chunks, (c) => c.chunk_type === "pgui"), PguiChunk);
+      const pgui = asInstance(_next(sspc.chunks, (c) => c.chunkType === "pgui"), PguiChunk);
       guids.push(pgui.guid);
     }
     expect(pyEq(guids[0], b("\x00".repeat(16)))).toBe(true);
@@ -2201,7 +2201,7 @@ describe("TestSynthesizedEffectParamWrites", () => {
             if (tdb4 == null || control == null) {
               continue;
             }
-            setdefault(seen, control, new Set<number>()).add(tdb4._spatial_static_flags);
+            setdefault(seen, control, new Set<number>()).add(tdb4._spatialStaticFlags);
           }
         }
       }
@@ -2233,7 +2233,7 @@ describe("TestSynthesizedEffectParamWrites", () => {
     expect(written._isLive()).toBe(true);
     expect(pyEq(written.value, [10.0, 20.0])).toBe(true);
     // Bit 1 is what makes AE read the value instead of the parT default.
-    expect(pyBool(and(written._tdb4._spatial_static_flags, 0x02))).toBe(true);
+    expect(pyBool(and(written._tdb4._spatialStaticFlags, 0x02))).toBe(true);
   });
 
   test("test_color_write_survives_roundtrip", () => {
@@ -2254,7 +2254,7 @@ describe("TestSynthesizedEffectParamWrites", () => {
     );
     expect(written._isLive()).toBe(true);
     expect(pyEq(written.value, [1.0, 0.0, 0.0, 1.0])).toBe(true);
-    expect(pyBool(and(written._tdb4._spatial_static_flags, 0x02))).toBe(true);
+    expect(pyBool(and(written._tdb4._spatialStaticFlags, 0x02))).toBe(true);
   });
 
   test("test_color_reports_spatial_like_extendscript", () => {
@@ -2266,7 +2266,7 @@ describe("TestSynthesizedEffectParamWrites", () => {
     const layer = getLayer(app.project, "effect_3dPoint");
     const effect = asInstance(_next(asInstance(layer.effects, PropertyGroup).properties, (e) => e.name === "CC Sphere"), PropertyGroup);
     const prop = asInstance(effect.property("Light Color"), Property);
-    expect(prop._tdb4._spatial_static_flags).toBe(0x07);
+    expect(prop._tdb4._spatialStaticFlags).toBe(0x07);
     expect(prop.isSpatial).toBe(true);
   });
 
@@ -2297,7 +2297,7 @@ describe("TestSynthesizedEffectParamWrites", () => {
     }
     pyAssert(prop != null, "StopIteration");
     prop.removeAllKeys();
-    expect(prop._tdb4._spatial_static_flags).toBe(0x07);
+    expect(prop._tdb4._spatialStaticFlags).toBe(0x07);
 
     const out = tmpPath.div("deanimated.aep");
     project.save(out);
@@ -2311,7 +2311,7 @@ describe("TestSynthesizedEffectParamWrites", () => {
       }
     }
     pyAssert(written != null, "StopIteration");
-    expect(written._tdb4._spatial_static_flags).toBe(0x07);
+    expect(written._tdb4._spatialStaticFlags).toBe(0x07);
   });
 });
 
@@ -2380,18 +2380,18 @@ describe("TestAddInstalledEffect", () => {
     expect(sourceComp.frameRate).toBe(24.0);
 
     const target = app.project.rootFolder.addComp("60fps", 640, 480, 1.0, 5.0, 60.0);
-    const targetBase = target._cdta.internal_timebase;
-    expect(pyEq(targetBase, sourceComp._cdta.internal_timebase)).toBe(false);
+    const targetBase = target._cdta.internalTimebase;
+    expect(pyEq(targetBase, sourceComp._cdta.internalTimebase)).toBe(false);
     const layer = target.addSolid([0.5, 0.5, 0.5], "s");
 
     const effect = layer.property("ADBE Effect Parade").addProperty("ADBE Gaussian Blur 2");
     pyAssert(effect instanceof PropertyGroup);
     const stamped = [...effect.properties].filter(
-      (child): child is Property => child instanceof Property && getattr(child, "_tdb4", null) != null && pyBool(child._tdb4._time_base),
+      (child): child is Property => child instanceof Property && getattr(child, "_tdb4", null) != null && pyBool(child._tdb4._timeBase),
     );
     pyAssert(pyBool(stamped), "expected at least one stamped tdb4 in the clone");
     for (const child of stamped) {
-      expect(pyEq(child._tdb4._time_base, targetBase)).toBe(true);
+      expect(pyEq(child._tdb4._timeBase, targetBase)).toBe(true);
     }
 
     const out = tmpPath.div("out.aep");
@@ -2401,8 +2401,8 @@ describe("TestAddInstalledEffect", () => {
     const effect2 = asInstance(asInstance(comp2.layers[0].effects, PropertyGroup).properties[0], PropertyGroup);
     for (const child of effect2.properties) {
       const tdb4 = getattr(child, "_tdb4", null);
-      if (tdb4 != null && pyBool(tdb4._time_base)) {
-        expect(pyEq(tdb4._time_base, targetBase)).toBe(true);
+      if (tdb4 != null && pyBool(tdb4._timeBase)) {
+        expect(pyEq(tdb4._timeBase, targetBase)).toBe(true);
       }
     }
   });
@@ -2456,11 +2456,11 @@ describe("TestAddInstalledEffect", () => {
     const tdgp = asInstance(layer.effects, PropertyGroup)._tdgp;
     pyAssert(tdgp != null);
     return tdgp.chunks
-      .filter((c) => c.chunk_type === "tdmn" || c.chunk_type === "engv")
+      .filter((c) => c.chunkType === "tdmn" || c.chunkType === "engv")
       .map((c) =>
-        c.chunk_type === "engv"
+        c.chunkType === "engv"
           ? `engv ${bytes_.intFromBytes(c.data, "big")}`
-          : pyOr(getattr(c, "value", null), c.chunk_type),
+          : pyOr(getattr(c, "value", null), c.chunkType),
       );
   }
 
@@ -2952,7 +2952,7 @@ describe("TestAddShapeElement", () => {
     const rect = contents.addProperty("ADBE Vector Shape - Rect");
     pyAssert(rect instanceof PropertyGroup);
     pyAssert(rect._tdgp != null);
-    expect(pyEq(rect._tdgp.chunks.map((c: Chunk) => pyOr(getattr(c, "list_type", null), c.chunk_type)), [
+    expect(pyEq(rect._tdgp.chunks.map((c: Chunk) => pyOr(getattr(c, "listType", null), c.chunkType)), [
       "tdsb",
       "tdsn",
       "tdmn",
@@ -3185,10 +3185,10 @@ describe("TestAddShapeElement", () => {
     pyAssert(pos instanceof Property);
     pos.value = [200.0, 160.0];
     pyAssert(pos._tdb4 != null);
-    expect(pos._tdb4._spatial_static_flags).toBe(0x0f);
+    expect(pos._tdb4._spatialStaticFlags).toBe(0x0f);
     expect(pos._tdb4._pad2a).toBe(3);
-    expect(pos._tdb4._value_hint_type).toBe(0xffff);
-    expect(pos._tdb4._property_category).toBe(0x09);
+    expect(pos._tdb4._valueHintType).toBe(0xffff);
+    expect(pos._tdb4._propertyCategory).toBe(0x09);
 
     const out = tmpPath.div("vpos.aep");
     app.project.save(out);
@@ -3776,7 +3776,7 @@ describe("TestRoundtripAnimatedTdb4Stamps", () => {
     const project = parseProjectFresh(SAMPLE);
     const comp = project.compositions[0];
     expect(comp.frameRate).toBe(25.0);
-    expect(comp._cdta.internal_timebase).toBe(25600);
+    expect(comp._cdta.internalTimebase).toBe(25600);
 
     const prop = comp.layers[0].transform.property("ADBE Scale");
     prop.addKey(1.0);
@@ -3786,7 +3786,7 @@ describe("TestRoundtripAnimatedTdb4Stamps", () => {
     const comp2 = parseAep(out).project.compositions[0];
     const prop2 = comp2.layers[0].transform.property("ADBE Scale");
     expect(pyBool(prop2.keyframes)).toBe(true);
-    expect(prop2._tdb4._time_base).toBe(25600);
+    expect(prop2._tdb4._timeBase).toBe(25600);
   });
 
   test("test_set_value_at_time_stamps_comp_timebase", () => {
@@ -3800,7 +3800,7 @@ describe("TestRoundtripAnimatedTdb4Stamps", () => {
 
     const comp2 = parseAep(out).project.compositions[0];
     const prop2 = comp2.layers[0].transform.property("ADBE Rotate Z");
-    expect(prop2._tdb4._time_base).toBe(25600);
+    expect(prop2._tdb4._timeBase).toBe(25600);
   });
 
   test("test_animate_stamps_pixel_aspect_on_spatial", () => {
@@ -3823,12 +3823,12 @@ describe("TestRoundtripAnimatedTdb4Stamps", () => {
     const comp2 = parseAep(out).project.compositions[0];
     const anchor = comp2.layers[0].transform.property("ADBE Anchor Point");
     expect(pyBool(anchor.isSpatial)).toBe(true);
-    expect(approx(anchor._tdb4.pixel_aspect, 400 / 300)).toBe(true);
-    expect(anchor._tdb4._arc_accuracy).toBe(NORMALIZED_ARC_ACCURACY);
-    expect(anchor._tdb4._time_base).toBe(25600);
+    expect(approx(anchor._tdb4.pixelAspect, 400 / 300)).toBe(true);
+    expect(anchor._tdb4._arcAccuracy).toBe(NORMALIZED_ARC_ACCURACY);
+    expect(anchor._tdb4._timeBase).toBe(25600);
     const position = comp2.layers[0].transform.property("ADBE Position");
-    expect(approx(position._tdb4.pixel_aspect, 1.5)).toBe(true);
-    expect(approx(position._tdb4._arc_accuracy, 1e-4)).toBe(true);
+    expect(approx(position._tdb4.pixelAspect, 1.5)).toBe(true);
+    expect(approx(position._tdb4._arcAccuracy, 1e-4)).toBe(true);
   });
 
   test("test_animate_leaves_pixel_aspect_alone_on_scalar", () => {
@@ -3849,7 +3849,7 @@ describe("TestRoundtripAnimatedTdb4Stamps", () => {
     const comp2 = parseAep(out).project.compositions[0];
     const opacity = comp2.layers[0].transform.property("ADBE Opacity");
     expect(pyBool(opacity.isSpatial)).toBe(false);
-    expect(approx(opacity._tdb4.pixel_aspect, 1.0)).toBe(true);
+    expect(approx(opacity._tdb4.pixelAspect, 1.0)).toBe(true);
   });
 });
 
@@ -4092,13 +4092,13 @@ describe("TestExpressionEnabledGuard", () => {
   test("test_the_rejected_write_leaves_the_byte_alone", () => {
     const project = parseProjectFresh(SAMPLE);
     const prop = project.compositions[0].layers[0].transform.property("ADBE Opacity");
-    const before = prop._tdb4.expression_disabled;
+    const before = prop._tdb4.expressionDisabled;
 
     raises(ValueError, () => {
       prop.expressionEnabled = true;
     });
 
-    expect(prop._tdb4.expression_disabled).toBe(before);
+    expect(prop._tdb4.expressionDisabled).toBe(before);
   });
 
   test("test_enabling_with_an_expression_still_works", () => {
@@ -4183,7 +4183,7 @@ describe("TestLockedRatio", () => {
     const project = parseAep(PROPERTY_SAMPLES_DIR.div("scale_unlinked.aep")).project;
     const scale = project.compositions[0].layers[0].transform.property("ADBE Scale");
     pyAssert(scale._tdsb != null);
-    expect(scale._tdsb.ratio_unlinked).toBe(true);
+    expect(scale._tdsb.ratioUnlinked).toBe(true);
     expect(scale.lockedRatio).toBe(false);
   });
 });
@@ -4239,7 +4239,7 @@ function _maskShapeBytes(mask: MaskPropertyGroup): Uint8Array {
   pyAssert(mask._tdgp != null);
   const chunks = mask._tdgp.chunks;
   const index = chunks.findIndex(
-    (c) => c.chunk_type === "tdmn" && getattr(c, "value", null) === "ADBE Mask Shape",
+    (c) => c.chunkType === "tdmn" && getattr(c, "value", null) === "ADBE Mask Shape",
   );
   pyAssert(index >= 0, "StopIteration"); // `next(...)` raises when nothing matches
   return chunks[index + 1].tobytes();
@@ -4561,7 +4561,7 @@ describe("TestTextPathWrite", () => {
     const tdb4 = path._tdb4;
     expect(
       pyEq(
-        [tdb4._spatial_static_flags, tdb4._value_hint_type, tdb4._cvot_flags, tdb4._type_flags, tdb4._property_category],
+        [tdb4._spatialStaticFlags, tdb4._valueHintType, tdb4._cvotFlags, tdb4._typeFlags, tdb4._propertyCategory],
         [0x01, 1, 0x00, 0x04, 0x04],
       ),
     ).toBe(true);
@@ -4621,7 +4621,7 @@ describe("TestMaskReferences", () => {
   test("test_reads_the_moved_mask_position", () => {
     const [layer, fillMask] = _fillMask(parseProjectFresh(SAMPLES_DIR.div("mask_reference_moved.aep")));
     const masks = _masks(layer).properties;
-    expect(masks.map((m) => asInstance(m, MaskPropertyGroup)._mkif.mask_id)).toEqual([2, 1]);
+    expect(masks.map((m) => asInstance(m, MaskPropertyGroup)._mkif.maskId)).toEqual([2, 1]);
     expect(fillMask._tdliChunk()?.value).toBe(2);
     expect(fillMask.value).toBe(1);
   });

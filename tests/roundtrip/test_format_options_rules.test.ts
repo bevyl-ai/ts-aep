@@ -242,11 +242,11 @@ test("test_v210_codec_clamps_depth", () => {
   expect(om.settings.get("Depth")).toBe(OutputColorDepth.TRILLIONS_OF_COLORS);
   // Rouu.videoCodec stays the constant AVI plugin tag: AE never
   // varies it with the selected codec (corpus-verified).
-  expect(om._roou.video_codec).toBe("CTXF");
+  expect(om._roou.videoCodec).toBe("CTXF");
   project.save(tmpPath.div("out.aep"));
   const om2 = _om(parseProjectFresh(tmpPath.div("out.aep")));
   expect(asInstance(om2.formatOptions, XmlFormatOptions).videoCodec).toBe(VideoCodec.V210);
-  expect(om2._roou.video_codec).toBe("CTXF");
+  expect(om2._roou.videoCodec).toBe("CTXF");
   expect(om2.settings.get("Depth")).toBe(OutputColorDepth.TRILLIONS_OF_COLORS);
 });
 

@@ -44,18 +44,19 @@ function pyOrder(a: string, b: string): number {
   return a < b ? -1 : a > b ? 1 : 0;
 }
 
-// The TS API is camelCase; py-aep's is snake_case. Three names don't invert by rule.
-const PY_EXCEPTIONS: Record<string, string> = { is3d: "is_3d", inE1d: "in_e_1d", outE1d: "out_e_1d" };
+// The TS API is camelCase; py-aep's is snake_case. Names whose digits keep their
+// underscore in Python (`reserved_8c` -> `reserved8c`) don't invert by rule: py_names.json.
+const PY_EXCEPTIONS: Record<string, string> = JSON.parse(fs.readFileSync(new URL("./py_names.json", import.meta.url), "utf8"));
 const TS_EXCEPTIONS = Object.fromEntries(Object.entries(PY_EXCEPTIONS).map(([t, p]) => [p, t]));
 
 /** py-aep's name for a TS member (`frameRate` -> `frame_rate`). */
 export function pyName(ts: string): string {
-  return PY_EXCEPTIONS[ts] ?? ts.replace(/[A-Z]/g, (c) => "_" + c.toLowerCase());
+  return Object.hasOwn(PY_EXCEPTIONS, ts) ? PY_EXCEPTIONS[ts] : ts.replace(/[A-Z]/g, (c) => "_" + c.toLowerCase());
 }
 
 /** The TS member for a py-aep name (`frame_rate` -> `frameRate`). */
 export function tsName(py: string): string {
-  return TS_EXCEPTIONS[py] ?? py.replace(/_([a-z0-9])/g, (_m, c: string) => c.toUpperCase());
+  return Object.hasOwn(TS_EXCEPTIONS, py) ? TS_EXCEPTIONS[py] : py.replace(/_([a-z0-9])/g, (_m, c: string) => c.toUpperCase());
 }
 
 function isContainer(obj: any): boolean {

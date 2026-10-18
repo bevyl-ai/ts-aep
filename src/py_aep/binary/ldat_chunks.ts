@@ -91,33 +91,33 @@ export const _NUM_VALUE = new Map<number, number>([
  * explicitly by mutation code rather than computed from `count`.
  */
 export class Lhd3Chunk extends Chunk {
-  declare chunk_type: string;
+  declare chunkType: string;
   declare _prefix: Uint8Array;
   declare count: number;
-  declare _count_b: number;
-  declare item_size: number;
+  declare _countB: number;
+  declare itemSize: number;
   declare _gap2: Uint8Array;
-  declare item_type_raw: number;
-  declare _counter_a: number;
-  declare _counter_b: number;
-  declare _trailing_pad: Uint8Array | null;
+  declare itemTypeRaw: number;
+  declare _counterA: number;
+  declare _counterB: number;
+  declare _trailingPad: Uint8Array | null;
 
   /** Effective item type derived from raw type and item size. */
-  get item_type(): LdatItemType {
-    return _ITEM_TYPE_MAP.get(tkey(this.item_type_raw, this.item_size)) ?? LdatItemType.unknown;
+  get itemType(): LdatItemType {
+    return _ITEM_TYPE_MAP.get(tkey(this.itemTypeRaw, this.itemSize)) ?? LdatItemType.unknown;
   }
 }
 define(Lhd3Chunk, {
-  chunk_type: { default: "lhd3" },
+  chunkType: { default: "lhd3" },
   _prefix: bytesField(8, { default: b("\x00\xd0\x0b\xee\x00\x00\x00\x00"), repr: false }),
   count: u4Field(),
-  _count_b: u4Field({ default: 1, repr: false }),
-  item_size: u4Field(),
+  _countB: u4Field({ default: 1, repr: false }),
+  itemSize: u4Field(),
   _gap2: bytesField(3, { default: b("\x00\x00\x00"), repr: false }),
-  item_type_raw: u1Field(),
-  _counter_a: u4Field({ default: 1, repr: false }),
-  _counter_b: u4Field({ default: 2, repr: false }),
-  _trailing_pad: bytesField(20, { default: bytes_.repeat(b("\x00"), 20), optional: true, repr: false }),
+  itemTypeRaw: u1Field(),
+  _counterA: u4Field({ default: 1, repr: false }),
+  _counterB: u4Field({ default: 2, repr: false }),
+  _trailingPad: bytesField(20, { default: bytes_.repeat(b("\x00"), 20), optional: true, repr: false }),
 });
 register("lhd3")(Lhd3Chunk);
 
@@ -143,9 +143,9 @@ export const LHD3_BLOCK_SINGLE = 1;
 export function setLhd3Count(lhd3: Lhd3Chunk, count: number, block: number): void {
   lhd3.count = count;
   const n = Math.max(1, Math.ceil(count / block));
-  lhd3._count_b = n;
-  lhd3._counter_b = n * block;
-  lhd3._counter_a = block === 1 ? n : 1;
+  lhd3._countB = n;
+  lhd3._counterB = n * block;
+  lhd3._counterA = block === 1 ? n : 1;
 }
 
 // ---------------------------------------------------------------------------
@@ -164,23 +164,23 @@ define(ShapePoint, {
 
 /** A single composition guide (ruler line). */
 export class GuideItem extends FmtItem {
-  declare orientation_type: number;
-  declare position_type: number;
+  declare orientationType: number;
+  declare positionType: number;
   declare position: number;
 }
 define(GuideItem, {
-  orientation_type: u4Field(),
-  position_type: u4Field(),
+  orientationType: u4Field(),
+  positionType: u4Field(),
   position: f8Field(),
 });
 
 /** Guide container data chunk (8 bytes, all zeros). */
 export class GdtaChunk extends Chunk {
-  declare chunk_type: string;
+  declare chunkType: string;
   declare data: Uint8Array;
 }
 define(GdtaChunk, {
-  chunk_type: { default: "gdta" },
+  chunkType: { default: "gdta" },
   data: { default: bytes_.repeat(b("\x00"), 8) },
 });
 register("gdta")(GdtaChunk);
@@ -193,18 +193,18 @@ register("gdta")(GdtaChunk);
 export class KfNoValue extends FmtItem {
   declare _unknown1: number | bigint;
   declare _unknown2: number;
-  declare in_speed: number;
-  declare in_influence: number;
-  declare out_speed: number;
-  declare out_influence: number;
+  declare inSpeed: number;
+  declare inInfluence: number;
+  declare outSpeed: number;
+  declare outInfluence: number;
 }
 define(KfNoValue, {
   _unknown1: u8Field(),
   _unknown2: f8Field(),
-  in_speed: f8Field(),
-  in_influence: f8Field(),
-  out_speed: f8Field(),
-  out_influence: f8Field(),
+  inSpeed: f8Field(),
+  inInfluence: f8Field(),
+  outSpeed: f8Field(),
+  outInfluence: f8Field(),
 });
 
 /**
@@ -214,10 +214,10 @@ define(KfNoValue, {
 export class KfColor extends FmtItem {
   declare _unknown1: number | bigint;
   declare _unknown2: number;
-  declare in_speed: number;
-  declare in_influence: number;
-  declare out_speed: number;
-  declare out_influence: number;
+  declare inSpeed: number;
+  declare inInfluence: number;
+  declare outSpeed: number;
+  declare outInfluence: number;
   declare a: number;
   declare r: number;
   declare g: number;
@@ -245,10 +245,10 @@ export class KfColor extends FmtItem {
 define(KfColor, {
   _unknown1: u8Field(),
   _unknown2: f8Field(),
-  in_speed: f8Field(),
-  in_influence: f8Field(),
-  out_speed: f8Field(),
-  out_influence: f8Field(),
+  inSpeed: f8Field(),
+  inInfluence: f8Field(),
+  outSpeed: f8Field(),
+  outInfluence: f8Field(),
   a: f8Field(),
   r: f8Field(),
   g: f8Field(),
@@ -266,62 +266,62 @@ define(KfColor, {
 /** Keyframe data for non-spatial multi-dimensional properties. */
 export class KfMultiDimensional extends AttrsBase {
   declare value: number[];
-  declare in_speed: number[];
-  declare in_influence: number[];
-  declare out_speed: number[];
-  declare out_influence: number[];
+  declare inSpeed: number[];
+  declare inInfluence: number[];
+  declare outSpeed: number[];
+  declare outInfluence: number[];
 
-  static frombytes(data: Uint8Array, kw: { num_value: number }): KfMultiDimensional {
-    const { num_value } = kw;
+  static frombytes(data: Uint8Array, kw: { numValue: number }): KfMultiDimensional {
+    const { numValue: num_value } = kw;
     const count = 5 * num_value;
     const vals = struct.unpack(">" + "d".repeat(count), data.slice(0, count * 8));
     const n = num_value;
     return new this({
       value: vals.slice(0, n),
-      in_speed: vals.slice(n, 2 * n),
-      in_influence: vals.slice(2 * n, 3 * n),
-      out_speed: vals.slice(3 * n, 4 * n),
-      out_influence: vals.slice(4 * n, 5 * n),
+      inSpeed: vals.slice(n, 2 * n),
+      inInfluence: vals.slice(2 * n, 3 * n),
+      outSpeed: vals.slice(3 * n, 4 * n),
+      outInfluence: vals.slice(4 * n, 5 * n),
     });
   }
 
   tobytes(): Uint8Array {
     const allVals = [
       ...this.value,
-      ...this.in_speed,
-      ...this.in_influence,
-      ...this.out_speed,
-      ...this.out_influence,
+      ...this.inSpeed,
+      ...this.inInfluence,
+      ...this.outSpeed,
+      ...this.outInfluence,
     ];
     return struct.pack(">" + "d".repeat(allVals.length), ...allVals);
   }
 }
 define(KfMultiDimensional, {
   value: { default: Factory(() => []) },
-  in_speed: { default: Factory(() => []) },
-  in_influence: { default: Factory(() => []) },
-  out_speed: { default: Factory(() => []) },
-  out_influence: { default: Factory(() => []) },
+  inSpeed: { default: Factory(() => []) },
+  inInfluence: { default: Factory(() => []) },
+  outSpeed: { default: Factory(() => []) },
+  outInfluence: { default: Factory(() => []) },
 });
 
 /** Keyframe data for spatial properties (position, anchor point). */
 export class KfPosition extends AttrsBase {
   declare _pad1: Uint8Array;
-  declare _spatial_flags: number;
+  declare _spatialFlags: number;
   declare _pad2: Uint8Array;
-  declare _unknown_header: number;
-  declare in_speed: number;
-  declare in_influence: number;
-  declare out_speed: number;
-  declare out_influence: number;
+  declare _unknownHeader: number;
+  declare inSpeed: number;
+  declare inInfluence: number;
+  declare outSpeed: number;
+  declare outInfluence: number;
   declare value: number[];
-  declare in_spatial_tangents: number[];
-  declare out_spatial_tangents: number[];
-  declare spatial_auto_bezier: boolean;
-  declare spatial_continuous: boolean;
+  declare inSpatialTangents: number[];
+  declare outSpatialTangents: number[];
+  declare spatialAutoBezier: boolean;
+  declare spatialContinuous: boolean;
 
-  static frombytes(data: Uint8Array, kw: { num_value: number }): KfPosition {
-    const { num_value } = kw;
+  static frombytes(data: Uint8Array, kw: { numValue: number }): KfPosition {
+    const { numValue: num_value } = kw;
     const pad1 = data.slice(0, 3);
     const flags = at(data, 3);
     const pad2 = data.slice(4, 8);
@@ -330,33 +330,33 @@ export class KfPosition extends AttrsBase {
     const vals = struct.unpack(">" + "d".repeat(totalDoubles), data.slice(8, 8 + totalDoubles * 8));
     return new this({
       pad1,
-      spatial_flags: flags,
+      spatialFlags: flags,
       pad2,
-      unknown_header: vals[0],
-      in_speed: vals[1],
-      in_influence: vals[2],
-      out_speed: vals[3],
-      out_influence: vals[4],
+      unknownHeader: vals[0],
+      inSpeed: vals[1],
+      inInfluence: vals[2],
+      outSpeed: vals[3],
+      outInfluence: vals[4],
       value: vals.slice(5, 5 + num_value),
-      in_spatial_tangents: vals.slice(5 + num_value, 5 + 2 * num_value),
-      out_spatial_tangents: vals.slice(5 + 2 * num_value, 5 + 3 * num_value),
+      inSpatialTangents: vals.slice(5 + num_value, 5 + 2 * num_value),
+      outSpatialTangents: vals.slice(5 + 2 * num_value, 5 + 3 * num_value),
     });
   }
 
   tobytes(): Uint8Array {
     const allVals = [
-      this._unknown_header,
-      this.in_speed,
-      this.in_influence,
-      this.out_speed,
-      this.out_influence,
+      this._unknownHeader,
+      this.inSpeed,
+      this.inInfluence,
+      this.outSpeed,
+      this.outInfluence,
       ...this.value,
-      ...this.in_spatial_tangents,
-      ...this.out_spatial_tangents,
+      ...this.inSpatialTangents,
+      ...this.outSpatialTangents,
     ];
     return concat(
       this._pad1,
-      struct.pack(">B", this._spatial_flags),
+      struct.pack(">B", this._spatialFlags),
       this._pad2,
       struct.pack(">" + "d".repeat(allVals.length), ...allVals),
     );
@@ -364,19 +364,19 @@ export class KfPosition extends AttrsBase {
 }
 define(KfPosition, {
   _pad1: { default: b("\x00\x00\x00") },
-  _spatial_flags: { default: 0 },
+  _spatialFlags: { default: 0 },
   _pad2: { default: b("\x00\x00\x00\x00") },
-  _unknown_header: { default: 0.0 },
-  in_speed: { default: 0.0 },
-  in_influence: { default: 0.0 },
-  out_speed: { default: 0.0 },
-  out_influence: { default: 0.0 },
+  _unknownHeader: { default: 0.0 },
+  inSpeed: { default: 0.0 },
+  inInfluence: { default: 0.0 },
+  outSpeed: { default: 0.0 },
+  outInfluence: { default: 0.0 },
   value: { default: Factory(() => []) },
-  in_spatial_tangents: { default: Factory(() => []) },
-  out_spatial_tangents: { default: Factory(() => []) },
+  inSpatialTangents: { default: Factory(() => []) },
+  outSpatialTangents: { default: Factory(() => []) },
 });
-descriptor(KfPosition, "spatial_auto_bezier", new BitField("_spatial_flags", 1));
-descriptor(KfPosition, "spatial_continuous", new BitField("_spatial_flags", 0));
+descriptor(KfPosition, "spatialAutoBezier", new BitField("_spatialFlags", 1));
+descriptor(KfPosition, "spatialContinuous", new BitField("_spatialFlags", 0));
 
 /**
  * An `LdatItem` payload: the `Kf*` body its item type selects, or the raw
@@ -401,27 +401,27 @@ export type KfData = KfNoValue | KfColor | KfPosition | KfMultiDimensional | Uin
  * `04 00`); the other bits are preserved as read.
  */
 export class LdatItem extends AttrsBase {
-  declare time_units: number;
-  declare in_interpolation_type: number;
-  declare out_interpolation_type: number;
-  declare _key_flags: number;
-  declare kf_data: KfData;
+  declare timeUnits: number;
+  declare inInterpolationType: number;
+  declare outInterpolationType: number;
+  declare _keyFlags: number;
+  declare kfData: KfData;
   declare _trailing: Uint8Array;
   declare roving: boolean;
-  declare temporal_auto_bezier: boolean;
-  declare temporal_continuous: boolean;
+  declare temporalAutoBezier: boolean;
+  declare temporalContinuous: boolean;
 
   /** Label color index (0-16), bits 6-10 of the key flags. */
   get label(): number {
-    return (this._key_flags >> 6) & 0x1f;
+    return (this._keyFlags >> 6) & 0x1f;
   }
 
   set label(value: number) {
-    this._key_flags = (this._key_flags & ~(0x1f << 6)) | ((value & 0x1f) << 6);
+    this._keyFlags = (this._keyFlags & ~(0x1f << 6)) | ((value & 0x1f) << 6);
   }
 
-  static frombytes(data: Uint8Array, kw: { item_type: LdatItemType }): LdatItem {
-    const { item_type } = kw;
+  static frombytes(data: Uint8Array, kw: { itemType: LdatItemType }): LdatItem {
+    const { itemType: item_type } = kw;
     // 8-byte header
     const [timeUnits, inInterp, outInterp, keyFlags] = struct.unpack(">iBBH", data.slice(0, 8));
 
@@ -446,13 +446,13 @@ export class LdatItem extends AttrsBase {
       trailing = payload.slice(48);
     } else if (item_type === LdatItemType.three_d_spatial || item_type === LdatItemType.two_d_spatial) {
       pyAssert(numValue != null);
-      kfData = KfPosition.frombytes(payload, { num_value: numValue });
+      kfData = KfPosition.frombytes(payload, { numValue: numValue });
       // prefix(8) + fixed_doubles(5*8) + arrays(3*num_value*8)
       const expected = 8 + 5 * 8 + 3 * numValue * 8;
       trailing = payload.slice(expected);
     } else if (numValue != null) {
       // three_d, two_d, one_d
-      kfData = KfMultiDimensional.frombytes(payload, { num_value: numValue });
+      kfData = KfMultiDimensional.frombytes(payload, { numValue: numValue });
       const expected = 5 * numValue * 8;
       trailing = payload.slice(expected);
     } else {
@@ -462,11 +462,11 @@ export class LdatItem extends AttrsBase {
     }
 
     return new this({
-      time_units: timeUnits,
-      in_interpolation_type: inInterp,
-      out_interpolation_type: outInterp,
-      key_flags: keyFlags,
-      kf_data: kfData,
+      timeUnits: timeUnits,
+      inInterpolationType: inInterp,
+      outInterpolationType: outInterp,
+      keyFlags: keyFlags,
+      kfData: kfData,
       trailing,
     });
   }
@@ -474,31 +474,31 @@ export class LdatItem extends AttrsBase {
   tobytes(): Uint8Array {
     const header = struct.pack(
       ">iBBH",
-      this.time_units,
-      this.in_interpolation_type,
-      this.out_interpolation_type,
-      this._key_flags,
+      this.timeUnits,
+      this.inInterpolationType,
+      this.outInterpolationType,
+      this._keyFlags,
     );
     let payload: Uint8Array;
-    if (this.kf_data instanceof Uint8Array) {
-      payload = this.kf_data;
+    if (this.kfData instanceof Uint8Array) {
+      payload = this.kfData;
     } else {
-      payload = this.kf_data.tobytes();
+      payload = this.kfData.tobytes();
     }
     return concat(header, payload, this._trailing);
   }
 }
 define(LdatItem, {
-  time_units: { default: 0 },
-  in_interpolation_type: { default: 0 },
-  out_interpolation_type: { default: 0 },
-  _key_flags: { default: 0 },
-  kf_data: { default: b("") },
+  timeUnits: { default: 0 },
+  inInterpolationType: { default: 0 },
+  outInterpolationType: { default: 0 },
+  _keyFlags: { default: 0 },
+  kfData: { default: b("") },
   _trailing: { default: b("") },
 });
-descriptor(LdatItem, "roving", new BitField("_key_flags", 5));
-descriptor(LdatItem, "temporal_auto_bezier", new BitField("_key_flags", 4));
-descriptor(LdatItem, "temporal_continuous", new BitField("_key_flags", 3));
+descriptor(LdatItem, "roving", new BitField("_keyFlags", 5));
+descriptor(LdatItem, "temporalAutoBezier", new BitField("_keyFlags", 4));
+descriptor(LdatItem, "temporalContinuous", new BitField("_keyFlags", 3));
 
 // ---------------------------------------------------------------------------
 // LdatChunk - registered chunk
@@ -510,22 +510,22 @@ export function _readItem(data: Uint8Array, itemType: LdatItemType): FmtItem | L
   if (itemType === LdatItemType.litm) return OutputModuleSettingsItem.frombytes(data);
   if (itemType === LdatItemType.shape) return ShapePoint.frombytes(data);
   if (itemType === LdatItemType.gide) return GuideItem.frombytes(data);
-  return LdatItem.frombytes(data, { item_type: itemType });
+  return LdatItem.frombytes(data, { itemType: itemType });
 }
 
 /** Keyframe / shape / settings data items. */
 export class LdatChunk extends Chunk {
-  declare chunk_type: string;
+  declare chunkType: string;
   declare items: any[];
-  declare item_type: LdatItemType;
-  declare item_size: number;
+  declare itemType: LdatItemType;
+  declare itemSize: number;
 
   static read(
     fp: IO,
     size: number,
     kw: ChunkReadKwargs = {},
   ): LdatChunk {
-    let { chunk_type = "", item_type = LdatItemType.unknown, item_size = 0, count = 0, is_spatial = false } = kw;
+    let { chunkType: chunk_type = "", itemType: item_type = LdatItemType.unknown, itemSize: item_size = 0, count = 0, isSpatial: is_spatial = false } = kw;
     // Spatial promotion: three_d -> three_d_spatial
     if (item_type === LdatItemType.three_d && is_spatial) {
       item_type = LdatItemType.three_d_spatial;
@@ -534,10 +534,10 @@ export class LdatChunk extends Chunk {
     if (item_size === 0 || count === 0) {
       const data = readBytes(fp, size);
       return new this({
-        chunk_type,
+        chunkType: chunk_type,
         data,
-        item_type,
-        item_size,
+        itemType: item_type,
+        itemSize: item_size,
       });
     }
     const items: (FmtItem | LdatItem)[] = [];
@@ -548,10 +548,10 @@ export class LdatChunk extends Chunk {
     const remaining = size - count * item_size;
     const trailing = remaining > 0 ? readBytes(fp, remaining) : b("");
     const instance = new this({
-      chunk_type,
+      chunkType: chunk_type,
       items,
-      item_type,
-      item_size,
+      itemType: item_type,
+      itemSize: item_size,
     });
     if (trailing?.length > 0) {
       instance._trailing = trailing;
@@ -578,9 +578,9 @@ export class LdatChunk extends Chunk {
   }
 }
 define(LdatChunk, {
-  chunk_type: { default: "ldat" },
+  chunkType: { default: "ldat" },
   items: { default: Factory(() => []) },
-  item_type: { default: LdatItemType.unknown },
-  item_size: { default: 0 },
+  itemType: { default: LdatItemType.unknown },
+  itemSize: { default: 0 },
 });
 register("ldat")(LdatChunk);

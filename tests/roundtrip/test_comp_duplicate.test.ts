@@ -89,7 +89,7 @@ function _ldtaInOrder(comp: CompItem): LdtaChunk[] {
 
 function _allIds(project: Project): number[] {
   return [
-    ...project.compositions.flatMap((comp) => _ldtaInOrder(comp).map((ld) => ld.layer_id)),
+    ...project.compositions.flatMap((comp) => _ldtaInOrder(comp).map((ld) => ld.layerId)),
     ...project.items.keys(),
   ];
 }
@@ -97,18 +97,18 @@ function _allIds(project: Project): number[] {
 /** Reference graph with layer ids as free variables (ldta positions). */
 function _graph(comp: CompItem): Map<string, unknown> {
   const pos = new Map<number, number>(
-    _ldtaInOrder(comp).map((ld, i): [number, number] => [ld.layer_id, i]),
+    _ldtaInOrder(comp).map((ld, i): [number, number] => [ld.layerId, i]),
   );
   const layers: Map<string, unknown>[] = [];
   for (const layer of comp.layers) {
     const ld = layer._ldta;
-    const matte = ld.matte_layer_id;
+    const matte = ld.matteLayerId;
     layers.push(
       new Map<string, unknown>([
         ["name", layer.name],
-        ["parent", ld.parent_id ? dictGet(pos, ld.parent_id) : null],
+        ["parent", ld.parentId ? dictGet(pos, ld.parentId) : null],
         ["matte", matte ? dictGet(pos, matte) : null],
-        ["source", ld.source_id],
+        ["source", ld.sourceId],
         ["override_uuids", [...layer.essentialPropertyUuids]],
       ]),
     );
@@ -136,7 +136,7 @@ function _graph(comp: CompItem): Map<string, unknown> {
 function _cctls(comp: CompItem): ListChunk[] {
   const out: ListChunk[] = [];
   for (const cif of comp._itemList.chunks) {
-    if (cif instanceof ListChunk && ["CIFO", "CIF2", "CIF3"].includes(cif.list_type)) {
+    if (cif instanceof ListChunk && ["CIFO", "CIF2", "CIF3"].includes(cif.listType)) {
       out.push(...filterByListType(cif.chunks, "CCtl"));
     }
   }
@@ -165,7 +165,7 @@ describe("TestDuplicateAgainstAE", () => {
     // AE trusts head.next_item_id on open without rescanning (probed in
     // AE 2026): a counter at or below a live id makes AE mint duplicate
     // ids, so the invariant is necessary.
-    expect(project._head.next_item_id > max(ids)).toBe(true);
+    expect(project._head.nextItemId > max(ids)).toBe(true);
   });
 
   test("test_name_and_placement", () => {
@@ -201,7 +201,7 @@ describe("TestDuplicateAgainstAE", () => {
       const ccid = next(filterByType(cprp.chunks, "CCId"));
       expect(ccid.value).toBe(dup.id);
       for (const chunk of cctl.chunks) {
-        if (["CVal", "CDef"].includes(chunk.chunk_type)) {
+        if (["CVal", "CDef"].includes(chunk.chunkType)) {
           expect(pyEq(chunk.data, bytes_.repeat(b("\x00"), len(chunk.data)))).toBe(true);
         }
       }
@@ -213,7 +213,7 @@ describe("TestDuplicateAgainstAE", () => {
     const src = _comp(project, "DupSrc");
     const dup = src.duplicate();
     // Layer sources (solid footage, the Inner precomp) are shared.
-    expect(pyEq(dup.layers.map((la) => la._ldta.source_id), src.layers.map((la) => la._ldta.source_id))).toBe(true);
+    expect(pyEq(dup.layers.map((la) => la._ldta.sourceId), src.layers.map((la) => la._ldta.sourceId))).toBe(true);
     // Layer-side Essential Properties override uuids reference the
     // SOURCE comp's controllers and must stay verbatim.
     expect(
@@ -246,18 +246,18 @@ describe("TestDuplicateAgainstAE", () => {
     // Both duplicates are clones of the same original, so ldta chunk
     // order is the exact pairing between their id spaces.
     const idMap = new Map<number, number>(
-      zip(pyLdta, aeLdta).map(([p, a]): [number, number] => [p.layer_id, a.layer_id]),
+      zip(pyLdta, aeLdta).map(([p, a]): [number, number] => [p.layerId, a.layerId]),
     );
     idMap.set(pyDup.id, aeDup.id);
 
     for (const ld of pyLdta) {
-      ld.layer_id = getitem(idMap, ld.layer_id);
-      if (idMap.has(ld.parent_id)) {
-        ld.parent_id = getitem(idMap, ld.parent_id);
+      ld.layerId = getitem(idMap, ld.layerId);
+      if (idMap.has(ld.parentId)) {
+        ld.parentId = getitem(idMap, ld.parentId);
       }
-      const matte = ld.matte_layer_id;
+      const matte = ld.matteLayerId;
       if (matte != null && idMap.has(matte)) {
-        ld.matte_layer_id = getitem(idMap, matte);
+        ld.matteLayerId = getitem(idMap, matte);
       }
     }
     for (const tdpi of recursiveFind(pyDup._itemList.chunks, "tdpi")) {
@@ -267,9 +267,9 @@ describe("TestDuplicateAgainstAE", () => {
     }
     const pyIdta = pyDup._idta;
     if (pyIdta == null) throw new AssertionError_("duplicate has no idta chunk");
-    pyIdta.item_id = aeDup.id;
+    pyIdta.itemId = aeDup.id;
     for (const chunk of pyDup._itemList.chunks) {
-      if (chunk.chunk_type === "iide") {
+      if (chunk.chunkType === "iide") {
         asInstance(chunk, U4LeChunk).value = aeDup.id;
       }
     }
@@ -281,7 +281,7 @@ describe("TestDuplicateAgainstAE", () => {
       // not a copy from AE.
       const cprp = findByListType(pyC.chunks, "CPrp");
       for (const chunk of cprp.chunks) {
-        if (["CCId", "CLId"].includes(chunk.chunk_type)) {
+        if (["CCId", "CLId"].includes(chunk.chunkType)) {
           const ref = asInstance(chunk, U4Chunk);
           if (idMap.has(ref.value)) {
             ref.value = getitem(idMap, ref.value);
@@ -292,14 +292,14 @@ describe("TestDuplicateAgainstAE", () => {
     pyDup.name = aeDup.name;
     // Documented family 1: AE re-derives the comp's time divisor; AE
     // accepts either value (its resave keeps py's).
-    pyDup._cdta.time_divisor = aeDup._cdta.time_divisor;
+    pyDup._cdta.timeDivisor = aeDup._cdta.timeDivisor;
     // Documented family 2: AE zeroes the stale viewer-pseudo-layer
     // expression-flags byte; AE's own resave zeroes it everywhere.
     const aeFlags = recursiveFind(aeDup._itemList.chunks, "tdb4").map(
-      (t) => t._expr_flags,
+      (t) => t._exprFlags,
     )[Symbol.iterator]();
     for (const t of recursiveFind(pyDup._itemList.chunks, "tdb4")) {
-      t._expr_flags = next(aeFlags);
+      t._exprFlags = next(aeFlags);
     }
     // Documented family 3: AE strips layer-level parT effect param
     // defs (redundant with EfdG); py keeps them - they are the only
@@ -331,7 +331,7 @@ describe("TestDuplicateAgainstAE", () => {
     const a = next(dup.layers, (la) => la.name === "A");
     const b_ = next(dup.layers, (la) => la.name === "B");
     expect(b_.parent).toBe(a);
-    expect(a._ldta.matte_layer_id).toBe(b_.id);
+    expect(a._ldta.matteLayerId).toBe(b_.id);
     expect(pyBool(a.transform.property("ADBE Opacity").expressionEnabled)).toBe(true);
     const innerLayer = next(dup.layers, (la) => la.name === "Inner");
     const overrides = asInstance(
@@ -342,7 +342,7 @@ describe("TestDuplicateAgainstAE", () => {
     expect(pyEq(dup.motionGraphicsControllers.map((c) => c.sourceCompId), [dup.id])).toBe(true);
     const ids = _allIds(project2);
     expect(len(ids)).toBe(len(new Set(ids)));
-    expect(project2._head.next_item_id > max(ids)).toBe(true);
+    expect(project2._head.nextItemId > max(ids)).toBe(true);
   });
 });
 
@@ -387,7 +387,7 @@ describe("TestDuplicateEdgeCases", () => {
     const src = next(project.compositions, (c) => pyBool(c.layers));
     const dup = src.duplicate();
     expect(dup.numLayers).toBe(src.numLayers);
-    expect(_ldtaInOrder(dup).every((ld) => ld.matte_layer_id == null)).toBe(true);
+    expect(_ldtaInOrder(dup).every((ld) => ld.matteLayerId == null)).toBe(true);
     const ids = _allIds(project);
     expect(len(ids)).toBe(len(new Set(ids)));
   });

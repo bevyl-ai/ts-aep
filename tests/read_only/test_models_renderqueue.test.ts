@@ -172,7 +172,7 @@ describe("TestRouuFrameRateAndDepth", () => {
     const project = parseProject(SAMPLES_DIR.div(`${sampleName}.aep`));
     const om = asInstance(project.renderQueue, RenderQueue).items[itemIndex].outputModules[0];
     const expOm = expected["renderQueue"]["items"][itemIndex]["outputModules"][0];
-    expect(approx(om._roou.frame_rate, frameRate, { abs: 1e-4 })).toBe(true);
+    expect(approx(om._roou.frameRate, frameRate, { abs: 1e-4 })).toBe(true);
     expect(om._roou.depth).toBe(expOm["settings"]["Depth"]);
     expect(expOm["settings"]["Depth"]).toBe(24);
     expect(getitem(om.getSettings(GetSettingsFormat.NUMBER), "Depth")).toBe(24);

@@ -29,9 +29,9 @@ import { parseRenderQueue } from "./render_queue.ts";
  */
 export function _colorProfileUtf8(rootChunks: Chunk[], marker: string): Utf8Chunk | null {
   for (const [i, chunk] of rootChunks.entries()) {
-    if (chunk.chunk_type !== marker || i + 1 >= rootChunks.length) continue;
+    if (chunk.chunkType !== marker || i + 1 >= rootChunks.length) continue;
     const following = rootChunks[i + 1];
-    if (following.chunk_type !== "Utf8" || !(following instanceof Utf8Chunk)) continue;
+    if (following.chunkType !== "Utf8" || !(following instanceof Utf8Chunk)) continue;
     if (following.value.includes("baseColorProfile")) return following;
   }
   return null;
@@ -39,13 +39,13 @@ export function _colorProfileUtf8(rootChunks: Chunk[], marker: string): Utf8Chun
 
 // The project settings nhed holds as nnhd does, in its older layout.
 export const _NHED_SETTINGS = [
-  "_display_byte",
-  "footage_timecode_display_start_type",
-  "_feet_byte",
-  "timecode_default_base",
-  "frames_count_type",
-  "bits_per_channel",
-  "transparency_grid_thumbnails",
+  "_displayByte",
+  "footageTimecodeDisplayStartType",
+  "_feetByte",
+  "timecodeDefaultBase",
+  "framesCountType",
+  "bitsPerChannel",
+  "transparencyGridThumbnails",
 ] as const;
 
 /** The fields `_NHED_SETTINGS` names, which nhed and nnhd both declare with the same types. */
@@ -146,7 +146,7 @@ export const parseProject = _suppressMaterialization()(function parse_project(
 
   project._effectParamDefs = parseEffectDefinitions(
     rootChunks,
-    nnhdChunk._system_code_page,
+    nnhdChunk._systemCodePage,
   );
 
   const rootFolder = parseFolder(

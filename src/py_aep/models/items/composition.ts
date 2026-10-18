@@ -117,7 +117,7 @@ export function _grid(cdta: CdtaChunk): [number, number] {
    * rate only approximates the grid's rate (29.970001220703125 for 23976 /
    * 800), so comp times snap to the grid, never to the 16.16 value.
    */
-  return frameGrid(cdta.frame_rate);
+  return frameGrid(cdta.frameRate);
 }
 
 export function _gridRate(cdta: CdtaChunk): number {
@@ -221,7 +221,7 @@ export function _materializeLayer(layer: Layer): void {
       if (!_CAMERA_LIGHT_TRANSFORM_SKIP.has(prop.matchName)) {
         prop._ensureMaterialized();
       }
-    } else if (prop._tdb4.has_time_base) {
+    } else if (prop._tdb4.hasTimeBase) {
       prop._ensureMaterialized();
     }
   }
@@ -323,9 +323,9 @@ export function _dropEssentialOverrides(layer: Layer): void {
       // (CprC counts them), the tdgp that follows holds their values.
       chunks[i + 1] = buildOvg2();
       const values = i + 2 < chunks.length ? chunks[i + 2] : null;
-      if (values instanceof ListChunk && values.list_type === "tdgp") {
+      if (values instanceof ListChunk && values.listType === "tdgp") {
         const inner = values.chunks;
-        const keep = inner.filter((c) => ["tdsb", "tdsn"].includes(c.chunk_type));
+        const keep = inner.filter((c) => ["tdsb", "tdsn"].includes(c.chunkType));
         inner.splice(0, inner.length, ...keep, new TdmnChunk({ value: "ADBE Group End" }));
       }
       break;
@@ -354,7 +354,7 @@ export function _insertLayerSkeletonExtras(layer: Layer): void {
 
   function hasFollowing(chunks: Chunk[], i: number, kind: string): boolean {
     const nxt = i + 1 < chunks.length ? chunks[i + 1] : null;
-    return (nxt instanceof ListChunk ? nxt.list_type : nxt?.chunk_type ?? null) === kind;
+    return (nxt instanceof ListChunk ? nxt.listType : nxt?.chunkType ?? null) === kind;
   }
 
   const chunks = root.chunks;
@@ -374,7 +374,7 @@ export function _insertLayerSkeletonExtras(layer: Layer): void {
       ch instanceof TdmnChunk &&
       ch.value === "ADBE Source Options Group" &&
       next instanceof ListChunk &&
-      next.list_type === "tdgp"
+      next.listType === "tdgp"
     ) {
       const inner = next.chunks;
       for (const [j, c] of inner.entries()) {
@@ -411,7 +411,7 @@ export function _rewriteEgIdentity(
   for (const cif of clonedItem.chunks) {
     if (
       !(cif instanceof ListChunk) ||
-      !["CIFO", "CIF2", "CIF3"].includes(cif.list_type)
+      !["CIFO", "CIF2", "CIF3"].includes(cif.listType)
     ) {
       continue;
     }
@@ -428,7 +428,7 @@ export function _rewriteEgIdentity(
         // AE zeroes the controller's cached value/default in the
         // duplicate and re-derives them from the source property
         // (probed in AE 2026 on a slider controller).
-        if (["CVal", "CDef"].includes(chunk.chunk_type) && chunk.data?.length > 0) {
+        if (["CVal", "CDef"].includes(chunk.chunkType) && chunk.data?.length > 0) {
           chunk.data = bytes_.repeat(b("\x00"), chunk.data.length);
         }
       }
@@ -580,22 +580,22 @@ export class CompItem extends AVItem {
    * timing and nested compositions are left untouched.
    */
   get frameRate(): number {
-    return this._cdta.frame_rate;
+    return this._cdta.frameRate;
   }
 
   set frameRate(value: number) {
     validateCompFrameRate(value);
     const cdta = this._cdta;
-    if (cdta.frame_rate === value) {
+    if (cdta.frameRate === value) {
       // A no-op write must stay a no-op: retiming an already-consistent
       // comp would requantize timings that are legitimately off-grid.
       return;
     }
-    const oldTimebase = cdta.internal_timebase;
+    const oldTimebase = cdta.internalTimebase;
     // Writing frame_rate also rewrites internal_timebase and time_scale
     // (CdtaChunk._update_timebase), so capture the old base first.
-    cdta.frame_rate = value;
-    this._retimeToTimebase(oldTimebase, cdta.internal_timebase);
+    cdta.frameRate = value;
+    this._retimeToTimebase(oldTimebase, cdta.internalTimebase);
     this._requantizeCompTiming();
   }
 
@@ -638,7 +638,7 @@ export class CompItem extends AVItem {
      * 500 % layer's ticks did not move.
      */
     const rescale = new_ !== old && old > 0;
-    const frameRate = this._cdta.frame_rate;
+    const frameRate = this._cdta.frameRate;
     for (const prop of this._walkProperties()) {
       if (prop._isLive()) {
         prop._ensureTimeBase();
@@ -653,7 +653,7 @@ export class CompItem extends AVItem {
       for (const keyframe of prop.keyframes) {
         if (propOld !== propNew) {
           const item = keyframe._ldatItem;
-          item.time_units = rescaleTicks(item.time_units, propOld, propNew);
+          item.timeUnits = rescaleTicks(item.timeUnits, propOld, propNew);
         }
         keyframe._frameRate = frameRate;
       }
@@ -680,15 +680,15 @@ export class CompItem extends AVItem {
     // take it in seconds before either is rewritten. 0xFFFFFFFF means
     // "the work area runs to the end of the comp": that end already
     // follows `duration`, and writing one would pin it.
-    const runsToEnd = cdta.work_area_end_dividend === WORK_AREA_TO_END;
-    const workAreaEnd = cdta.work_area_start + cdta.work_area_duration;
+    const runsToEnd = cdta.workAreaEndDividend === WORK_AREA_TO_END;
+    const workAreaEnd = cdta.workAreaStart + cdta.workAreaDuration;
 
-    cdta.duration_dividend = _durationUnits(cdta.duration, timebase, unitsPerFrame);
-    cdta.duration_divisor = timebase;
+    cdta.durationDividend = _durationUnits(cdta.duration, timebase, unitsPerFrame);
+    cdta.durationDivisor = timebase;
     this._restoreTimesInTimebase();
     if (!runsToEnd) {
-      cdta.work_area_end_dividend = _frameUnits(workAreaEnd, timebase, unitsPerFrame);
-      cdta.work_area_end_divisor = timebase;
+      cdta.workAreaEndDividend = _frameUnits(workAreaEnd, timebase, unitsPerFrame);
+      cdta.workAreaEndDivisor = timebase;
     }
     this._keepTimesInside();
   }
@@ -708,23 +708,23 @@ export class CompItem extends AVItem {
     const [timebase, unitsPerFrame] = _grid(cdta);
     const endOfComp = round(cdta.duration * timebase);
     const lastFrame = endOfComp - unitsPerFrame;
-    if (cdta.time_dividend > lastFrame) {
-      cdta.time_dividend = lastFrame;
+    if (cdta.timeDividend > lastFrame) {
+      cdta.timeDividend = lastFrame;
     }
-    if (cdta.work_area_start_dividend > lastFrame) {
-      cdta.work_area_start_dividend = lastFrame;
-      cdta.work_area_end_dividend = WORK_AREA_TO_END;
+    if (cdta.workAreaStartDividend > lastFrame) {
+      cdta.workAreaStartDividend = lastFrame;
+      cdta.workAreaEndDividend = WORK_AREA_TO_END;
     } else if (
-      cdta.work_area_end_dividend !== WORK_AREA_TO_END &&
+      cdta.workAreaEndDividend !== WORK_AREA_TO_END &&
       _ratioScaledGe(
-        cdta.work_area_end_dividend,
-        cdta.work_area_end_divisor,
+        cdta.workAreaEndDividend,
+        cdta.workAreaEndDivisor,
         timebase,
         endOfComp,
       )
     ) {
-      cdta.work_area_end_dividend = WORK_AREA_TO_END;
-      cdta.work_area_end_divisor = timebase;
+      cdta.workAreaEndDividend = WORK_AREA_TO_END;
+      cdta.workAreaEndDivisor = timebase;
     }
   }
 
@@ -745,8 +745,8 @@ export class CompItem extends AVItem {
     validateCompDuration(value);
     const cdta = this._cdta;
     const [timebase, unitsPerFrame] = _grid(cdta);
-    cdta.duration_dividend = _durationUnits(value, timebase, unitsPerFrame);
-    cdta.duration_divisor = timebase;
+    cdta.durationDividend = _durationUnits(value, timebase, unitsPerFrame);
+    cdta.durationDivisor = timebase;
     // AE also re-stores the time and work-area start over the timebase
     // on a duration write (a 0/600 time becomes 0/24576 at 24 fps).
     this._restoreTimesInTimebase();
@@ -755,7 +755,7 @@ export class CompItem extends AVItem {
 
   /** The duration of the item in frames. Read / Write. */
   get frameDuration(): number {
-    return this._cdta.frame_duration;
+    return this._cdta.frameDuration;
   }
 
   set frameDuration(value: number) {
@@ -779,8 +779,8 @@ export class CompItem extends AVItem {
     const cdta = this._cdta;
     return _frameNumber(
       cdta,
-      cdta.display_start_time_dividend,
-      cdta.display_start_time_divisor,
+      cdta.displayStartTimeDividend,
+      cdta.displayStartTimeDivisor,
     );
   }
 
@@ -799,10 +799,10 @@ export class CompItem extends AVItem {
     // is 13312/24576); past the signed 32-bit range, as a plain ratio.
     const units = value * unitsPerFrame;
     if (-(2 ** 31) <= units && units < 2 ** 31) {
-      cdta.display_start_time_dividend = units;
-      cdta.display_start_time_divisor = timebase;
+      cdta.displayStartTimeDividend = units;
+      cdta.displayStartTimeDivisor = timebase;
     } else {
-      cdta.display_start_time = units / timebase;
+      cdta.displayStartTime = units / timebase;
     }
     this._restoreTimesInTimebase();
   }
@@ -815,10 +815,10 @@ export class CompItem extends AVItem {
      */
     const cdta = this._cdta;
     const [timebase, unitsPerFrame] = _grid(cdta);
-    cdta.work_area_start_dividend = _frameUnits(cdta.work_area_start, timebase, unitsPerFrame);
-    cdta.work_area_start_divisor = timebase;
-    cdta.time_dividend = _frameUnits(cdta.time_seconds, timebase, unitsPerFrame);
-    cdta.time_divisor = timebase;
+    cdta.workAreaStartDividend = _frameUnits(cdta.workAreaStart, timebase, unitsPerFrame);
+    cdta.workAreaStartDivisor = timebase;
+    cdta.timeDividend = _frameUnits(cdta.timeSeconds, timebase, unitsPerFrame);
+    cdta.timeDivisor = timebase;
   }
 
   /**
@@ -831,7 +831,7 @@ export class CompItem extends AVItem {
    * ends there instead; After Effects moves the start back.
    */
   get workAreaStart(): number {
-    return this._cdta.work_area_start;
+    return this._cdta.workAreaStart;
   }
 
   set workAreaStart(value: number) {
@@ -839,7 +839,7 @@ export class CompItem extends AVItem {
       min: 0.0,
       max: (self: CompItem) => self.duration - 1 / self.frameRate,
     })(value, this);
-    const runsToEnd = this._cdta.work_area_end_dividend === WORK_AREA_TO_END;
+    const runsToEnd = this._cdta.workAreaEndDividend === WORK_AREA_TO_END;
     this._setWorkArea(value, runsToEnd ? null : value + this.workAreaDuration);
   }
 
@@ -847,7 +847,7 @@ export class CompItem extends AVItem {
    * Read / Write. */
   get workAreaStartFrame(): number {
     const cdta = this._cdta;
-    return _frameNumber(cdta, cdta.work_area_start_dividend, cdta.work_area_start_divisor);
+    return _frameNumber(cdta, cdta.workAreaStartDividend, cdta.workAreaStartDivisor);
   }
 
   set workAreaStartFrame(value: number) {
@@ -866,7 +866,7 @@ export class CompItem extends AVItem {
    * frame rounding up, as After Effects does.
    */
   get workAreaDuration(): number {
-    return this._cdta.work_area_duration;
+    return this._cdta.workAreaDuration;
   }
 
   set workAreaDuration(value: number) {
@@ -880,7 +880,7 @@ export class CompItem extends AVItem {
 
   /** The work area duration in frames. Read / Write. */
   get workAreaDurationFrame(): number {
-    return this._cdta.work_area_duration_frame;
+    return this._cdta.workAreaDurationFrame;
   }
 
   set workAreaDurationFrame(value: number) {
@@ -900,15 +900,15 @@ export class CompItem extends AVItem {
      */
     const cdta = this._cdta;
     const [timebase, unitsPerFrame] = _grid(cdta);
-    cdta.work_area_start_dividend = _frameUnits(start, timebase, unitsPerFrame);
-    cdta.work_area_start_divisor = timebase;
+    cdta.workAreaStartDividend = _frameUnits(start, timebase, unitsPerFrame);
+    cdta.workAreaStartDivisor = timebase;
     let endUnits: number | null =
       end == null ? null : _frameUnits(end, timebase, unitsPerFrame);
     if (endUnits == null || endUnits >= round(cdta.duration * timebase)) {
       endUnits = WORK_AREA_TO_END;
     }
-    cdta.work_area_end_dividend = endUnits;
-    cdta.work_area_end_divisor = timebase;
+    cdta.workAreaEndDividend = endUnits;
+    cdta.workAreaEndDivisor = timebase;
   }
 
   /**
@@ -922,15 +922,15 @@ export class CompItem extends AVItem {
    * the display start time.
    */
   get time(): number {
-    return this._cdta.time_seconds;
+    return this._cdta.timeSeconds;
   }
 
   set time(value: number) {
     _validateNumber({ min: 0.0, max: 10800.0 })(value);
     const cdta = this._cdta;
     const [timebase, unitsPerFrame] = _grid(cdta);
-    cdta.time_dividend = _frameUnits(value, timebase, unitsPerFrame);
-    cdta.time_divisor = timebase;
+    cdta.timeDividend = _frameUnits(value, timebase, unitsPerFrame);
+    cdta.timeDivisor = timebase;
   }
 
   /**
@@ -940,7 +940,7 @@ export class CompItem extends AVItem {
    */
   get frameTime(): number {
     const cdta = this._cdta;
-    return _frameNumber(cdta, cdta.time_dividend, cdta.time_divisor);
+    return _frameNumber(cdta, cdta.timeDividend, cdta.timeDivisor);
   }
 
   set frameTime(value: number) {
@@ -992,28 +992,28 @@ export class CompItem extends AVItem {
     validateCompFrameRate(frameRate);
 
     const newId = project._allocateId();
-    const aeMajor = project._head.ae_version_major;
+    const aeMajor = project._head.aeVersionMajor;
 
     // AE hard-crashes opening a comp item without the full view-state
     // skeleton (~180 chunks of viewer pseudo-layers and panel state),
     // so the whole item is built by the typed skeleton builder.
     const [itemList, idta, nameUtf8, gide] = buildNewCompItem({
-      item_id: newId,
+      itemId: newId,
       name,
       width,
       height,
-      pixel_aspect: pixelAspect,
+      pixelAspect: pixelAspect,
       duration,
-      frame_rate: frameRate,
-      allocate_layer_id: project._allocateId.bind(project),
-      ae_major: aeMajor,
+      frameRate: frameRate,
+      allocateLayerId: project._allocateId.bind(project),
+      aeMajor: aeMajor,
       label: labelIndex(project._preferences, "Comp Label Index 2", 15),
     });
 
     // View data chunks that AE expects after every comp's LIST:Item
     const fee = new ListChunk({
-      list_type: "FEE ",
-      chunks: aeWrites("ppSn", aeMajor) ? [new F8Chunk({ chunk_type: "ppSn" })] : [],
+      listType: "FEE ",
+      chunks: aeWrites("ppSn", aeMajor) ? [new F8Chunk({ chunkType: "ppSn" })] : [],
     });
     const viewData: Chunk[] = [fee, ...buildItemViewChunks()];
 
@@ -1131,8 +1131,8 @@ export class CompItem extends AVItem {
         continue;
       }
       for (const om of rqi.outputModules) {
-        if (om._omLdat.post_render_target_comp_id === compId) {
-          om._omLdat.post_render_target_comp_id = 0;
+        if (om._omLdat.postRenderTargetCompId === compId) {
+          om._omLdat.postRenderTargetCompId = 0;
         }
       }
     }
@@ -1175,7 +1175,7 @@ export class CompItem extends AVItem {
     // Pre-2020 files have no iide; the id then lives only in idta.
     const iide = findByTypeOrNull(clonedItem.chunks, "iide");
     if (iide !== null) iide.value = newCompId;
-    findByType(clonedItem.chunks, "idta").item_id = newCompId;
+    findByType(clonedItem.chunks, "idta").itemId = newCompId;
 
     // Fresh ids for every ldta - real layers AND viewer pseudo-layers,
     // AE reallocates them all - then remap every intra-comp layer
@@ -1185,18 +1185,18 @@ export class CompItem extends AVItem {
     const ldtaChunks = recursiveFind(clonedItem.chunks, "ldta");
     const idMap: Map<number, number> = new Map();
     for (const ldta of ldtaChunks) {
-      idMap.set(ldta.layer_id, project._allocateId());
+      idMap.set(ldta.layerId, project._allocateId());
     }
     for (const ldta of ldtaChunks) {
-      ldta.layer_id = getitem(idMap, ldta.layer_id);
-      if (idMap.has(ldta.parent_id)) {
-        ldta.parent_id = getitem(idMap, ldta.parent_id);
+      ldta.layerId = getitem(idMap, ldta.layerId);
+      if (idMap.has(ldta.parentId)) {
+        ldta.parentId = getitem(idMap, ldta.parentId);
       }
       // matte_layer_id is absent (None) in pre-AE23 files.
-      const matte = ldta.matte_layer_id;
+      const matte = ldta.matteLayerId;
       const newMatte = matte == null ? undefined : idMap.get(matte);
       if (newMatte !== undefined) {
-        ldta.matte_layer_id = newMatte;
+        ldta.matteLayerId = newMatte;
       }
     }
     // tdpi layer references: the effect owner (hidden -0000 param) and
@@ -1218,8 +1218,8 @@ export class CompItem extends AVItem {
     // AE parks the duplicate's current time at 0 (AE 2026: a copy of a
     // comp whose time is 2.5 s reads time 0).
     const cdta = findByType(clonedItem.chunks, "cdta");
-    cdta.time_dividend = 0;
-    cdta.time_divisor = 600;
+    cdta.timeDividend = 0;
+    cdta.timeDivisor = 600;
 
     // Insert right after the original's block, then build the model
     // through the normal parse path (registers it in project.items).
@@ -1249,8 +1249,8 @@ export class CompItem extends AVItem {
     if (deferred != null) {
       const sourceIds: Set<number> = new Set();
       for (const lc of deferred[0]) {
-        if (lc instanceof DeferredListChunk && lc._parsed_chunks == null) {
-          const raw = lc._raw_body;
+        if (lc instanceof DeferredListChunk && lc._parsedChunks == null) {
+          const raw = lc._rawBody;
           if (
             raw.length >= _LDTA_SOURCE_ID_END &&
             bytesEq(bytes_.slice(raw, 0, 4), b("ldta"))
@@ -1266,8 +1266,8 @@ export class CompItem extends AVItem {
         } else {
           const ldta = findByTypeOrNull(lc.chunks, "ldta");
           if (ldta === null) continue;
-          if (ldta.source_id !== 0) {
-            sourceIds.add(ldta.source_id);
+          if (ldta.sourceId !== 0) {
+            sourceIds.add(ldta.sourceId);
           }
         }
       }
@@ -1412,7 +1412,7 @@ export class CompItem extends AVItem {
     for (const [i, chunk] of this._itemList.chunks.entries()) {
       if (
         chunk instanceof ListChunk &&
-        ["DLay", "SLay", "CLay", "SecL", "CIFO"].includes(chunk.list_type)
+        ["DLay", "SLay", "CLay", "SecL", "CIFO"].includes(chunk.listType)
       ) {
         return i;
       }
@@ -1484,8 +1484,8 @@ export class CompItem extends AVItem {
     } else {
       const [cps2, utf8Chunk] = buildCps2(value);
       const cif3 = new ListChunk({
-        list_type: "CIF3",
-        chunks: [cps2, new S4Chunk({ chunk_type: "CcCt" })],
+        listType: "CIF3",
+        chunks: [cps2, new S4Chunk({ chunkType: "CcCt" })],
       });
       this._itemList.chunks.push(cif3);
       this._egTemplateNameUtf8 = utf8Chunk;
@@ -1532,7 +1532,7 @@ export class CompItem extends AVItem {
      */
     return this._itemList.chunks.filter(
       (c): c is ListChunk =>
-        c instanceof ListChunk && ["CIFO", "CIF2", "CIF3"].includes(c.list_type),
+        c instanceof ListChunk && ["CIFO", "CIF2", "CIF3"].includes(c.listType),
     );
   }
 
@@ -1548,7 +1548,7 @@ export class CompItem extends AVItem {
      * Called once per CIF container so each holds its own chunk objects.
      */
     const compId = this.id;
-    const layerId = plan.layer._ldta.layer_id;
+    const layerId = plan.layer._ldta.layerId;
     if (plan.controllerType === CONTROLLER_SLIDER) {
       // AE seeds the EGP slider range from the pard UI slider range
       // (Slider Control -> 0..100 despite its +/-1e6 valid range,
@@ -1620,7 +1620,7 @@ export class CompItem extends AVItem {
       cif.chunks.push(cctl);
       const ccct = findByType(cif.chunks, "CcCt");
       ccct.value += 1;
-      if (cif.list_type === "CIF3" || model == null) {
+      if (cif.listType === "CIF3" || model == null) {
         model = [nameUtf8, ctyp];
       }
     }
@@ -1644,7 +1644,7 @@ export class CompItem extends AVItem {
           (node) => new SourcePropertyRef(node.matchName, node.propIndex),
         ),
         sourceCompId: this.id,
-        sourceLayerId: layer._ldta.layer_id,
+        sourceLayerId: layer._ldta.layerId,
       }),
     );
   }
@@ -1691,7 +1691,7 @@ export class CompItem extends AVItem {
     const display = name != null ? name : layer.name;
     validateName(display);
     const uuidStr = uuid4();
-    const timebase = this._cdta.internal_timebase;
+    const timebase = this._cdta.internalTimebase;
     const [nodes, pathJson] = mediaControllerPath();
     // AE names a per-controller thumbnail cache file it regenerates on
     // open; only the uuid-shaped name is stored in the project.
@@ -1707,7 +1707,7 @@ export class CompItem extends AVItem {
         timebase,
         thumbnail,
         this.id,
-        layer._ldta.layer_id,
+        layer._ldta.layerId,
         pathJson,
       ),
     );
@@ -1736,21 +1736,21 @@ export class CompItem extends AVItem {
    * Read `renderer_options` again after changing the renderer.
    */
   get renderer(): string {
-    const binaryName = this._prin.match_name;
+    const binaryName = this._prin.matchName;
     return _RENDERER_BINARY_TO_EXTENDSCRIPT.get(binaryName) ?? binaryName;
   }
 
   set renderer(value: string) {
     _validateRenderer(value);
     const binaryName = getitem(_RENDERER_EXTENDSCRIPT_TO_BINARY, value);
-    if (binaryName === this._prin.match_name) {
+    if (binaryName === this._prin.matchName) {
       // If comp is already set to the requested renderer,
       // preserve renderer options instead of replacing with defaults
       return;
     }
     // Otherwise update match name and display name
-    this._prin.match_name = binaryName;
-    this._prin.display_name = getitem(_RENDERER_DISPLAY_NAMES, binaryName);
+    this._prin.matchName = binaryName;
+    this._prin.displayName = getitem(_RENDERER_DISPLAY_NAMES, binaryName);
     // Create a fresh prda chunk using requested renderer's default settings
     const newPrda = new (getitem(_PRDA_VARIANTS, binaryName)[0])();
     // Replace the existing prda chunk
@@ -2263,7 +2263,7 @@ export class CompItem extends AVItem {
     // AE sets the ldta name bit when addParametricMesh receives an
     // explicit name (unlike other sourceless layers); UI-created mesh
     // layers with default names leave it clear.
-    layer._ldta.name_set = explicitName;
+    layer._ldta.nameSet = explicitName;
     this._insertLayer(layer);
     return layer;
   }
@@ -2372,7 +2372,7 @@ export class CompItem extends AVItem {
       if (
         !(layer instanceof AVLayer) ||
         layer.source == null ||
-        layer._ldta.layer_type === LayerType.THREE_D_MODEL
+        layer._ldta.layerType === LayerType.THREE_D_MODEL
       ) {
         throw new ValueError(
           "move_all_attributes=False requires a layer with a " + "replaceable source.",
@@ -2463,7 +2463,7 @@ export class CompItem extends AVItem {
     for (const ly of moved) {
       const newId = project._allocateId();
       idMap.set(ly.id, newId);
-      ly._ldta.layer_id = newId;
+      ly._ldta.layerId = newId;
       rewriteOwnerTdpi(ly._layerList, newId);
     }
 
@@ -2479,7 +2479,7 @@ export class CompItem extends AVItem {
     for (const [i, ly] of moved.entries()) {
       const block = blocks[i];
       finalBlocks.push(block);
-      const referenced: number[] = [ly._ldta.matte_layer_id || 0];
+      const referenced: number[] = [ly._ldta.matteLayerId || 0];
       referenced.push(...sorted([...collectLayerRefTdpiIds(ly._layerList)]));
       for (const matteId of referenced) {
         if (!matteId || idMap.has(matteId) || matteMap.has(matteId)) {
@@ -2495,16 +2495,16 @@ export class CompItem extends AVItem {
           ];
           const mLdta = findByType(mList.chunks, "ldta");
           const copyId = project._allocateId();
-          mLdta.layer_id = copyId;
+          mLdta.layerId = copyId;
           rewriteOwnerTdpi(mList, copyId);
           // The clone's own references point at old-comp layer
           // ids: follow a parent/matte that moved, drop one that
           // stayed behind (it does not exist in the new comp).
-          if (mLdta.parent_id) {
-            mLdta.parent_id = idMap.get(mLdta.parent_id) ?? 0;
+          if (mLdta.parentId) {
+            mLdta.parentId = idMap.get(mLdta.parentId) ?? 0;
           }
-          if (mLdta.matte_layer_id) {
-            mLdta.matte_layer_id = idMap.get(mLdta.matte_layer_id) ?? 0;
+          if (mLdta.matteLayerId) {
+            mLdta.matteLayerId = idMap.get(mLdta.matteLayerId) ?? 0;
           }
           matteMap.set(matteId, copyId);
           finalBlocks.push(mBlock);
@@ -2517,12 +2517,12 @@ export class CompItem extends AVItem {
     // the copy created above.
     for (const ly of moved) {
       const ldta = ly._ldta;
-      if (ldta.parent_id) {
-        ldta.parent_id = idMap.get(ldta.parent_id) ?? 0;
+      if (ldta.parentId) {
+        ldta.parentId = idMap.get(ldta.parentId) ?? 0;
       }
-      const matteId = ldta.matte_layer_id || 0;
+      const matteId = ldta.matteLayerId || 0;
       if (matteId) {
-        ldta.matte_layer_id = idMap.get(matteId) || (matteMap.get(matteId) ?? 0);
+        ldta.matteLayerId = idMap.get(matteId) || (matteMap.get(matteId) ?? 0);
       }
     }
 
@@ -2581,11 +2581,11 @@ export class CompItem extends AVItem {
         continue;
       }
       const ldta = ly._ldta;
-      if (oldIds.has(ldta.parent_id)) {
-        ldta.parent_id = replId;
+      if (oldIds.has(ldta.parentId)) {
+        ldta.parentId = replId;
       }
-      if (oldIds.has(ldta.matte_layer_id)) {
-        ldta.matte_layer_id = replId;
+      if (oldIds.has(ldta.matteLayerId)) {
+        ldta.matteLayerId = replId;
       }
     }
 
@@ -2691,19 +2691,19 @@ export class CompItem extends AVItem {
     const cdat = new CdatChunk({ pad: b("\x00\x00\x00\x00") });
     const tdb4 = new Tdb4Chunk({
       dimensions: 1,
-      time_base: this._cdta.internal_timebase,
-      no_value_flags: 1,
-      type_flags: 0x08,
-      cvot_flags: 0x04,
-      value_hint_type: 1,
+      timeBase: this._cdta.internalTimebase,
+      noValueFlags: 1,
+      typeFlags: 0x08,
+      cvotFlags: 0x04,
+      valueHintType: 1,
     });
     const tdbs = new ListChunk({
-      list_type: "tdbs",
+      listType: "tdbs",
       chunks: [new TdsbChunk(), TdsnChunk.new_(TDSN_SENTINEL), tdb4, cdat],
     });
-    const btds = new ListChunk({ list_type: "btds", chunks: [tdbs, btdk] });
+    const btds = new ListChunk({ listType: "btds", chunks: [tdbs, btdk] });
     const btgu = new ListChunk({
-      list_type: "btgu",
+      listType: "btgu",
       chunks: [PguiChunk.new_(), new PguiChunk()],
     });
     const tdmn = new TdmnChunk({ value: "ADBE Text Document" });
@@ -2809,28 +2809,28 @@ export class CompItem extends AVItem {
 descriptor(
   CompItem,
   "bgColor",
-  new ChunkField("_cdta", "bg_color", { validate: validateRgbColor }),
+  new ChunkField("_cdta", "bgColor", { validate: validateRgbColor }),
 );
 
 /** When `true`, Draft 3D mode is enabled for the composition. Read / Write. */
 descriptor(CompItem, "draft3d", ChunkField.bool("_cdta", "draft3d"));
 
 /** When `true`, frame blending is enabled for this Composition. Read / Write. */
-descriptor(CompItem, "frameBlending", ChunkField.bool("_cdta", "frame_blending"));
+descriptor(CompItem, "frameBlending", ChunkField.bool("_cdta", "frameBlending"));
 
 /** When `true`, only layers with `shy` set to `false` are shown in the
  * Timeline panel. Read / Write. */
-descriptor(CompItem, "hideShyLayers", ChunkField.bool("_cdta", "hide_shy_layers"));
+descriptor(CompItem, "hideShyLayers", ChunkField.bool("_cdta", "hideShyLayers"));
 
 /** When `true`, motion blur is enabled for the composition. Read / Write. */
-descriptor(CompItem, "motionBlur", ChunkField.bool("_cdta", "motion_blur"));
+descriptor(CompItem, "motionBlur", ChunkField.bool("_cdta", "motionBlur"));
 
 /** When `true`, the frame rate of nested compositions is preserved in
  * the current composition. Read / Write. */
 descriptor(
   CompItem,
   "preserveNestedFrameRate",
-  ChunkField.bool("_cdta", "preserve_nested_frame_rate"),
+  ChunkField.bool("_cdta", "preserveNestedFrameRate"),
 );
 
 /** When `true`, the resolution of nested compositions is preserved in
@@ -2838,7 +2838,7 @@ descriptor(
 descriptor(
   CompItem,
   "preserveNestedResolution",
-  ChunkField.bool("_cdta", "preserve_nested_resolution"),
+  ChunkField.bool("_cdta", "preserveNestedResolution"),
 );
 
 /** The width of the item in pixels. Read / Write. */
@@ -2865,7 +2865,7 @@ descriptor(
 descriptor(
   CompItem,
   "shutterAngle",
-  new ChunkField("_cdta", "shutter_angle", {
+  new ChunkField("_cdta", "shutterAngle", {
     validate: _validateNumber({ min: 0, max: 720, integer: true }),
   }),
 );
@@ -2874,7 +2874,7 @@ descriptor(
 descriptor(
   CompItem,
   "shutterPhase",
-  new ChunkField("_cdta", "shutter_phase", {
+  new ChunkField("_cdta", "shutterPhase", {
     validate: _validateNumber({ min: -360, max: 360, integer: true }),
   }),
 );
@@ -2884,7 +2884,7 @@ descriptor(
 descriptor(
   CompItem,
   "resolutionFactor",
-  new ChunkField("_cdta", "resolution_factor", {
+  new ChunkField("_cdta", "resolutionFactor", {
     validate: validateSequence({ length: 2, min: 1, max: 99, integer: true }),
   }),
 );
@@ -2896,7 +2896,7 @@ descriptor(
 descriptor(
   CompItem,
   "motionBlurAdaptiveSampleLimit",
-  new ChunkField("_cdta", "motion_blur_adaptive_sample_limit", {
+  new ChunkField("_cdta", "motionBlurAdaptiveSampleLimit", {
     validate: _validateNumber({
       min: (self: CompItem) => self.motionBlurSamplesPerFrame,
       max: 256,
@@ -2910,7 +2910,7 @@ descriptor(
 descriptor(
   CompItem,
   "motionBlurSamplesPerFrame",
-  new ChunkField("_cdta", "motion_blur_samples_per_frame", {
+  new ChunkField("_cdta", "motionBlurSamplesPerFrame", {
     validate: _validateNumber({ min: 2, max: 64, integer: true }),
   }),
 );
@@ -2919,7 +2919,7 @@ descriptor(
 descriptor(
   CompItem,
   "pixelAspect",
-  new ChunkField("_cdta", "pixel_aspect", {
+  new ChunkField("_cdta", "pixelAspect", {
     validate: validatePixelAspect,
     // See `width`.
     preSet: "_buildLiveDefaults",
@@ -2930,14 +2930,14 @@ descriptor(
 descriptor(
   CompItem,
   "timeScale",
-  new ChunkField("_cdta", "time_scale", { readOnly: true }),
+  new ChunkField("_cdta", "timeScale", { readOnly: true }),
 );
 
 /** The time set as the beginning of the composition, in seconds. Read / Write. */
 descriptor(
   CompItem,
   "displayStartTime",
-  new ChunkField("_cdta", "display_start_time", {
+  new ChunkField("_cdta", "displayStartTime", {
     // AE 2026's own bounds ("out of range -10800 to 86400").
     validate: _validateNumber({ min: -10800.0, max: 86400.0 }),
     postSet: "_restoreTimesInTimebase",

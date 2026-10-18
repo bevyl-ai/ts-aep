@@ -178,7 +178,7 @@ export const _setLinearizeWorkingSpace = requiresVersion(15)(function linearize_
   validateBool(value);
   // `lnrp` sits immediately after `lnrb` (or after `cpid` when linear
   // blending is off), before `dwga`.
-  toggleFlagChunk(this._rifx, "lnrp", value, { after_types: ["lnrb", "cpid"] });
+  toggleFlagChunk(this._rifx, "lnrp", value, { afterTypes: ["lnrb", "cpid"] });
 });
 
 export const _setExpressionEngine = requiresVersion(16)(function expression_engine(
@@ -190,7 +190,7 @@ export const _setExpressionEngine = requiresVersion(16)(function expression_engi
     this._exenUtf8.value = value;
   } else {
     const utf8 = new Utf8Chunk({ value });
-    const exen = new ListChunk({ list_type: "ExEn", chunks: [utf8] });
+    const exen = new ListChunk({ listType: "ExEn", chunks: [utf8] });
     this._rifx.chunks.push(exen);
     this._exenUtf8 = utf8;
   }
@@ -502,8 +502,8 @@ export class Project {
     });
     if ([1, 2].includes(depth)) {
       // 0 = 8 bpc = the chunk default
-      nhed.bits_per_channel = int(depth);
-      nnhd.bits_per_channel = int(depth);
+      nhed.bitsPerChannel = int(depth);
+      nnhd.bitsPerChannel = int(depth);
     }
     const blob = preferences._getBytes(
       "Project Pref Section",
@@ -514,12 +514,12 @@ export class Project {
     const item = TimeDisplayPrefItem.frombytes(blob);
     pyAssert(item instanceof TimeDisplayPrefItem);
     for (const chunk of [nhed, nnhd]) {
-      chunk.time_display_type = item.display_byte & 0x7f;
-      chunk.feet_frames_film_type = (item.display_byte & 0x80) !== 0;
-      chunk.footage_timecode_display_start_type = item.footage_timecode_display_start_type;
-      chunk.frames_use_feet_frames = (item.feet_byte & 0x01) !== 0;
-      chunk.timecode_default_base = item.timecode_default_base;
-      chunk.frames_count_type = item.frames_count_type;
+      chunk.timeDisplayType = item.displayByte & 0x7f;
+      chunk.feetFramesFilmType = (item.displayByte & 0x80) !== 0;
+      chunk.footageTimecodeDisplayStartType = item.footageTimecodeDisplayStartType;
+      chunk.framesUseFeetFrames = (item.feetByte & 0x01) !== 0;
+      chunk.timecodeDefaultBase = item.timecodeDefaultBase;
+      chunk.framesCountType = item.framesCountType;
     }
   }
 
@@ -552,34 +552,34 @@ export class Project {
     // open in that AE (validated AE 2022-2026). A release newer than any
     // with a known stamp keeps the AE 2026 one HeadChunk defaults to,
     // matching the AE 2026 skeleton built below.
-    head.sync_file_format_version();
-    const major = head.ae_version_major;
+    head.syncFileFormatVersion();
+    const major = head.aeVersionMajor;
     // Saving-platform stamps, constant per platform across the sample
     // corpus (1348 Windows / 7 macOS files): the head OS code, nnhd byte
     // 2, and the system text encoding at the start of nnhd 0x1A - macOS
     // 0x0100, Windows code page 1252 up to AE 25 and 65001 (UTF-8) from
     // AE 26. AE rewrites all three on every save.
-    head.ae_version_os = macos ? 14 : 12;
-    const svap = new SvapChunk({ build_number: head.ae_build_number });
+    head.aeVersionOs = macos ? 14 : 12;
+    const svap = new SvapChunk({ buildNumber: head.aeBuildNumber });
     const nhed = new NhedChunk();
     const nnhd = new NnhdChunk();
     this._applyProjectSettingsPrefs(preferences, nhed, nnhd);
-    nnhd._saving_platform = macos ? 0x08 : 0;
+    nnhd._savingPlatform = macos ? 0x08 : 0;
     if (macos) {
-      nnhd._system_code_page = 0x0100;
+      nnhd._systemCodePage = 0x0100;
     } else {
       const utf8 = aeWrites("utf-8 code page", major);
-      nnhd._system_code_page = utf8 ? 65001 : 1252;
+      nnhd._systemCodePage = utf8 ? 65001 : 1252;
     }
-    const acer = new U1Chunk({ chunk_type: "acer", value: 1 });
-    const adfr = new F8Chunk({ chunk_type: "adfr", value: 48000.0 });
-    const dwga = new DwgaChunk({ working_gamma_selector: 1 });
+    const acer = new U1Chunk({ chunkType: "acer", value: 1 });
+    const adfr = new F8Chunk({ chunkType: "adfr", value: 48000.0 });
+    const dwga = new DwgaChunk({ workingGammaSelector: 1 });
     // A new project takes the platform's GPU renderer: AE's File > New
     // on Windows writes CUDA (emptier.aep), macOS files carry Metal.
     const gpugUtf8 = new Utf8Chunk({
       value: GpuAccelType.toBinary(macos ? GpuAccelType.METAL : GpuAccelType.CUDA),
     });
-    const fold = new ListChunk({ list_type: "Fold", chunks: [new FdtaChunk()] });
+    const fold = new ListChunk({ listType: "Fold", chunks: [new FdtaChunk()] });
     // AE stamps the "New Project Solids Folder" preference into the
     // root sfnm chunk at File > New; the stored name is used from
     // then on (see _solids_folder_name).
@@ -602,36 +602,36 @@ export class Project {
       nhed,
       nnhd,
       adfr,
-      new ListChunk({ list_type: "Pefl" }),
-      new U1Chunk({ chunk_type: "qtlg" }),
-      new ListChunk({ list_type: "gpuG", chunks: [gpugUtf8] }),
+      new ListChunk({ listType: "Pefl" }),
+      new U1Chunk({ chunkType: "qtlg" }),
+      new ListChunk({ listType: "gpuG", chunks: [gpugUtf8] }),
       new ListChunk({
-        list_type: "sfnm",
+        listType: "sfnm",
         chunks: [
           new Utf8Chunk({ value: solidsName || "Solids" }),
-          new U4LeChunk({ chunk_type: "sfid" }),
+          new U4LeChunk({ chunkType: "sfid" }),
         ],
       }),
     ];
     if (aeWrites("media replacement folder id", major)) {
-      rootChunks.push(new U4LeChunk({ chunk_type: "mrid" }));
+      rootChunks.push(new U4LeChunk({ chunkType: "mrid" }));
     }
-    rootChunks.push(acer, new ListChunk({ list_type: "CPPl" }), new CpidChunk(), dwga);
+    rootChunks.push(acer, new ListChunk({ listType: "CPPl" }), new CpidChunk(), dwga);
     if (aeWrites("color management", major)) {
       cmsUtf8 = new Utf8Chunk({ value: this._NEW_PROJECT_CMS_JSON });
       rootChunks.push(
-        new U1Chunk({ chunk_type: "pcms", value: 1 }),
+        new U1Chunk({ chunkType: "pcms", value: 1 }),
         cmsUtf8,
-        new U1Chunk({ chunk_type: "PwCs", value: 1 }),
+        new U1Chunk({ chunkType: "PwCs", value: 1 }),
         new Utf8Chunk({ value: "{}" }),
       );
     }
     if (aeWrites("pdvc", major)) {
-      rootChunks.push(new U1Chunk({ chunk_type: "pdvc", value: 1 }), new Utf8Chunk({ value: "{}" }));
+      rootChunks.push(new U1Chunk({ chunkType: "pdvc", value: 1 }), new Utf8Chunk({ value: "{}" }));
     }
     if (aeWrites("expression engine", major)) {
       exenUtf8 = new Utf8Chunk({ value: "javascript-1.0" });
-      rootChunks.push(new ListChunk({ list_type: "ExEn", chunks: [exenUtf8] }));
+      rootChunks.push(new ListChunk({ listType: "ExEn", chunks: [exenUtf8] }));
     }
     rootChunks.push(
       fold,
@@ -641,10 +641,10 @@ export class Project {
       new WsnsChunk(),
       new WsnmChunk(),
       new Utf8Chunk({ value: "Default" }),
-      new U4Chunk({ chunk_type: "fcid" }),
-      new U2Chunk({ chunk_type: "oacc" }),
+      new U4Chunk({ chunkType: "fcid" }),
+      new U2Chunk({ chunkType: "oacc" }),
     );
-    const rifx = new ListChunk({ chunk_type: "RIFX", list_type: "Egg!", chunks: rootChunks });
+    const rifx = new ListChunk({ chunkType: "RIFX", listType: "Egg!", chunks: rootChunks });
 
     const project = new this({
       _nhed: nhed,
@@ -784,8 +784,8 @@ export class Project {
   _syncNhedTimecodeDefaultBase(): void {
     // nhed matches nnhd in every sample, none above 255; what AE writes
     // in its u1 for a larger base is unmeasured, so it is left as is.
-    if (this._nnhd.timecode_default_base <= 0xff) {
-      this._syncNhedField("timecode_default_base");
+    if (this._nnhd.timecodeDefaultBase <= 0xff) {
+      this._syncNhedField("timecodeDefaultBase");
     }
   }
 
@@ -807,14 +807,14 @@ export class Project {
    * the standard blending mode is used. Read / Write.
    */
   get linearBlending(): boolean {
-    return this._rootChunks.some((c) => c.chunk_type === "lnrb");
+    return this._rootChunks.some((c) => c.chunkType === "lnrb");
   }
 
   set linearBlending(value: boolean) {
     validateBool(value);
     // AE keeps `lnrb` in a fixed slot right after `cpid` (before `lnrp` /
     // `dwga`); appending it at the tail makes AE report "missing data".
-    toggleFlagChunk(this._rifx, "lnrb", value, { after_types: ["cpid"] });
+    toggleFlagChunk(this._rifx, "lnrb", value, { afterTypes: ["cpid"] });
   }
 
   /**
@@ -822,7 +822,7 @@ export class Project {
    * operations. Read / Write.
    */
   get linearizeWorkingSpace(): boolean {
-    return this._rootChunks.some((c) => c.chunk_type === "lnrp");
+    return this._rootChunks.some((c) => c.chunkType === "lnrp");
   }
 
   set linearizeWorkingSpace(value: boolean) {
@@ -869,7 +869,7 @@ export class Project {
    */
   get workingSpace(): string {
     if (this._wsUtf8 != null) return envelopeProfileName(this._wsUtf8.value);
-    if (!this._rootChunks.some((c) => c.chunk_type === "pcms")) {
+    if (!this._rootChunks.some((c) => c.chunkType === "pcms")) {
       // Before AE 22 the working space is the `LIST:CPPl` profile
       // whose ICC profile id `cpid` holds (all 0xFF: None).
       const profileId = this._cpid.data;
@@ -885,7 +885,7 @@ export class Project {
 
   set workingSpace(value: string) {
     validateString(value);
-    if (!this._rootChunks.some((c) => c.chunk_type === "pcms")) {
+    if (!this._rootChunks.some((c) => c.chunkType === "pcms")) {
       this._setCpplWorkingSpace(value);
       return;
     }
@@ -934,9 +934,9 @@ export class Project {
     // profile (reused) or the one the new profile goes before.
     const at = cppl.chunks.findIndex((pprf) => pyCmp(iccProfileId(pprf.data), profileId) >= 0);
     if (at === -1) {
-      cppl.chunks.push(new Chunk({ chunk_type: "pprf", data: icc }));
+      cppl.chunks.push(new Chunk({ chunkType: "pprf", data: icc }));
     } else if (pyCmp(iccProfileId(cppl.chunks[at].data), profileId) > 0) {
-      cppl.chunks.splice(at, 0, new Chunk({ chunk_type: "pprf", data: icc }));
+      cppl.chunks.splice(at, 0, new Chunk({ chunkType: "pprf", data: icc }));
     }
     this._cpid.data = profileId;
   }
@@ -1065,7 +1065,7 @@ export class Project {
   _rewriteColorProfile(marker: string, envelope: string): Utf8Chunk {
     const root = this._rootChunks;
     for (const [i, chunk] of root.entries()) {
-      if (chunk.chunk_type === marker) {
+      if (chunk.chunkType === marker) {
         const utf8 = findByTypeOrNull(root.slice(i + 1, i + 2), "Utf8");
         if (utf8 !== null) {
           utf8.value = envelope;
@@ -1537,7 +1537,7 @@ export class Project {
         if (!spec.enabled) groupLayer.enabled = false;
         if (spec.layerName != null) {
           groupLayer.name = spec.layerName;
-          groupLayer._ldta.name_set = false;
+          groupLayer._ldta.nameSet = false;
         }
         _serializeImportLayerStyles(groupLayer, null, file.name);
         continue;
@@ -1697,7 +1697,7 @@ export class Project {
       const spec = new LayerSpec(
         file.name,
         buildPsdFlattenedOptiData(info.width, info.height, info.bitDepth, info.pixelChannels, {
-          color_mode: info.colorMode,
+          colorMode: info.colorMode,
         }),
         info.width,
         info.height,
@@ -2281,19 +2281,19 @@ export class Project {
       const layerIds: number[] = [];
       for (const comp of this.compositions) {
         for (const ldta of recursiveFind(comp._itemList.chunks, "ldta")) {
-          layerIds.push(ldta.layer_id);
+          layerIds.push(ldta.layerId);
         }
       }
       const maxLayerId = max(layerIds, null, 0);
       const maxItemId = max([...this.items.keys()], null, 0);
       const floor = max([maxLayerId, maxItemId]) + 1;
-      if (this._head.next_item_id < floor) {
-        this._head.next_item_id = floor;
+      if (this._head.nextItemId < floor) {
+        this._head.nextItemId = floor;
       }
       this._idCounterReconciled = true;
     }
-    const newId = this._head.next_item_id;
-    this._head.next_item_id = newId + 1;
+    const newId = this._head.nextItemId;
+    this._head.nextItemId = newId + 1;
     return newId;
   }
 
@@ -2380,31 +2380,31 @@ export class Project {
 descriptor(
   Project,
   "bitsPerChannel",
-  ChunkField.enum(BitsPerChannel, "_nnhd", "bits_per_channel", {
-    postSet: (obj: Project) => obj._syncNhedField("bits_per_channel"),
+  ChunkField.enum(BitsPerChannel, "_nnhd", "bitsPerChannel", {
+    postSet: (obj: Project) => obj._syncNhedField("bitsPerChannel"),
   }),
 );
 
 descriptor(
   Project,
   "feetFramesFilmType",
-  ChunkField.enum(FeetFramesFilmType, "_nnhd", "feet_frames_film_type", {
-    postSet: (obj: Project) => obj._syncNhedField("_display_byte"),
+  ChunkField.enum(FeetFramesFilmType, "_nnhd", "feetFramesFilmType", {
+    postSet: (obj: Project) => obj._syncNhedField("_displayByte"),
   }),
 );
 
 descriptor(
   Project,
   "footageTimecodeDisplayStartType",
-  ChunkField.enum(FootageTimecodeDisplayStartType, "_nnhd", "footage_timecode_display_start_type", {
-    postSet: (obj: Project) => obj._syncNhedField("footage_timecode_display_start_type"),
+  ChunkField.enum(FootageTimecodeDisplayStartType, "_nnhd", "footageTimecodeDisplayStartType", {
+    postSet: (obj: Project) => obj._syncNhedField("footageTimecodeDisplayStartType"),
   }),
 );
 
 descriptor(
   Project,
   "_timecodeDefaultBase",
-  new ChunkField("_nnhd", "timecode_default_base", {
+  new ChunkField("_nnhd", "timecodeDefaultBase", {
     // nhed holds it as a u1, so a CC 12.0 project (whose nnhd is a
     // synthetic stand-in) persists at most 255.
     validate: _validateNumber({
@@ -2419,45 +2419,45 @@ descriptor(
 descriptor(
   Project,
   "framesCountType",
-  ChunkField.enum(FramesCountType, "_nnhd", "frames_count_type", {
-    postSet: (obj: Project) => obj._syncNhedField("frames_count_type"),
+  ChunkField.enum(FramesCountType, "_nnhd", "framesCountType", {
+    postSet: (obj: Project) => obj._syncNhedField("framesCountType"),
   }),
 );
 
 descriptor(
   Project,
   "displayStartFrame",
-  new ChunkField("_nnhd", "display_start_frame", {
+  new ChunkField("_nnhd", "displayStartFrame", {
     validate: validateOneOf([0, 1]),
-    postSet: (obj: Project) => obj._syncNhedField("frames_count_type"),
+    postSet: (obj: Project) => obj._syncNhedField("framesCountType"),
   }),
 );
 
 descriptor(
   Project,
   "framesUseFeetFrames",
-  ChunkField.bool("_nnhd", "frames_use_feet_frames", {
-    postSet: (obj: Project) => obj._syncNhedField("_feet_byte"),
+  ChunkField.bool("_nnhd", "framesUseFeetFrames", {
+    postSet: (obj: Project) => obj._syncNhedField("_feetByte"),
   }),
 );
 
 descriptor(
   Project,
   "timeDisplayType",
-  ChunkField.enum(TimeDisplayType, "_nnhd", "time_display_type", {
-    postSet: (obj: Project) => obj._syncNhedField("_display_byte"),
+  ChunkField.enum(TimeDisplayType, "_nnhd", "timeDisplayType", {
+    postSet: (obj: Project) => obj._syncNhedField("_displayByte"),
   }),
 );
 
 descriptor(
   Project,
   "transparencyGridThumbnails",
-  ChunkField.bool("_nnhd", "transparency_grid_thumbnails", {
-    postSet: (obj: Project) => obj._syncNhedField("transparency_grid_thumbnails"),
+  ChunkField.bool("_nnhd", "transparencyGridThumbnails", {
+    postSet: (obj: Project) => obj._syncNhedField("transparencyGridThumbnails"),
   }),
 );
 
-descriptor(Project, "revision", new ChunkField("_head", "file_revision", { validate: validateU4 }));
+descriptor(Project, "revision", new ChunkField("_head", "fileRevision", { validate: validateU4 }));
 
 descriptor(
   Project,
@@ -2480,7 +2480,7 @@ descriptor(
 descriptor(
   Project,
   "workingGamma",
-  new ChunkField("_dwga", "working_gamma", {
+  new ChunkField("_dwga", "workingGamma", {
     validate: validateOneOf([2.2, 2.4]),
     // A CC 12.0 project has no dwga to keep it in.
     minVersion: 13,
@@ -2585,25 +2585,25 @@ export function _stampStyleTdb4(leaf: Property, matchName: string, timebase: num
   );
   if (canon == null) return;
   const [hint, hintFlag, cvot, typeFlags, category, pad2a, vector, spatial] = canon;
-  if (hint != null) tdb4._value_hint_type = hint;
-  if (hintFlag != null) tdb4._value_hint_flag = hintFlag;
-  if (cvot != null) tdb4._cvot_flags = cvot;
-  if (typeFlags != null) tdb4._type_flags = typeFlags;
-  if (category != null) tdb4._property_category = category;
+  if (hint != null) tdb4._valueHintType = hint;
+  if (hintFlag != null) tdb4._valueHintFlag = hintFlag;
+  if (cvot != null) tdb4._cvotFlags = cvot;
+  if (typeFlags != null) tdb4._typeFlags = typeFlags;
+  if (category != null) tdb4._propertyCategory = category;
   if (pad2a != null) tdb4._pad2a = pad2a;
   if (vector != null) tdb4.vector = vector;
   if (spatial) {
     // AE fills the spatial block on the 2D point leaves: marker + flags
     // 0x0F, its point epsilon, and the LAYER's display aspect
     // (source_width * PAR / source_height; 1.28 in the fixture).
-    tdb4._spatial_marker = true;
-    tdb4._spatial_static_flags = 0x0f;
+    tdb4._spatialMarker = true;
+    tdb4._spatialStaticFlags = 0x0f;
     // The normalized-point accuracy (psd_styles_offset_phase fixture:
     // leaves and layers alike).
-    tdb4._arc_accuracy = NORMALIZED_ARC_ACCURACY;
-    tdb4.pixel_aspect = pointAspect;
+    tdb4._arcAccuracy = NORMALIZED_ARC_ACCURACY;
+    tdb4.pixelAspect = pointAspect;
   }
-  tdb4._time_base = timebase;
+  tdb4._timeBase = timebase;
 }
 
 // AE default values per Layer Styles leaf match name. Editable imports
@@ -2658,7 +2658,7 @@ export function _serializeImportLayerStyles(layer: AVLayer, styles: PsdLayerStyl
   const containerFlags = styled ? 1 : 3;
   container._ensureMaterialized();
   pyAssert(container._tdsb != null);
-  container._tdsb._enable_flags = containerFlags;
+  container._tdsb._enableFlags = containerFlags;
   // The synthesis pass stamped derived `enabled` overrides while every
   // group was still synthetic-disabled; refresh them to the written state
   // (ExtendScript semantics: container/Blend Options = any style enabled).
@@ -2668,7 +2668,7 @@ export function _serializeImportLayerStyles(layer: AVLayer, styles: PsdLayerStyl
     child._ensureMaterialized();
     pyAssert(child._tdsb != null);
     if (child.matchName === "ADBE Blend Options Group") {
-      child._tdsb._enable_flags = containerFlags;
+      child._tdsb._enableFlags = containerFlags;
       instanceDict(child).set("enabled", styled);
       for (const sub of child.properties) {
         if (sub instanceof PropertyGroup) {
@@ -2677,7 +2677,7 @@ export function _serializeImportLayerStyles(layer: AVLayer, styles: PsdLayerStyl
           // AE writes the Advanced Blending subgroup enabled on
           // EVERY import, plain skeletons included (pinned by the
           // psd_fill_opacity/psd_layer_styles/ai_comp fixtures).
-          sub._tdsb._enable_flags = 1;
+          sub._tdsb._enableFlags = 1;
         }
       }
     } else {
@@ -2692,7 +2692,7 @@ export function _serializeImportLayerStyles(layer: AVLayer, styles: PsdLayerStyl
       } else {
         flags = 2;
       }
-      child._tdsb._enable_flags = flags;
+      child._tdsb._enableFlags = flags;
       instanceDict(child).delete("enabled");
     }
   }
@@ -2706,7 +2706,7 @@ export function _serializeImportLayerStyles(layer: AVLayer, styles: PsdLayerStyl
     );
   }
   if (!styles.values?.size) return;
-  const timebase = layer.containingComp._cdta.internal_timebase;
+  const timebase = layer.containingComp._cdta.internalTimebase;
   const source = layer.source;
   // Python `cast("AVItem", layer.source)`: an imported layer always has one.
   if (source == null) throw new AttributeError("'NoneType' object has no attribute 'width'");

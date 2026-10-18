@@ -156,7 +156,7 @@ export function _syncProxyActive(obj: AVItem): void {
   // AE 2026 keeps 1 after `useProxy = false` and writes 0 only on
   // `setProxyToNone()` (as in sample proxy.aep's `proxy_disabled` items).
   pyAssert(obj._idta != null);
-  obj._idta._proxy_active = int(obj._proxySource != null);
+  obj._idta._proxyActive = int(obj._proxySource != null);
   obj._syncModifiedTime();
 }
 
@@ -515,7 +515,7 @@ export class AVItem extends Item {
       return source._pin;
     }
     const pin = buildPinList(source._sspc, source._opti, {
-      is_solid: source instanceof SolidSource,
+      isSolid: source instanceof SolidSource,
     });
     // Link the source to its color record, as parsing does, so the
     // version fit and the color-management setters reach it.
@@ -552,7 +552,7 @@ export class AVItem extends Item {
 descriptor(
   AVItem,
   "useProxy",
-  ChunkField.bool("_idta", "use_proxy", {
+  ChunkField.bool("_idta", "useProxy", {
     validate: _validateUseProxy,
     postSet: _syncProxyActive,
   }),

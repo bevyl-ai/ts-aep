@@ -91,20 +91,20 @@ describe("TestAlphabeticalSequence", () => {
     const source = asInstance(reparsed.mainSource, FileSource);
     const sspc = source._sspc;
     expect(
-      pyEq([sspc.start_frame, sspc.end_frame, sspc.frame_padding], [UNDEFINED_FRAME, UNDEFINED_FRAME, 0]),
+      pyEq([sspc.startFrame, sspc.endFrame, sspc.framePadding], [UNDEFINED_FRAME, UNDEFINED_FRAME, 0]),
     ).toBe(true);
     expect(
       pyEq(
-        [sspc._reserved_a8, sspc._reserved_b8, sspc._reserved_ba],
+        [sspc._reservedA8, sspc._reservedB8, sspc._reservedBa],
         [b("\x00\x00\x00\x01"), b("\x00"), b("\x00\x00")],
       ),
     ).toBe(true);
-    expect(sspc._source_stamp[0]).toBe(1);
-    expect(pyEq([sspc.duration_dividend, sspc.duration_divisor], [7, 30])).toBe(true);
+    expect(sspc._sourceStamp[0]).toBe(1);
+    expect(pyEq([sspc.durationDividend, sspc.durationDivisor], [7, 30])).toBe(true);
     const stvc = findByListType(source._pin.chunks, "StVc");
     const stvs = stvc.chunks[0];
     pyAssert(stvs instanceof U4LeChunk);
-    expect(stvs.chunk_type).toBe("StVS");
+    expect(stvs.chunkType).toBe("StVS");
     expect(stvs.value).toBe(7);
     expect(pyEq(source.fileNames, TestAlphabeticalSequence.ORDER)).toBe(true);
     expect(reparsed.name).toBe("shots");
@@ -133,7 +133,7 @@ describe("TestAlphabeticalSequence", () => {
     item.replaceWithSequence(TestAlphabeticalSequence._mixed(tmpPath).div("a_001.png"), true);
     expect(item.name).toBe("shots");
     const sspc = item.mainSource._sspc;
-    expect(pyEq([sspc.duration_dividend, sspc.duration_divisor], [7, 24])).toBe(true);
+    expect(pyEq([sspc.durationDividend, sspc.durationDivisor], [7, 24])).toBe(true);
   });
 
   test("test_reload_relists_the_folder", () => {
@@ -196,8 +196,8 @@ describe("TestSequencePadding", () => {
       const reparsed = _reparsed(project, item, tmpPath);
       expect(reparsed.name).toBe(name);
       expect(new Path(asInstance(reparsed.mainSource, FileSource).file).name).toBe(first);
-      expect(reparsed.mainSource._sspc.frame_padding).toBe(padding);
-      expect(pyEq(reparsed.mainSource._sspc._reserved_b8, zeroPadded)).toBe(true);
+      expect(reparsed.mainSource._sspc.framePadding).toBe(padding);
+      expect(pyEq(reparsed.mainSource._sspc._reservedB8, zeroPadded)).toBe(true);
     },
   );
 });
@@ -215,8 +215,8 @@ describe("TestSequenceConformFrameRate", () => {
       const [, item] = _import(folder.div("shot_0001.png"), { alphabetical: false });
       item.mainSource.conformFrameRate = rate;
       const sspc = item.mainSource._sspc;
-      expect(pyEq([sspc.duration_dividend, sspc.duration_divisor], [dividend, divisor])).toBe(true);
-      expect(sspc.conform_frame_rate).toBe(0.0);
+      expect(pyEq([sspc.durationDividend, sspc.durationDivisor], [dividend, divisor])).toBe(true);
+      expect(sspc.conformFrameRate).toBe(0.0);
     },
   );
 });
@@ -244,7 +244,7 @@ describe("TestAnimatedGifSequence", () => {
     expect(item.frameRate).toBe(10.0);
     expect(item.duration).toBe(1.4);
     const sspc = item.mainSource._sspc;
-    expect(pyEq([sspc.duration_dividend, sspc.duration_divisor], [14, 10])).toBe(true);
+    expect(pyEq([sspc.durationDividend, sspc.durationDivisor], [14, 10])).toBe(true);
   });
 
   test.each(["placeholder", "sequence", "conformed movie"])("test_a_replace_keeps_its_rate[%#]", (old) => {
@@ -288,14 +288,14 @@ describe("TestCachedDataSize", () => {
     const item = asInstance(project.importFile(new ImportOptions(ASSETS.div("image_with_alpha.png"))), FootageItem);
     // Node's fs.Stats exposes the byte count as `size` (Python `st_size`).
     const size = ASSETS.div("image_with_alpha.png").stat().size;
-    expect(item.mainSource._sspc.data_size).toBe(size);
+    expect(item.mainSource._sspc.dataSize).toBe(size);
   });
 
   test("test_sequence", () => {
     // sequence_001..003.gif are 4928, 5332 and 5223 bytes; AE's
     // `imio_sequence.aep` fixture stores 3 x 4928.
     const [, item] = _import(ASSETS.div("sequence_001.gif"), { alphabetical: false });
-    expect(item.mainSource._sspc.data_size).toBe(3 * 4928);
+    expect(item.mainSource._sspc.dataSize).toBe(3 * 4928);
   });
 });
 
@@ -326,12 +326,12 @@ describe("TestPlatform", () => {
     const opts = new ImportOptions(ASSETS.div("sequence_001.gif"));
     opts.sequence = true;
     const item = asInstance(project.importFile(opts), FootageItem);
-    expect(item.mainSource._sspc.source_format_type).toBe(code);
+    expect(item.mainSource._sspc.sourceFormatType).toBe(code);
     // Every path that builds a sequence follows the project's platform.
     item.replaceWithSequence(ASSETS.div("sequence_001.gif"));
-    expect(item.mainSource._sspc.source_format_type).toBe(code);
+    expect(item.mainSource._sspc.sourceFormatType).toBe(code);
     item.setProxyWithSequence(ASSETS.div("sequence_001.gif"));
-    expect(item.proxySource?._sspc.source_format_type).toBe(code);
+    expect(item.proxySource?._sspc.sourceFormatType).toBe(code);
   });
 
   test.each([
@@ -342,11 +342,11 @@ describe("TestPlatform", () => {
     // stores HEIC without alpha (windows_stills.aep), on every path.
     const project = parseAep(BASE, { platform }).project;
     const item = asInstance(project.importFile(new ImportOptions(ASSETS.div("bmp.bmp"))), FootageItem);
-    expect(item.mainSource._sspc.source_format_type).toBe(code);
+    expect(item.mainSource._sspc.sourceFormatType).toBe(code);
     item.setProxy(ASSETS.div("gif.gif"));
-    expect(item.proxySource?._sspc.source_format_type).toBe(code);
+    expect(item.proxySource?._sspc.sourceFormatType).toBe(code);
     item.replace(ASSETS.div("gif.gif"));
-    expect(item.mainSource._sspc.source_format_type).toBe(code);
+    expect(item.mainSource._sspc.sourceFormatType).toBe(code);
     item.replace(ASSETS.div("heic_alpha.heic"));
     expect(item.mainSource.hasAlpha).toBe(heicAlpha);
   });
@@ -355,6 +355,6 @@ describe("TestPlatform", () => {
     const project = py_aep.new(undefined, { platform: "macos" }).project;
     const opts = new ImportOptions(ASSETS.div("sequence_001.gif"));
     opts.sequence = true;
-    expect(asInstance(project.importFile(opts), FootageItem).mainSource._sspc.source_format_type).toBe("IMIO");
+    expect(asInstance(project.importFile(opts), FootageItem).mainSource._sspc.sourceFormatType).toBe("IMIO");
   });
 });

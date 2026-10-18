@@ -34,7 +34,7 @@ export function parseRenderQueue(rootChunks: Chunk[], project: Project): RenderQ
     // AE writes LRdr immediately before LIST:PTRE (the workspace blob), so
     // insert at that canonical root position rather than appending past it.
     const ptreFound = rootChunks.findIndex(
-      (c) => c instanceof ListChunk && c.list_type === "PTRE",
+      (c) => c instanceof ListChunk && c.listType === "PTRE",
     );
     const ptreIdx = ptreFound === -1 ? rootChunks.length : ptreFound;
     rootChunks.splice(ptreIdx, 0, renderQueue._lrdr);
@@ -68,14 +68,14 @@ export function parseRenderQueue(rootChunks: Chunk[], project: Project): RenderQ
   let litmChunk = findByListTypeOrNull(lrdrChildChunks, "LItm");
   if (litmChunk === null) {
     synthesized = true;
-    litmChunk = new ListChunk({ list_type: "LItm", synthetic: true });
+    litmChunk = new ListChunk({ listType: "LItm", synthetic: true });
     lrdrChildChunks.push(litmChunk);
   }
 
   let lsifChunk = findByListTypeOrNull(lrdrChildChunks, "LSIf");
   if (lsifChunk === null) {
     synthesized = true;
-    lsifChunk = new ListChunk({ list_type: "LSIf", synthetic: true });
+    lsifChunk = new ListChunk({ listType: "LSIf", synthetic: true });
     lrdrChildChunks.push(lsifChunk);
   }
   let arsiChunk = findByTypeOrNull(lsifChunk.chunks, "ARsi");
@@ -96,7 +96,7 @@ export function parseRenderQueue(rootChunks: Chunk[], project: Project): RenderQ
       0,
       lrdrChildChunks.length,
       ...sorted(lrdrChildChunks, (c) =>
-        _canon.get((c instanceof ListChunk && c.list_type) || c.chunk_type) ?? _canon.size,
+        _canon.get((c instanceof ListChunk && c.listType) || c.chunkType) ?? _canon.size,
       ),
     );
   }
@@ -111,7 +111,7 @@ export function parseRenderQueue(rootChunks: Chunk[], project: Project): RenderQ
     // with count==0; reuse it when present.)
     const existing = findByTypeOrNull(listSettingsChunk.chunks, "ldat");
     if (existing === null) {
-      settingsLdat = new LdatChunk({ chunk_type: "ldat", synthetic: true });
+      settingsLdat = new LdatChunk({ chunkType: "ldat", synthetic: true });
       listSettingsChunk.chunks.push(settingsLdat);
     } else {
       settingsLdat = existing;
@@ -171,13 +171,13 @@ export function parseRenderQueueItems(
   let listChunk: ListChunk | null = null;
 
   for (const chunk of litmChunk.chunks) {
-    if (chunk instanceof ContainerChunk && chunk.chunk_type === "RCom") {
+    if (chunk instanceof ContainerChunk && chunk.chunkType === "RCom") {
       rcomContainer = chunk;
       rcomUtf8 = findByType(chunk.chunks, "Utf8");
     } else if (chunk instanceof ListChunk) {
-      if (chunk.list_type === "list") {
+      if (chunk.listType === "list") {
         listChunk = chunk;
-      } else if (chunk.list_type === "LOm " && listChunk != null) {
+      } else if (chunk.listType === "LOm " && listChunk != null) {
         const routStart = itemIndex * ROUT_ITEMS_PER_RQ_ITEM;
         const item = parseRenderQueueItem(
           listChunk,
@@ -229,7 +229,7 @@ export function parseRenderQueueItem(
   const omLdat = findByType(listChunk.chunks, "ldat");
   const omLdatItems = omLdat.items;
 
-  const compId = ldatBody.comp_id;
+  const compId = ldatBody.compId;
   const comp = getitem(project.items, compId) as CompItem;
 
   // Group chunks by Roou - each Roou starts a new output module

@@ -26,7 +26,7 @@ describe("TestIntegerFlaggedBounds", () => {
 
   test("test_eight_byte_body_is_a_double", () => {
     const raw = struct.pack(">d", 100.0);
-    const chunk = TdumChunk.read(new BytesIO(raw), 8, { chunk_type: "tduM", is_integer: true });
+    const chunk = TdumChunk.read(new BytesIO(raw), 8, { chunkType: "tduM", isInteger: true });
     expect(pyEq(chunk.values, [100.0])).toBe(true);
     const out = new BytesIO();
     chunk.write(out);
