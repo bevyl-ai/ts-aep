@@ -22,7 +22,8 @@ function public_names(obj: any): string[] {
   const names = new Set<string>();
   for (let p = Object.getPrototypeOf(obj); p && p !== Object.prototype; p = Object.getPrototypeOf(p)) {
     for (const [name, d] of Object.entries(Object.getOwnPropertyDescriptors(p))) {
-      if (name.startsWith("_") || name === "constructor") continue;
+      // `length` / `size` getters are the JS spelling of Python's `len()`, not attributes.
+      if (name.startsWith("_") || name === "constructor" || name === "length" || name === "size") continue;
       if (d.get) names.add(name);
     }
   }
@@ -43,7 +44,7 @@ function py_order(a: string, b: string): number {
 }
 
 function is_container(obj: any): boolean {
-  return typeof obj?.[Symbol.iterator] === "function" && typeof obj.__len__ === "function";
+  return typeof obj?.[Symbol.iterator] === "function" && (typeof obj.length === "number" || typeof obj.size === "number");
 }
 
 export function err_name(e: any): string {
