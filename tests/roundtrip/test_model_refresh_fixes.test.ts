@@ -98,7 +98,7 @@ describe("TestScaleZFollowsTheThreeDSwitch", () => {
    */
 
   const _layer = () => {
-    const app = py_aep.new();
+    const app = py_aep.newProject();
     const comp = app.project.rootFolder.addComp("Z", 320, 240, 1.0, 10.0, 24.0);
     const layer = comp.addSolid([1, 0, 0], "ScaleZ", 320, 240, 1.0);
     return [app, layer, asInstance(layer.property("Transform"), py_aep.PropertyGroup).property("ADBE Scale")] as const;
@@ -309,7 +309,7 @@ describe("TestEaseSpeedsAreNotLayerTime", () => {
    */
 
   test.each([100.0, 200.0, 50.0])("test_speed_is_stretch_invariant[%#]", (stretch: number) => {
-    const app = py_aep.new();
+    const app = py_aep.newProject();
     const comp = app.project.rootFolder.addComp("C", 320, 240, 1.0, 40.0, 24.0);
     const layer = comp.addSolid([1, 1, 1], "L", 320, 240, 1.0);
     layer.stretch = stretch;

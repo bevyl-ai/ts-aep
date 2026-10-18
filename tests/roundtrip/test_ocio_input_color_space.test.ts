@@ -6,7 +6,7 @@
  * recorded as its source profile.
  *
  * `ocio_input_<config>.aep` are AE 2026 imports of five stills into
- * `py_aep.new()` projects set to ACES 1.2, ACES 1.3 CG v1.0 and the sergb.ocio
+ * `newProject()` projects set to ACES 1.2, ACES 1.3 CG v1.0 and the sergb.ocio
  * studio config (`EXR` rule -> `scene_linear`, `Default` rule -> `default`).
  *
  * A replace keeps the space the source had - a rule's pick or one the user
@@ -20,7 +20,7 @@
 import { expect, test } from "bun:test";
 import { b, getitem, Path, pyBool, pyEq, repr, sorted, StopIteration, str } from "../../src/pyrt/index.ts";
 import { skip } from "../../src/pyrt/pytest.ts";
-import { new as new_, parse as parseAep } from "../../src/py_aep/index.ts";
+import { newProject, parse as parseAep } from "../../src/py_aep/index.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { findByListType } from "../../src/py_aep/binary/utils.ts";
 import { resolveOcioConfig } from "../../src/py_aep/color/ocio.ts";
@@ -90,7 +90,7 @@ test.each(IMPORT_ROWS)("test_import_records_the_ocio_input_space[%#]", (tag, nam
     parseAep(IMPORT_DIR.div(`ocio_input_${tag}.aep`)).project.footages,
     (item) => item.name === name,
   );
-  const project = new_().project;
+  const project = newProject().project;
   project.colorManagementSystem = ColorManagementSystem.OCIO;
   project.ocioConfigurationFile = config;
   const ours = asInstance(project.importFile(new ImportOptions(getitem(FILES, name))), FootageItem);
@@ -116,7 +116,7 @@ test.each([
       parseAep(IMPORT_DIR.div("ocio_replace_sergb.aep")).project.footages,
       (item) => item.name === name,
     );
-    const project = new_().project;
+    const project = newProject().project;
     project.colorManagementSystem = ColorManagementSystem.OCIO;
     project.ocioConfigurationFile = str(SERGB);
     const ours = asInstance(project.importFile(new ImportOptions(first)), FootageItem);
@@ -136,7 +136,7 @@ test("test_proxy_takes_the_rules_pick", () => {
     parseAep(IMPORT_DIR.div("ocio_replace_sergb.aep")).project.footages,
     (item) => item.name === "ae_png_proxy_exr",
   );
-  const project = new_().project;
+  const project = newProject().project;
   project.colorManagementSystem = ColorManagementSystem.OCIO;
   project.ocioConfigurationFile = str(SERGB);
   const ours = project.importFile(new ImportOptions(PNG));

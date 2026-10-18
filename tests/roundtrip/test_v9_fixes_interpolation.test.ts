@@ -44,7 +44,7 @@ function _next<T>(items: Iterable<T>, pred: (x: T) => boolean): T {
 }
 
 function _comp(width = 1920, height = 1080, par = 1.0, fps = 24.0): [py_aep.Application, CompItem] {
-  const app = py_aep.new();
+  const app = py_aep.newProject();
   const comp = app.project.rootFolder.addComp("C", width, height, par, 10.0, fps);
   return [app, comp];
 }

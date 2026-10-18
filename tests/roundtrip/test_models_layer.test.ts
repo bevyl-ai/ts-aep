@@ -100,7 +100,7 @@ describe("TestLightSource", () => {
 
   test("test_light_source_set_none_before_ae_23", () => {
     // AE 22 stores no light source as 0 (0xFFFFFFFF from AE 23).
-    const project = py_aep.new("22.5x53").project;
+    const project = py_aep.newProject("22.5x53").project;
     const comp = project.rootFolder.addComp("Comp", 100, 100, 1.0, 1.0, 24.0);
     const light = comp.addLight("Light", [50, 50]);
     light.lightSource = null;
@@ -1797,7 +1797,7 @@ describe("TestLayerReservedBytes", () => {
    */
 
   test("test_new_layer_reserved_bytes", () => {
-    const comp = py_aep.new().project.rootFolder.addComp("t", 100, 100, 1.0, 1.0, 30.0);
+    const comp = py_aep.newProject().project.rootFolder.addComp("t", 100, 100, 1.0, 1.0, 30.0);
     const av = comp.addSolid([1.0, 0.0, 0.0]);
     const shape = comp.addShape();
     const camera = comp.addCamera();

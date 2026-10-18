@@ -310,12 +310,12 @@ describe("TestPlatform", () => {
     // Python `os.name == "nt"` is Windows.
     const host = process.platform === "win32" ? "windows" : "macos";
     expect(parseAep(BASE).project._platform).toBe(host);
-    expect(py_aep.new().project._platform).toBe(host);
+    expect(py_aep.newProject().project._platform).toBe(host);
   });
 
   test("test_rejects_an_unknown_platform", () => {
     raises(ValueError, () => parseAep(BASE, { platform: "linux" }), "must be one of");
-    raises(ValueError, () => py_aep.new(undefined, { platform: "linux" }), "must be one of");
+    raises(ValueError, () => py_aep.newProject(undefined, { platform: "linux" }), "must be one of");
   });
 
   test.each([
@@ -352,7 +352,7 @@ describe("TestPlatform", () => {
   });
 
   test("test_new_project", () => {
-    const project = py_aep.new(undefined, { platform: "macos" }).project;
+    const project = py_aep.newProject(undefined, { platform: "macos" }).project;
     const opts = new ImportOptions(ASSETS.div("sequence_001.gif"));
     opts.sequence = true;
     expect(asInstance(project.importFile(opts), FootageItem).mainSource._sspc.sourceFormatType).toBe("IMIO");

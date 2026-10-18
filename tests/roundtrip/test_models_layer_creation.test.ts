@@ -3,7 +3,7 @@
 import { describe, expect, test } from "bun:test";
 import { Path, TypeError_, ValueError, contains, len, pyAssert, pyEq } from "../../src/pyrt/index.ts";
 import { approx, makeTmpPath, raises } from "../../src/pyrt/pytest.ts";
-import { new as new_, parse as parseAep } from "../../src/py_aep/index.ts";
+import { newProject, parse as parseAep } from "../../src/py_aep/index.ts";
 import { LineOrientation } from "../../src/py_aep/enums/index.ts";
 import { AVLayer } from "../../src/py_aep/models/layers/av_layer.ts";
 import { CameraLayer } from "../../src/py_aep/models/layers/camera_layer.ts";
@@ -421,7 +421,7 @@ describe("TestAddSolid", () => {
    */
   test("test_solids_folder_tracked_by_id", () => {
     const tmpPath = makeTmpPath();
-    const app = new_();
+    const app = newProject();
     let comp = app.project.rootFolder.addComp("C", 100, 100, 1.0, 1.0, 24.0);
     const first = comp.addSolid([1.0, 0.0, 0.0], "A");
     const folder = asInstance(asInstance(first.source, FootageItem).parentFolder, FolderItem);
@@ -444,7 +444,7 @@ describe("TestAddSolid", () => {
    * Solids name and leaves `sfid` at 0.
    */
   test("test_solids_folder_found_by_name_keeps_id_unset", () => {
-    const app = new_();
+    const app = newProject();
     const existing = app.project.rootFolder.addFolder("Solids");
     const comp = app.project.rootFolder.addComp("C", 100, 100, 1.0, 1.0, 24.0);
     const layer = comp.addSolid([1.0, 0.0, 0.0], "A");

@@ -100,7 +100,7 @@ define(RhedChunk, {
   _c: u4Field({ repr: false }),
   _d: u4Field({ repr: false }),
   // Render-queue identity captured from one empty project. The fixed default
-  // is intentional: it keeps py_aep.new() output deterministic, and AE
+  // is intentional: it keeps newProject() output deterministic, and AE
   // rewrites render-queue state on save - so every generated file sharing
   // this value is inert (it is not a cross-file item/project id).
   _uid: u4Field({ default: 0x03e2076c, repr: false }),

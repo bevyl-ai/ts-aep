@@ -15,7 +15,7 @@ import { parseApp } from "./parsers/application.ts";
 import { parseProject } from "./parsers/project.ts";
 
 // NOTE(port): Python falls back to "0.0.0" when package metadata is absent; this port has no installed py_aep distribution (package.json is also 0.0.0), so the fallback is the Python value.
-export const __version__ = "0.0.0";
+export const version = "0.0.0";
 
 /**
  * Parse an After Effects (.aep) project file and return an {@link Application} instance.
@@ -93,14 +93,14 @@ export const _DEFAULT_NEW_VERSION = "26.0x67";
  *
  * @example
  * ```ts
- * import { new as new_project } from "@bevyl-ai/ts-aep";
+ * import { newProject } from "@bevyl-ai/ts-aep";
  *
- * const app = new_project();
+ * const app = newProject();
  * const comp = app.project.rootFolder.addComp("Comp 1", 1920, 1080, 1.0, 10.0, 30.0);
  * app.project.save("new_project.aep");
  * ```
  */
-export function new_(
+export function newProject(
   version: string = _DEFAULT_NEW_VERSION,
   kw: { aePreferencesDir?: string | PathLike | null; platform?: string | null } = {},
 ): Application {
@@ -113,7 +113,7 @@ export function new_(
   return Application._new(version, prefsPath, platform);
 }
 
-export { AdvancedRendererOptions, AlphaMode, Application, AudioBitDepth, AudioChannels, AudioSampleRate, AutoKernType, AutoOrientType, AVItem, AVLayer, BaselineDirection, BitsPerChannel, BlendingMode, BoxAutoFitPolicy, BoxFirstBaselineAlignment, BoxVerticalAlignment, CameraLayer, ChannelType, Cinema4DRendererOptions, CineonFormatOptions, ClassicRendererOptions, CloseOptions, ColorDepthSetting, ColorManagementSystem, CompPreset, CompItem, ComposerEngine, CTFontTechnology, CTFontType, CTScript, DigitSet, DiskCacheSetting, EffectsSetting, EnvironmentLightShadowResolution, FastPreviewType, FeatherPoint, FeetFramesFilmType, FieldRender, FieldSeparationType, FileSource, FillLightingCorrectionType, FillMethodType, FillOutputDepthType, FillRangeType, FolderItem, FontBaselineOption, FontCapsOption, FontObject, FootageItem, FootageSource, FootageTimecodeDisplayStartType, FrameBlendingSetting, FrameBlendingType, FrameRateSetting, FramesCountType, GetSettingsFormat, GpuAccelType, GuideOrientationType, GuideLayers, Guide, ImportAsType, ImportOptions, Item, CURRENT_VALUE, JpegFormatOptions, Keyframe, KeyframeEase, KeyframeInterpolationType, Label, Language, Layer, LayerQuality, LayerSamplingQuality, LeadingType, LightLayer, LightType, LinearLightMode, LineJoinType, LineOrientation, listLayers, LogType, LoopMode, LutInterpolationMethod, MarkerValue, MaskFeatherFalloff, MaskMode, MaskMotionBlur, MaskPropertyGroup, MotionBlurSetting, new_ as new, OpenExrFormatOptions, OutputAudio, OutputChannels, OutputColorDepth, OutputColorMode, OutputFormat, OutputModule, ParametricMeshLayer, ParametricMeshType, ParagraphDirection, ParagraphJustification, PlaceholderSource, PlayMode, PngFormatOptions, PostRenderAction, Preferences, PREFType, Project, ProjectThread, Property, PropertyBase, PropertyControlType, PropertyGroup, PropertyType, PropertyValueType, ProxyUseSetting, PulldownMethod, PulldownPhase, PulldownSetting, PurgeTarget, RayTracedRendererOptions, RendererOptionsBase, RenderQuality, RenderQueue, RenderQueueItem, ResizeQuality, ResolveType, RQItemStatus, SettingsView, ShadowMapResolution, Shape, ShapeLayer, SolidSource, SoloSwitchesSetting, TargaFormatOptions, TextDocument, TextLayer, ThreeDModelLayer, TiffFormatOptions, TimeDisplayType, TimeSpanSource, ToolType, TrackMatteType, View, Viewer, ViewerType, ViewOptions, XmlFormatOptions };
+export { AdvancedRendererOptions, AlphaMode, Application, AudioBitDepth, AudioChannels, AudioSampleRate, AutoKernType, AutoOrientType, AVItem, AVLayer, BaselineDirection, BitsPerChannel, BlendingMode, BoxAutoFitPolicy, BoxFirstBaselineAlignment, BoxVerticalAlignment, CameraLayer, ChannelType, Cinema4DRendererOptions, CineonFormatOptions, ClassicRendererOptions, CloseOptions, ColorDepthSetting, ColorManagementSystem, CompPreset, CompItem, ComposerEngine, CTFontTechnology, CTFontType, CTScript, DigitSet, DiskCacheSetting, EffectsSetting, EnvironmentLightShadowResolution, FastPreviewType, FeatherPoint, FeetFramesFilmType, FieldRender, FieldSeparationType, FileSource, FillLightingCorrectionType, FillMethodType, FillOutputDepthType, FillRangeType, FolderItem, FontBaselineOption, FontCapsOption, FontObject, FootageItem, FootageSource, FootageTimecodeDisplayStartType, FrameBlendingSetting, FrameBlendingType, FrameRateSetting, FramesCountType, GetSettingsFormat, GpuAccelType, GuideOrientationType, GuideLayers, Guide, ImportAsType, ImportOptions, Item, CURRENT_VALUE, JpegFormatOptions, Keyframe, KeyframeEase, KeyframeInterpolationType, Label, Language, Layer, LayerQuality, LayerSamplingQuality, LeadingType, LightLayer, LightType, LinearLightMode, LineJoinType, LineOrientation, listLayers, LogType, LoopMode, LutInterpolationMethod, MarkerValue, MaskFeatherFalloff, MaskMode, MaskMotionBlur, MaskPropertyGroup, MotionBlurSetting, OpenExrFormatOptions, OutputAudio, OutputChannels, OutputColorDepth, OutputColorMode, OutputFormat, OutputModule, ParametricMeshLayer, ParametricMeshType, ParagraphDirection, ParagraphJustification, PlaceholderSource, PlayMode, PngFormatOptions, PostRenderAction, Preferences, PREFType, Project, ProjectThread, Property, PropertyBase, PropertyControlType, PropertyGroup, PropertyType, PropertyValueType, ProxyUseSetting, PulldownMethod, PulldownPhase, PulldownSetting, PurgeTarget, RayTracedRendererOptions, RendererOptionsBase, RenderQuality, RenderQueue, RenderQueueItem, ResizeQuality, ResolveType, RQItemStatus, SettingsView, ShadowMapResolution, Shape, ShapeLayer, SolidSource, SoloSwitchesSetting, TargaFormatOptions, TextDocument, TextLayer, ThreeDModelLayer, TiffFormatOptions, TimeDisplayType, TimeSpanSource, ToolType, TrackMatteType, View, Viewer, ViewerType, ViewOptions, XmlFormatOptions };
 
 // Host file system controls (not part of py_aep's Python API): browsers and
 // Workers read and write through the in-memory fs; see README "Use".

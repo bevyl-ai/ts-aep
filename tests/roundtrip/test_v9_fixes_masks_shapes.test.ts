@@ -1,7 +1,7 @@
 /** Regression tests for the v9 fuzz findings on masks, paths and effects.
 
 After Effects numbers below were measured on AE 2026 (26.0x67) running the
-same scripted operation on a `py_aep.new()` project holding a 400x300 comp
+same scripted operation on a `newProject()` project holding a 400x300 comp
 ("C") with a 200x100 solid, then reading the values back and saving.
 */
 
@@ -39,7 +39,7 @@ const TRIANGLE = [[10.0, 10.0], [150.0, 20.0], [100.0, 90.0]];
 const QUAD = [[10.0, 10.0], [150.0, 20.0], [100.0, 90.0], [20.0, 80.0]];
 
 function _solidMask(width = 200, height = 100) {
-  const app = py_aep.new();
+  const app = py_aep.newProject();
   const comp = app.project.rootFolder.addComp("C", 400, 300, 1.0, 5.0, 24.0);
   const solid = comp.addSolid([1.0, 0.0, 0.0], "S", width, height, 1.0);
   const mask = asInstance(solid.masks, PropertyGroup).addProperty("ADBE Mask Atom");
@@ -251,7 +251,7 @@ describe("TestPathValueValidation", () => {
   );
 
   test("test_shape_layer_path_rejects_non_shape", () => {
-    const app = py_aep.new();
+    const app = py_aep.newProject();
     const comp = app.project.rootFolder.addComp("C", 400, 300, 1.0, 5.0, 24.0);
     const group = comp.addShape().property("ADBE Root Vectors Group");
     const path = group
@@ -374,7 +374,7 @@ describe("TestShapeGeometry", () => {
 
 describe("TestShapeCopies", () => {
   const _twoLayers = () => {
-    const app = py_aep.new();
+    const app = py_aep.newProject();
     const comp = app.project.rootFolder.addComp("C", 800, 600, 1.0, 5.0, 24.0);
     const a = comp.addSolid([1.0, 0.0, 0.0], "A", 200, 100, 1.0);
     const b = comp.addSolid([0.0, 1.0, 0.0], "B", 400, 400, 1.0);
@@ -491,7 +491,7 @@ describe("TestGroupAttributeWrites", () => {
 
 describe("TestNewLayerMatchNames", () => {
   test("test_text_and_shape_layers", () => {
-    const app = py_aep.new();
+    const app = py_aep.newProject();
     const comp = app.project.rootFolder.addComp("C", 400, 300, 1.0, 5.0, 24.0);
     expect(String(comp.addText("x").matchName)).toBe("ADBE Text Layer");
     expect(String(comp.addShape().matchName)).toBe("ADBE Vector Layer");
