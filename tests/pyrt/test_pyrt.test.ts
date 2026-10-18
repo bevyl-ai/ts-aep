@@ -18,7 +18,6 @@ import {
   jsonDumps,
   jsonGetitem,
   jsonLoads,
-  listMul,
   patternFindall,
   patternMatch,
   assert,
@@ -235,9 +234,7 @@ describe("builtins", () => {
     ]);
   });
 
-  test("list_mul and dict", () => {
-    expect(listMul([0, 1], 2)).toEqual([0, 1, 0, 1]);
-    expect(listMul([0], -1)).toEqual([]);
+  test("dict", () => {
     const view = { keys: () => ["a", "b"], get: (k: string) => k.toUpperCase() };
     expect(valueEquals(dict(view), new Map([["a", "A"], ["b", "B"]]))).toBe(true);
     expect(valueEquals(dict([["x", 1]]), new Map([["x", 1]]))).toBe(true);

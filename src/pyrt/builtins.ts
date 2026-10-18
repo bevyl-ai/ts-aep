@@ -397,13 +397,6 @@ export function typeName(x: unknown): string {
   return x.constructor?.name ?? "object";
 }
 
-/** `[x, ...] * n` (list repetition; `n <= 0` gives an empty list). */
-export function listMul<T>(xs: readonly T[], n: number): T[] {
-  const out: T[] = [];
-  for (let i = 0; i < n; i++) out.push(...xs);
-  return out;
-}
-
 /** A Python Mapping: a `Map`, an object with `items()`, or one with `keys()` + `get()`. */
 export type Mapping<K, V> = Map<K, V> | { items(): Iterable<[K, V]> } | KeyedMapping<K, V>;
 type KeyedMapping<K, V> = { keys(): Iterable<K>; get(key: K): V };

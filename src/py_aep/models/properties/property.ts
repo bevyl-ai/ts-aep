@@ -35,7 +35,7 @@ import { _EMPTY_CDAT_PAD, GRADIENT_KIND, MARKER_KIND, ORIENTATION_KIND, SHAPE_KI
 import { PropertyBase } from "./property_base.ts";
 import { Shape } from "./shape.ts";
 import type { PropertyGroup } from "./property_group.ts";
-import { deferred, deepcopy, getOrThrow, isclose, valueEquals, sorted, warn, int, round, floordiv, ValueError, IndexError, AttributeError, NotImplementedError, StopIteration, assert, literal, min, zip, float, lshift, rshift, and, or, ord, b, descriptor, listMul, typeName, type ClassAttributes, truthyOr } from "../../../pyrt/index.ts";
+import { deferred, deepcopy, getOrThrow, isclose, valueEquals, sorted, warn, int, round, floordiv, ValueError, IndexError, AttributeError, NotImplementedError, StopIteration, assert, literal, min, zip, float, lshift, rshift, and, or, ord, b, descriptor, typeName, type ClassAttributes, truthyOr } from "../../../pyrt/index.ts";
 
 const _propertyGroup = deferred<typeof import("./property_group.ts")>("py_aep/models/properties/property_group");
 import { AVItem } from "../items/av_item.ts";
@@ -1351,11 +1351,11 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
       // lives in a separate `tdli` chunk (see _ensure_mask_index_chunks),
       // NOT in the cdat, which stays all-zeros.
       if (this._cdat == null) {
-        const cdat = new CdatChunk({ values: listMul([0.0], 5) });
+        const cdat = new CdatChunk({ values: Array.from({ length: 5 }, () => 0.0) });
         this._tdbs.chunks.splice(indexByIdentity(this._tdbs.chunks, this._tdb4) + 1, 0, cdat);
         this._cdat = cdat;
       } else if (this._cdat.values.length < 5) {
-        this._cdat.values = listMul([0.0], 5);
+        this._cdat.values = Array.from({ length: 5 }, () => 0.0);
       }
       return;
     }
@@ -1438,16 +1438,16 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     const keepCdat = value == null && this._cdat != null;
     if (!(typeof value === "number" || typeof value === "boolean" || Array.isArray(value))) value = this.defaultValue;
     if (!(typeof value === "number" || typeof value === "boolean" || Array.isArray(value))) {
-      value = dims <= 1 ? 0.0 : listMul([0.0], dims);
+      value = dims <= 1 ? 0.0 : Array.from({ length: dims }, () => 0.0);
     }
     const mult = this._color || this.isSpatial ? 3 : 5;
     const target = dims * mult;
     if (this._cdat == null) {
-      const cdat = new CdatChunk({ values: listMul([0.0], target) });
+      const cdat = new CdatChunk({ values: Array.from({ length: target }, () => 0.0) });
       this._tdbs.chunks.splice(indexByIdentity(this._tdbs.chunks, this._tdb4) + 1, 0, cdat);
       this._cdat = cdat;
     } else if (this._cdat.values.length < target) {
-      this._cdat.values = [...this._cdat.values, ...listMul([0.0], target - this._cdat.values.length)];
+      this._cdat.values = [...this._cdat.values, ...Array.from({ length: target - this._cdat.values.length }, () => 0.0)];
     }
     if (!keepCdat) this._writeCdat(value);
   }
@@ -2512,9 +2512,9 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     const times = sorted([...new Set(keysAt.flatMap((perDimension) => [...perDimension.keys()]))]);
     const [incoming, outgoing] = this.constructor._segmentSpans(times);
     const dimensions = followers.length;
-    const composed = times.map(() => listMul([0.0], dimensions));
-    const inTangents = times.map(() => listMul([0.0], dimensions));
-    const outTangents = times.map(() => listMul([0.0], dimensions));
+    const composed = times.map(() => Array.from({ length: dimensions }, () => 0.0));
+    const inTangents = times.map(() => Array.from({ length: dimensions }, () => 0.0));
+    const outTangents = times.map(() => Array.from({ length: dimensions }, () => 0.0));
     // Interpolation is per keyframe, not per dimension: take it from the
     // first dimension that has a keyframe at that time.
     const interpolation = times.map((time) => {
@@ -3759,8 +3759,8 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     const v1 = nextKf._storedValue;
     if (!Array.isArray(v0) || !Array.isArray(v1)) return 0.0;
     const ndim = v0.length;
-    const outTangent = truthyOr(prevKf.outSpatialTangent, listMul([0.0], ndim));
-    const inTangent = truthyOr(nextKf.inSpatialTangent, listMul([0.0], ndim));
+    const outTangent = truthyOr(prevKf.outSpatialTangent, Array.from({ length: ndim }, () => 0.0));
+    const inTangent = truthyOr(nextKf.inSpatialTangent, Array.from({ length: ndim }, () => 0.0));
     return motionPathLength(v0, v1, outTangent, inTangent, this._arcMetric);
   }
 
@@ -3795,8 +3795,8 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     const v1 = nextKf._storedValue;
     if (!Array.isArray(v0) || !Array.isArray(v1)) return;
     const ndim = v0.length;
-    const outTangent = truthyOr(prevKf.outSpatialTangent, listMul([0.0], ndim));
-    const inTangent = truthyOr(nextKf.inSpatialTangent, listMul([0.0], ndim));
+    const outTangent = truthyOr(prevKf.outSpatialTangent, Array.from({ length: ndim }, () => 0.0));
+    const inTangent = truthyOr(nextKf.inSpatialTangent, Array.from({ length: ndim }, () => 0.0));
     if (_tangentsAreZero(outTangent) && _tangentsAreZero(inTangent)) return;
     const [leftOut, newIn, _split, newOut, rightIn] = splitSpatialPath(v0, v1, outTangent, inTangent, u);
     prevKf.outSpatialTangent = leftOut;
@@ -3908,7 +3908,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     // stream flags have bit 1 (spatial and colour streams), 5 otherwise
     // - the layout of every static numeric stream in the samples.
     const perDim = this._tdb4._spatialStaticFlags & 0x02 ? 3 : 5;
-    rawVals.push(...listMul([0.0], this._tdb4.dimensions * perDim - rawVals.length));
+    rawVals.push(...Array.from({ length: this._tdb4.dimensions * perDim - rawVals.length }, () => 0.0));
     const cdat = new CdatChunk({ values: rawVals });
     if (inner != null) {
       chunks[indexByIdentity(chunks, inner)] = cdat;
@@ -4002,7 +4002,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
       if (mask.rotoBezier) {
         const own = shape._ownTensions();
         const count = floordiv(points.length, 3);
-        tensions = own.length === count ? own : listMul([1.0], count);
+        tensions = own.length === count ? own : Array.from({ length: count }, () => 1.0);
       }
     }
     const shap = buildShap([bbox[0], bbox[1], bbox[2], bbox[3]], {
