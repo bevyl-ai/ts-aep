@@ -294,25 +294,25 @@ export function boolField(kw: FmtFieldOptions<boolean> = {}): FieldSpec<boolean>
   return fmtField("B", { ...kw, coerce: truthy });
 }
 
+/**
+ * Derive struct layout metadata for a chunk class.
+ *
+ * Returns a 10-element array `[fmt, data_fields, encodings, optional_start, endians, items_info, coerces, init_names, simple, expected_size]` or `null` for raw-bytes chunks that have neither
+ * `fmtField` nor `itemsField` fields.
+ *
+ * - `encodings`: field-index -\> encoding name.
+ * - `optionalStart`: index of first optional field.
+ * - `endians`: field-index -\> endian override (`"<"` or `">"`);
+ *   non-empty triggers per-field I/O in `Chunk.read()` / `Chunk.write()`.
+ * - `itemsInfo`: `(init_param_name, item_cls, item_size)` or `null`.
+ * - `coerces`: field-index -\> type callable (e.g. `bool`).
+ * - `simple`: `true` when the chunk has no string encodings, endian
+ *   overrides, optional fields, or items, so `_decodeFields` can be
+ *   replaced with `dict(zip(init_names, values))` plus inline coerce
+ *   and trailing-bytes handling.
+ * - `expectedSize`: pre-computed `struct.calcsize('>' + fmt)`.
+ */
 export function _structInfoUncached(cls: Function): _StructInfo | null {
-  /**
-   * Derive struct layout metadata for a chunk class.
-   *
-   * Returns a 10-element array `[fmt, data_fields, encodings, optional_start, endians, items_info, coerces, init_names, simple, expected_size]` or `null` for raw-bytes chunks that have neither
-   * `fmtField` nor `itemsField` fields.
-   *
-   * - `encodings`: field-index -\> encoding name.
-   * - `optionalStart`: index of first optional field.
-   * - `endians`: field-index -\> endian override (`"<"` or `">"`);
-   *   non-empty triggers per-field I/O in `Chunk.read()` / `Chunk.write()`.
-   * - `itemsInfo`: `(init_param_name, item_cls, item_size)` or `null`.
-   * - `coerces`: field-index -\> type callable (e.g. `bool`).
-   * - `simple`: `true` when the chunk has no string encodings, endian
-   *   overrides, optional fields, or items, so `_decodeFields` can be
-   *   replaced with `dict(zip(init_names, values))` plus inline coerce
-   *   and trailing-bytes handling.
-   * - `expectedSize`: pre-computed `struct.calcsize('>' + fmt)`.
-   */
   const baseNames: ReadonlySet<string> =
     cls === _chunk().Chunk || _chunk().Chunk.isPrototypeOf(cls)
       ? new Set(fields(_chunk().Chunk).map((f) => f.name))

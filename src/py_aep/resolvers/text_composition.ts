@@ -347,8 +347,8 @@ export class _CharStyle {
   }
 }
 
+/** Raise {@link CompositionUnsupported} outside the verified envelope. */
 export function _checkEnvelope(doc: TextDocument, raw: string): void {
-  /** Raise {@link CompositionUnsupported} outside the verified envelope. */
   if (hb == null) {
     throw new CompositionUnsupported(
       "composition requires uharfbuzz, which is unavailable on Python 3.7",

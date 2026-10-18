@@ -203,12 +203,12 @@ export class _Reader {
     return rules;
   }
 
+  /**
+   * Accumulated transform of `elem`: the root base (viewBox + root
+   * transform) composed with every ancestor's `transform` down to and
+   * including `elem`'s own.
+   */
   _elementCtm(elem: Element): Affine {
-    /**
-     * Accumulated transform of `elem`: the root base (viewBox + root
-     * transform) composed with every ancestor's `transform` down to and
-     * including `elem`'s own.
-     */
     if (this._parents == null) {
       this._parents = new Map();
       for (const parent of this._root.iter()) {
@@ -296,11 +296,11 @@ export class _Reader {
     for (const d of this.walk(elem, localTf, style, effOpacity, depth + 1)) out.push(d);
   }
 
+  /**
+   * What this element's percentage and `em` lengths resolve against:
+   * the nearest viewport and its font size.
+   */
   _ctx(style: Map<string, string>): LengthContext {
-    /**
-     * What this element's percentage and `em` lengths resolve against:
-     * the nearest viewport and its font size.
-     */
     const fontSize = parseLength(
       style.get("font-size") ?? null,
       DEFAULT_FONT_SIZE,
@@ -310,6 +310,11 @@ export class _Reader {
     return new LengthContext(this._viewport[0], this._viewport[1], fontSize);
   }
 
+  /**
+   * A nested `<svg>` is a new viewport (SVG 1.1 7.9): `x / y / width / height` place it (100 % of the parent viewport by default)
+   * and its viewBox maps onto that box under `preserveAspectRatio`, as
+   * AE 2026 imports it. Its content is not clipped (AE clips it).
+   */
   _visitViewport(
     elem: Element,
     ctm: Affine,
@@ -318,17 +323,18 @@ export class _Reader {
     out: SvgDrawable[],
     depth: number,
   ): void {
-    /**
-     * A nested `<svg>` is a new viewport (SVG 1.1 7.9): `x / y / width / height` place it (100 % of the parent viewport by default)
-     * and its viewBox maps onto that box under `preserveAspectRatio`, as
-     * AE 2026 imports it. Its content is not clipped (AE clips it).
-     */
     const ctx = this._ctx(style);
     const x = parseLength(elem.get("x"), 0.0, ctx.width, ctx.fontSize);
     const y = parseLength(elem.get("y"), 0.0, ctx.height, ctx.fontSize);
     this._walkViewport(elem, elem, ctm, style, opacity, out, depth, x, y);
   }
 
+  /**
+   * Walk the children of a viewport element (a nested `<svg>`, or the
+   * `<symbol>` / `<svg>` a `<use>` instantiates), its viewBox mapped
+   * onto the `x, y` box sized by `sizing`'s width / height (falling back
+   * to the viewport's own, then 100 %).
+   */
   _walkViewport(
     viewport: Element,
     sizing: Element,
@@ -340,12 +346,6 @@ export class _Reader {
     x: number,
     y: number,
   ): void {
-    /**
-     * Walk the children of a viewport element (a nested `<svg>`, or the
-     * `<symbol>` / `<svg>` a `<use>` instantiates), its viewBox mapped
-     * onto the `x, y` box sized by `sizing`'s width / height (falling back
-     * to the viewport's own, then 100 %).
-     */
     const ctx = this._ctx(style);
     const width = parseLength(
       sizing.get("width") || viewport.get("width"),
@@ -620,13 +620,13 @@ export class _Reader {
     );
   }
 
+  /**
+   * A fill or stroke paint, its `fill-opacity` / `stroke-opacity`
+   * (`opacity`) folded into its alpha: a color's own, or every gradient
+   * stop's. After Effects' own SVG import ignores both attributes
+   * (AE 2026: a 0.5 stroke-opacity imports at 100 %).
+   */
   _paint(value: string | null, opacity: string | null, bbox: Bbox, ctm: Affine): Paint {
-    /**
-     * A fill or stroke paint, its `fill-opacity` / `stroke-opacity`
-     * (`opacity`) folded into its alpha: a color's own, or every gradient
-     * stop's. After Effects' own SVG import ignores both attributes
-     * (AE 2026: a 0.5 stroke-opacity imports at 100 %).
-     */
     if (value == null) return null;
     value = strip(value);
     if (value === "none") return null;

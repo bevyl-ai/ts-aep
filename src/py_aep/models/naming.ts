@@ -35,14 +35,14 @@ export function _intDigits(tail: string): bigint {
 // also matches before one trailing "\n", hence the lookahead.
 export const _TRAILING_NUMBER_RE = /(\p{Nd}+)(?=\n?$)/u;
 
+/**
+ * Return the next available numeric suffix for `{prefix}{N}`.
+ *
+ * Returns 1 if no name in `existingNames` starts with `prefix`.
+ * If any name matches `prefix` (with or without a digit suffix),
+ * suffix 1 is skipped - returns at least 2.
+ */
 export function _nextSuffix(prefix: string, existingNames: Set<string>): number | bigint {
-  /**
-   * Return the next available numeric suffix for `{prefix}{N}`.
-   *
-   * Returns 1 if no name in `existingNames` starts with `prefix`.
-   * If any name matches `prefix` (with or without a digit suffix),
-   * suffix 1 is skipped - returns at least 2.
-   */
   let maxSuffix = 0n;
   for (const name of existingNames) {
     if (name.startsWith(prefix)) {
@@ -62,17 +62,17 @@ export function _nextSuffix(prefix: string, existingNames: Set<string>): number 
   return result <= BigInt(Number.MAX_SAFE_INTEGER) ? Number(result) : result;
 }
 
+/**
+ * Find the next available incremented name.
+ *
+ * - Removes the number suffix if there is one
+ * - Finds the highest number suffix with the same prefix in `existingNames`
+ * - Increments it by 1
+ * - If no existing name starts with the base name, return `{name} 1`.
+ * - If existing names start with the base name but none has a number suffix, skip 1 and
+ * return `{name} 2`.
+ */
 export function autoName(name: string, existingNames: Set<string>): string {
-  /**
-   * Find the next available incremented name.
-   *
-   * - Removes the number suffix if there is one
-   * - Finds the highest number suffix with the same prefix in `existingNames`
-   * - Increments it by 1
-   * - If no existing name starts with the base name, return `{name} 1`.
-   * - If existing names start with the base name but none has a number suffix, skip 1 and
-   * return `{name} 2`.
-   */
   const match = _TRAILING_NUMBER_RE.exec(name);
   let prefix: string;
   if (match) {

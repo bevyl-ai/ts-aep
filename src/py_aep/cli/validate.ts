@@ -323,8 +323,8 @@ export function getEnumValue<T>(val: T): T {
 
 export const _CAMEL_RE = /(?<=[a-z0-9])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])/g;
 
+/** Convert camelCase dict keys to snake_case recursively. */
 export function _normalizeKeys(d: Dict): Dict {
-  /** Convert camelCase dict keys to snake_case recursively. */
   const result: Dict = new Map();
   for (const [key, value0] of d) {
     const snakeKey = key.replace(_CAMEL_RE, "_").toLowerCase();
@@ -431,6 +431,7 @@ export function _compareFields(
   }
 }
 
+/** Compare a list of markers (used by both layers and compositions). */
 export function _compareMarkers(
   expectedMarkers: Dict[],
   parsedMarkers: Dict[],
@@ -438,7 +439,6 @@ export function _compareMarkers(
   frameRate: number,
   result: ValidationResult,
 ): void {
-  /** Compare a list of markers (used by both layers and compositions). */
   if (expectedMarkers.length !== parsedMarkers.length) {
     result.addDiff(`${path}.numMarkers`, expectedMarkers.length, parsedMarkers.length, "markers");
   }
@@ -447,8 +447,8 @@ export function _compareMarkers(
   }
 }
 
+/** Compare a list of guides. */
 export function _compareGuides(expectedGuides: Dict[], parsedGuides: Dict[], path: string, result: ValidationResult): void {
-  /** Compare a list of guides. */
   if (expectedGuides.length !== parsedGuides.length) {
     result.addDiff(`${path}.numGuides`, expectedGuides.length, parsedGuides.length, "composition");
   }
@@ -462,8 +462,8 @@ export function _compareGuides(expectedGuides: Dict[], parsedGuides: Dict[], pat
   }
 }
 
+/** Compare proxySource on an AVItem (comp or footage). */
 export function _compareProxySource(expectedItem: Dict, parsedItem: Dict, path: string, result: ValidationResult): void {
-  /** Compare proxySource on an AVItem (comp or footage). */
   const expProxy = expectedItem.get("proxySource") ?? null;
   const parsedProxy = parsedItem.get("proxySource") ?? null;
   if (truthy(expProxy) && truthy(parsedProxy)) {
@@ -490,13 +490,13 @@ export function _compareProxySource(expectedItem: Dict, parsedItem: Dict, path: 
   }
 }
 
+/** Match expected/parsed property children by matchName, then recurse. */
 export function _compareChildrenByMatchName(
   expectedProps: Dict[],
   parsedProps: Dict[],
   path: string,
   result: ValidationResult,
 ): void {
-  /** Match expected/parsed property children by matchName, then recurse. */
   if (expectedProps.length !== parsedProps.length) {
     result.addDiff(`${path}.numProperties`, expectedProps.length, parsedProps.length, "properties");
   }
@@ -565,6 +565,7 @@ export function compareProjectLevel(expected: Dict, parsed: Dict, result: Valida
   _compareFields(expected, parsed, mappings, "Project", "project", result, "Project");
 }
 
+/** Compare marker properties. */
 export function compareMarker(
   expectedMarker: Dict,
   parsedMarker: Dict,
@@ -572,7 +573,6 @@ export function compareMarker(
   frameRate: number,
   result: ValidationResult,
 ): void {
-  /** Compare marker properties. */
   // Calculate time from frame_time if available
   let parsedTime: number | null = null;
   if (parsedMarker.get("frameTime") != null) {
@@ -605,6 +605,7 @@ export function compareMarker(
   _compareFields(expectedMarker, parsedMarker, markerMappings, path, "markers", result, "Marker");
 }
 
+/** Compare layer properties. */
 export function compareLayer(
   expectedLayer: Dict,
   parsedLayer: Dict,
@@ -613,7 +614,6 @@ export function compareLayer(
   frameRate: number,
   result: ValidationResult,
 ): void {
-  /** Compare layer properties. */
   const layerMappings = {
     name: "name",
     id: "id",
@@ -704,20 +704,20 @@ export function compareLayer(
   );
 }
 
+/**
+ * Compare a single property (leaf node).
+ *
+ * @param expectedProp - Expected property from ExtendScript JSON.
+ * @param parsedProp - Parsed property from py_aep.
+ * @param path - Dotted path for error messages.
+ * @param result - ValidationResult to accumulate differences.
+ */
 export function compareProperty(
   expectedProp: Dict,
   parsedProp: Dict,
   path: string,
   result: ValidationResult,
 ): void {
-  /**
-   * Compare a single property (leaf node).
-   *
-   * @param expected_prop - Expected property from ExtendScript JSON.
-   * @param parsed_prop - Parsed property from py_aep.
-   * @param path - Dotted path for error messages.
-   * @param result - ValidationResult to accumulate differences.
-   */
   const propertyMappings = {
     name: "name",
     matchName: "matchName",
@@ -931,20 +931,20 @@ export function compareProperty(
   }
 }
 
+/**
+ * Compare a Shape value (mask path or shape layer path).
+ *
+ * @param expectedShape - Expected shape from ExtendScript JSON.
+ * @param parsedShape - Parsed shape dict from py_aep.
+ * @param path - Dotted path for error messages.
+ * @param result - ValidationResult to accumulate differences.
+ */
 export function compareShapeValue(
   expectedShape: Dict,
   parsedShape: Dict,
   path: string,
   result: ValidationResult,
 ): void {
-  /**
-   * Compare a Shape value (mask path or shape layer path).
-   *
-   * @param expected_shape - Expected shape from ExtendScript JSON.
-   * @param parsed_shape - Parsed shape dict from py_aep.
-   * @param path - Dotted path for error messages.
-   * @param result - ValidationResult to accumulate differences.
-   */
   const shapeMappings: Record<string, string> = {
     closed: "closed",
     vertices: "vertices",
@@ -979,20 +979,20 @@ export function compareShapeValue(
   }
 }
 
+/**
+ * Compare a single keyframe's attributes.
+ *
+ * @param expectedKf - Expected keyframe from ExtendScript JSON.
+ * @param parsedKf - Parsed keyframe from py_aep.
+ * @param path - Dotted path for error messages.
+ * @param result - ValidationResult to accumulate differences.
+ */
 export function compareKeyframe(
   expectedKf: Dict,
   parsedKf: Dict,
   path: string,
   result: ValidationResult,
 ): void {
-  /**
-   * Compare a single keyframe's attributes.
-   *
-   * @param expected_kf - Expected keyframe from ExtendScript JSON.
-   * @param parsed_kf - Parsed keyframe from py_aep.
-   * @param path - Dotted path for error messages.
-   * @param result - ValidationResult to accumulate differences.
-   */
   // Track manually-compared fields
   result.trackField("Keyframe", "value", expectedKf.has("value"));
   result.trackField("Keyframe", "inTemporalEase", expectedKf.has("inTemporalEase"));
@@ -1068,20 +1068,20 @@ export function compareKeyframe(
   }
 }
 
+/**
+ * Compare TextDocument properties.
+ *
+ * @param expectedDoc - Expected TextDocument from ExtendScript JSON.
+ * @param parsedDoc - Parsed TextDocument from py_aep.
+ * @param path - Dotted path for error messages.
+ * @param result - ValidationResult to accumulate differences.
+ */
 export function compareTextDocument(
   expectedDoc: Dict,
   parsedDoc: Dict,
   path: string,
   result: ValidationResult,
 ): void {
-  /**
-   * Compare TextDocument properties.
-   *
-   * @param expected_doc - Expected TextDocument from ExtendScript JSON.
-   * @param parsed_doc - Parsed TextDocument from py_aep.
-   * @param path - Dotted path for error messages.
-   * @param result - ValidationResult to accumulate differences.
-   */
   // fontFamily/fontStyle/fontLocation are intentionally omitted: AE does not
   // store them in the .aep. It resolves them at runtime by feeding the stored
   // PostScript name to CoolType against the host's installed font database, so
@@ -1159,22 +1159,22 @@ export function compareTextDocument(
   _compareFields(expectedDoc, parsedDoc, textMappings, path, "textdocument", result, "TextDocument");
 }
 
+/**
+ * Compare a property group (effects group, transform group, etc.).
+ *
+ * Recursively compares nested properties and property groups.
+ *
+ * @param expectedGroup - Expected property group from ExtendScript JSON.
+ * @param parsedGroup - Parsed property group from py_aep.
+ * @param path - Dotted path for error messages.
+ * @param result - ValidationResult to accumulate differences.
+ */
 export function comparePropertyGroup(
   expectedGroup: Dict,
   parsedGroup: Dict,
   path: string,
   result: ValidationResult,
 ): void {
-  /**
-   * Compare a property group (effects group, transform group, etc.).
-   *
-   * Recursively compares nested properties and property groups.
-   *
-   * @param expected_group - Expected property group from ExtendScript JSON.
-   * @param parsed_group - Parsed property group from py_aep.
-   * @param path - Dotted path for error messages.
-   * @param result - ValidationResult to accumulate differences.
-   */
   const groupMappings = {
     name: "name",
     matchName: "matchName",
@@ -1215,13 +1215,13 @@ export function comparePropertyGroup(
   );
 }
 
+/** Compare composition item properties. */
 export function compareCompItem(
   expectedItem: Dict,
   parsedComp: Dict,
   path: string,
   result: ValidationResult,
 ): void {
-  /** Compare composition item properties. */
   const compMappings = {
     name: "name",
     id: "id",
@@ -1290,12 +1290,12 @@ export function compareCompItem(
   _compareProxySource(expectedItem, parsedComp, path, result);
 }
 
+/** Compare folder hierarchy. */
 export function compareFolderHierarchy(
   expectedItems: Dict[],
   parsedItems: Map<number, Dict>,
   result: ValidationResult,
 ): void {
-  /** Compare folder hierarchy. */
   const expectedFolders = new Map<number, Dict>();
   for (const item of expectedItems) {
     if ((item.get("itemType") ?? null) === "FolderItem") {
@@ -1327,20 +1327,20 @@ export function compareFolderHierarchy(
   }
 }
 
+/**
+ * Compare footage item properties and its main source.
+ *
+ * @param expectedItem - Expected FootageItem from ExtendScript JSON.
+ * @param parsedItem - Parsed FootageItem from py_aep.
+ * @param path - Dotted path for error messages.
+ * @param result - ValidationResult to accumulate differences.
+ */
 export function compareFootageItem(
   expectedItem: Dict,
   parsedItem: Dict,
   path: string,
   result: ValidationResult,
 ): void {
-  /**
-   * Compare footage item properties and its main source.
-   *
-   * @param expected_item - Expected FootageItem from ExtendScript JSON.
-   * @param parsed_item - Parsed FootageItem from py_aep.
-   * @param path - Dotted path for error messages.
-   * @param result - ValidationResult to accumulate differences.
-   */
   const footageMappings = {
     name: "name",
     id: "id",
@@ -1431,17 +1431,17 @@ export function compareFootageItem(
   _compareProxySource(expectedItem, parsedItem, path, result);
 }
 
+/**
+ * Compare render settings.
+ *
+ * Render settings are now stored as raw integer values with ExtendScript keys.
+ */
 export function compareSettings(
   expectedSettings: Dict,
   parsedSettings: Dict | null,
   path: string,
   result: ValidationResult,
 ): void {
-  /**
-   * Compare render settings.
-   *
-   * Render settings are now stored as raw integer values with ExtendScript keys.
-   */
   if (parsedSettings == null) {
     result.addDiff(`${path}`, "exists", "missing", "renderqueue");
     return;
@@ -1476,17 +1476,17 @@ export function compareSettings(
   _compareFields(expectedSettings, parsedSettings, settingsMappings, path, "renderqueue", result, "RenderSettings");
 }
 
+/**
+ * Compare output module settings.
+ *
+ * Output module settings are stored as a dict with ExtendScript keys.
+ */
 export function compareOutputModuleSettings(
   expectedSettings: Dict | null,
   parsedSettings: Dict | null,
   path: string,
   result: ValidationResult,
 ): void {
-  /**
-   * Compare output module settings.
-   *
-   * Output module settings are stored as a dict with ExtendScript keys.
-   */
   if (expectedSettings == null) return;
   if (parsedSettings == null) {
     result.addDiff(`${path}`, "exists", "missing", "renderqueue");
@@ -1522,13 +1522,13 @@ export function compareOutputModuleSettings(
   _compareFields(expectedSettings, parsedSettings, omSettingsMappings, path, "renderqueue", result, "OMSettings");
 }
 
+/** Compare render queue items. */
 export function compareRenderQueue(
   expectedRq: Dict,
   parsedRq: Dict,
   result: ValidationResult,
   verbose = false,
 ): void {
-  /** Compare render queue items. */
   const expectedItems: Dict[] = getOr(expectedRq, "items", []);
   const parsedItems: Dict[] = getOr(parsedRq, "items", []);
 
@@ -1625,18 +1625,18 @@ export function compareRenderQueue(
   }
 }
 
+/**
+ * Compare active viewer properties.
+ *
+ * @param expectedViewer - Expected activeViewer from ExtendScript JSON.
+ * @param parsedViewer - Parsed active_viewer dict from py_aep.
+ * @param result - ValidationResult to accumulate differences.
+ */
 export function compareViewer(
   expectedViewer: Dict,
   parsedViewer: Dict,
   result: ValidationResult,
 ): void {
-  /**
-   * Compare active viewer properties.
-   *
-   * @param expected_viewer - Expected activeViewer from ExtendScript JSON.
-   * @param parsed_viewer - Parsed active_viewer dict from py_aep.
-   * @param result - ValidationResult to accumulate differences.
-   */
   const viewerMappings: Record<string, string> = {
     type: "type",
   };
@@ -1669,21 +1669,21 @@ export function compareViewer(
   }
 }
 
+/**
+ * Validate parsed AEP against expected JSON.
+ *
+ * @param aepPath - Path to .aep file.
+ * @param jsonPath - Path to expected JSON (from ExtendScript export).
+ * @param verbose - Whether to print detailed progress.
+ * @param categoryFilter - Only show differences from this category.
+ * @returns ValidationResult containing all differences.
+ */
 export function validateAep(
   aepPath: Path,
   jsonPath: Path,
   verbose = false,
   categoryFilter: string | null = null,
 ): ValidationResult {
-  /**
-   * Validate parsed AEP against expected JSON.
-   *
-   * @param aep_path - Path to .aep file.
-   * @param json_path - Path to expected JSON (from ExtendScript export).
-   * @param verbose - Whether to print detailed progress.
-   * @param category_filter - Only show differences from this category.
-   * @returns ValidationResult containing all differences.
-   */
   const result = new ValidationResult();
 
   // Parse AEP
@@ -1791,12 +1791,12 @@ export function validateAep(
   return result;
 }
 
+/** Print validation results. */
 export function printResults(
   result: ValidationResult,
   verbose = false,
   categoryFilter: string | null = null,
 ): void {
-  /** Print validation results. */
   console.log("\n" + "=".repeat(60));
 
   if (!result.differences?.length) {
@@ -1834,8 +1834,8 @@ export function printResults(
   }
 }
 
+/** Print field coverage report. */
 export function printCoverage(result: ValidationResult): void {
-  /** Print field coverage report. */
   const compared = sorted(result.comparedFields);
   const notCompared = sorted([...result.definedFields].filter((x) => !result.comparedFields.has(x)));
 

@@ -77,13 +77,13 @@ export class CssRule {
 // `search`); patterns use only classes/`\s`/`$` where Python and JS agree (trailing `\s*` eats any "\n" before `$`).
 export const _RULE_RE = /([^{}]+)\{([^{}]*)\}/g;
 
+/** Parse a `<style>` block into rules (comma groups split out).
+ *
+ * Supports simple selectors: `tag`, `.class`, `#id`, `*`, and chains
+ * of those (e.g. `rect.foo`). Combinators and pseudo-classes are not
+ * matched (treated as never-matching).
+ */
 export function parseCss(text: string): CssRule[] {
-  /** Parse a `<style>` block into rules (comma groups split out).
-   *
-   * Supports simple selectors: `tag`, `.class`, `#id`, `*`, and chains
-   * of those (e.g. `rect.foo`). Combinators and pseudo-classes are not
-   * matched (treated as never-matching).
-   */
   const rules: CssRule[] = [];
   text = text.replace(/\/\*.*?\*\//gs, "");
   let order = 0;
@@ -102,11 +102,11 @@ export function parseCss(text: string): CssRule[] {
 
 export const _IMPORTANT_RE = /\s*!\s*important\s*$/i;
 
+/** `(declarations, the !important ones)` of a declaration block. */
 export function _splitDeclarations(
   body: string,
   tracked: readonly string[] | ReadonlySet<string> = _TRACKED,
 ): [Map<string, string>, Map<string, string>] {
-  /** `(declarations, the !important ones)` of a declaration block. */
   const out = new Map<string, string>();
   const important = new Map<string, string>();
   for (const decl of body.split(";")) {
@@ -146,17 +146,17 @@ export function _specificity(selector: string): [number, number, number] {
   return [ids, classes, types];
 }
 
+/** Test a simple selector against an element.
+ *
+ * Only single compound selectors (no descendant combinators) match;
+ * a selector containing whitespace never matches.
+ */
 export function selectorMatches(
   selector: string,
   tag: string,
   elemId: string,
   classes: ReadonlySet<string>,
 ): boolean {
-  /** Test a simple selector against an element.
-   *
-   * Only single compound selectors (no descendant combinators) match;
-   * a selector containing whitespace never matches.
-   */
   if (
     strip(selector).includes(" ") ||
     selector.includes(">") ||
@@ -178,21 +178,21 @@ export function selectorMatches(
   return true;
 }
 
+/**
+ * Compute the effective presentation properties for an element.
+ *
+ * @param parent - The parent element's resolved properties.
+ * @param tag - Local element name.
+ * @param attrs - Element attributes.
+ * @param cssRules - Parsed document CSS rules.
+ * @returns The resolved property dict for this element.
+ */
 export function resolveProperties(
   parent: Map<string, string>,
   tag: string,
   attrs: Map<string, string>,
   cssRules: CssRule[],
 ): Map<string, string> {
-  /**
-   * Compute the effective presentation properties for an element.
-   *
-   * @param parent - The parent element's resolved properties.
-   * @param tag - Local element name.
-   * @param attrs - Element attributes.
-   * @param css_rules - Parsed document CSS rules.
-   * @returns The resolved property dict for this element.
-   */
   // Start from inherited properties only.
   const style = new Map<string, string>(
     [...parent].filter(([k]) => INHERITABLE.has(k)),

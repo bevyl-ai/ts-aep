@@ -304,14 +304,14 @@ export class Chunk extends AttrsBase {
     return written;
   }
 
+  /** Parse a chunk body from raw bytes. */
   static frombytes(data: Uint8Array, kwargs: ChunkReadKwargs = {}): Chunk {
-    /** Parse a chunk body from raw bytes. */
     const f = new BytesIO(data);
     return this.read(f, data.length, kwargs);
   }
 
+  /** Serialize the chunk body to bytes. */
   tobytes(): Uint8Array {
-    /** Serialize the chunk body to bytes. */
     const f = new BytesIO();
     this.write(f);
     return f.getvalue();
@@ -548,14 +548,14 @@ export class ContainerChunk extends Chunk {
     return new this({ chunkType, chunks });
   }
 
+  /**
+   * A body holding the string itself, as older projects write it: NUL
+   * terminated, in a buffer sized to it (a `tdsn` of a lone zero byte, a
+   * `pdnm`) or of a fixed size (a 48-byte `fnam`), where newer ones wrap
+   * it in a `Utf8` child. The bytes are kept to be written back as they
+   * were; the string is a synthetic `Utf8` child, for the readers.
+   */
   static _readLegacy(fp: IO, size: number, kwargs: { chunkType: string }): ContainerChunk {
-    /**
-     * A body holding the string itself, as older projects write it: NUL
-     * terminated, in a buffer sized to it (a `tdsn` of a lone zero byte, a
-     * `pdnm`) or of a fixed size (a 48-byte `fnam`), where newer ones wrap
-     * it in a `Utf8` child. The bytes are kept to be written back as they
-     * were; the string is a synthetic `Utf8` child, for the readers.
-     */
     const { chunkType } = kwargs;
     const data = readBytes(fp, size);
     // Registry lookup instead of a deferred import: scalar_chunks imports Chunk

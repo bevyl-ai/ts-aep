@@ -48,19 +48,19 @@ export const _CMD_RE = /^[MmLlHhVvCcSsQqTtAaZz]/;
 // Argument count per command (per coordinate-set repetition).
 export const _ARGC: Record<string, number> = { M: 2, L: 2, H: 1, V: 1, C: 6, S: 4, Q: 4, T: 2, A: 7 };
 
+/**
+ * Split a path `d` string into command and argument tokens.
+ *
+ * The elliptical-arc large-arc-flag and sweep-flag are single-character
+ * flags (`0`/`1`) in the W3C path grammar, so they may be written with no
+ * separator from each other or the following coordinate (e.g.
+ * `A5 5 0 11 0,10`). A context-free scan would misread `11` as the single
+ * number 11; this scanner tracks the active command and per-repetition
+ * argument index and peels off exactly one flag character at the two flag
+ * positions of an `A`/`a` command. Every other token matches the same
+ * number grammar as before, so non-arc paths tokenize identically.
+ */
 export function _tokenize(d: string): string[] {
-  /**
-   * Split a path `d` string into command and argument tokens.
-   *
-   * The elliptical-arc large-arc-flag and sweep-flag are single-character
-   * flags (`0`/`1`) in the W3C path grammar, so they may be written with no
-   * separator from each other or the following coordinate (e.g.
-   * `A5 5 0 11 0,10`). A context-free scan would misread `11` as the single
-   * number 11; this scanner tracks the active command and per-repetition
-   * argument index and peels off exactly one flag character at the two flag
-   * positions of an `A`/`a` command. Every other token matches the same
-   * number grammar as before, so non-arc paths tokenize identically.
-   */
   const tokens: string[] = [];
   // Python indexes code points; `i` is the UTF-16 offset of the current code
   // point and advances by its width, so the scan visits the same characters.
@@ -289,6 +289,7 @@ export class _PathParser {
     this._prevCmd = up;
   }
 
+  /** Convert an SVG elliptical arc to cubic segments (W3C algorithm). */
   _arcTo(
     rx: number,
     ry: number,
@@ -298,7 +299,6 @@ export class _PathParser {
     x: number,
     y: number,
   ): void {
-    /** Convert an SVG elliptical arc to cubic segments (W3C algorithm). */
     const x1 = this.cx;
     const y1 = this.cy;
     if (rx === 0 || ry === 0) {

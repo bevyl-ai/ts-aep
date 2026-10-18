@@ -84,42 +84,42 @@ export function _isOsError(e: unknown): boolean {
   return e instanceof OSError || (typeof e === "object" && e !== null && "errno" in e && typeof e.errno === "number");
 }
 
+/**
+ * Select the `opti` asset-info body for a file source (`path`, or a
+ * sequence's first frame; `data` is its content, if already read).
+ *
+ * Rules verified against AE 2026:
+ *
+ * - TIFF (still or sequence): always needs the 602-byte `TIF ` header;
+ *   an empty or generic header crashes AE for TIFF regardless of whether
+ *   it is a still or a sequence.
+ * - PSD: the 602-byte `8BPS` header of the merged document.
+ * - TIFF and PSD record the image as AE reads it: channel count, bit
+ *   depth, colour mode and layer count.
+ * - EXR (still or sequence): the 9750-byte `oEXR` header AE writes
+ *   (`buildExrOptiData`). AE opens an EXR with an empty or generic opti,
+ *   but renders a data window that differs from the display window
+ *   misplaced, and crashed rendering one larger than the display window.
+ * - FBX singles: empty opti is fine (AE re-reads the located file).
+ * - Sequences and all audio/video formats: need the 58-byte generic
+ *   header so AE recognises the item as a sequence or media file rather
+ *   than missing footage.
+ * - PNG (still or sequence): needs the 58-byte generic header; AE opens
+ *   a PNG still with an empty opti but crashes as soon as it renders it.
+ * - HDR (Radiance): needs the 30-byte format-specific `RHDR` header;
+ *   dimensions live in `sspc`, not the opti.
+ * - Camera Raw (CRW): the 30-byte `Craw` header AE writes for a raw file
+ *   without develop settings; an empty opti crashes AE.
+ * - AI/EPS/PDF: need the 596-byte `TEXT` header with width/height
+ *   embedded as big-endian u16; an Illustrator/PDF document adds its
+ *   layer count, page count and page-size tail, an EPS file does not.
+ */
 export function _optiData(
   fmt: FileFormat,
   info: MediaInfo,
   path: Path,
   kw: { sequence?: boolean; data?: Uint8Array | null } = {},
 ): Uint8Array {
-  /**
-   * Select the `opti` asset-info body for a file source (`path`, or a
-   * sequence's first frame; `data` is its content, if already read).
-   *
-   * Rules verified against AE 2026:
-   *
-   * - TIFF (still or sequence): always needs the 602-byte `TIF ` header;
-   *   an empty or generic header crashes AE for TIFF regardless of whether
-   *   it is a still or a sequence.
-   * - PSD: the 602-byte `8BPS` header of the merged document.
-   * - TIFF and PSD record the image as AE reads it: channel count, bit
-   *   depth, colour mode and layer count.
-   * - EXR (still or sequence): the 9750-byte `oEXR` header AE writes
-   *   (`buildExrOptiData`). AE opens an EXR with an empty or generic opti,
-   *   but renders a data window that differs from the display window
-   *   misplaced, and crashed rendering one larger than the display window.
-   * - FBX singles: empty opti is fine (AE re-reads the located file).
-   * - Sequences and all audio/video formats: need the 58-byte generic
-   *   header so AE recognises the item as a sequence or media file rather
-   *   than missing footage.
-   * - PNG (still or sequence): needs the 58-byte generic header; AE opens
-   *   a PNG still with an empty opti but crashes as soon as it renders it.
-   * - HDR (Radiance): needs the 30-byte format-specific `RHDR` header;
-   *   dimensions live in `sspc`, not the opti.
-   * - Camera Raw (CRW): the 30-byte `Craw` header AE writes for a raw file
-   *   without develop settings; an empty opti crashes AE.
-   * - AI/EPS/PDF: need the 596-byte `TEXT` header with width/height
-   *   embedded as big-endian u16; an Illustrator/PDF document adds its
-   *   layer count, page count and page-size tail, an EPS file does not.
-   */
   const { sequence = false, data = null } = kw;
   if (fmt.opti === "tiff") {
     return buildTiffOptiData(
@@ -155,14 +155,14 @@ export function _optiData(
   return buildGenericOptiData(fmt.sourceFormat, { sequence });
 }
 
+/**
+ * How many layers an Illustrator/PDF document has, as AE records it for
+ * the whole document: 0 for one without layers (pdf.pdf, ai_no_pdf.ai in
+ * footage_depth.aep). A document whose layers cannot be read (malformed or
+ * truncated PDF objects) counts 0 as well: the count only annotates the
+ * footage, which imports without it.
+ */
 export function _aiLayerCount(path: Path, data: Uint8Array | null = null): number {
-  /**
-   * How many layers an Illustrator/PDF document has, as AE records it for
-   * the whole document: 0 for one without layers (pdf.pdf, ai_no_pdf.ai in
-   * footage_depth.aep). A document whose layers cannot be read (malformed or
-   * truncated PDF objects) counts 0 as well: the count only annotates the
-   * footage, which imports without it.
-   */
   try {
     return readAiLayerOcgs(path, data).length;
   } catch (e) {
@@ -171,15 +171,15 @@ export function _aiLayerCount(path: Path, data: Uint8Array | null = null): numbe
   }
 }
 
+/**
+ * The source data size AE caches in `sspc` for a single file.
+ *
+ * The file's size on disk (AE 2026, macOS and Windows), except for merged
+ * PSD footage and TIFF stills, whose decoded pixel buffer AE caches
+ * instead: `w * h * channels * bytes per channel` (`MediaInfo.pixel_channels`;
+ * choose_layer_merged / flattened_rgb_comp / footage_depth.aep fixtures).
+ */
 export function _stillDataSize(fmt: FileFormat, info: MediaInfo, path: Path): number {
-  /**
-   * The source data size AE caches in `sspc` for a single file.
-   *
-   * The file's size on disk (AE 2026, macOS and Windows), except for merged
-   * PSD footage and TIFF stills, whose decoded pixel buffer AE caches
-   * instead: `w * h * channels * bytes per channel` (`MediaInfo.pixel_channels`;
-   * choose_layer_merged / flattened_rgb_comp / footage_depth.aep fixtures).
-   */
   if (!["psd", "tiff"].includes(fmt.opti)) return path.stat().size;
   return pixelBufferSize(info.width, info.height, info.pixelChannels, info.bitDepth);
 }
@@ -216,23 +216,23 @@ export class PsdLayerFootage {
   }
 }
 
+/**
+ * The content box, `opti`, cached data size, alpha and depth AE
+ * records for `layer`'s footage - the same on a layered import and on a
+ * single-layer import or replace (`resolvers.psd_bounds.psd_layer_box`,
+ * `buildPsdLayerOptiData`, AE 2026 fixtures).
+ *
+ * @param info - The probed document.
+ * @param layer - The Photoshop layer.
+ * @param layerStyles - The Layer Options choice: `"merge"`, `"editable"` or `"ignore"`.
+ * @param globalAngle - The document's global light angle.
+ */
 export function psdLayerFootage(
   info: MediaInfo,
   layer: PsdLayer,
   layerStyles: string,
   globalAngle: number,
 ): PsdLayerFootage {
-  /**
-   * The content box, `opti`, cached data size, alpha and depth AE
-   * records for `layer`'s footage - the same on a layered import and on a
-   * single-layer import or replace (`resolvers.psd_bounds.psd_layer_box`,
-   * `buildPsdLayerOptiData`, AE 2026 fixtures).
-   *
-   * @param info - The probed document.
-   * @param layer - The Photoshop layer.
-   * @param layer_styles - The Layer Options choice: `"merge"`, `"editable"` or `"ignore"`.
-   * @param global_angle - The document's global light angle.
-   */
   const box = psdLayerBox(layer, info.width, info.height, layerStyles, globalAngle);
   const [left, top, right, bottom] = box;
   const layerChannels = psdLayerChannels(info, layer.hasTransparency);
@@ -268,18 +268,18 @@ export function psdLayerFootage(
   );
 }
 
+/**
+ * `info` as After Effects on the target platform reads the file.
+ *
+ * AE 2026 on Windows stores `heic_alpha.heic` without alpha, whether it is
+ * imported by script or through the Import dialog; AE on macOS keeps the
+ * alpha channel (`format_options/heic` fixture).
+ */
 export function _platformMediaInfo(
   info: MediaInfo,
   fmt: FileFormat,
   kw: { windows: boolean },
 ): MediaInfo {
-  /**
-   * `info` as After Effects on the target platform reads the file.
-   *
-   * AE 2026 on Windows stores `heic_alpha.heic` without alpha, whether it is
-   * imported by script or through the Import dialog; AE on macOS keeps the
-   * alpha channel (`format_options/heic` fixture).
-   */
   const { windows } = kw;
   if (windows && fmt.sourceFormat === "AIDE" && info.hasAlpha) {
     // The same channels without the alpha one (32 -> 24 on Windows).
@@ -368,8 +368,8 @@ export const _LINEAR_LIGHT_OFF_FORMATS = new Set([
   "AIDE",
 ]);
 
+/** After Effects' own copy of the named profile, if it is installed. */
 export function _cataloguedProfile(name: string): Uint8Array | null {
-  /** After Effects' own copy of the named profile, if it is installed. */
   try {
     return defaultIccLibrary().bytesFor(name);
   } catch (e) {
@@ -383,15 +383,15 @@ export function _profileRecord(blob: Uint8Array): ColorProfileRecord {
   return new ColorProfileRecord(iccProfileId(blob), buildIccEnvelope(name, blob));
 }
 
+/**
+ * The profile After Effects records by name only for a TIFF or Photoshop
+ * image whose colours are not RGB, or `null` when it records an ICC
+ * profile (or none) instead.
+ *
+ * A file tagged with a non-RGB profile names that profile; an untagged one
+ * names AE's default for its colour mode (`_MODE_PROFILE_NAMES`).
+ */
 export function namedMediaProfile(sourceFormat: string, info: MediaInfo): string | null {
-  /**
-   * The profile After Effects records by name only for a TIFF or Photoshop
-   * image whose colours are not RGB, or `null` when it records an ICC
-   * profile (or none) instead.
-   *
-   * A file tagged with a non-RGB profile names that profile; an untagged one
-   * names AE's default for its colour mode (`_MODE_PROFILE_NAMES`).
-   */
   if (!_CATALOGUED_PROFILE_FORMATS.has(sourceFormat)) return null;
   if (info.iccProfile != null) {
     if (bytesEq(bytes_.slice(info.iccProfile, 16, 20), b("RGB "))) return null;
@@ -405,22 +405,44 @@ export function namedMediaProfile(sourceFormat: string, info: MediaInfo): string
   return _MODE_PROFILE_NAMES.get(info.colorMode) ?? null;
 }
 
+/**
+ * `(icc_profile, profile_name)` for an Illustrator/PDF/EPS file: the RGB
+ * profile its page draws with, recorded like a raster file's embedded one,
+ * or the name of a non-RGB one, which AE records by name only (AE 2026:
+ * complex.ai embeds sRGB, ai.ai names Coated FOGRA39).
+ */
 export function aiDocumentProfile(
   path: Path,
   data: Uint8Array | null = null,
 ): [Uint8Array | null, string | null] {
-  /**
-   * `(icc_profile, profile_name)` for an Illustrator/PDF/EPS file: the RGB
-   * profile its page draws with, recorded like a raster file's embedded one,
-   * or the name of a non-RGB one, which AE records by name only (AE 2026:
-   * complex.ai embeds sRGB, ai.ai names Coated FOGRA39).
-   */
   const icc = readAiIccProfile(path, data);
   if (icc == null) return [null, null];
   if (bytesEq(bytes_.slice(icc, 16, 20), b("RGB "))) return [icc, null];
   return [null, iccProfileDescription(icc)];
 }
 
+/**
+ * The `(embedded, assigned)` CLRS profile records for a source file.
+ *
+ * AE records the profile the file carries and assigns one to media that
+ * carries none, with the per-format exceptions in
+ * `_CATALOGUED_PROFILE_FORMATS`, `_UNRECORDED_PROFILE_FORMATS`,
+ * `_VIDEO_CONTAINER_FORMATS` and `_VIDEO_DECODED_FORMATS`. Measured across
+ * every format py_aep imports (AE 2026), plus untagged JPEG/TIFF/PSB
+ * variants.
+ *
+ * @param iccProfile - The profile the media file embeds, if any (see
+ *   {@link MediaInfo | MediaInfo.icc_profile}).
+ * @param sourceFormat - Its `sspc` 4-char format code.
+ * @param hasVideo - Whether the media has picture at all (audio-only QuickTime is recorded like
+ *   any other audio file).
+ * @param isVideo - Whether the picture is time-based rather than a still or an image sequence.
+ * @param embeddedProfileName - A named media color space, for the formats that carry one (`.ai`
+ *   and friends, non-RGB TIFF/PSD).
+ * @param colorMode - The Photoshop colour mode the image reads as (see
+ *   {@link MediaInfo | MediaInfo.color_mode}); an untagged bitmap
+ *   TIFF/PSD is assigned sRGB rather than taken as carrying it.
+ */
 export function _mediaProfileRecords(
   iccProfile: Uint8Array | null,
   sourceFormat: string,
@@ -429,28 +451,6 @@ export function _mediaProfileRecords(
   embeddedProfileName: string | null,
   colorMode: number = 3,
 ): [ColorProfileRecord | null, ColorProfileRecord | null] {
-  /**
-   * The `(embedded, assigned)` CLRS profile records for a source file.
-   *
-   * AE records the profile the file carries and assigns one to media that
-   * carries none, with the per-format exceptions in
-   * `_CATALOGUED_PROFILE_FORMATS`, `_UNRECORDED_PROFILE_FORMATS`,
-   * `_VIDEO_CONTAINER_FORMATS` and `_VIDEO_DECODED_FORMATS`. Measured across
-   * every format py_aep imports (AE 2026), plus untagged JPEG/TIFF/PSB
-   * variants.
-   *
-   * @param icc_profile - The profile the media file embeds, if any (see
-   *   {@link MediaInfo | MediaInfo.icc_profile}).
-   * @param source_format - Its `sspc` 4-char format code.
-   * @param has_video - Whether the media has picture at all (audio-only QuickTime is recorded like
-   *   any other audio file).
-   * @param is_video - Whether the picture is time-based rather than a still or an image sequence.
-   * @param embedded_profile_name - A named media color space, for the formats that carry one (`.ai`
-   *   and friends, non-RGB TIFF/PSD).
-   * @param color_mode - The Photoshop colour mode the image reads as (see
-   *   {@link MediaInfo | MediaInfo.color_mode}); an untagged bitmap
-   *   TIFF/PSD is assigned sRGB rather than taken as carrying it.
-   */
   if (embeddedProfileName != null || _UNPROFILED_FORMATS.has(sourceFormat)) {
     return [null, null]; // a named space, or none at all (DPX/Cineon)
   }
@@ -487,25 +487,25 @@ export function _mediaProfileRecords(
   return [null, _profileRecord(assigned)];
 }
 
+/**
+ * The `sspc` alpha byte AE stores: 3 = no alpha, 1 = premultiplied,
+ * 0 = straight.
+ */
 export function _alphaModeRaw(hasAlpha: boolean, premultiplied: boolean): number {
-  /**
-   * The `sspc` alpha byte AE stores: 3 = no alpha, 1 = premultiplied,
-   * 0 = straight.
-   */
   if (!hasAlpha) return 3;
   return premultiplied ? 1 : 0;
 }
 
+/**
+ * Set the `sspc` premultiplied flag bit AE writes with the alpha byte.
+ *
+ * AE resets the footage to straight alpha on open when the bit disagrees
+ * with a premultiplied alpha byte. An FBX scene is the exception: AE 2026
+ * sets the bit while the byte stays straight (the 3D scene renders against
+ * a premultiplied black background; measured against an AE-resaved
+ * crystal.fbx).
+ */
 export function _syncPremultiplied(sspc: SspcChunk): void {
-  /**
-   * Set the `sspc` premultiplied flag bit AE writes with the alpha byte.
-   *
-   * AE resets the footage to straight alpha on open when the bit disagrees
-   * with a premultiplied alpha byte. An FBX scene is the exception: AE 2026
-   * sets the bit while the byte stays straight (the 3D scene renders against
-   * a premultiplied black background; measured against an AE-resaved
-   * crystal.fbx).
-   */
   sspc.premultiplied =
     sspc.alphaModeRaw === 1 || sspc.sourceFormatType === FORMAT_3D_MODEL_SCENE;
 }
@@ -534,12 +534,12 @@ export const _FRAME_NUMBER_RE = pyRe(String.raw`(\d{1,9})$`);
 // fit the field at all.
 export const _MAX_FOOTAGE_SIZE = 32767;
 
+/**
+ * Reject footage dimensions After Effects cannot store or read back.
+ *
+ * @throws {@link ValueError} If `width` or `height` is outside 0-32767 px.
+ */
 export function checkFootageSize(name: string, width: number, height: number): void {
-  /**
-   * Reject footage dimensions After Effects cannot store or read back.
-   *
-   * @throws {@link ValueError} If `width` or `height` is outside 0-32767 px.
-   */
   if (!(0 <= width && width <= _MAX_FOOTAGE_SIZE && 0 <= height && height <= _MAX_FOOTAGE_SIZE)) {
     throw new ValueError(
       `${name}: ${width}x${height} px is outside the 0-${_MAX_FOOTAGE_SIZE} px ` +
@@ -548,15 +548,15 @@ export function checkFootageSize(name: string, width: number, height: number): v
   }
 }
 
+/**
+ * Join a footage folder with an image-sequence frame filename using the
+ * folder's own separator, so the result matches AE's `fsName` (all `\` for
+ * a Windows-authored project, all `/` for a POSIX one) rather than mixing
+ * the two. A backslash anywhere marks a Windows path; `PureWindowsPath` also
+ * splits any embedded `/`, while `PurePosixPath` leaves a native POSIX path
+ * intact (`PureWindowsPath` would rewrite its forward slashes to `\`).
+ */
 export function _joinSequenceFrame(folder: string, frameName: string): string {
-  /**
-   * Join a footage folder with an image-sequence frame filename using the
-   * folder's own separator, so the result matches AE's `fsName` (all `\` for
-   * a Windows-authored project, all `/` for a POSIX one) rather than mixing
-   * the two. A backslash anywhere marks a Windows path; `PureWindowsPath` also
-   * splits any embedded `/`, while `PurePosixPath` leaves a native POSIX path
-   * intact (`PureWindowsPath` would rewrite its forward slashes to `\`).
-   */
   if (folder.includes("\\")) return String(new PureWindowsPath(folder).div(frameName));
   return String(new PurePosixPath(folder).div(frameName));
 }
@@ -833,67 +833,68 @@ export class FileSource extends FootageSource {
     }
   }
 
+  /**
+   * Create a new file footage source with backing chunks.
+   *
+   * AE caches all of this metadata in `sspc` and does not re-read the
+   * media on open, so the caller must supply correct values (see
+   * `resolvers.media_probe`). The `opti` asset-info chunk is left empty;
+   * AE locates the file via the `alas` path.
+   *
+   * @param file - Path to the source file (single), or to a representative frame (sequence; the
+   *   containing folder is stored).
+   * @param kw - Options:
+   * - `windows`: Store the path in the style of AE on Windows rather than macOS (see
+   *     `resolvers.platform_paths.platform_path`).
+   * - `sourceFormat`: 4-char `sspc` source-format code (see `data/file_formats.py`).
+   * - `width`: Pixel width (0 for audio-only media).
+   * - `height`: Pixel height (0 for audio-only media).
+   * - `duration`: Duration in seconds (0 for a still image).
+   * - `frameRate`: Native frame rate in fps (0 for stills/audio).
+   * - `pixelAspect`: Pixel aspect ratio.
+   * - `hasAlpha`: Whether the footage has an alpha channel.
+   * - `depth`: Pixel depth AE caches for the footage (see
+   *     {@link MediaInfo | MediaInfo.depth}).
+   * - `mediaFlag`: Mark the footage the way AE marks its media formats
+   *     (`FileFormat.media_flag`): `sspc` 0x70 bit 3, and 0x9F bit 3 for a single file.
+   * - `alphaPremultiplied`: When `hasAlpha`, select PREMULTIPLIED rather than the STRAIGHT
+   *     default.
+   * - `audioSampleRate`: Audio sample rate in Hz (0 = no audio).
+   * - `sequencePrefix`: Filename text before the frame number. When not `null`, the source
+   *     is an image sequence.
+   * - `sequenceExt`: Filename extension including the dot (sequence only).
+   * - `sequenceFiles`: The frame file names of an alphabetical sequence, in order. When not
+   *     `null`, the source is an image sequence listed by name rather than numbered, and
+   *     `sequencePrefix`, `sequenceExt`, `startFrame`, `endFrame` and `framePadding` are not
+   *     used.
+   * - `startFrame`: First frame number (sequence only).
+   * - `endFrame`: Last frame number (sequence only).
+   * - `framePadding`: Zero-padded digit width of the frame number (sequence only).
+   * - `optiData`: Raw `opti` asset-info bytes. Empty is accepted by AE for single still
+   *     images; sequences and audio need the generic header (see `buildGenericOptiData`).
+   * - `embeddedProfileName`: Name of the source's embedded color profile, recorded in
+   *     `LIST:CLRS` (matching AE). `null` for sources with no embedded profile.
+   * - `iccProfile`: The ICC profile the media file embeds (see
+   *     {@link MediaInfo | MediaInfo.icc_profile}). `null` selects the
+   *     profile AE assigns to media that carries none - see `_mediaProfileRecords`.
+   * - `fullFrame`: When `true` (default, every standard import), the footage spans its full
+   *     source frame. Set `false` for a layer cropped to its content box (`COMP_CROPPED_LAYERS`, or
+   *     a chosen layer imported at Layer Size).
+   * - `layerName`: Name of the referenced layer when the source is a single layer of a
+   *     layered file; stored in the Pin's `Utf8` slot after `sspc` (empty otherwise, matching AE).
+   * - `layerId`: Photoshop layer id for a layer-bound source; `null` keeps the `0xFFFFFFFF`
+   *     unbound sentinel.
+   * - `layerIndex`: 0-based document index of the referenced layer; `null` keeps the
+   *     `0xFFFFFFFF` unbound sentinel.
+   * - `dataSize`: Cached source data size for `sspc` byte 0xD0 (see `SspcChunk.dataSize`);
+   *     `0` lets AE re-derive it.
+   * - `reservedC8`: Override for the `sspc` 0xC8 kind bytes. `null` applies the whole-file
+   *     rule (see below); layer-bound and merged-PSD sources pass AE's observed per-context value.
+   * - `colorMode`: The Photoshop colour mode the image reads as (see
+   *     `_mediaProfileRecords`); 3 (RGB) by default.
+   * @throws {@link ValueError} If `width` or `height` is outside 0-32767 px.
+   */
   static _new(file: PathLike, kw: NewSourceKw): FileSource {
-    /**
-     * Create a new file footage source with backing chunks.
-     *
-     * AE caches all of this metadata in `sspc` and does not re-read the
-     * media on open, so the caller must supply correct values (see
-     * `resolvers.media_probe`). The `opti` asset-info chunk is left empty;
-     * AE locates the file via the `alas` path.
-     *
-     * @param file - Path to the source file (single), or to a representative frame (sequence; the
-     *   containing folder is stored).
-     * @param windows - Store the path in the style of AE on Windows rather than macOS (see
-     *   `resolvers.platform_paths.platform_path`).
-     * @param source_format - 4-char `sspc` source-format code (see `data/file_formats.py`).
-     * @param width - Pixel width (0 for audio-only media).
-     * @param height - Pixel height (0 for audio-only media).
-     * @param duration - Duration in seconds (0 for a still image).
-     * @param frame_rate - Native frame rate in fps (0 for stills/audio).
-     * @param pixel_aspect - Pixel aspect ratio.
-     * @param has_alpha - Whether the footage has an alpha channel.
-     * @param depth - Pixel depth AE caches for the footage (see
-     *   {@link MediaInfo | MediaInfo.depth}).
-     * @param media_flag - Mark the footage the way AE marks its media formats
-     *   (`FileFormat.media_flag`): `sspc` 0x70 bit 3, and 0x9F bit 3 for a single file.
-     * @param alpha_premultiplied - When `hasAlpha`, select PREMULTIPLIED rather than the STRAIGHT
-     *   default.
-     * @param audio_sample_rate - Audio sample rate in Hz (0 = no audio).
-     * @param sequence_prefix - Filename text before the frame number. When not `null`, the source
-     *   is an image sequence.
-     * @param sequence_ext - Filename extension including the dot (sequence only).
-     * @param sequence_files - The frame file names of an alphabetical sequence, in order. When not
-     *   `null`, the source is an image sequence listed by name rather than numbered, and
-     *   `sequencePrefix`, `sequenceExt`, `startFrame`, `endFrame` and `framePadding` are not
-     *   used.
-     * @param start_frame - First frame number (sequence only).
-     * @param end_frame - Last frame number (sequence only).
-     * @param frame_padding - Zero-padded digit width of the frame number (sequence only).
-     * @param opti_data - Raw `opti` asset-info bytes. Empty is accepted by AE for single still
-     *   images; sequences and audio need the generic header (see `buildGenericOptiData`).
-     * @param embedded_profile_name - Name of the source's embedded color profile, recorded in
-     *   `LIST:CLRS` (matching AE). `null` for sources with no embedded profile.
-     * @param icc_profile - The ICC profile the media file embeds (see
-     *   {@link MediaInfo | MediaInfo.icc_profile}). `null` selects the
-     *   profile AE assigns to media that carries none - see `_mediaProfileRecords`.
-     * @param full_frame - When `true` (default, every standard import), the footage spans its full
-     *   source frame. Set `false` for a layer cropped to its content box (`COMP_CROPPED_LAYERS`, or
-     *   a chosen layer imported at Layer Size).
-     * @param layer_name - Name of the referenced layer when the source is a single layer of a
-     *   layered file; stored in the Pin's `Utf8` slot after `sspc` (empty otherwise, matching AE).
-     * @param layer_id - Photoshop layer id for a layer-bound source; `null` keeps the `0xFFFFFFFF`
-     *   unbound sentinel.
-     * @param layer_index - 0-based document index of the referenced layer; `null` keeps the
-     *   `0xFFFFFFFF` unbound sentinel.
-     * @param data_size - Cached source data size for `sspc` byte 0xD0 (see `SspcChunk.dataSize`);
-     *   `0` lets AE re-derive it.
-     * @param reserved_c8 - Override for the `sspc` 0xC8 kind bytes. `null` applies the whole-file
-     *   rule (see below); layer-bound and merged-PSD sources pass AE's observed per-context value.
-     * @param color_mode - The Photoshop colour mode the image reads as (see
-     *   `_mediaProfileRecords`); 3 (RGB) by default.
-     * @throws {@link ValueError} If `width` or `height` is outside 0-32767 px.
-     */
     const {
       sourceFormat,
       width,
@@ -1061,6 +1062,30 @@ export class FileSource extends FootageSource {
     return new this({ _pin: pin, _sspc: sspc, _opti: opti, _linl: linl, _clrs: clrs });
   }
 
+  /**
+   * Build a `FileSource` by probing a media file's header.
+   *
+   * Shared by `Project.importFile`, `FootageItem.replace*`, and
+   * `AVItem.setProxy*`.
+   *
+   * @param file - Path to the source file, or a representative frame for a sequence.
+   * @param kw - Options:
+   * - `sequence`: When `true`, import as a numbered image sequence.
+   * - `forceAlphabetical`: For a sequence, order frames alphabetically rather than
+   *     numerically.
+   * - `windows`: Write what AE on Windows writes rather than AE on macOS: the BMP/GIF
+   *     importer code, and no alpha for HEIC (see `Project._platform`).
+   * - `defaultSequenceFps`: Frame rate for formats with no native rate (AE's "Import
+   *     Options Default Sequence FPS" preference; AE's factory value is 30).
+   * - `rangeStart`: First frame number of the sequence clipping range (see
+   *     `ImportOptions.rangeStart`). 0 with `rangeEnd` 0 imports every frame.
+   * - `rangeEnd`: Last frame number of the clipping range, inclusive.
+   * @throws {@link ValueError} If the extension is not a supported footage format (or, with
+   *   `sequence`, one AE does not import as a sequence), if the frame range is invalid, or if the
+   *   file has no track After Effects can decode (e.g. an AV1-only `.mp4`).
+   * @throws {@link NotImplementedError} If After Effects requires a format-specific `opti` header
+   *   that is not implemented yet, or header probing is unavailable for the format.
+   */
   static _fromFile(
     file: PathLike,
     kw: {
@@ -1072,29 +1097,6 @@ export class FileSource extends FootageSource {
       rangeEnd?: number;
     },
   ): FileSource {
-    /**
-     * Build a `FileSource` by probing a media file's header.
-     *
-     * Shared by `Project.importFile`, `FootageItem.replace*`, and
-     * `AVItem.setProxy*`.
-     *
-     * @param file - Path to the source file, or a representative frame for a sequence.
-     * @param sequence - When `true`, import as a numbered image sequence.
-     * @param force_alphabetical - For a sequence, order frames alphabetically rather than
-     *   numerically.
-     * @param windows - Write what AE on Windows writes rather than AE on macOS: the BMP/GIF
-     *   importer code, and no alpha for HEIC (see `Project._platform`).
-     * @param default_sequence_fps - Frame rate for formats with no native rate (AE's "Import
-     *   Options Default Sequence FPS" preference; AE's factory value is 30).
-     * @param range_start - First frame number of the sequence clipping range (see
-     *   `ImportOptions.rangeStart`). 0 with `rangeEnd` 0 imports every frame.
-     * @param range_end - Last frame number of the clipping range, inclusive.
-     * @throws {@link ValueError} If the extension is not a supported footage format (or, with
-     *   `sequence`, one AE does not import as a sequence), if the frame range is invalid, or if the
-     *   file has no track After Effects can decode (e.g. an AV1-only `.mp4`).
-     * @throws {@link NotImplementedError} If After Effects requires a format-specific `opti` header
-     *   that is not implemented yet, or header probing is unavailable for the format.
-     */
     const {
       sequence = false,
       forceAlphabetical = false,
@@ -1171,37 +1173,38 @@ export class FileSource extends FootageSource {
     });
   }
 
+  /**
+   * Build a `FileSource` referencing a single layer of a layered file.
+   *
+   * Mirrors the "Choose Layer" option of AE's import dialog for
+   * `.psd`/`.psb` (layer records) and `.ai`/`.pdf` (PDF Optional Content
+   * Groups). Shared by `Project.importFile` (`ImportOptions.layerIndex`)
+   * and `FootageItem.replace`. Byte-verified against the AE 2026
+   * `choose_layer_*.aep` / `ai_choose_layer*.aep` fixtures.
+   *
+   * @param file - Path to the layered source file.
+   * @param layerIndex - The layer to reference, as its 0-based position in
+   *   `resolvers.source_layers.list_layers` order (top first, leaf layers only).
+   * @param kw - Options:
+   * - `dimensions`: `"document"` (default) sizes the footage to the full canvas; `"layer"` to
+   *     the layer's content box - the PSD layer's (`resolvers.psd_bounds.psd_layer_box`), or the
+   *     AI/PDF artwork box measured by `resolvers.ai_bounds.read_ai_layer_bounds`.
+   * - `layerStyles`: PSD only - the Layer Options choice recorded in the `sspc` kind byte:
+   *     `"merge"` (default), `"ignore"`, or `"editable"` (reachable only via replace's
+   *     CURRENT_VALUE pass-through). Callers validate; ignored for AI/PDF.
+   * - `windows`: Store the path in the style of AE on Windows rather than macOS (see `_new`).
+   * @throws {@link ValueError} If the file is not a layered format, or `layerIndex` is out of
+   *   range.
+   * @throws {@link NotImplementedError} For a merged PSD layer whose styles' rasterized bounds
+   *   are not known (see `resolvers.psd_styles.merged_styles_bounds`).
+   * @throws {@link UnsupportedAiLayersError} For `dimensions="layer"` on an AI/PDF file whose
+   *   page content py_aep cannot read.
+   */
   static _fromLayer(
     file: PathLike,
     layerIndex: number,
     kw: { dimensions?: string | null; layerStyles?: string | null; windows: boolean },
   ): FileSource {
-    /**
-     * Build a `FileSource` referencing a single layer of a layered file.
-     *
-     * Mirrors the "Choose Layer" option of AE's import dialog for
-     * `.psd`/`.psb` (layer records) and `.ai`/`.pdf` (PDF Optional Content
-     * Groups). Shared by `Project.importFile` (`ImportOptions.layerIndex`)
-     * and `FootageItem.replace`. Byte-verified against the AE 2026
-     * `choose_layer_*.aep` / `ai_choose_layer*.aep` fixtures.
-     *
-     * @param file - Path to the layered source file.
-     * @param layer_index - The layer to reference, as its 0-based position in
-     *   `resolvers.source_layers.list_layers` order (top first, leaf layers only).
-     * @param dimensions - `"document"` (default) sizes the footage to the full canvas; `"layer"` to
-     *   the layer's content box - the PSD layer's (`resolvers.psd_bounds.psd_layer_box`), or the
-     *   AI/PDF artwork box measured by `resolvers.ai_bounds.read_ai_layer_bounds`.
-     * @param layer_styles - PSD only - the Layer Options choice recorded in the `sspc` kind byte:
-     *   `"merge"` (default), `"ignore"`, or `"editable"` (reachable only via replace's
-     *   CURRENT_VALUE pass-through). Callers validate; ignored for AI/PDF.
-     * @param windows - Store the path in the style of AE on Windows rather than macOS (see `_new`).
-     * @throws {@link ValueError} If the file is not a layered format, or `layerIndex` is out of
-     *   range.
-     * @throws {@link NotImplementedError} For a merged PSD layer whose styles' rasterized bounds
-     *   are not known (see `resolvers.psd_styles.merged_styles_bounds`).
-     * @throws {@link UnsupportedAiLayersError} For `dimensions="layer"` on an AI/PDF file whose
-     *   page content py_aep cannot read.
-     */
     const { dimensions = null, layerStyles = null, windows } = kw;
     validateFileExists(file);
     const path = new Path(file);
@@ -1301,6 +1304,21 @@ export class FileSource extends FootageSource {
     throw new ValueError(`layerIndex requires a layered .psd/.psb/.ai/.pdf file, got ${repr(suffix)}`);
   }
 
+  /**
+   * Build a sequence `FileSource` by scanning sibling frames.
+   *
+   * With a frame range set, frames are filtered to numbers in
+   * `[range_start, range_end]` (inclusive) and the stored
+   * `startFrame`/`endFrame` bounds are the RANGE bounds even when
+   * files are missing inside or beyond it - AE treats absent frames as
+   * implied placeholders and encodes nothing else (verified against
+   * AE 2026 range-import fixtures, including interior gaps).
+   *
+   * `forceAlphabetical` takes every file of the same type in the
+   * folder, numbered or not, in case-insensitive name order - AE 2026
+   * gathers `a_001.png`, `b.png`, `D.PNG`, `n_10.png`, `n_2.png` from a
+   * folder that also holds `x.jpg` and a subfolder.
+   */
   static _buildSequence(
     file: Path,
     fmt: FileFormat,
@@ -1308,21 +1326,6 @@ export class FileSource extends FootageSource {
     defaultFrameRate: number,
     kw: { windows: boolean; rangeStart?: number; rangeEnd?: number },
   ): FileSource {
-    /**
-     * Build a sequence `FileSource` by scanning sibling frames.
-     *
-     * With a frame range set, frames are filtered to numbers in
-     * `[range_start, range_end]` (inclusive) and the stored
-     * `startFrame`/`endFrame` bounds are the RANGE bounds even when
-     * files are missing inside or beyond it - AE treats absent frames as
-     * implied placeholders and encodes nothing else (verified against
-     * AE 2026 range-import fixtures, including interior gaps).
-     *
-     * `forceAlphabetical` takes every file of the same type in the
-     * folder, numbered or not, in case-insensitive name order - AE 2026
-     * gathers `a_001.png`, `b.png`, `D.PNG`, `n_10.png`, `n_2.png` from a
-     * folder that also holds `x.jpg` and a subfolder.
-     */
     const { windows, rangeStart = 0, rangeEnd = 0 } = kw;
     validateBool(forceAlphabetical);
     if (!(0 < defaultFrameRate && defaultFrameRate <= 999)) {
