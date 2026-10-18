@@ -30,7 +30,7 @@ const CAMERA_SAMPLE = SAMPLES_DIR.div("camera_default_position.aep");
 const LIGHT_SAMPLE = SAMPLES_DIR.div("light_default_position.aep");
 
 function _prop(layer: Layer, group: string, match_name: string): Property {
-  const prop = as_instance(layer.__getitem__(group), PropertyGroup).__getitem__(match_name);
+  const prop = as_instance(layer.property(group), PropertyGroup).property(match_name);
   py_assert(prop instanceof Property);
   return prop;
 }

@@ -122,7 +122,7 @@ describe("btdk schema", () => {
     const app = parse("samples/models/text/text_writes.aep");
     const docs = app.project.compositions[0].text_layers.map((layer) => {
       py_assert(layer.text != null);
-      return layer.text.__getitem__("ADBE Text Document").value;
+      return layer.text.property("ADBE Text Document").value;
     });
     expect(docs.length).toBeGreaterThan(0);
     for (const doc of docs) {

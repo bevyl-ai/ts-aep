@@ -1796,7 +1796,7 @@ export class CompItem extends AVItem {
     }
     const view = this.renderer_options;
     for (const [key, option] of value instanceof Map ? value.entries() : value.items()) {
-      view.__setitem__(key, option);
+      view.set(key, option);
     }
   }
 
@@ -1890,7 +1890,7 @@ export class CompItem extends AVItem {
       throw new ValueError(`Layer with name '${name}' not found`);
     } else if (index != null) {
       return at(this.layers, index);
-    } else if (other_layer != null && py_bool(other_layer) && rel_index != null && rel_index !== 0) {
+    } else if (other_layer != null && other_layer.length > 0 && rel_index != null && rel_index !== 0) {
       const other_idx = this.layers.indexOf(other_layer);
       if (other_idx < 0) {
         throw new ValueError(`${repr(other_layer)} is not in list`);

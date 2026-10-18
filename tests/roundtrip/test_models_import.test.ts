@@ -1656,8 +1656,8 @@ describe("TestImportAiCroppedComp", () => {
   const _measure = (comp: CompItem): Map<string, [number[], number[], number[]]> => {
     const out = new Map<string, [number[], number[], number[]]>();
     for (const layer of comp.layers) {
-      const anchor = layer.transform.__getitem__("ADBE Anchor Point").value;
-      const position = layer.transform.__getitem__("ADBE Position").value;
+      const anchor = layer.transform.property("ADBE Anchor Point").value;
+      const position = layer.transform.property("ADBE Position").value;
       out.set(layer.name, [
         [as_instance(as_instance(layer, AVLayer).source, AVItem).width, as_instance(as_instance(layer, AVLayer).source, AVItem).height],
         [anchor[0], anchor[1]],
@@ -2162,7 +2162,7 @@ describe("TestImportPsdCropped", () => {
       ).toBe(true);
       for (const prop of ["ADBE Anchor Point", "ADBE Position"] as const) {
         expect(
-          py_eq(layer.transform.__getitem__(prop).value, getitem(ae_xform, layer.name).__getitem__(prop).value),
+          py_eq(layer.transform.property(prop).value, getitem(ae_xform, layer.name).property(prop).value),
         ).toBe(true);
       }
     }
@@ -3405,9 +3405,9 @@ describe("TestLayerStylesEditableImport", () => {
     ).layer("Layer 1");
     const styles = layer.property("ADBE Layer Styles");
     expect(styles.enabled).toBe(true);
-    expect(styles.__getitem__("dropShadow/enabled").enabled).toBe(true);
+    expect(styles.property("dropShadow/enabled").enabled).toBe(true);
     expect(
-      as_instance(as_instance(styles.__getitem__("dropShadow/enabled"), PropertyGroup).__getitem__("dropShadow/mode2"), Property).value,
+      as_instance(as_instance(styles.property("dropShadow/enabled"), PropertyGroup).property("dropShadow/mode2"), Property).value,
     ).toBe(17.0);
   });
 
@@ -3431,13 +3431,13 @@ describe("TestLayerStylesEditableImport", () => {
       CompItem,
     );
     const styles = comp_item.layer("fill plus disabled shadow").property("ADBE Layer Styles");
-    expect(styles.__getitem__("dropShadow/enabled").enabled).toBe(false);
-    expect(as_instance(styles.__getitem__("dropShadow/enabled")._tdsb, TdsbChunk)._enable_flags).toBe(0);
+    expect(styles.property("dropShadow/enabled").enabled).toBe(false);
+    expect(as_instance(styles.property("dropShadow/enabled")._tdsb, TdsbChunk)._enable_flags).toBe(0);
     const adv = as_instance(
-      as_instance(styles.__getitem__("ADBE Blend Options Group"), PropertyGroup).__getitem__("ADBE Adv Blend Group"),
+      as_instance(styles.property("ADBE Blend Options Group"), PropertyGroup).property("ADBE Adv Blend Group"),
       PropertyGroup,
     );
-    expect(as_instance(adv.__getitem__("ADBE Layer Fill Opacity2"), Property).value).toBe(60.0);
+    expect(as_instance(adv.property("ADBE Layer Fill Opacity2"), Property).value).toBe(60.0);
   });
 
   test("test_per_layer_footage_matches_ae", () => {
@@ -3466,8 +3466,8 @@ describe("TestLayerStylesEditableImport", () => {
     }, "frameFX");
     const layer = as_instance(comp, CompItem).layer("Layer 1");
     const styles = layer.property("ADBE Layer Styles");
-    expect(styles.__getitem__("frameFX/enabled").enabled).toBe(false);
-    expect(styles.__getitem__("dropShadow/enabled").enabled).toBe(true);
+    expect(styles.property("frameFX/enabled").enabled).toBe(false);
+    expect(styles.property("dropShadow/enabled").enabled).toBe(true);
   });
 });
 

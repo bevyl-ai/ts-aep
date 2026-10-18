@@ -6,6 +6,7 @@
  * model attribute (either a ChunkField descriptor or a `@property`).
  */
 
+import { INSPECT } from "../../../pyrt/index.ts";
 import {
   AttributeError,
   KeyError,
@@ -84,7 +85,7 @@ export class SettingsView<V extends SettingValues = SettingValues> {
 
   // -- reads -------------------------------------------------------------
 
-  __getitem__<K extends string>(key: K): V[K] {
+  get<K extends string>(key: K): V[K] {
     const spec = this._specs.get(key) ?? null;
     if (spec == null) throw new KeyError(repr(key));
     const [attr_name] = spec;
@@ -93,7 +94,7 @@ export class SettingsView<V extends SettingValues = SettingValues> {
 
   // -- writes ------------------------------------------------------------
 
-  __setitem__(key: string, value: SettingValue | null): void {
+  set(key: string, value: SettingValue | null): void {
     const spec = this._specs.get(key) ?? null;
     if (spec == null) {
       const valid = sorted(this._specs.keys());
@@ -115,7 +116,7 @@ export class SettingsView<V extends SettingValues = SettingValues> {
     }
   }
 
-  __delitem__(key: string): void {
+  delete(key: string): void {
     throw new TypeError_("Cannot delete settings keys");
   }
 
@@ -125,11 +126,11 @@ export class SettingsView<V extends SettingValues = SettingValues> {
     return this._specs.keys();
   }
 
-  __len__(): number {
+  get size(): number {
     return this._specs.size;
   }
 
-  __contains__(key: unknown): boolean {
+  has(key: unknown): boolean {
     return typeof key === "string" && this._specs.has(key);
   }
 
@@ -140,18 +141,18 @@ export class SettingsView<V extends SettingValues = SettingValues> {
   }
 
   items(): Array<[string, SettingValue]> {
-    return [...this._specs.keys()].map((key): [string, SettingValue] => [key, this.__getitem__(key)]);
+    return [...this._specs.keys()].map((key): [string, SettingValue] => [key, this.get(key)]);
   }
 
   values(): SettingValue[] {
     return this.items().map(([, v]) => v);
   }
 
-  get(key: string): SettingValue | null;
-  get<D>(key: string, default_: D): SettingValue | D;
-  get<D>(key: string, default_: D | null = null): SettingValue | D | null {
+  get_or(key: string): SettingValue | null;
+  get_or<D>(key: string, default_: D): SettingValue | D;
+  get_or<D>(key: string, default_: D | null = null): SettingValue | D | null {
     try {
-      return this.__getitem__(key);
+      return this.get(key);
     } catch (e) {
       if (!(e instanceof KeyError)) throw e;
       return default_;
@@ -163,21 +164,21 @@ export class SettingsView<V extends SettingValues = SettingValues> {
     kwargs: Record<string, SettingValue> = {},
   ): void {
     if (other instanceof Map || other instanceof SettingsView) {
-      for (const [k, v] of other instanceof Map ? [...other.entries()] : other.items()) this.__setitem__(k, v);
+      for (const [k, v] of other instanceof Map ? [...other.entries()] : other.items()) this.set(k, v);
     } else {
-      for (const [k, v] of other) this.__setitem__(k, v);
+      for (const [k, v] of other) this.set(k, v);
     }
-    for (const [k, v] of Object.entries(kwargs)) this.__setitem__(k, v);
+    for (const [k, v] of Object.entries(kwargs)) this.set(k, v);
   }
 
   setdefault(key: string): SettingValue | null;
   setdefault<D extends SettingValue>(key: string, default_: D): SettingValue | D;
   setdefault<D extends SettingValue>(key: string, default_: D | null = null): SettingValue | D | null {
     try {
-      return this.__getitem__(key);
+      return this.get(key);
     } catch (e) {
       if (!(e instanceof KeyError)) throw e;
-      this.__setitem__(key, default_);
+      this.set(key, default_);
       return default_;
     }
   }
@@ -187,13 +188,13 @@ export class SettingsView<V extends SettingValues = SettingValues> {
   pop<D>(key: string, ...default_: [D?]): SettingValue | D | undefined {
     let value: SettingValue;
     try {
-      value = this.__getitem__(key);
+      value = this.get(key);
     } catch (e) {
       if (!(e instanceof KeyError)) throw e;
       if (default_.length) return default_[0];
       throw e;
     }
-    this.__delitem__(key);
+    this.delete(key);
     return value;
   }
 
@@ -201,8 +202,8 @@ export class SettingsView<V extends SettingValues = SettingValues> {
     const it = this._specs.keys().next();
     if (it.done) throw new KeyError("");
     const key = it.value;
-    const value = this.__getitem__(key);
-    this.__delitem__(key);
+    const value = this.get(key);
+    this.delete(key);
     return [key, value];
   }
 
@@ -218,11 +219,11 @@ export class SettingsView<V extends SettingValues = SettingValues> {
     }
   }
 
-  __repr__(): string {
+  [INSPECT](): string {
     return `SettingsView(${repr(new Map(this.items()))})`;
   }
 
-  __eq__(other: unknown): boolean {
+  equals(other: unknown): boolean {
     if (other instanceof Map || other instanceof SettingsView) {
       return py_eq(new Map(this.items()), new Map(mapping_items(other)));
     }

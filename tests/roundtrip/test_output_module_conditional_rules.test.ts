@@ -56,7 +56,7 @@ test.each(REJECTS.map(([s, k, v]) => [`${s}-${k}-${v}`, s, k, v]))(
     const project = parse_project_fresh(FORMAT_DIR.div(`${sample}.aep`));
     // NOTE(port): `settings[key] = value` is Python __setitem__; called explicitly, same validation path.
     raises(ValueError, () => {
-      _om(project).settings.__setitem__(key, value);
+      _om(project).settings.set(key, value);
     });
   },
 );
@@ -78,9 +78,9 @@ test.each(ACCEPTS.map(([s, k, v]) => [`${s}-${k}-${v}`, s, k, v]))(
     const project = parse_project_fresh(FORMAT_DIR.div(`${sample}.aep`));
     const tmp_path = make_tmp_path();
     const om = _om(project);
-    om.settings.__setitem__(key, value);
+    om.settings.set(key, value);
     project.save(tmp_path.div("out.aep"));
-    expect(_om(parse_project_fresh(tmp_path.div("out.aep"))).settings.__getitem__(key)).toBe(value);
+    expect(_om(parse_project_fresh(tmp_path.div("out.aep"))).settings.get(key)).toBe(value);
   },
 );
 
@@ -88,12 +88,12 @@ test("test_avi_none_codec_allows_rgba", () => {
   const tmp_path = make_tmp_path();
   const project = parse_project_fresh(AVI_NONE_SAMPLE);
   const om = _om(project);
-  om.settings.__setitem__("Channels", OutputChannels.RGBA);
-  expect(om.settings.__getitem__("Depth")).toBe(OutputColorDepth.MILLIONS_OF_COLORS_PLUS);
+  om.settings.set("Channels", OutputChannels.RGBA);
+  expect(om.settings.get("Depth")).toBe(OutputColorDepth.MILLIONS_OF_COLORS_PLUS);
   project.save(tmp_path.div("out.aep"));
   const om2 = _om(parse_project_fresh(tmp_path.div("out.aep")));
-  expect(om2.settings.__getitem__("Channels")).toBe(OutputChannels.RGBA);
-  expect(om2.settings.__getitem__("Depth")).toBe(OutputColorDepth.MILLIONS_OF_COLORS_PLUS);
+  expect(om2.settings.get("Channels")).toBe(OutputChannels.RGBA);
+  expect(om2.settings.get("Depth")).toBe(OutputColorDepth.MILLIONS_OF_COLORS_PLUS);
 });
 
 /** Changing the FO bitrate narrows the rate to the new singleton. */
@@ -102,10 +102,10 @@ test("test_mp3_bitrate_change_revalidates_rate", () => {
   const om = _om(project);
   as_instance(om.format_options, XmlFormatOptions).bitrate = 320;
   raises(ValueError, () => {
-    om.settings.__setitem__("Audio Sample Rate", 44100);
+    om.settings.set("Audio Sample Rate", 44100);
   });
-  om.settings.__setitem__("Audio Sample Rate", 48000);
-  expect(int(om.settings.__getitem__("Audio Sample Rate"))).toBe(48000);
+  om.settings.set("Audio Sample Rate", 48000);
+  expect(int(om.settings.get("Audio Sample Rate"))).toBe(48000);
 });
 
 /**
@@ -115,18 +115,18 @@ test("test_mp3_bitrate_change_revalidates_rate", () => {
 test("test_mp3_mono_rows_from_binary_evidence", () => {
   let project = parse_project_fresh(FORMAT_DIR.div("mp3", "mp3_mono_18.aep"));
   let om = _om(project);
-  expect(int(om.settings.__getitem__("Audio Sample Rate"))).toBe(12000); // RATE_12000 decode
+  expect(int(om.settings.get("Audio Sample Rate"))).toBe(12000); // RATE_12000 decode
   raises(ValueError, () => {
-    om.settings.__setitem__("Audio Sample Rate", 44100);
+    om.settings.set("Audio Sample Rate", 44100);
   });
-  om.settings.__setitem__("Audio Sample Rate", 12000);
+  om.settings.set("Audio Sample Rate", 12000);
 
   project = parse_project_fresh(FORMAT_DIR.div("mp3", "mp3_mono_320.aep"));
   om = _om(project);
   raises(ValueError, () => {
-    om.settings.__setitem__("Audio Sample Rate", 48000); // stereo@320, not mono@320
+    om.settings.set("Audio Sample Rate", 48000); // stereo@320, not mono@320
   });
-  om.settings.__setitem__("Audio Sample Rate", 44100);
+  om.settings.set("Audio Sample Rate", 44100);
 });
 
 /**
@@ -144,7 +144,7 @@ test("test_modern_ae_depth_low_byte_decodes", () => {
   for (const [subdir, name, expected] of cases) {
     const project = parse_project_fresh(FORMAT_DIR.div(subdir, `${name}.aep`));
     const om = _om(project);
-    expect([name, om.settings.__getitem__("Depth")]).toEqual([name, expected]);
+    expect([name, om.settings.get("Depth")]).toEqual([name, expected]);
     expect([name, om.validate_state()]).toEqual([name, []]);
   }
 });

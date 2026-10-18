@@ -40,7 +40,7 @@ function _effect_props(comp_name: string, layer_name: string): Property[] {
   const layer = comp.layers.find((ly) => ly.name === layer_name);
   if (layer === undefined) throw new StopIteration();
   py_assert(layer.effects != null);
-  return as_instance(layer.effects.__getitem__(0), PropertyGroup).properties.filter(
+  return as_instance(layer.effects.property(0), PropertyGroup).properties.filter(
     (p): p is Property => p instanceof Property,
   );
 }

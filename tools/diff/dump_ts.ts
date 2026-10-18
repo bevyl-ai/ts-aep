@@ -20,9 +20,11 @@ function num(x: number | bigint): any {
 
 function public_names(obj: any): string[] {
   const names = new Set<string>();
+  // A container's `length` / `size` getter is the JS spelling of Python's `len()`, not an attribute.
+  const len_getters = typeof obj[Symbol.iterator] === "function" ? ["length", "size"] : [];
   for (let p = Object.getPrototypeOf(obj); p && p !== Object.prototype; p = Object.getPrototypeOf(p)) {
     for (const [name, d] of Object.entries(Object.getOwnPropertyDescriptors(p))) {
-      if (name.startsWith("_") || name === "constructor") continue;
+      if (name.startsWith("_") || name === "constructor" || len_getters.includes(name)) continue;
       if (d.get) names.add(name);
     }
   }
@@ -43,7 +45,7 @@ function py_order(a: string, b: string): number {
 }
 
 function is_container(obj: any): boolean {
-  return typeof obj?.[Symbol.iterator] === "function" && typeof obj.__len__ === "function";
+  return typeof obj?.[Symbol.iterator] === "function" && (typeof obj.length === "number" || typeof obj.size === "number");
 }
 
 export function err_name(e: any): string {

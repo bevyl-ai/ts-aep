@@ -93,9 +93,9 @@ describe("TestRoundtripRendererOptions", () => {
   test("test_mapping_write_round_trips", () => {
     const tmp_path = make_tmp_path();
     const app = parse_aep(COMPOSITION_DIR.div("renderer_advanced_3d.aep"));
-    app.project.compositions[0].renderer_options.__setitem__("Quality", 42);
+    app.project.compositions[0].renderer_options.set("Quality", 42);
 
-    expect(_reparse(app, tmp_path).renderer_options.__getitem__("Quality")).toBe(42);
+    expect(_reparse(app, tmp_path).renderer_options.get("Quality")).toBe(42);
   });
 
   test("test_bulk_assignment", () => {
@@ -126,7 +126,7 @@ describe("TestRendererOptionsValidation", () => {
     const comp = parse_aep(COMPOSITION_DIR.div("renderer_cinema_4d.aep")).project.compositions[0];
 
     raises(KeyError, () => {
-      comp.renderer_options.__setitem__("Nonexistent", 1);
+      comp.renderer_options.set("Nonexistent", 1);
     });
   });
 

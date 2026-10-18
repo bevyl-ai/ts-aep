@@ -610,10 +610,10 @@ export class OutputModule {
         // real write to a read-only key still raises. An unknown key
         // short-circuits to `__setitem__`, which names the valid keys
         // (reading it here would raise a bare KeyError).
-        if (OM_SETTINGS.has(k) && py_eq(view.__getitem__(k), v)) {
+        if (OM_SETTINGS.has(k) && py_eq(view.get(k), v)) {
           continue;
         }
-        view.__setitem__(k, v);
+        view.set(k, v);
       }
     });
   }
@@ -1459,8 +1459,8 @@ export class OutputModule {
     const rq_settings = this.parent.settings;
 
     const extension = this._resolve_extension;
-    const om_channels = this.settings.__getitem__("Channels");
-    const om_depth = this.settings.__getitem__("Depth");
+    const om_channels = this.settings.get("Channels");
+    const om_depth = this.settings.get("Depth");
     const compressor = this._video_codec ? VIDEO_CODEC_NAMES.get(this._video_codec) ?? this._video_codec : null;
 
     const [effective_width, effective_height] = this._effective_dimensions;
@@ -1489,8 +1489,8 @@ export class OutputModule {
       int(project.bits_per_channel),
       om_depth,
       compressor,
-      rq_settings.__getitem__("Field Render"),
-      rq_settings.__getitem__("3:2 Pulldown"),
+      rq_settings.get("Field Render"),
+      rq_settings.get("3:2 Pulldown"),
       extension,
     );
   }

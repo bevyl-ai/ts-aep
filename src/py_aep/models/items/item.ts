@@ -143,7 +143,7 @@ export class Item {
 
   // Python `__eq__` returns NotImplemented for a non-Item; the reflected
   // comparison then falls back to identity, which is False here.
-  __eq__(other: unknown): boolean {
+  equals(other: unknown): boolean {
     if (!(other instanceof Item)) return false;
     return this.id === other.id;
   }

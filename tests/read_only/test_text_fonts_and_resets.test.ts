@@ -64,7 +64,7 @@ function _doc(project: Project, comp_name: string, layer_name: string): TextDocu
   py_assert(layer instanceof TextLayer);
   const text = layer.text;
   if (text == null) throw new AssertionError_(`text layer ${layer_name} has no text properties`);
-  return text.__getitem__("ADBE Text Document").value;
+  return text.property("ADBE Text Document").value;
 }
 
 describe("TestBaselineLocs", () => {
@@ -158,7 +158,7 @@ class TestReplaceFont {
       if (layer === undefined) throw new StopIteration();
       const text = layer.text;
       py_assert(text != null);
-      const prop = text.__getitem__("ADBE Text Document");
+      const prop = text.property("ADBE Text Document");
       const docs = py_or(
         prop.keyframes.map((kf) => kf.value),
         [prop.value],
@@ -382,7 +382,7 @@ describe("TestFuzzRegressions", () => {
     for (const comp of project.compositions) {
       for (const layer of comp.layers) {
         if (layer.text == null) continue;
-        const locs = layer.text.__getitem__("ADBE Text Document").value.baseline_locs;
+        const locs = layer.text.property("ADBE Text Document").value.baseline_locs;
         expect(mod(len(locs), 4)).toBe(0);
       }
     }

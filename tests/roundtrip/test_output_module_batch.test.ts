@@ -33,9 +33,9 @@ test("test_coupled_writes_succeed_in_any_order", () => {
   const project = parse_project_fresh(FORMAT_DIR.div("wav", "base.aep"));
   const om = _om(project);
   om.batch_edit(() => {
-    om.settings.__setitem__("Audio Sample Rate", 22050);
+    om.settings.set("Audio Sample Rate", 22050);
     _fo(om).audio_codec = AudioCodec.GSM_6_10;
-    om.settings.__setitem__("Audio Channels", AudioChannels.MONO);
+    om.settings.set("Audio Channels", AudioChannels.MONO);
   });
   project.save(tmp_path.div("a.aep"));
 
@@ -43,16 +43,16 @@ test("test_coupled_writes_succeed_in_any_order", () => {
   const om2 = _om(project2);
   om2.batch_edit(() => {
     _fo(om2).audio_codec = AudioCodec.GSM_6_10;
-    om2.settings.__setitem__("Audio Channels", AudioChannels.MONO);
-    om2.settings.__setitem__("Audio Sample Rate", 22050);
+    om2.settings.set("Audio Channels", AudioChannels.MONO);
+    om2.settings.set("Audio Sample Rate", 22050);
   });
   project2.save(tmp_path.div("b.aep"));
 
   for (const name of ["a.aep", "b.aep"]) {
     const om3 = _om(parse_project_fresh(tmp_path.div(name)));
     expect(_fo(om3).audio_codec).toBe(AudioCodec.GSM_6_10);
-    expect(om3.settings.__getitem__("Audio Channels")).toBe(AudioChannels.MONO);
-    expect(int(om3.settings.__getitem__("Audio Sample Rate"))).toBe(22050);
+    expect(om3.settings.get("Audio Channels")).toBe(AudioChannels.MONO);
+    expect(int(om3.settings.get("Audio Sample Rate"))).toBe(22050);
   }
 });
 
@@ -64,8 +64,8 @@ test("test_invalid_final_state_rolls_back_everything", () => {
   const excinfo = raises(ValueError, () => {
     om.batch_edit(() => {
       _fo(om).audio_codec = AudioCodec.GSM_6_10;
-      om.settings.__setitem__("Audio Sample Rate", 96000); // invalid under GSM
-      om.settings.__setitem__("Audio Channels", AudioChannels.STEREO); // invalid
+      om.settings.set("Audio Sample Rate", 96000); // invalid under GSM
+      om.settings.set("Audio Channels", AudioChannels.STEREO); // invalid
     });
   });
   // One error, every violation listed.
@@ -99,7 +99,7 @@ test("test_rollback_restores_byte_identical_save", () => {
   raises(ValueError, () => {
     om.batch_edit(() => {
       _fo(om).audio_codec = AudioCodec.GSM_6_10;
-      om.settings.__setitem__("Audio Sample Rate", 96000);
+      om.settings.set("Audio Sample Rate", 96000);
     });
   });
   project2.save(tmp_path.div("rolled_back.aep"));
@@ -138,13 +138,13 @@ test("test_depth_and_channels_converge_in_any_order", () => {
     om.batch_edit(() => {
       for (const step of [first, second]) {
         if (step === "depth") {
-          om.settings.__setitem__("Depth", OutputColorDepth.TRILLIONS_OF_COLORS);
+          om.settings.set("Depth", OutputColorDepth.TRILLIONS_OF_COLORS);
         } else {
-          om.settings.__setitem__("Channels", OutputChannels.RGBA);
+          om.settings.set("Channels", OutputChannels.RGBA);
         }
       }
     });
-    results.push(om.settings.__getitem__("Depth"));
+    results.push(om.settings.get("Depth"));
   }
   // The channels change re-pairs 48 -> 64 at exit in both orders.
   expect(
@@ -159,14 +159,14 @@ test("test_depth_and_channels_converge_in_any_order", () => {
 test("test_unpaired_depth_without_channels_change_raises", () => {
   const project = parse_project_fresh(RQ_DIR.div("format_photoshop_sequence.aep"));
   const om = _om(project);
-  om.settings.__setitem__("Channels", OutputChannels.RGBA); // depth pairs to 32
+  om.settings.set("Channels", OutputChannels.RGBA); // depth pairs to 32
   const excinfo = raises(ValueError, () => {
     om.batch_edit(() => {
-      om.settings.__setitem__("Depth", OutputColorDepth.TRILLIONS_OF_COLORS); // base
+      om.settings.set("Depth", OutputColorDepth.TRILLIONS_OF_COLORS); // base
     });
   });
   expect(excinfo.message.includes("Depth")).toBe(true);
-  expect(om.settings.__getitem__("Depth")).toBe(OutputColorDepth.MILLIONS_OF_COLORS_PLUS);
+  expect(om.settings.get("Depth")).toBe(OutputColorDepth.MILLIONS_OF_COLORS_PLUS);
 });
 
 test("test_nested_batches_validate_at_outermost", () => {
@@ -174,14 +174,14 @@ test("test_nested_batches_validate_at_outermost", () => {
   const om = _om(project);
   om.batch_edit(() => {
     om.batch_edit(() => {
-      om.settings.__setitem__("Channels", OutputChannels.RGBA);
+      om.settings.set("Channels", OutputChannels.RGBA);
     });
     // Inner exit must not validate: Color is still premultiplied-free
     // only after we fix it here, in the outer batch.
-    om.settings.__setitem__("Color", OutputColorMode.STRAIGHT_UNMATTED);
+    om.settings.set("Color", OutputColorMode.STRAIGHT_UNMATTED);
   });
-  expect(om.settings.__getitem__("Color")).toBe(OutputColorMode.STRAIGHT_UNMATTED);
-  expect(om.settings.__getitem__("Depth")).toBe(OutputColorDepth.MILLIONS_OF_COLORS_PLUS);
+  expect(om.settings.get("Color")).toBe(OutputColorMode.STRAIGHT_UNMATTED);
+  expect(om.settings.get("Depth")).toBe(OutputColorDepth.MILLIONS_OF_COLORS_PLUS);
 });
 
 test("test_batch_on_removed_module_raises_clearly", () => {

@@ -213,13 +213,13 @@ test("test_gsm_codec_clamps_mono", () => {
   const tmp_path = make_tmp_path();
   const project = parse_project_fresh(FORMAT_DIR.div("wav", "base.aep"));
   const om = _om(project);
-  expect(om.settings.__getitem__("Audio Channels")).toBe(AudioChannels.STEREO);
+  expect(om.settings.get("Audio Channels")).toBe(AudioChannels.STEREO);
   as_instance(om.format_options, XmlFormatOptions).audio_codec = AudioCodec.GSM_6_10;
-  expect(om.settings.__getitem__("Audio Channels")).toBe(AudioChannels.MONO);
+  expect(om.settings.get("Audio Channels")).toBe(AudioChannels.MONO);
   project.save(tmp_path.div("out.aep"));
   const om2 = _om(parse_project_fresh(tmp_path.div("out.aep")));
   expect(as_instance(om2.format_options, XmlFormatOptions).audio_codec).toBe(AudioCodec.GSM_6_10);
-  expect(om2.settings.__getitem__("Audio Channels")).toBe(AudioChannels.MONO);
+  expect(om2.settings.get("Audio Channels")).toBe(AudioChannels.MONO);
 });
 
 test("test_mp3_bitrate_clamps_rate", () => {
@@ -227,11 +227,11 @@ test("test_mp3_bitrate_clamps_rate", () => {
   const project = parse_project_fresh(FORMAT_DIR.div("mp3", "base.aep"));
   const om = _om(project);
   as_instance(om.format_options, XmlFormatOptions).bitrate = 320;
-  expect(int(om.settings.__getitem__("Audio Sample Rate"))).toBe(48000);
+  expect(int(om.settings.get("Audio Sample Rate"))).toBe(48000);
   project.save(tmp_path.div("out.aep"));
   const om2 = _om(parse_project_fresh(tmp_path.div("out.aep")));
   expect(as_instance(om2.format_options, XmlFormatOptions).bitrate).toBe(320);
-  expect(int(om2.settings.__getitem__("Audio Sample Rate"))).toBe(48000);
+  expect(int(om2.settings.get("Audio Sample Rate"))).toBe(48000);
 });
 
 test("test_v210_codec_clamps_depth", () => {
@@ -239,7 +239,7 @@ test("test_v210_codec_clamps_depth", () => {
   const project = parse_project_fresh(FORMAT_DIR.div("avi", "base.aep"));
   const om = _om(project);
   as_instance(om.format_options, XmlFormatOptions).video_codec = VideoCodec.V210;
-  expect(om.settings.__getitem__("Depth")).toBe(OutputColorDepth.TRILLIONS_OF_COLORS);
+  expect(om.settings.get("Depth")).toBe(OutputColorDepth.TRILLIONS_OF_COLORS);
   // Rouu.video_codec stays the constant AVI plugin tag: AE never
   // varies it with the selected codec (corpus-verified).
   expect(om._roou.video_codec).toBe("CTXF");
@@ -247,7 +247,7 @@ test("test_v210_codec_clamps_depth", () => {
   const om2 = _om(parse_project_fresh(tmp_path.div("out.aep")));
   expect(as_instance(om2.format_options, XmlFormatOptions).video_codec).toBe(VideoCodec.V210);
   expect(om2._roou.video_codec).toBe("CTXF");
-  expect(om2.settings.__getitem__("Depth")).toBe(OutputColorDepth.TRILLIONS_OF_COLORS);
+  expect(om2.settings.get("Depth")).toBe(OutputColorDepth.TRILLIONS_OF_COLORS);
 });
 
 test("test_3gpp_multiplexer_clamps_audio_format", () => {
@@ -267,14 +267,14 @@ test("test_targa_bits_not_coupled_to_channels", () => {
   const tmp_path = make_tmp_path();
   const project = parse_project_fresh(FORMAT_DIR.div("targa", "24_bits_per_pixel.aep"));
   const om = _om(project);
-  om.settings.__setitem__("Channels", OutputChannels.RGBA);
+  om.settings.set("Channels", OutputChannels.RGBA);
   expect(as_instance(om.format_options, TargaFormatOptions).bits_per_pixel).toBe(24); // untouched, like AE
-  expect(om.settings.__getitem__("Depth")).toBe(OutputColorDepth.MILLIONS_OF_COLORS_PLUS);
+  expect(om.settings.get("Depth")).toBe(OutputColorDepth.MILLIONS_OF_COLORS_PLUS);
   as_instance(om.format_options, TargaFormatOptions).bits_per_pixel = 32; // both values stay writable
   project.save(tmp_path.div("out.aep"));
   const om2 = _om(parse_project_fresh(tmp_path.div("out.aep")));
   expect(as_instance(om2.format_options, TargaFormatOptions).bits_per_pixel).toBe(32);
-  expect(om2.settings.__getitem__("Depth")).toBe(OutputColorDepth.MILLIONS_OF_COLORS_PLUS);
+  expect(om2.settings.get("Depth")).toBe(OutputColorDepth.MILLIONS_OF_COLORS_PLUS);
 });
 
 test("test_raw_params_escape_hatch_bypasses_rules", () => {

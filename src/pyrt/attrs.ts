@@ -227,7 +227,7 @@ export class AttrsBase {
   }
 }
 
-/** The generated `__eq__`: same class and equal `eq=True` fields. */
+/** The generated `__eq__` (`equals`): same class and equal `eq=True` fields. */
 export function attrs_eq(a: object, b: unknown, eq: (x: unknown, y: unknown) => boolean): boolean {
   if (a === b) return true;
   if (!b || a.constructor !== Object(b).constructor) return false;

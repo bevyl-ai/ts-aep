@@ -3,15 +3,15 @@
 import { AttributeError, IndexError, KeyError, TypeError_, ValueError } from "./errors.ts";
 import { float_repr, PyFloat } from "./num.ts";
 import { ord } from "./codecs.ts";
+import { INSPECT } from "./inspect.ts";
+
+export { INSPECT };
 
 /** The dunder methods the builtins below probe for. */
 type DunderProbe = {
   __bool__?: () => boolean;
-  __len__?: () => number;
-  __contains__?: (x: unknown) => boolean;
-  __eq__?: (other: unknown) => boolean;
-  __repr__?: () => string;
-  __str__?: () => string;
+  has?: (x: unknown) => boolean;
+  equals?: (other: unknown) => boolean;
 };
 
 /** Objects and functions can carry dunder methods; reading one off a primitive yields nothing. */
@@ -21,7 +21,7 @@ function _probeable(x: unknown): x is DunderProbe {
 
 /**
  * Python truthiness: empty containers (array, string, bytes, Map, Set,
- * object with `__len__`) are false. JS treats `[]` and an empty
+ * custom truthiness via `__bool__`) are false. JS treats `[]` and an empty
  * Uint8Array as true - never use bare `if (x)` on a container.
  */
 export function py_bool(x: unknown): boolean {
@@ -36,7 +36,8 @@ export function py_bool(x: unknown): boolean {
   if (x instanceof Map || x instanceof Set) return x.size > 0;
   if (_probeable(x)) {
     if (typeof x.__bool__ === "function") return x.__bool__();
-    if (typeof x.__len__ === "function") return x.__len__() > 0;
+    const n = _sized_length(x);
+    if (n !== null) return n > 0;
   }
   return true;
 }
@@ -60,7 +61,8 @@ export function len(x: unknown): number {
   if (typeof x === "string" || Array.isArray(x)) return x.length;
   if (ArrayBuffer.isView(x) && "length" in x && typeof x.length === "number") return x.length;
   if (x instanceof Map || x instanceof Set) return x.size;
-  if (_probeable(x) && typeof x.__len__ === "function") return x.__len__();
+  const n = _probeable(x) ? _sized_length(x) : null;
+  if (n !== null) return n;
   throw new TypeError(`object of type '${x?.constructor?.name}' has no len()`);
 }
 
@@ -293,11 +295,11 @@ export function contains(container: unknown, x: unknown): boolean {
   if (typeof container === "string") return container.includes(String(x));
   if (container instanceof Map || container instanceof Set) return container.has(x);
   if (Array.isArray(container)) return container.some((y) => py_eq(y, x));
-  if (_probeable(container) && typeof container.__contains__ === "function") return container.__contains__(x);
+  if (_probeable(container) && typeof container.has === "function") return container.has(x);
   throw new TypeError("argument of type is not iterable");
 }
 
-/** `a == b` for values (numbers, strings, arrays/tuples, bytes, Maps, objects with `__eq__`). */
+/** `a == b` for values (numbers, strings, arrays/tuples, bytes, Maps, objects with `equals`). */
 export function py_eq(a: unknown, b: unknown): boolean {
   if (a === b) return true;
   if (a instanceof PyFloat) a = a.value;
@@ -321,7 +323,7 @@ export function py_eq(a: unknown, b: unknown): boolean {
     return true;
   }
   if (a instanceof Set && b instanceof Set) return a.size === b.size && [...a].every((x) => b.has(x));
-  if (_probeable(a) && typeof a.__eq__ === "function") return a.__eq__(b);
+  if (_probeable(a) && typeof a.equals === "function") return a.equals(b);
   return false;
 }
 
@@ -370,7 +372,7 @@ export function repr(x: unknown): string {
   if (Array.isArray(x)) return `[${x.map(repr).join(", ")}]`;
   if (x instanceof Map) return `{${[...x].map(([k, v]) => `${repr(k)}: ${repr(v)}`).join(", ")}}`;
   if (x instanceof Set) return x.size ? `{${[...x].map(repr).join(", ")}}` : "set()";
-  if (_probeable(x) && typeof x.__repr__ === "function") return x.__repr__();
+  if (_probeable(x) && INSPECT in x && typeof x[INSPECT] === "function") return String(x[INSPECT]());
   return String(x);
 }
 
@@ -401,37 +403,37 @@ export function list_mul<T>(xs: readonly T[], n: number): T[] {
   return out;
 }
 
-/** A Python Mapping: a `Map`, an object with `items()`, or one with `keys()` + `__getitem__`. */
+/** A Python Mapping: a `Map`, an object with `items()`, or one with `keys()` + `get()`. */
 export type Mapping<K, V> = Map<K, V> | { items(): Iterable<[K, V]> } | KeyedMapping<K, V>;
-type KeyedMapping<K, V> = { keys(): Iterable<K>; __getitem__(key: K): V };
+type KeyedMapping<K, V> = { keys(): Iterable<K>; get(key: K): V };
 
 function is_keyed_mapping<K, V>(x: KeyedMapping<K, V> | Iterable<[K, V]>): x is KeyedMapping<K, V> {
-  return typeof Reflect.get(x, "keys") === "function" && typeof Reflect.get(x, "__getitem__") === "function";
+  return typeof Reflect.get(x, "keys") === "function" && typeof Reflect.get(x, "get") === "function";
 }
 
 /**
  * `mapping.items()` over the Mapping protocol: a `Map`'s entries, an
- * object's own `items()`, or `keys()` + `__getitem__`.
+ * object's own `items()`, or `keys()` + `get()`.
  */
 export function mapping_items<K, V>(m: Mapping<K, V>): [K, V][] {
   if (m instanceof Map) return [...m.entries()];
   if ("items" in m && typeof m.items === "function") return [...m.items()];
-  if ("keys" in m && typeof m.keys === "function" && typeof m.__getitem__ === "function") {
-    return [...m.keys()].map((k): [K, V] => [k, m.__getitem__(k)]);
+  if ("keys" in m && typeof m.keys === "function" && typeof m.get === "function") {
+    return [...m.keys()].map((k): [K, V] => [k, m.get(k)]);
   }
   throw new TypeError_(`'${type_name(m)}' object is not a mapping`);
 }
 
 /**
  * `dict(arg)`: a new `Map` from a mapping (`Map`, an object with `keys()` /
- * `__getitem__`) or an iterable of key/value pairs, in iteration order.
+ * `get()`) or an iterable of key/value pairs, in iteration order.
  */
 export function dict<K, V>(arg?: KeyedMapping<K, V> | Map<K, V> | Iterable<[K, V]> | null): Map<K, V> {
   if (arg == null) return new Map();
   if (arg instanceof Map) return new Map(arg);
-  // CPython: anything with `keys()` is a mapping, read through `keys()` + `__getitem__`.
+  // CPython: anything with `keys()` is a mapping, read through `keys()` + `get()`.
   if (is_keyed_mapping(arg)) {
-    return new Map([...arg.keys()].map((k): [K, V] => [k, arg.__getitem__(k)]));
+    return new Map([...arg.keys()].map((k): [K, V] => [k, arg.get(k)]));
   }
   const out = new Map<K, V>();
   let i = 0;
@@ -449,7 +451,7 @@ export function dict<K, V>(arg?: KeyedMapping<K, V> | Map<K, V> | Iterable<[K, V
 export function str(x: unknown): string {
   if (typeof x === "string") return x;
   if (x instanceof String) return String(x);
-  if (_probeable(x) && typeof x.__str__ === "function") return x.__str__();
+  if (_has_own_to_string(x)) return x.toString();
   return repr(x);
 }
 
@@ -592,4 +594,24 @@ export function lru_cache<A extends unknown[], R>(fn: (...args: A) => R): ((...a
       single.clear();
     },
   });
+}
+
+/** A class instance whose own `toString` (not Object's, Array's or Error's) is its `str()`. */
+function _has_own_to_string(x: unknown): x is { toString(): string } {
+  if (x === null || typeof x !== "object" || x instanceof Error || Array.isArray(x) || ArrayBuffer.isView(x)) return false;
+  for (let p = Object.getPrototypeOf(x); p !== null && p !== Object.prototype; p = Object.getPrototypeOf(p)) {
+    if (Object.prototype.hasOwnProperty.call(p, "toString")) return true;
+  }
+  return false;
+}
+
+/** A class's container size: a `length` or `size` getter on its prototype chain (Python's `__len__`). */
+function _sized_length(x: object): number | null {
+  for (let p = Object.getPrototypeOf(x); p !== null && p !== Object.prototype; p = Object.getPrototypeOf(p)) {
+    for (const name of ["length", "size"]) {
+      const get = Object.getOwnPropertyDescriptor(p, name)?.get;
+      if (get) return Number(get.call(x));
+    }
+  }
+  return null;
 }

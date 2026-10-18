@@ -375,7 +375,7 @@ export class ValidationResult {
     this.compared_fields = new Set();
   }
 
-  __len__(): number {
+  get length(): number {
     return this.differences.length;
   }
 
@@ -1721,11 +1721,11 @@ export function validate_aep(
     }
 
     const parsed_comp = getitem(parsed_by_id, item_id);
-    const before_count = len(result);
+    const before_count = result.length;
     compare_comp_item(exp_item, parsed_comp, `Comp[${item_name}]`, result);
 
     if (verbose) {
-      const diff_count = len(result) - before_count;
+      const diff_count = result.length - before_count;
       if (diff_count > 0) {
         console.log(`  ${item_name} (id=${item_id}): ${diff_count} differences`);
       } else {
@@ -1758,11 +1758,11 @@ export function validate_aep(
       continue;
     }
 
-    const before_count = len(result);
+    const before_count = result.length;
     compare_footage_item(exp_fi, parsed_fi, `Footage[${fi_name}]`, result);
 
     if (verbose) {
-      const diff_count = len(result) - before_count;
+      const diff_count = result.length - before_count;
       if (diff_count > 0) {
         console.log(`  ${fi_name} (id=${fi_id}): ${diff_count} differences`);
       } else {

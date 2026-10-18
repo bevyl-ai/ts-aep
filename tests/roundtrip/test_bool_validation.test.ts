@@ -48,7 +48,7 @@ function _first_mask(): MaskPropertyGroup {
     for (const layer of comp.layers) {
       const masks = getattr(layer, "masks", null);
       if (masks != null && py_bool(masks) && len(masks) > 0) {
-        return as_instance(masks.__getitem__(0), MaskPropertyGroup);
+        return as_instance(masks.property(0), MaskPropertyGroup);
       }
     }
   }

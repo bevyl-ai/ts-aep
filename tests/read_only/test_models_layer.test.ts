@@ -945,13 +945,13 @@ describe("TestLayerPropertyGroupInheritance", () => {
   /** layer[0] returns the first child property group. */
   test("test_getitem_by_int_index", () => {
     const layer = get_layer(parse_project(SAMPLES_DIR.div("layer_switches.aep")), "enabled_false");
-    expect(layer.__getitem__(0) === layer.properties[0]).toBe(true);
+    expect(layer.property(0) === layer.properties[0]).toBe(true);
   });
 
   /** layer['ADBE Transform Group'] returns the Transform group. */
   test("test_getitem_by_match_name", () => {
     const layer = get_layer(parse_project(SAMPLES_DIR.div("layer_switches.aep")), "enabled_false");
-    const result = layer.__getitem__("ADBE Transform Group");
+    const result = layer.property("ADBE Transform Group");
     expect(result instanceof PropertyGroup).toBe(true);
     expect(result.match_name).toBe("ADBE Transform Group");
     expect(result === layer.transform).toBe(true);
@@ -960,7 +960,7 @@ describe("TestLayerPropertyGroupInheritance", () => {
   /** layer['Transform'] returns the Transform group by display name. */
   test("test_getitem_by_display_name", () => {
     const layer = get_layer(parse_project(SAMPLES_DIR.div("layer_switches.aep")), "enabled_false");
-    const result = layer.__getitem__("Transform");
+    const result = layer.property("Transform");
     expect(result instanceof PropertyGroup).toBe(true);
     expect(result.match_name).toBe("ADBE Transform Group");
   });
@@ -968,8 +968,8 @@ describe("TestLayerPropertyGroupInheritance", () => {
   /** layer['ADBE Transform Group']['ADBE Position'] chains correctly. */
   test("test_getitem_chained", () => {
     const layer = get_layer(parse_project(SAMPLES_DIR.div("layer_switches.aep")), "enabled_false");
-    const transform = layer.__getitem__("ADBE Transform Group");
-    const position = transform.__getitem__("ADBE Position");
+    const transform = layer.property("ADBE Transform Group");
+    const position = transform.property("ADBE Position");
     expect(position.match_name).toBe("ADBE Position");
   });
 
@@ -977,7 +977,7 @@ describe("TestLayerPropertyGroupInheritance", () => {
   test("test_getitem_key_error", () => {
     const layer = get_layer(parse_project(SAMPLES_DIR.div("layer_switches.aep")), "enabled_false");
     raises(KeyError, () => {
-      layer.__getitem__("nonexistent_match_name");
+      layer.property("nonexistent_match_name");
     });
   });
 
@@ -985,7 +985,7 @@ describe("TestLayerPropertyGroupInheritance", () => {
   test("test_getitem_index_error", () => {
     const layer = get_layer(parse_project(SAMPLES_DIR.div("layer_switches.aep")), "enabled_false");
     raises(IndexError, () => {
-      layer.__getitem__(9999);
+      layer.property(9999);
     });
   });
 
@@ -993,7 +993,7 @@ describe("TestLayerPropertyGroupInheritance", () => {
   test("test_getitem_type_error", () => {
     const layer = get_layer(parse_project(SAMPLES_DIR.div("layer_switches.aep")), "enabled_false");
     raises(TypeError_, () => {
-      layer.__getitem__(1.5);
+      layer.property(1.5);
     });
   });
 
@@ -1372,7 +1372,7 @@ describe("TestLayerStylesEnabled", () => {
       "selection_dropshadow_enabled_opacity.aep",
     );
     const layer = parse_aep(path).project.compositions[0].layers[0];
-    const layer_styles = layer.__getitem__("ADBE Layer Styles");
+    const layer_styles = layer.property("ADBE Layer Styles");
     expect(layer_styles instanceof PropertyGroup).toBe(true);
     expect(layer_styles.can_set_enabled).toBe(true);
     for (const child of layer_styles.properties) {
@@ -1392,42 +1392,42 @@ describe("TestTransformNaming", () => {
   /** 2D layers show Rotate Z as 'Rotation'. */
   test("test_2d_rotate_z_named_rotation", () => {
     const layer = get_layer(parse_project(SAMPLES_DIR.div("avlayer_flags.aep")), "adjustmentLayer_true");
-    const rotate_z = layer.transform.__getitem__("ADBE Rotate Z");
+    const rotate_z = layer.transform.property("ADBE Rotate Z");
     expect(rotate_z.name).toBe("Rotation");
   });
 
   /** 3D layers show Rotate Z as 'Z Rotation'. */
   test("test_3d_rotate_z_named_z_rotation", () => {
     const layer = get_layer(parse_project(SAMPLES_DIR.div("avlayer_flags.aep")), "threeDLayer_true");
-    const rotate_z = layer.transform.__getitem__("ADBE Rotate Z");
+    const rotate_z = layer.transform.property("ADBE Rotate Z");
     expect(rotate_z.name).toBe("Z Rotation");
   });
 
   /** Camera layers show Rotate Z as 'Z Rotation'. */
   test("test_camera_rotate_z_named_z_rotation", () => {
     const layer = get_layer(parse_project(SAMPLES_DIR.div("type.aep")), "type_camera");
-    const rotate_z = layer.transform.__getitem__("ADBE Rotate Z");
+    const rotate_z = layer.transform.property("ADBE Rotate Z");
     expect(rotate_z.name).toBe("Z Rotation");
   });
 
   /** Camera layers show Anchor Point as 'Point of Interest'. */
   test("test_camera_anchor_named_point_of_interest", () => {
     const layer = get_layer(parse_project(SAMPLES_DIR.div("type.aep")), "type_camera");
-    const anchor = layer.transform.__getitem__("ADBE Anchor Point");
+    const anchor = layer.transform.property("ADBE Anchor Point");
     expect(anchor.name).toBe("Point of Interest");
   });
 
   /** Light layers show Anchor Point as 'Point of Interest'. */
   test("test_light_anchor_named_point_of_interest", () => {
     const layer = get_layer(parse_project(SAMPLES_DIR.div("lightType.aep")), "lightType_PARALLEL");
-    const anchor = layer.transform.__getitem__("ADBE Anchor Point");
+    const anchor = layer.transform.property("ADBE Anchor Point");
     expect(anchor.name).toBe("Point of Interest");
   });
 
   /** 2D layers show Anchor Point as 'Anchor Point'. */
   test("test_2d_anchor_named_anchor_point", () => {
     const layer = get_layer(parse_project(SAMPLES_DIR.div("avlayer_flags.aep")), "adjustmentLayer_true");
-    const anchor = layer.transform.__getitem__("ADBE Anchor Point");
+    const anchor = layer.transform.property("ADBE Anchor Point");
     expect(anchor.name).toBe("Anchor Point");
   });
 

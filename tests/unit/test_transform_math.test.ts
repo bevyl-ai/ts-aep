@@ -32,8 +32,8 @@ function _mat_approx(a: Mat4, b: Mat4, tol = 1e-6): void {
   for (let r = 0; r < 4; r++) {
     for (let c = 0; c < 4; c++) {
       py_assert(
-        approx(a.__getitem__(r)[c], b.__getitem__(r)[c], { abs: tol }),
-        `M[${r}][${c}]: ${float_repr(a.__getitem__(r)[c])} != ${float_repr(b.__getitem__(r)[c])}`,
+        approx(a.row(r)[c], b.row(r)[c], { abs: tol }),
+        `M[${r}][${c}]: ${float_repr(a.row(r)[c])} != ${float_repr(b.row(r)[c])}`,
       );
     }
   }
@@ -49,7 +49,7 @@ describe("TestMatrixPrimitives", () => {
     for (let r = 0; r < 4; r++) {
       for (let c = 0; c < 4; c++) {
         const expected = r === c ? 1.0 : 0.0;
-        expect(m.__getitem__(r)[c]).toBe(expected);
+        expect(m.row(r)[c]).toBe(expected);
       }
     }
   });

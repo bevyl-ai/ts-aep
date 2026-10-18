@@ -199,9 +199,9 @@ describe("TestRateRoundingSaves", () => {
   test("test_use_this_frame_rate", () => {
     const tmp_path = make_tmp_path();
     const [project, comp] = _new_comp();
-    as_instance(project.render_queue, RenderQueue).add(comp).settings.__setitem__("Use this frame rate", 29.9999999);
+    as_instance(project.render_queue, RenderQueue).add(comp).settings.set("Use this frame rate", 29.9999999);
     const rqi = at(as_instance(_reparse(project, tmp_path).render_queue, RenderQueue).items, 0);
-    expect(rqi.settings.__getitem__("Use this frame rate")).toBe(30.0);
+    expect(rqi.settings.get("Use this frame rate")).toBe(30.0);
   });
 });
 
@@ -266,7 +266,7 @@ describe("TestTimeSpanWrites", () => {
     for (const [field, value] of steps) {
       setattr(rqi, "time_span_" + field, value);
     }
-    expect(rqi.settings.__getitem__("Time Span")).toBe(TimeSpanSource.CUSTOM);
+    expect(rqi.settings.get("Time Span")).toBe(TimeSpanSource.CUSTOM);
     expect(approx([rqi.time_span_start, rqi.time_span_duration], expected)).toBe(true);
   });
 });
@@ -351,7 +351,7 @@ describe("TestSettingsWritten", () => {
     item.skip_frames = 1;
     item.time_span_start = 1;
     expect(item._ldat.settings_written).toBe(0);
-    item.settings.__setitem__("Quality", item.settings.__getitem__("Quality"));
+    item.settings.set("Quality", item.settings.get("Quality"));
     expect(item._ldat.settings_written).toBe(1);
   });
 });
@@ -429,13 +429,13 @@ function _stretched_layer(comp: CompItem, stretch: number, start: number, times:
   layer.stretch = stretch;
   layer.start_time = start;
   for (const [i, t] of times.entries()) {
-    layer.transform.__getitem__("ADBE Opacity").set_value_at_time(t, 10.0 * (i + 1));
+    layer.transform.property("ADBE Opacity").set_value_at_time(t, 10.0 * (i + 1));
   }
   return layer;
 }
 
 function _ticks(layer: Layer): number[] {
-  return sorted(layer.transform.__getitem__("ADBE Opacity").keyframes.map((kf) => kf.time_units));
+  return sorted(layer.transform.property("ADBE Opacity").keyframes.map((kf) => kf.time_units));
 }
 
 function _start_ratio(layer: Layer): [number, number] {
@@ -543,7 +543,7 @@ describe("TestLayerStartTime", () => {
     const [_project, comp] = _new_comp(32.0);
     const layer = comp.add_solid([0.5, 0.5, 0.5], "L", 10, 10, 1.0, 10.0);
     layer.stretch = stretch;
-    const base = layer.transform.__getitem__("ADBE Opacity")._layer_timebase;
+    const base = layer.transform.property("ADBE Opacity")._layer_timebase;
     layer.start_time = ticks / base;
     expect(layer._ldta.start_time_dividend).toBe(expected);
   });
@@ -638,7 +638,7 @@ describe("TestStretchStorage", () => {
     const layer = _stretched_layer(comp, 133.33, 1.3);
     expect(py_eq(_start_ratio(layer), [134809, 103699])).toBe(true);
     expect(py_eq(_ticks(layer), [-62221, 0, 54443, 209996, 462768])).toBe(true);
-    const got = sorted(layer.transform.__getitem__("ADBE Opacity").keyframes.map((kf: Keyframe) => kf.time));
+    const got = sorted(layer.transform.property("ADBE Opacity").keyframes.map((kf: Keyframe) => kf.time));
     expect(
       approx(
         got,
@@ -767,11 +767,11 @@ describe("TestFrameGridPastTheCap", () => {
     comp.display_start_time = 0.1234;
     got.set("dsf", comp.display_start_frame);
     const layer = comp.add_solid([0.5, 0.5, 0.5], "k", 10, 10, 1.0, 1.0);
-    layer.transform.__getitem__("ADBE Opacity").set_value_at_time(0.5041, 10.0);
-    layer.transform.__getitem__("ADBE Opacity").set_value_at_time(0.25, 20.0);
+    layer.transform.property("ADBE Opacity").set_value_at_time(0.5041, 10.0);
+    layer.transform.property("ADBE Opacity").set_value_at_time(0.25, 20.0);
     got.set(
       "keys",
-      layer.transform.__getitem__("ADBE Opacity").keyframes.map((kf) => kf.time),
+      layer.transform.property("ADBE Opacity").keyframes.map((kf) => kf.time),
     );
     for (const [key, value] of expected.entries()) {
       // The Python assertion message names the key; bun's expect takes no message.

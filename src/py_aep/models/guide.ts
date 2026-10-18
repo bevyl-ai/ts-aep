@@ -1,5 +1,6 @@
 // Python: src/py_aep/models/guide.py (`from __future__ import annotations`: dropped)
 
+import { INSPECT } from "../../pyrt/index.ts";
 import { GuideItem } from "../binary/ldat_chunks.ts";
 import { GuideOrientationType } from "../enums/index.ts";
 import { descriptor, float_repr } from "../../pyrt/index.ts";
@@ -68,7 +69,7 @@ export class Guide {
     return new this(item);
   }
 
-  __repr__(): string {
+  [INSPECT](): string {
     const orient =
       this.orientation_type === GuideOrientationType.HORIZONTAL
         ? "horizontal"

@@ -1,5 +1,6 @@
 // Port of py_aep/models/layers/parametric_mesh_layer.py
 
+import { INSPECT } from "../../../pyrt/index.ts";
 import { LayerType, ParametricMeshType } from "../../enums/index.ts";
 import { _PARAMETRIC_MESH_ACTIVE_GROUPS } from "../../synthesis/property.ts";
 import {
@@ -242,7 +243,7 @@ export class ParametricMeshOptions {
     return child;
   }
 
-  __repr__(): string {
+  [INSPECT](): string {
     const result = new Map<string, number | boolean>();
     // NOTE(port): descriptors_of walks the MRO but vars(cls) is the class's own dict; same result because no base class declares descriptors.
     for (const [name] of descriptors_of(this.constructor)) {

@@ -62,7 +62,7 @@ function _skip_unless_fonts_match(layer: Layer): boolean {
   if (!importorskip("harfbuzzjs")) return true;
   const text = layer.text;
   py_assert(text != null, "not a text layer");
-  const document = text.__getitem__("ADBE Text Document").value;
+  const document = text.property("ADBE Text Document").value;
   for (const font of document._fonts) {
     if (!py_eq(font_version_string(font.post_script_name), font.version)) {
       skip(`${font.post_script_name} not installed at the fixture's version`);

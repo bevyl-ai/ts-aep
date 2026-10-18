@@ -1,5 +1,6 @@
 // Port of py_aep/models/application.py.
 
+import { INSPECT } from "../../pyrt/index.ts";
 import { ae_writes } from "../ae_version.ts";
 import { LEGACY_NAME_FORMAT } from "../binary/chunk.ts";
 import type { HeadChunk } from "../binary/item_chunks.ts";
@@ -135,7 +136,7 @@ export class Application {
     return new this({ _head: project._head, project, active_viewer: null });
   }
 
-  __repr__(): string {
+  [INSPECT](): string {
     return `Application(version=${repr(this.version)}, build_number=${repr(this.build_number)}, app_name=${repr(this.app_name)})`;
   }
 

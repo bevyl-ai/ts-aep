@@ -143,7 +143,7 @@ export class LayerSpec {
   }
 
   /** NamedTuple equality: field-wise. */
-  __eq__(other: object | null): boolean {
+  equals(other: object | null): boolean {
     return other instanceof LayerSpec && py_eq([...this], [...other]);
   }
 
@@ -233,7 +233,7 @@ export class LayerGroupSpec {
   }
 
   /** NamedTuple equality: field-wise. */
-  __eq__(other: object | null): boolean {
+  equals(other: object | null): boolean {
     return other instanceof LayerGroupSpec && py_eq([...this], [...other]);
   }
 

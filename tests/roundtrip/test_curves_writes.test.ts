@@ -29,7 +29,7 @@ function _layer(project: Project, name: string): Layer {
 }
 
 function _curves(layer: Layer, index = 0): Property {
-  const prop = as_instance(layer.__getitem__("ADBE Effect Parade").properties[index], PropertyGroup).__getitem__(
+  const prop = as_instance(layer.property("ADBE Effect Parade").properties[index], PropertyGroup).property(
     "ADBE CurvesCustom-0001",
   );
   py_assert(prop instanceof Property);
@@ -56,7 +56,7 @@ test("test_add_property_writes_an_untouched_curves", () => {
   // AE 2026's addProperty("ADBE CurvesCustom") writes an untouched
   // instance's bytes here, although the stored definition is keyed.
   const project = parse_project_fresh(SAMPLE);
-  _layer(project, "keyed").__getitem__("ADBE Effect Parade").add_property("ADBE CurvesCustom");
+  _layer(project, "keyed").property("ADBE Effect Parade").add_property("ADBE CurvesCustom");
   const out = tmp_path.div("out.aep");
   project.save(out);
 

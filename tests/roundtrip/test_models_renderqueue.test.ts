@@ -292,79 +292,79 @@ describe("TestSetSetting", () => {
     const tmp_path = make_tmp_path();
     const project = parse_aep(SAMPLES_DIR.div("render_settings.aep")).project;
     const rqi = get_rqi(project, "base");
-    rqi.settings.__setitem__("Quality", RenderQuality.DRAFT);
+    rqi.settings.set("Quality", RenderQuality.DRAFT);
 
     const out = tmp_path.div("quality_enum.aep");
     project.save(out);
     const rqi2 = get_rqi(parse_aep(out).project, "base");
-    expect(rqi2.settings.__getitem__("Quality")).toBe(RenderQuality.DRAFT);
+    expect(rqi2.settings.get("Quality")).toBe(RenderQuality.DRAFT);
   });
 
   test("test_set_int_value", () => {
     const tmp_path = make_tmp_path();
     const project = parse_aep(SAMPLES_DIR.div("render_settings.aep")).project;
     const rqi = get_rqi(project, "base");
-    rqi.settings.__setitem__("Quality", 1); // DRAFT
+    rqi.settings.set("Quality", 1); // DRAFT
 
     const out = tmp_path.div("quality_int.aep");
     project.save(out);
     const rqi2 = get_rqi(parse_aep(out).project, "base");
-    expect(rqi2.settings.__getitem__("Quality")).toBe(RenderQuality.DRAFT);
+    expect(rqi2.settings.get("Quality")).toBe(RenderQuality.DRAFT);
   });
 
   test("test_set_string_value", () => {
     const tmp_path = make_tmp_path();
     const project = parse_aep(SAMPLES_DIR.div("render_settings.aep")).project;
     const rqi = get_rqi(project, "base");
-    rqi.settings.__setitem__("Motion Blur", "On for Checked Layers");
+    rqi.settings.set("Motion Blur", "On for Checked Layers");
 
     const out = tmp_path.div("mblur_str.aep");
     project.save(out);
     const rqi2 = get_rqi(parse_aep(out).project, "base");
-    expect(rqi2.settings.__getitem__("Motion Blur")).toBe(MotionBlurSetting.ON_FOR_CHECKED_LAYERS);
+    expect(rqi2.settings.get("Motion Blur")).toBe(MotionBlurSetting.ON_FOR_CHECKED_LAYERS);
   });
 
   test("test_set_resolution", () => {
     const tmp_path = make_tmp_path();
     const project = parse_aep(SAMPLES_DIR.div("render_settings.aep")).project;
     const rqi = get_rqi(project, "base");
-    rqi.settings.__setitem__("Resolution", [2, 2]);
+    rqi.settings.set("Resolution", [2, 2]);
 
     const out = tmp_path.div("resolution.aep");
     project.save(out);
     const rqi2 = get_rqi(parse_aep(out).project, "base");
-    expect(py_eq(rqi2.settings.__getitem__("Resolution"), [2, 2])).toBe(true);
+    expect(py_eq(rqi2.settings.get("Resolution"), [2, 2])).toBe(true);
   });
 
   test("test_set_skip_existing_files", () => {
     const tmp_path = make_tmp_path();
     const project = parse_aep(SAMPLES_DIR.div("render_settings.aep")).project;
     const rqi = get_rqi(project, "base");
-    rqi.settings.__setitem__("Skip Existing Files", true);
+    rqi.settings.set("Skip Existing Files", true);
 
     const out = tmp_path.div("skip_existing.aep");
     project.save(out);
     const rqi2 = get_rqi(parse_aep(out).project, "base");
-    expect(rqi2.settings.__getitem__("Skip Existing Files")).toBe(true);
+    expect(rqi2.settings.get("Skip Existing Files")).toBe(true);
   });
 
   test("test_set_frame_rate", () => {
     const tmp_path = make_tmp_path();
     const project = parse_aep(SAMPLES_DIR.div("render_settings.aep")).project;
     const rqi = get_rqi(project, "base");
-    rqi.settings.__setitem__("Use this frame rate", 30.0);
+    rqi.settings.set("Use this frame rate", 30.0);
 
     const out = tmp_path.div("frame_rate.aep");
     project.save(out);
     const rqi2 = get_rqi(parse_aep(out).project, "base");
-    expect(approx(rqi2.settings.__getitem__("Use this frame rate"), 30.0)).toBe(true);
+    expect(approx(rqi2.settings.get("Use this frame rate"), 30.0)).toBe(true);
   });
 
   test("test_unknown_key_raises", () => {
     const project = parse_aep(SAMPLES_DIR.div("render_settings.aep")).project;
     const rqi = get_rqi(project, "base");
     raises(KeyError, () => {
-      rqi.settings.__setitem__("Nonexistent", 42);
+      rqi.settings.set("Nonexistent", 42);
     }, "Unknown setting");
   });
 
@@ -372,7 +372,7 @@ describe("TestSetSetting", () => {
     const project = parse_aep(SAMPLES_DIR.div("render_settings.aep")).project;
     const rqi = get_rqi(project, "base");
     raises(AttributeError, () => {
-      rqi.settings.__setitem__("Use comp's frame rate", 30.0);
+      rqi.settings.set("Use comp's frame rate", 30.0);
     }, "read-only");
   });
 
@@ -380,7 +380,7 @@ describe("TestSetSetting", () => {
     const project = parse_aep(SAMPLES_DIR.div("render_settings.aep")).project;
     const rqi = get_rqi(project, "base");
     raises(ValueError, () => {
-      rqi.settings.__setitem__("Quality", 9999);
+      rqi.settings.set("Quality", 9999);
     }, "Invalid int value");
   });
 
@@ -388,7 +388,7 @@ describe("TestSetSetting", () => {
     const project = parse_aep(SAMPLES_DIR.div("render_settings.aep")).project;
     const rqi = get_rqi(project, "base");
     raises(ValueError, () => {
-      rqi.settings.__setitem__("Quality", "SuperHD");
+      rqi.settings.set("Quality", "SuperHD");
     }, "Invalid string");
   });
 
@@ -396,7 +396,7 @@ describe("TestSetSetting", () => {
     const project = parse_aep(SAMPLES_DIR.div("render_settings.aep")).project;
     const rqi = get_rqi(project, "base");
     raises(TypeError_, () => {
-      rqi.settings.__setitem__("Quality", [1, 2, 3]);
+      rqi.settings.set("Quality", [1, 2, 3]);
     }, "Expected");
   });
 });
@@ -591,7 +591,7 @@ describe("TestRoundtripSkipFrames", () => {
     const project = parse_aep(SAMPLES_DIR.div("skip_frames.aep")).project;
     const rqi = get_rqi(project, "skip_frames_2");
     rqi.skip_frames = 2;
-    rqi.settings.__setitem__("Use this frame rate", 24);
+    rqi.settings.set("Use this frame rate", 24);
     expect(rqi.skip_frames).toBe(2);
     expect(rqi.output_modules[0]._roou.frame_rate).toBe(8.0);
   });
@@ -600,7 +600,7 @@ describe("TestRoundtripSkipFrames", () => {
     const project = parse_aep(SAMPLES_DIR.div("skip_frames.aep")).project;
     const rqi = get_rqi(project, "skip_frames_2");
     rqi.skip_frames = 2;
-    rqi.settings.__setitem__("Frame Rate", FrameRateSetting.USE_COMP_FRAME_RATE);
+    rqi.settings.set("Frame Rate", FrameRateSetting.USE_COMP_FRAME_RATE);
     expect(rqi.skip_frames).toBe(2);
     expect(rqi.output_modules[0]._roou.frame_rate).toBe(8.0); // 24 fps comp
   });
@@ -626,13 +626,13 @@ describe("TestRoundtripRouuFrameRateAndDepth", () => {
     const project = parse_aep(FO_SAMPLES_DIR.div("png", "png_rgba.aep")).project;
     const om = render_queue_of(project).items[0].output_modules[0];
     expect(py_eq(bytes_.slice(om._roou.tobytes(), 0x42, 0x48), bytes_.fromhex("001DF8520020"))).toBe(true);
-    om.settings.__setitem__("Depth", OutputColorDepth.TRILLIONS_OF_COLORS_PLUS);
+    om.settings.set("Depth", OutputColorDepth.TRILLIONS_OF_COLORS_PLUS);
 
     const out = tmp_path.div("depth.aep");
     project.save(out);
     const om2 = render_queue_of(parse_aep(out).project).items[0].output_modules[0];
     expect(py_eq(bytes_.slice(om2._roou.tobytes(), 0x42, 0x48), bytes_.fromhex("001DF8520040"))).toBe(true);
-    expect(om2.settings.__getitem__("Depth")).toBe(OutputColorDepth.TRILLIONS_OF_COLORS_PLUS);
+    expect(om2.settings.get("Depth")).toBe(OutputColorDepth.TRILLIONS_OF_COLORS_PLUS);
   });
 
   test("test_floating_point_gray_is_signed", () => {
@@ -677,14 +677,14 @@ describe("TestRoundtripPreserveRgb", () => {
     const tmp_path = make_tmp_path();
     // preserve_rgb_off/on differ only in that byte.
     const project = parse_aep(OM_SAMPLES_DIR.div("preserve_rgb_off.aep")).project;
-    render_queue_of(project).items[0].output_modules[0].settings.__setitem__("Preserve RGB", true);
+    render_queue_of(project).items[0].output_modules[0].settings.set("Preserve RGB", true);
     const out = tmp_path.div("prgb.aep");
     project.save(out);
     const got = render_queue_of(parse_aep(out).project).items[0].output_modules[0];
     const want = render_queue_of(parse_aep(OM_SAMPLES_DIR.div("preserve_rgb_on.aep")).project).items[0]
       .output_modules[0];
     expect(py_eq(got._om_ldat.tobytes(), want._om_ldat.tobytes())).toBe(true);
-    expect(got.settings.__getitem__("Preserve RGB")).toBe(true);
+    expect(got.settings.get("Preserve RGB")).toBe(true);
   });
 });
 
@@ -768,32 +768,32 @@ describe("TestRoundtripSettingsResolution", () => {
     const tmp_path = make_tmp_path();
     const project = parse_aep(SAMPLES_DIR.div("render_settings.aep")).project;
     const rqi = get_rqi(project, "base");
-    rqi.settings.__setitem__("Resolution", [7, 3]);
+    rqi.settings.set("Resolution", [7, 3]);
 
     const out = tmp_path.div("res_asymmetric.aep");
     project.save(out);
     const rqi2 = get_rqi(parse_aep(out).project, "base");
-    expect(py_eq(rqi2.settings.__getitem__("Resolution"), [7, 3])).toBe(true);
+    expect(py_eq(rqi2.settings.get("Resolution"), [7, 3])).toBe(true);
   });
 
   test("test_resolution_full_to_custom_roundtrip", () => {
     const tmp_path = make_tmp_path();
     const project = parse_aep(SAMPLES_DIR.div("resolution.aep")).project;
     const rqi = get_rqi(project, "resolution_custom_7x3");
-    expect(py_eq(rqi.settings.__getitem__("Resolution"), [7, 3])).toBe(true);
+    expect(py_eq(rqi.settings.get("Resolution"), [7, 3])).toBe(true);
 
-    rqi.settings.__setitem__("Resolution", [1, 1]);
+    rqi.settings.set("Resolution", [1, 1]);
     const out = tmp_path.div("res_full.aep");
     project.save(out);
     const rqi2 = get_rqi(parse_aep(out).project, "resolution_custom_7x3");
-    expect(py_eq(rqi2.settings.__getitem__("Resolution"), [1, 1])).toBe(true);
+    expect(py_eq(rqi2.settings.get("Resolution"), [1, 1])).toBe(true);
 
     // And back to a different custom value
-    rqi2.settings.__setitem__("Resolution", [8, 3]);
+    rqi2.settings.set("Resolution", [8, 3]);
     const out2 = tmp_path.div("res_custom_again.aep");
     rqi2._project.save(out2);
     const rqi3 = get_rqi(parse_aep(out2).project, "resolution_custom_7x3");
-    expect(py_eq(rqi3.settings.__getitem__("Resolution"), [8, 3])).toBe(true);
+    expect(py_eq(rqi3.settings.get("Resolution"), [8, 3])).toBe(true);
   });
 });
 
@@ -803,27 +803,27 @@ describe("TestRoundtripSettingsFrameRate", () => {
     const tmp_path = make_tmp_path();
     const project = parse_aep(SAMPLES_DIR.div("render_settings.aep")).project;
     const rqi = get_rqi(project, "base");
-    rqi.settings.__setitem__("Frame Rate", FrameRateSetting.USE_THIS_FRAME_RATE);
-    rqi.settings.__setitem__("Use this frame rate", 29.97);
+    rqi.settings.set("Frame Rate", FrameRateSetting.USE_THIS_FRAME_RATE);
+    rqi.settings.set("Use this frame rate", 29.97);
 
     const out = tmp_path.div("fr_29_97.aep");
     project.save(out);
     const rqi2 = get_rqi(parse_aep(out).project, "base");
-    expect(rqi2.settings.__getitem__("Frame Rate")).toBe(FrameRateSetting.USE_THIS_FRAME_RATE);
-    expect(approx(rqi2.settings.__getitem__("Use this frame rate"), 29.97, { abs: 0.01 })).toBe(true);
+    expect(rqi2.settings.get("Frame Rate")).toBe(FrameRateSetting.USE_THIS_FRAME_RATE);
+    expect(approx(rqi2.settings.get("Use this frame rate"), 29.97, { abs: 0.01 })).toBe(true);
   });
 
   test("test_integer_frame_rate_24", () => {
     const tmp_path = make_tmp_path();
     const project = parse_aep(SAMPLES_DIR.div("frame_rate.aep")).project;
     const rqi = get_rqi(project, "frame_rate_24");
-    expect(approx(rqi.settings.__getitem__("Use this frame rate"), 24.0)).toBe(true);
+    expect(approx(rqi.settings.get("Use this frame rate"), 24.0)).toBe(true);
 
-    rqi.settings.__setitem__("Use this frame rate", 60.0);
+    rqi.settings.set("Use this frame rate", 60.0);
     const out = tmp_path.div("fr_60.aep");
     project.save(out);
     const rqi2 = get_rqi(parse_aep(out).project, "frame_rate_24");
-    expect(approx(rqi2.settings.__getitem__("Use this frame rate"), 60.0)).toBe(true);
+    expect(approx(rqi2.settings.get("Use this frame rate"), 60.0)).toBe(true);
   });
 
   /** Parse and save 29.97 without modification preserves the value. */
@@ -831,13 +831,13 @@ describe("TestRoundtripSettingsFrameRate", () => {
     const tmp_path = make_tmp_path();
     const project = parse_aep(SAMPLES_DIR.div("frame_rate.aep")).project;
     const rqi = get_rqi(project, "frame_rate_29_97");
-    const original = rqi.settings.__getitem__("Use this frame rate");
+    const original = rqi.settings.get("Use this frame rate");
     expect(approx(original, 29.97, { abs: 0.01 })).toBe(true);
 
     const out = tmp_path.div("fr_29_97_unchanged.aep");
     project.save(out);
     const rqi2 = get_rqi(parse_aep(out).project, "frame_rate_29_97");
-    expect(approx(rqi2.settings.__getitem__("Use this frame rate"), original, { abs: 0.001 })).toBe(true);
+    expect(approx(rqi2.settings.get("Use this frame rate"), original, { abs: 0.001 })).toBe(true);
   });
 });
 
@@ -848,18 +848,18 @@ describe("TestRoundtripSettingsMultiWrite", () => {
     const project = parse_aep(SAMPLES_DIR.div("render_settings.aep")).project;
     const rqi = get_rqi(project, "base");
 
-    rqi.settings.__setitem__("Quality", RenderQuality.DRAFT);
-    rqi.settings.__setitem__("Resolution", [3, 3]);
-    rqi.settings.__setitem__("Motion Blur", MotionBlurSetting.ON_FOR_CHECKED_LAYERS);
-    rqi.settings.__setitem__("Field Render", FieldRender.UPPER_FIELD_FIRST);
+    rqi.settings.set("Quality", RenderQuality.DRAFT);
+    rqi.settings.set("Resolution", [3, 3]);
+    rqi.settings.set("Motion Blur", MotionBlurSetting.ON_FOR_CHECKED_LAYERS);
+    rqi.settings.set("Field Render", FieldRender.UPPER_FIELD_FIRST);
 
     const out = tmp_path.div("batch_multi.aep");
     project.save(out);
     const rqi2 = get_rqi(parse_aep(out).project, "base");
-    expect(rqi2.settings.__getitem__("Quality")).toBe(RenderQuality.DRAFT);
-    expect(py_eq(rqi2.settings.__getitem__("Resolution"), [3, 3])).toBe(true);
-    expect(rqi2.settings.__getitem__("Motion Blur")).toBe(MotionBlurSetting.ON_FOR_CHECKED_LAYERS);
-    expect(rqi2.settings.__getitem__("Field Render")).toBe(FieldRender.UPPER_FIELD_FIRST);
+    expect(rqi2.settings.get("Quality")).toBe(RenderQuality.DRAFT);
+    expect(py_eq(rqi2.settings.get("Resolution"), [3, 3])).toBe(true);
+    expect(rqi2.settings.get("Motion Blur")).toBe(MotionBlurSetting.ON_FOR_CHECKED_LAYERS);
+    expect(rqi2.settings.get("Field Render")).toBe(FieldRender.UPPER_FIELD_FIRST);
   });
 
   /** Set the frame rate toggle and value together. */
@@ -868,14 +868,14 @@ describe("TestRoundtripSettingsMultiWrite", () => {
     const project = parse_aep(SAMPLES_DIR.div("render_settings.aep")).project;
     const rqi = get_rqi(project, "base");
 
-    rqi.settings.__setitem__("Frame Rate", FrameRateSetting.USE_THIS_FRAME_RATE);
-    rqi.settings.__setitem__("Use this frame rate", 23.976);
+    rqi.settings.set("Frame Rate", FrameRateSetting.USE_THIS_FRAME_RATE);
+    rqi.settings.set("Use this frame rate", 23.976);
 
     const out = tmp_path.div("batch_fr.aep");
     project.save(out);
     const rqi2 = get_rqi(parse_aep(out).project, "base");
-    expect(rqi2.settings.__getitem__("Frame Rate")).toBe(FrameRateSetting.USE_THIS_FRAME_RATE);
-    expect(approx(rqi2.settings.__getitem__("Use this frame rate"), 23.976, { abs: 0.01 })).toBe(true);
+    expect(rqi2.settings.get("Frame Rate")).toBe(FrameRateSetting.USE_THIS_FRAME_RATE);
+    expect(approx(rqi2.settings.get("Use this frame rate"), 23.976, { abs: 0.01 })).toBe(true);
   });
 });
 
@@ -894,9 +894,9 @@ describe("TestRoundtripSettingsBulkAssign", () => {
     const out = tmp_path.div("bulk_assign.aep");
     project.save(out);
     const rqi2 = get_rqi(parse_aep(out).project, "base");
-    expect(rqi2.settings.__getitem__("Quality")).toBe(RenderQuality.WIREFRAME);
-    expect(py_eq(rqi2.settings.__getitem__("Resolution"), [4, 4])).toBe(true);
-    expect(rqi2.settings.__getitem__("Skip Existing Files")).toBe(true);
+    expect(rqi2.settings.get("Quality")).toBe(RenderQuality.WIREFRAME);
+    expect(py_eq(rqi2.settings.get("Resolution"), [4, 4])).toBe(true);
+    expect(rqi2.settings.get("Skip Existing Files")).toBe(true);
   });
 
   /** Copy settings from one RQI to another via .settings setter. */
@@ -906,10 +906,10 @@ describe("TestRoundtripSettingsBulkAssign", () => {
     const items = render_queue_of(project).items;
     expect(len(items)).toBe(2);
 
-    items[0].settings.__setitem__("Quality", RenderQuality.DRAFT);
-    items[0].settings.__setitem__("Resolution", [2, 2]);
+    items[0].settings.set("Quality", RenderQuality.DRAFT);
+    items[0].settings.set("Resolution", [2, 2]);
     const copied_settings = new Map(
-      [...items[0].settings].map((k: string): [string, SettingValue] => [k, items[0].settings.__getitem__(k)]),
+      [...items[0].settings].map((k: string): [string, SettingValue] => [k, items[0].settings.get(k)]),
     );
     expect(copied_settings.has("Use comp's frame rate")).toBe(true);
     dict_pop(copied_settings, "Use comp's frame rate");
@@ -918,8 +918,8 @@ describe("TestRoundtripSettingsBulkAssign", () => {
     const out = tmp_path.div("copy_settings.aep");
     project.save(out);
     const items2 = render_queue_of(parse_aep(out).project).items;
-    expect(items2[1].settings.__getitem__("Quality")).toBe(RenderQuality.DRAFT);
-    expect(py_eq(items2[1].settings.__getitem__("Resolution"), [2, 2])).toBe(true);
+    expect(items2[1].settings.get("Quality")).toBe(RenderQuality.DRAFT);
+    expect(py_eq(items2[1].settings.get("Resolution"), [2, 2])).toBe(true);
   });
 
   /** Bulk assignment should surface read-only setting errors. */
@@ -940,21 +940,21 @@ describe("TestRoundtripSettingsReadOnly", () => {
     const project = parse_aep(SAMPLES_DIR.div("render_settings.aep")).project;
     const rqi = get_rqi(project, "base");
     // Time Span Start is now writable - verify no error
-    rqi.settings.__setitem__("Time Span Start", 1.0);
+    rqi.settings.set("Time Span Start", 1.0);
   });
 
   test("test_time_span_duration_writable", () => {
     const project = parse_aep(SAMPLES_DIR.div("render_settings.aep")).project;
     const rqi = get_rqi(project, "base");
     // Time Span Duration is now writable - verify no error
-    rqi.settings.__setitem__("Time Span Duration", 5.0);
+    rqi.settings.set("Time Span Duration", 5.0);
   });
 
   test("test_comps_frame_rate_read_only", () => {
     const project = parse_aep(SAMPLES_DIR.div("render_settings.aep")).project;
     const rqi = get_rqi(project, "base");
     raises(AttributeError, () => {
-      rqi.settings.__setitem__("Use comp's frame rate", 30.0);
+      rqi.settings.set("Use comp's frame rate", 30.0);
     }, "read-only");
   });
 
@@ -962,10 +962,10 @@ describe("TestRoundtripSettingsReadOnly", () => {
     const project = parse_aep(SAMPLES_DIR.div("render_settings.aep")).project;
     const rqi = get_rqi(project, "base");
     raises(KeyError, () => {
-      rqi.settings.__getitem__("Nonexistent");
+      rqi.settings.get("Nonexistent");
     });
     raises(KeyError, () => {
-      rqi.settings.__setitem__("Nonexistent", 42);
+      rqi.settings.set("Nonexistent", 42);
     }, "Unknown setting");
   });
 });
@@ -976,31 +976,31 @@ describe("TestRoundtripOutputModuleResize", () => {
     const tmp_path = make_tmp_path();
     const project = parse_aep(OM_SAMPLES_DIR.div("resize_custom_960x540.aep")).project;
     const om = render_queue_of(project).items[0].output_modules[0];
-    expect(py_eq(om.settings.__getitem__("Resize to"), [960, 540])).toBe(true);
+    expect(py_eq(om.settings.get("Resize to"), [960, 540])).toBe(true);
 
-    om.settings.__setitem__("Resize to", [1280, 720]);
+    om.settings.set("Resize to", [1280, 720]);
     const out = tmp_path.div("resize_720p.aep");
     project.save(out);
     const om2 = render_queue_of(parse_aep(out).project).items[0].output_modules[0];
-    expect(py_eq(om2.settings.__getitem__("Resize to"), [1280, 720])).toBe(true);
+    expect(py_eq(om2.settings.get("Resize to"), [1280, 720])).toBe(true);
   });
 
   test("test_resize_roundtrip_back", () => {
     const tmp_path = make_tmp_path();
     const project = parse_aep(OM_SAMPLES_DIR.div("resize_custom_960x540.aep")).project;
     const om = render_queue_of(project).items[0].output_modules[0];
-    om.settings.__setitem__("Resize to", [3840, 2160]);
+    om.settings.set("Resize to", [3840, 2160]);
 
     const out = tmp_path.div("resize_4k.aep");
     project.save(out);
     const om2 = render_queue_of(parse_aep(out).project).items[0].output_modules[0];
-    expect(py_eq(om2.settings.__getitem__("Resize to"), [3840, 2160])).toBe(true);
+    expect(py_eq(om2.settings.get("Resize to"), [3840, 2160])).toBe(true);
 
-    om2.settings.__setitem__("Resize to", [640, 480]);
+    om2.settings.set("Resize to", [640, 480]);
     const out2 = tmp_path.div("resize_vga.aep");
     om2._project.save(out2);
     const om3 = render_queue_of(parse_aep(out2).project).items[0].output_modules[0];
-    expect(py_eq(om3.settings.__getitem__("Resize to"), [640, 480])).toBe(true);
+    expect(py_eq(om3.settings.get("Resize to"), [640, 480])).toBe(true);
   });
 
   test("test_resize_string_form_fallback", () => {
@@ -1010,13 +1010,13 @@ describe("TestRoundtripOutputModuleResize", () => {
     const project = parse_aep(OM_SAMPLES_DIR.div("resize_custom_960x540.aep")).project;
     const om = render_queue_of(project).items[0].output_modules[0];
 
-    om.settings.__setitem__("Resize to", [1920, 1080]);
+    om.settings.set("Resize to", [1920, 1080]);
     expect(getitem(om.get_settings(GetSettingsFormat.STRING), "Resize to")).toBe(
       "HD  •  1920x1080 • 24 fps",
     );
     expect(om.get_setting("Resize to")).toBe("HD  •  1920x1080 • 24 fps");
 
-    om.settings.__setitem__("Resize to", [960, 540]);
+    om.settings.set("Resize to", [960, 540]);
     expect(getitem(om.get_settings(GetSettingsFormat.STRING), "Resize to")).toBe("Custom");
   });
 });
@@ -1029,37 +1029,37 @@ describe("TestRoundtripOutputModuleCrop", () => {
     const rqi = get_rqi(project, "crop_checked");
     const om = rqi.output_modules[0];
 
-    om.settings.__setitem__("Crop Top", 20);
-    om.settings.__setitem__("Crop Left", 30);
-    om.settings.__setitem__("Crop Bottom", 40);
-    om.settings.__setitem__("Crop Right", 50);
+    om.settings.set("Crop Top", 20);
+    om.settings.set("Crop Left", 30);
+    om.settings.set("Crop Bottom", 40);
+    om.settings.set("Crop Right", 50);
 
     const out = tmp_path.div("crop_all.aep");
     project.save(out);
     const rqi2 = get_rqi(parse_aep(out).project, "crop_checked");
     const om2 = rqi2.output_modules[0];
-    expect(om2.settings.__getitem__("Crop Top")).toBe(20);
-    expect(om2.settings.__getitem__("Crop Left")).toBe(30);
-    expect(om2.settings.__getitem__("Crop Bottom")).toBe(40);
-    expect(om2.settings.__getitem__("Crop Right")).toBe(50);
+    expect(om2.settings.get("Crop Top")).toBe(20);
+    expect(om2.settings.get("Crop Left")).toBe(30);
+    expect(om2.settings.get("Crop Bottom")).toBe(40);
+    expect(om2.settings.get("Crop Right")).toBe(50);
   });
 
   test("test_toggle_crop_and_set_values", () => {
     const tmp_path = make_tmp_path();
     const project = parse_aep(OM_SAMPLES_DIR.div("crop_unchecked.aep")).project;
     const om = render_queue_of(project).items[0].output_modules[0];
-    expect(om.settings.__getitem__("Crop")).toBe(false);
+    expect(om.settings.get("Crop")).toBe(false);
 
-    om.settings.__setitem__("Crop", true);
-    om.settings.__setitem__("Crop Top", 10);
-    om.settings.__setitem__("Crop Bottom", 10);
+    om.settings.set("Crop", true);
+    om.settings.set("Crop Top", 10);
+    om.settings.set("Crop Bottom", 10);
 
     const out = tmp_path.div("crop_enabled.aep");
     project.save(out);
     const om2 = render_queue_of(parse_aep(out).project).items[0].output_modules[0];
-    expect(om2.settings.__getitem__("Crop")).toBe(true);
-    expect(om2.settings.__getitem__("Crop Top")).toBe(10);
-    expect(om2.settings.__getitem__("Crop Bottom")).toBe(10);
+    expect(om2.settings.get("Crop")).toBe(true);
+    expect(om2.settings.get("Crop Top")).toBe(10);
+    expect(om2.settings.get("Crop Bottom")).toBe(10);
   });
 });
 
@@ -1070,14 +1070,14 @@ describe("TestRoundtripOutputModuleSettings", () => {
     const project = parse_aep(OM_SAMPLES_DIR.div("om_resize.aep")).project;
     const rqi = get_rqi(project, "resize_quality_low");
     const om = rqi.output_modules[0];
-    expect(om.settings.__getitem__("Resize Quality")).toBe(ResizeQuality.LOW);
+    expect(om.settings.get("Resize Quality")).toBe(ResizeQuality.LOW);
 
-    om.settings.__setitem__("Resize Quality", ResizeQuality.HIGH);
+    om.settings.set("Resize Quality", ResizeQuality.HIGH);
     const out = tmp_path.div("rq_high.aep");
     project.save(out);
     const rqi2 = get_rqi(parse_aep(out).project, "resize_quality_low");
     const om2 = rqi2.output_modules[0];
-    expect(om2.settings.__getitem__("Resize Quality")).toBe(ResizeQuality.HIGH);
+    expect(om2.settings.get("Resize Quality")).toBe(ResizeQuality.HIGH);
   });
 
   test("test_read_only_om_settings", () => {
@@ -1085,13 +1085,13 @@ describe("TestRoundtripOutputModuleSettings", () => {
     const rqi = get_rqi(project, "base");
     const om = rqi.output_modules[0];
     raises(AttributeError, () => {
-      om.settings.__setitem__("Output File Info", new Map());
+      om.settings.set("Output File Info", new Map());
     }, "read-only");
     // "Output Color Space" is not a settings key - it is a KeyError, not
     // a read-only setting (use the OutputModule.output_color_space
     // property to read/write it).
     raises(KeyError, () => {
-      om.settings.__setitem__("Output Color Space", "sRGB");
+      om.settings.set("Output Color Space", "sRGB");
     });
   });
 
@@ -1113,12 +1113,12 @@ describe("TestRoundtripOutputModuleSettings", () => {
     const tmp_path = make_tmp_path();
     const project = parse_aep(SAMPLES_DIR.div("render_settings.aep")).project;
     const rqi = get_rqi(project, "base");
-    rqi.settings.__setitem__("Time Span", TimeSpanSource.WORK_AREA_ONLY);
+    rqi.settings.set("Time Span", TimeSpanSource.WORK_AREA_ONLY);
 
     const out = tmp_path.div("ts_work_area.aep");
     project.save(out);
     const rqi2 = get_rqi(parse_aep(out).project, "base");
-    expect(rqi2.settings.__getitem__("Time Span")).toBe(TimeSpanSource.WORK_AREA_ONLY);
+    expect(rqi2.settings.get("Time Span")).toBe(TimeSpanSource.WORK_AREA_ONLY);
   });
 });
 
@@ -2166,7 +2166,7 @@ describe("TestOutputModuleAudioMatchesAfterEffects", () => {
         // reads Stereo / 32 Bit (AE's fallbacks).
         if (len(step) === 1) {
           const [[key, value]] = [...step];
-          om.settings.__setitem__(key, value);
+          om.settings.set(key, value);
         } else {
           om.settings = step;
         }
@@ -2189,7 +2189,7 @@ describe("TestOutputModuleAudioMatchesAfterEffects", () => {
     const om = _om_by_file_stem(project, start);
     const before = om._roou.tobytes();
     raises(ValueError, () => {
-      om.settings.__setitem__("Audio Bit Depth", AudioBitDepth.TWENTY_FOUR_BIT);
+      om.settings.set("Audio Bit Depth", AudioBitDepth.TWENTY_FOUR_BIT);
     }, "24-bit");
     raises(ValueError, () => {
       om.settings = new Map<string, SettingValue>([["Audio Bit Depth", AudioBitDepth.TWENTY_FOUR_BIT]]);

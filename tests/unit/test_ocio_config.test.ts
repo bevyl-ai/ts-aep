@@ -13,7 +13,7 @@ import { make_tmp_path } from "../../src/pyrt/pytest.ts";
 
 const CONFIG = new Path(import.meta.dir, "..", "..", "samples", "assets", "config.ocio");
 
-const path_eq = (a: Path | null, b: Path): boolean => a != null && a.__eq__(b);
+const path_eq = (a: Path | null, b: Path): boolean => a != null && a.equals(b);
 
 describe("TestListConfigColorSpaces", () => {
   test("test_active_color_spaces", () => {

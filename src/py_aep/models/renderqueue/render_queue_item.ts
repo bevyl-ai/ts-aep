@@ -1,5 +1,6 @@
 // Port of py_aep/models/renderqueue/render_queue_item.py
 
+import { INSPECT } from "../../../pyrt/index.ts";
 import { ColorDepthSetting, DiskCacheSetting, EffectsSetting, FieldRender, FrameBlendingSetting, FrameRateSetting, GetSettingsFormat, GuideLayers, LogType, MotionBlurSetting, ProxyUseSetting, PulldownSetting, RenderQuality, RQItemStatus, SoloSwitchesSetting, TimeSpanSource } from "../../enums/index.ts";
 import { ContainerChunk, ListChunk } from "../../binary/chunk.ts";
 import { LHD3_BLOCK_SINGLE, set_lhd3_count } from "../../binary/ldat_chunks.ts";
@@ -58,8 +59,8 @@ export function _next_item_id(rq: RenderQueue): number {
  */
 export class _RenderSettingsView extends SettingsView<RenderSettingValues> {
   declare _owner: RenderQueueItem;
-  __setitem__(key: string, value: SettingValue | null): void {
-    super.__setitem__(key, value);
+  set(key: string, value: SettingValue | null): void {
+    super.set(key, value);
     this._owner._ldat.settings_written = 1;
   }
 }
@@ -334,7 +335,7 @@ export class RenderQueueItem {
     return [...this.output_modules][Symbol.iterator]();
   }
 
-  __repr__(): string {
+  [INSPECT](): string {
     // Python's repr of an IntEnum member is `<RQItemStatus.X: n>` (members are plain numbers here).
     const status = this.status;
     const status_repr = RQItemStatus.has(status)
@@ -546,7 +547,7 @@ export class RenderQueueItem {
     // SettingsView exposes Python's Mapping `items()` as an array of pairs; a dict is a Map.
     const entries = value instanceof Map ? value.entries() : value.items();
     for (const [k, v] of entries) {
-      view.__setitem__(k, v);
+      view.set(k, v);
     }
   }
 

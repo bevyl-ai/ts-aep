@@ -22,7 +22,7 @@ const SAMPLES_DIR = new Path(import.meta.dir).parent.parent.div("samples", "mode
 const SAMPLE = SAMPLES_DIR.div("is_modified_false.aep");
 
 function _opacity(project: Project) {
-  return project.compositions[0].layers[0].transform.__getitem__("ADBE Opacity");
+  return project.compositions[0].layers[0].transform.property("ADBE Opacity");
 }
 
 describe("TestAutoFixExpressions", () => {

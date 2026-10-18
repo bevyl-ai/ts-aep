@@ -33,14 +33,14 @@ describe("TestStrictBools", () => {
     const rqi = _rqi(parse_project_fresh(SAMPLE));
     // NOTE(port): Python `settings[k] = v` is SettingsView.__setitem__ (item assignment on a __setitem__ class).
     raises(TypeError_, () => {
-      rqi.settings.__setitem__("Skip Existing Files", "no");
+      rqi.settings.set("Skip Existing Files", "no");
     });
     raises(TypeError_, () => {
       // @ts-expect-error render is boolean; a non-bool write must raise TypeError at runtime
       rqi.render = 1;
     });
-    rqi.settings.__setitem__("Skip Existing Files", true);
-    expect(rqi.settings.__getitem__("Skip Existing Files")).toBe(true);
+    rqi.settings.set("Skip Existing Files", true);
+    expect(rqi.settings.get("Skip Existing Files")).toBe(true);
   });
 
   test("test_om_bool_settings_reject_non_bool", () => {
@@ -59,11 +59,11 @@ describe("TestStrictBools", () => {
     ]) {
       // NOTE(port): Python `settings[k] = v` is SettingsView.__setitem__.
       raises(TypeError_, () => {
-        om.settings.__setitem__(key, "no");
+        om.settings.set(key, "no");
       });
     }
-    om.settings.__setitem__("Preserve RGB", true);
-    expect(om.settings.__getitem__("Preserve RGB")).toBe(true);
+    om.settings.set("Preserve RGB", true);
+    expect(om.settings.get("Preserve RGB")).toBe(true);
   });
 });
 
@@ -83,18 +83,18 @@ describe("TestSkipFramesBounds", () => {
 describe("TestResolutionBounds", () => {
   test("test_zero_is_current_settings", () => {
     const rqi = _rqi(parse_project_fresh(SAMPLE));
-    rqi.settings.__setitem__("Resolution", [0, 0]);
-    expect(py_eq(rqi.settings.__getitem__("Resolution"), [0, 0])).toBe(true);
+    rqi.settings.set("Resolution", [0, 0]);
+    expect(py_eq(rqi.settings.get("Resolution"), [0, 0])).toBe(true);
   });
 
   test("test_components_0_to_99", () => {
     const rqi = _rqi(parse_project_fresh(SAMPLE));
-    rqi.settings.__setitem__("Resolution", [99, 99]);
+    rqi.settings.set("Resolution", [99, 99]);
     raises(ValueError, () => {
-      rqi.settings.__setitem__("Resolution", [100, 100]);
+      rqi.settings.set("Resolution", [100, 100]);
     });
     raises(ValueError, () => {
-      rqi.settings.__setitem__("Resolution", [-2, -2]);
+      rqi.settings.set("Resolution", [-2, -2]);
     });
   });
 });

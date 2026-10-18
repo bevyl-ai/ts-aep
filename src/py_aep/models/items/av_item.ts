@@ -64,14 +64,6 @@ export class _IdHashSet<T extends { id: number }> {
     return this._lookup(item) >= 0;
   }
 
-  __contains__(item: T): boolean {
-    return this.has(item);
-  }
-
-  __len__(): number {
-    return this._used;
-  }
-
   add(item: T): this {
     if (this._lookup(item) >= 0) return this;
     const hash = item.id;

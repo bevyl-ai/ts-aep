@@ -343,7 +343,7 @@ describe("TestAddKeyPreservesTheCurve", () => {
     }
 
     const app = parse_app_fresh(PROPERTY_DIR.div("keyframe_spatial_bezier_arc.aep"));
-    const pos = app.project.compositions[0].layers[0].transform.__getitem__("ADBE Position");
+    const pos = app.project.compositions[0].layers[0].transform.property("ADBE Position");
     const k0 = pos.keyframes[0];
     const k1 = pos.keyframes[1];
     const out_tangent = k0.out_spatial_tangent;
