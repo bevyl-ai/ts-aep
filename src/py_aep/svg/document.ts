@@ -8,14 +8,14 @@ import type { Element } from "../../pyrt/etree.ts";
 export type { Element };
 
 // TYPE_CHECKING-only alias in Python.
-export type ViewBox = readonly [number, number, number, number];
+type ViewBox = readonly [number, number, number, number];
 
 /**
  * The `(min_x, min_y, width, height)` of a viewBox attribute, or `null`
  * when it is absent or invalid (not four finite numbers, or a size that is
  * not positive: SVG treats those as an error / no viewBox).
  */
-export function _viewBox(value: string | null): ViewBox | null {
+function _viewBox(value: string | null): ViewBox | null {
   if (!value) return null;
   const nums = Array.from(value.matchAll(NUMBER_RE), (n) => Number(n[0]));
   if (nums.length !== 4 || !nums.every((n) => Number.isFinite(n))) return null;

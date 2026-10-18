@@ -66,7 +66,7 @@ test("test_parent_om_backref_survives_apply_template", () => {
   // fresh object must be re-wired. Template parsing needs a prefs dir,
   // so emulate the re-derive path directly (the real one also detaches
   // the outgoing wrapper - see the batch_edit rollback tests below).
-  const tmpPath = makeTmpPath();
+  makeTmpPath();
   const project = parseProjectFresh(FORMAT_DIR.div("targa", "base.aep"));
   const om = _om(project);
   const foBefore = om.formatOptions;

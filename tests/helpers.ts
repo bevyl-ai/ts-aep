@@ -66,7 +66,7 @@ export const SAMPLES_DIR = new Path(import.meta.dir).parent.div("samples");
  * A value as `JSON.parse` decodes it from an expected-JSON fixture: objects
  * are plain records (the convention the ported read-only tests use).
  */
-export type ExpectedValue = null | boolean | number | string | ExpectedValue[] | { [key: string]: ExpectedValue };
+type ExpectedValue = null | boolean | number | string | ExpectedValue[] | { [key: string]: ExpectedValue };
 
 /** The empty `dict` a Python lookup helper returns on a miss; reading any key of it raises `KeyError`. */
 export type EmptyJson = Record<string, never>;
@@ -94,7 +94,7 @@ export interface ExpectedMarker {
 }
 
 /** One temporal ease entry of a keyframe. */
-export interface ExpectedEase {
+interface ExpectedEase {
   speed: number;
   influence: number;
 }
@@ -181,7 +181,7 @@ interface ExpectedItemBase {
 }
 
 /** A comp guide in the ExtendScript export. */
-export interface ExpectedGuide {
+interface ExpectedGuide {
   orientationType: GuideOrientationType;
   positionType: number;
   position: number;
@@ -229,7 +229,7 @@ export interface ExpectedFootage extends ExpectedItemBase {
 }
 
 /** A footage item's `mainSource` in the ExtendScript export. */
-export interface ExpectedFootageSource {
+interface ExpectedFootageSource {
   alphaMode: AlphaMode;
   invertAlpha: boolean;
   premulColor: number[];
@@ -249,17 +249,17 @@ export interface ExpectedFolder extends ExpectedItemBase {
 }
 
 /** A project item in the ExtendScript export, told apart by `typeName`. */
-export type ExpectedItem = ExpectedComp | ExpectedFootage | ExpectedFolder;
+type ExpectedItem = ExpectedComp | ExpectedFootage | ExpectedFolder;
 
 /** An output module of a render queue item in the ExtendScript export. */
-export interface ExpectedOutputModule {
+interface ExpectedOutputModule {
   name: string;
   file: string;
   settings: ExpectedOutputModuleSettings;
 }
 
 /** An output module's `getSettings()` record in the ExtendScript export. */
-export interface ExpectedOutputModuleSettings {
+interface ExpectedOutputModuleSettings {
   "Crop Top": number;
   "Crop Bottom": number;
   Depth: number;
@@ -269,7 +269,7 @@ export interface ExpectedOutputModuleSettings {
 }
 
 /** A render queue item in the ExtendScript export. */
-export interface ExpectedRenderQueueItem {
+interface ExpectedRenderQueueItem {
   compName: string;
   render: boolean;
   settings: Record<string, ExpectedValue>;
@@ -425,12 +425,6 @@ export function loadExpectedValueAtTime(samplesDir: Path, sampleName: string): E
   return _loadExpectedValueAtTimeCached(String(samplesDir), sampleName);
 }
 
-/** Get all .aep stems in a samples directory. */
-export function getSampleFiles(samplesDir: Path): string[] {
-  if (!samplesDir.exists()) return [];
-  return samplesDir.glob("*.aep").map((f) => f.stem);
-}
-
 /**
  * `value` as an instance of `cls`, failing the test when it is not. Python
  * tests read a subclass attribute straight off a `Layer` or a group child;
@@ -505,16 +499,6 @@ export function getRqi(project: Project, compName: string): RenderQueueItem {
     if (rqi.comp.name === compName) return rqi;
   }
   throw new ValueError(`RQI for comp '${compName}' not found`);
-}
-
-// ---- First-item JSON helpers (for non-consolidated single-comp samples) ----
-
-/** Extract first composition from expected JSON. */
-export function getCompFromJson(expected: ExpectedProject): ExpectedComp | EmptyJson {
-  for (const item of _jget(expected, "items", [])) {
-    if (item.typeName === "Composition") return item;
-  }
-  return {};
 }
 
 /** Extract first layer from expected JSON. */

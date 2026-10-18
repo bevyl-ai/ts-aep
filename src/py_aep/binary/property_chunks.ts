@@ -674,10 +674,10 @@ register("vfdn")(VfdnChunk);
 // aRbp - the Curves effect's curves (ADBE CurvesCustom-0001)
 // ---------------------------------------------------------------------------
 
-export const _CURVES_SLOTS = 16;
-export const _CURVES_RECORD_SIZE = 72;
+const _CURVES_SLOTS = 16;
+const _CURVES_RECORD_SIZE = 72;
 /** The size of a Curves effect's aRbp, in bytes. */
-export const CURVES_ARBP_SIZE = 4 + 5 * 256 + 5 * _CURVES_RECORD_SIZE;
+const CURVES_ARBP_SIZE = 4 + 5 * 256 + 5 * _CURVES_RECORD_SIZE;
 
 /**
  * One channel's points in a Curves aRbp (72 bytes).

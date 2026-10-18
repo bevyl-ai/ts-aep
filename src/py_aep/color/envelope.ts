@@ -25,11 +25,6 @@
 
 import { encode, stringifyJson, jsonGet, jsonRequire, parseJson, typeName, type JsonValue } from "../../pyrt/index.ts";
 import { b64decode, b64encode } from "../../pyrt/base64.ts";
-
-// baseProfileType values.
-
-/** Display-referred tag (8-byte blob); read-only, not a write target. */
-export const PROFILE_TYPE_TAG = 1;
 /** Adobe ICC profile; `colorProfileData` is raw ICC bytes. */
 export const PROFILE_TYPE_ICC = 2;
 /** OCIO color space; `colorProfileData` is a small JSON. */
@@ -38,9 +33,9 @@ export const PROFILE_TYPE_OCIO = 3;
 // ocioColorSpaceType values inside an OCIO `colorProfileData` JSON.
 
 /** A display + view pair (`colorSpace1` = display, `colorSpace2` = view). */
-export const OCIO_TYPE_DISPLAY = 1;
+const OCIO_TYPE_DISPLAY = 1;
 /** A single color space (`colorSpace1` only). */
-export const OCIO_TYPE_COLORSPACE = 2;
+const OCIO_TYPE_COLORSPACE = 2;
 
 /**
  * Serialize `obj` exactly as AE does: compact, no whitespace.
@@ -53,7 +48,7 @@ export function _compact(obj: object): string {
   return stringifyJson(obj, { separators: [",", ":"], ensureAscii: false });
 }
 
-export function _b64(text: string): string {
+function _b64(text: string): string {
   return b64encode(encode(text, "utf-8"));
 }
 
@@ -63,7 +58,7 @@ export function _b64(text: string): string {
  * Key order matches AE verbatim: `baseColorProfile` (`colorProfileData` then
  * `colorProfileName`), then `baseProfileType`.
  */
-export function _envelope(colorProfileDataB64: string, name: string, profileType: number): string {
+function _envelope(colorProfileDataB64: string, name: string, profileType: number): string {
   return _compact({
     baseColorProfile: {
       colorProfileData: colorProfileDataB64,

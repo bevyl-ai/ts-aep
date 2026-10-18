@@ -1,0 +1,12 @@
+# Fixes what it can in the staged files and stages the result; CI checks the rest.
+pre-commit:
+  parallel: false
+  commands:
+    format:
+      glob: "*.{ts,js,mjs,json,jsonc,md,yml,yaml}"
+      run: bunx --bun oxfmt --write --no-error-on-unmatched-pattern {staged_files}
+      stage_fixed: true
+    lint:
+      glob: "*.{ts,js,mjs}"
+      run: bunx --bun oxlint --fix --deny-warnings {staged_files}
+      stage_fixed: true

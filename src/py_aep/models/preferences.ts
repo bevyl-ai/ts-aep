@@ -28,7 +28,7 @@ import {
   compare,
 } from "../../pyrt/index.ts";
 
-export const _validatePrefType = validateEnum(PREFType);
+const _validatePrefType = validateEnum(PREFType);
 
 // Tombstone marking a key removed by delete_pref (masks the file value).
 export const _DELETED: unique symbol = Symbol("_DELETED");
@@ -36,7 +36,7 @@ export const _DELETED: unique symbol = Symbol("_DELETED");
 /** A preference value as a setter stores it. */
 export type PrefValue = number | boolean | string;
 
-export const _LABEL_INDICES_SECTION = "Label Preference Indices Section 5";
+const _LABEL_INDICES_SECTION = "Label Preference Indices Section 5";
 
 /**
  * Resolve a default label color index from the label preferences.
@@ -69,7 +69,7 @@ export function defaultSequenceFps(preferences: Preferences): number {
   return value;
 }
 
-export const _CHOOSE_LAYER_SECTION = "Choose Layer Dialog";
+const _CHOOSE_LAYER_SECTION = "Choose Layer Dialog";
 
 // AE's PSD/PSB import-dialog popup indices, probed in AE 2026 by toggling
 // each dropdown and re-reading the machine-specific prefs. These are dialog
@@ -77,15 +77,15 @@ export const _CHOOSE_LAYER_SECTION = "Choose Layer Dialog";
 // there ({merge:0, ignore:1} here vs the c9 {ignore:0, merge:1}). AE's own
 // importFile follows the last sticky choice, so py_aep uses them to fill an
 // unset ImportOptions field.
-export const _PSD_COMP_LAYER_STYLES: Map<number, string> = new Map<number, string>([
+const _PSD_COMP_LAYER_STYLES: Map<number, string> = new Map<number, string>([
   [0, "editable"],
   [1, "merge"],
 ]);
-export const _PSD_FOOTAGE_LAYER_STYLES: Map<number, string> = new Map<number, string>([
+const _PSD_FOOTAGE_LAYER_STYLES: Map<number, string> = new Map<number, string>([
   [0, "merge"],
   [1, "ignore"],
 ]);
-export const _PSD_FOOTAGE_DIMENSIONS: Map<number, string> = new Map<number, string>([
+const _PSD_FOOTAGE_DIMENSIONS: Map<number, string> = new Map<number, string>([
   [0, "layer"],
   [1, "document"],
 ]);
@@ -94,7 +94,7 @@ export const _PSD_FOOTAGE_DIMENSIONS: Map<number, string> = new Map<number, stri
  * Resolve a `Choose Layer Dialog` popup index to its string value, or
  * `null` when the preference is unset (or holds an unknown index).
  */
-export function _chooseLayerPref(preferences: Preferences, key: string, mapping: Map<number, string>): string | null {
+function _chooseLayerPref(preferences: Preferences, key: string, mapping: Map<number, string>): string | null {
   if (!preferences.havePref(_CHOOSE_LAYER_SECTION, key, PREFType.PREF_Type_MACHINE_SPECIFIC)) {
     return null;
   }
@@ -133,17 +133,17 @@ export function psdFootageDimensions(preferences: Preferences): string | null {
   return _chooseLayerPref(preferences, "PSD Dimensions Popup", _PSD_FOOTAGE_DIMENSIONS);
 }
 
-export const _TEXT_STYLE_SECTION = "Text Style Sheet";
-export const _PARA_SHEET_SECTION = "Text Paragraph Sheet";
-export const _TXT = PREFType.PREF_Type_MACHINE_SPECIFIC_TEXT;
+const _TEXT_STYLE_SECTION = "Text Style Sheet";
+const _PARA_SHEET_SECTION = "Text Paragraph Sheet";
+const _TXT = PREFType.PREF_Type_MACHINE_SPECIFIC_TEXT;
 
 // The horizontal/vertical scale preferences are percentages, while the
 // document stores (and ExtendScript reports) a fraction.
-export const _SCALE_PERCENT = 100.0;
+const _SCALE_PERCENT = 100.0;
 
 // AE's factory Character/Paragraph panel values, used when the preference
 // file is unavailable (a project parsed without an `aePreferencesDir`).
-export const _FACTORY_CHAR_STYLE = {
+const _FACTORY_CHAR_STYLE = {
   font: "MyriadPro-Regular",
   font_size: 36.0,
   faux_bold: false,
@@ -166,12 +166,12 @@ export const _FACTORY_CHAR_STYLE = {
 } as const;
 
 // AE names the Character panel's kerning modes in prose.
-export const _AUTO_KERN_BY_PREF: Map<string, AutoKernType> = new Map<string, AutoKernType>([
+const _AUTO_KERN_BY_PREF: Map<string, AutoKernType> = new Map<string, AutoKernType>([
   ["No Auto Kerning", AutoKernType.NO_AUTO_KERN],
   ["Metric Auto Kerning", AutoKernType.METRIC_KERN],
   ["Optical Auto Kerning", AutoKernType.OPTICAL_KERN],
 ]);
-export const _FACTORY_PARA_STYLE = {
+const _FACTORY_PARA_STYLE = {
   justification: ParagraphJustification.LEFT_JUSTIFY,
   first_line_indent: 0.0,
   start_indent: 0.0,
@@ -183,14 +183,14 @@ export const _FACTORY_PARA_STYLE = {
 } as const;
 
 // AE writes the horizontal half of "Justification" before a `|`.
-export const _JUSTIFICATION_BY_PREF: Map<string, ParagraphJustification> = new Map<string, ParagraphJustification>([
+const _JUSTIFICATION_BY_PREF: Map<string, ParagraphJustification> = new Map<string, ParagraphJustification>([
   ["Left", ParagraphJustification.LEFT_JUSTIFY],
   ["Center", ParagraphJustification.CENTER_JUSTIFY],
   ["Right", ParagraphJustification.RIGHT_JUSTIFY],
 ]);
 
 /** Build `(number, flag)` readers over one machine-specific text sheet. */
-export function _sheetReaders(
+function _sheetReaders(
   preferences: Preferences,
   section: string,
 ): [(key: string, fallback: number) => number, (key: string, fallback: boolean) => boolean] {
@@ -301,7 +301,7 @@ export function defaultParagraphStyle(preferences: Preferences) {
  * value), meaning "composition duration". Semantics probed in AE 2026:
  * `75/25` gives new layers a 3-second span.
  */
-export function _defaultOutPoint(preferences: Preferences, key: string): number | null {
+function _defaultOutPoint(preferences: Preferences, key: string): number | null {
   const raw = preferences.getPrefAsString("Main Pref Section v2", key, PREFType.PREF_Type_MACHINE_INDEPENDENT, {
     default: "0/0",
   });

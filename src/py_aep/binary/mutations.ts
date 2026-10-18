@@ -49,7 +49,7 @@ import { filterByType, isChunkType, recursiveFind } from "./utils.ts";
 
 // Keyframe ldat items always use raw type 4; the effective LdatItemType is
 // disambiguated by item_size (and spatial context on re-read).
-export const _KEYFRAME_ITEM_TYPE_RAW = 4;
+const _KEYFRAME_ITEM_TYPE_RAW = 4;
 
 // Fixed serialized byte size per keyframe item type.
 export const ITEM_SIZE_BY_TYPE: Map<LdatItemType, number> = new Map<LdatItemType, number>([
@@ -66,7 +66,7 @@ export const ITEM_SIZE_BY_TYPE: Map<LdatItemType, number> = new Map<LdatItemType
 ]);
 
 /** `[0.0] * n` (Python list repetition; no pyrt shim for lists). */
-export function zerosList(n: number): number[] {
+function zerosList(n: number): number[] {
   return Array.from({ length: n }, () => 0.0);
 }
 
@@ -487,7 +487,7 @@ export function buildSourceAlternateExtras(): Chunk[] {
  * Returns `(cctl, name_utf8, ctyp)` so callers can bind the editable
  * chunks to the controller model.
  */
-export function _buildCctl(
+function _buildCctl(
   name: string,
   uuidStr: string,
   controllerType: number,
@@ -609,7 +609,7 @@ export function buildTextCctl(
   return _buildCctl(name, uuidStr, 6, valueChunks, compId, layerId, pathJson);
 }
 
-export const _NULL_UUID = "00000000-0000-0000-0000-000000000000";
+const _NULL_UUID = "00000000-0000-0000-0000-000000000000";
 
 /** Build a Media Replacement (CTyp 14) controller.
  *
@@ -820,7 +820,7 @@ export function buildOmContainer(): ListChunk {
  *
  * @param timeBase - The comp's internal timebase (`cdta.internal_timebase`).
  */
-export function buildDefaultPathShape(timeBase: number): [TdmnChunk, ListChunk] {
+function buildDefaultPathShape(timeBase: number): [TdmnChunk, ListChunk] {
   const tdb4 = new Tdb4Chunk({
     spatialStaticFlags: 7,
     pad2a: 1,
@@ -860,7 +860,7 @@ export function buildDefaultPathShape(timeBase: number): [TdmnChunk, ListChunk] 
 // comp-specific and is patched per call. Captured from AE 2026
 // (rotoBezier=true on a freshly added mask); py_aep round-trips it
 // byte-identically.
-export const _DEFAULT_ROTO_MASK_SHAPE_OMS =
+const _DEFAULT_ROTO_MASK_SHAPE_OMS =
   "4c495354000001c26f6d2d734c495354000000b67464627374647362000000040100000174" +
   "64736e0000000e55746638000000062d5f305f2f2d746462340000007cdb99000100070001" +
   "00020007000060003f1a36e2eb1c432d3ff00000000000003ff00000000000003ff0000000" +

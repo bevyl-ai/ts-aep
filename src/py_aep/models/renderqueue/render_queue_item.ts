@@ -1,6 +1,16 @@
 // Port of py_aep/models/renderqueue/render_queue_item.py
 
-import { INSPECT } from "../../../pyrt/index.ts";
+import {
+  INSPECT,
+  deepcopy,
+  descriptor,
+  floatRepr,
+  getOrThrow,
+  literal,
+  StopIteration,
+  ValueError,
+  type ClassAttributes,
+} from "../../../pyrt/index.ts";
 import {
   ColorDepthSetting,
   DiskCacheSetting,
@@ -45,24 +55,14 @@ import {
   settingsToString,
 } from "./settings.ts";
 import type { RenderQueue } from "./render_queue.ts";
-import {
-  deepcopy,
-  descriptor,
-  floatRepr,
-  getOrThrow,
-  literal,
-  StopIteration,
-  ValueError,
-  type ClassAttributes,
-} from "../../../pyrt/index.ts";
 import { OutputModule } from "./output_module.ts";
 import { parseOutputModule } from "../../parsers/output_module.ts";
 
 // NOTE(port): the epoch is a UTC `Date`; Python's naive datetime(1904, 1, 1) is the same wall-clock instant.
-export const _AEP_EPOCH = new Date(Date.UTC(1904, 0, 1));
+const _AEP_EPOCH = new Date(Date.UTC(1904, 0, 1));
 
 /** Convert Mac HFS+ epoch timestamp to datetime, or None if 0. */
-export function _startTimeFromBinary(value: number): Date | null {
+function _startTimeFromBinary(value: number): Date | null {
   if (!value) return null;
   return new Date(_AEP_EPOCH.getTime() + value * 1000);
 }
@@ -72,7 +72,7 @@ export function _startTimeFromBinary(value: number): Date | null {
  * 2 in an empty queue (AE 2026: ids 9 and 3 -\> an added item gets 10, a
  * duplicate after it 11).
  */
-export function _nextItemId(rq: RenderQueue): number {
+function _nextItemId(rq: RenderQueue): number {
   return Math.max(1, ...rq.items.map((item) => item._ldat.itemId)) + 1;
 }
 
@@ -80,7 +80,7 @@ export function _nextItemId(rq: RenderQueue): number {
  * The render settings view: AE marks the item's render settings as
  * written by a script on every `setSettings` (AE 2026).
  */
-export class _RenderSettingsView extends SettingsView<RenderSettingValues> {
+class _RenderSettingsView extends SettingsView<RenderSettingValues> {
   declare _owner: RenderQueueItem;
   set(key: string, value: SettingValue | null): void {
     super.set(key, value);
@@ -116,7 +116,7 @@ export type RenderSettingValues = SettingValues & {
 // RENDER_SETTINGS: ExtendScript key -> (attribute, optional enum class)
 // ---------------------------------------------------------------------------
 
-export const RENDER_SETTINGS: SettingsSpec = new Map([
+const RENDER_SETTINGS: SettingsSpec = new Map([
   ["3:2 Pulldown", ["_pulldown", PulldownSetting]],
   ["Color Depth", ["_colorDepth", ColorDepthSetting]],
   ["Disk Cache", ["_diskCache", DiskCacheSetting]],

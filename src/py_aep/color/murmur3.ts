@@ -15,19 +15,19 @@
 
 import { Bytes, concat } from "../../pyrt/index.ts";
 
-export const _MASK = (1n << 64n) - 1n;
-export const _C1 = 0x87c37b91114253d5n;
-export const _C2 = 0x4cf5ad432745937fn;
+const _MASK = (1n << 64n) - 1n;
+const _C1 = 0x87c37b91114253d5n;
+const _C2 = 0x4cf5ad432745937fn;
 
 /** The seed After Effects loads into both accumulators. */
 export const GUID_SEED = 0xc29de5b8264cd69en;
 
-export function _rotl64(x: bigint, r: number): bigint {
+function _rotl64(x: bigint, r: number): bigint {
   const br = BigInt(r);
   return ((x << br) | (x >> (64n - br))) & _MASK;
 }
 
-export function _fmix64(k: bigint): bigint {
+function _fmix64(k: bigint): bigint {
   k ^= k >> 33n;
   k = (k * 0xff51afd7ed558ccdn) & _MASK;
   k ^= k >> 33n;

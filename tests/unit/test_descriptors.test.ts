@@ -154,7 +154,7 @@ class _ValidateModel {
   declare _body: _FakeBody | null;
   declare count: number;
 
-  static _check_positive(value: number, obj: object): void {
+  static _check_positive(value: number, _obj: object): void {
     if (value < 0) {
       throw new ValueError("must be positive");
     }
@@ -515,7 +515,7 @@ describe("TestChunkFieldEnumAllowOutOfEnumValues", () => {
   test("test_caller_validate_is_not_overridden", () => {
     const calls: unknown[] = [];
 
-    function _record(value: unknown, obj: unknown): void {
+    function _record(value: unknown, _obj: unknown): void {
       calls.push(value);
     }
 
@@ -572,7 +572,7 @@ describe("TestChunkFieldBool", () => {
   });
 
   test("test_caller_validate_is_not_overridden", () => {
-    function _custom(value: unknown, obj: unknown): void {}
+    function _custom(_value: unknown, _obj: unknown): void {}
 
     const cf = ChunkField.bool("_body", "flag", { validate: _custom });
     expect(cf.validate).toBe(_custom);

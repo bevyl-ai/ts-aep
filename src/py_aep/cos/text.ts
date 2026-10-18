@@ -11,7 +11,7 @@ import { ByteStream, Bytes, assert } from "../../pyrt/index.ts";
 import { CosParser, type CosDict } from "./cos.ts";
 import { decodeBtdk } from "./schema.ts";
 
-export let _COS_TEMPLATE_CACHE: CosDict | null = null;
+let _COS_TEMPLATE_CACHE: CosDict | null = null;
 
 /** Parse and cache the COS template from the gzip blob. */
 export function getCosTemplate(): CosDict {
@@ -33,7 +33,7 @@ export function getCosTemplate(): CosDict {
 // addText output byte-for-byte. `addText` additionally applies the
 // "Text Style Sheet" preference on top when an ae_preferences_dir is
 // provided (see models.preferences.apply_text_style_prefs).
-export const POINT_TEXT_COS_TEMPLATE =
+const POINT_TEXT_COS_TEMPLATE =
   "H4sIAAAAAAAC/+1Z3W9URRQfRBIKFD+CCSjF4UHDJvbumZl7Z+61iIFikUQMocSXsg+lu9XG" +
   "pUtKayTGJ2N88x/wI1FiiA/+Ff4phvjmm76gXM+c+bh3t9ttu4aopCw7X2fmzPn8zcyWN4uc" +
   "nz3Lm8CF4ufO2YbtCj+44GtbFgVvzvZ63et3b3fmeqvrYRz4mUclu8LusjW2whZZm02za6zH" +

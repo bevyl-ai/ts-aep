@@ -47,7 +47,7 @@ export const _VALUE_FROM_CHUNK: unique symbol = Symbol("_VALUE_FROM_CHUNK");
  * params) would otherwise accept a LINEAR/BEZIER byte AE never writes.
  * An unbound keyframe has no property to ask, so it is left alone.
  */
-export function _validateInterpolationType(value: KeyframeInterpolationType, keyframe: Keyframe): void {
+function _validateInterpolationType(value: KeyframeInterpolationType, keyframe: Keyframe): void {
   const prop = keyframe._property;
   if (prop == null) return;
   // Raises for an out-of-enum value before the descriptor's own
@@ -89,7 +89,7 @@ export function _checkTimeUnits(units: number): void {
  * caller sees the mistake rather than getting a write that appears to
  * succeed and does not.
  */
-export function _validateRoving(value: boolean, keyframe: Keyframe): void {
+function _validateRoving(value: boolean, keyframe: Keyframe): void {
   validateBool(value);
   if (!value) return;
   const prop = keyframe._property;
@@ -1248,7 +1248,7 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
 }
 
 /** Compute the constant speed between two adjacent keyframes. */
-export function _segmentSpeed(kfA: Keyframe, kfB: Keyframe): number[] {
+function _segmentSpeed(kfA: Keyframe, kfB: Keyframe): number[] {
   // Seconds rather than whole frames: two keyframes can sit inside the
   // same frame at different sub-frame times, and rounding them together
   // would report a zero-length segment. LAYER seconds, because AE stores

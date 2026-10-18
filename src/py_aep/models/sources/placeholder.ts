@@ -89,7 +89,7 @@ export class PlaceholderSource extends FootageSource {
     return this._sspc.duration * this._sspc.loop;
   }
 
-  _resolveName(rawName: string): string {
+  _resolveName(_rawName: string): string {
     return this._opti.placeholderName;
   }
 

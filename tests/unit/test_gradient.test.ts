@@ -16,8 +16,6 @@ class _FakeUtf8 {
     this.value = value;
   }
 }
-
-const SAMPLE = "samples/models/property/gradient.aep";
 const SAMPLE_XML = `<prop.map version="4">
   <prop.list>
     <prop.pair>

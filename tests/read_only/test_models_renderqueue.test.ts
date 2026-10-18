@@ -29,7 +29,6 @@ import { enumerate } from "../support/python.ts";
 const SAMPLES_DIR = new Path(import.meta.dir, "..", "..", "samples", "models", "renderqueue");
 const OM_SAMPLES_DIR = new Path(import.meta.dir, "..", "..", "samples", "models", "output_module");
 const BUGS_DIR = new Path(import.meta.dir, "..", "..", "samples", "bugs");
-const AE_PREFS_DIR = process.env.AE_PREFS_DIR ?? null;
 const OCS_SAMPLES_DIR = new Path(
   import.meta.dir,
   "..",

@@ -129,7 +129,7 @@ describe("TestRoundTrip2D", () => {
     const scale = [100.0, 100.0, 100.0];
     const rz = 0.0;
     const m = buildLocalMatrix(pos, anchor, scale, rz);
-    const [dPos, dScale, dRz, dRx, dRy] = decomposeTransform(m, anchor);
+    const [dPos, dScale, dRz, ,] = decomposeTransform(m, anchor);
     _approx(dPos, pos);
     _approx(dScale, scale);
     _approx(dRz, rz);
@@ -202,7 +202,7 @@ describe("TestRoundTrip2D", () => {
     const scale = [100.0, 100.0, 100.0];
     const rz = 270.0;
     const m = buildLocalMatrix(pos, anchor, scale, rz);
-    const [dPos, dScale, dRz] = decomposeTransform(m, anchor);
+    const [, , dRz] = decomposeTransform(m, anchor);
     // 270 degrees decomposes to -90 (same visual rotation)
     _approx(dRz, -90.0);
   });
@@ -228,7 +228,7 @@ describe("TestRoundTrip3D", () => {
     const anchor = [0.0, 0.0, 0.0];
     const scale = [100.0, 100.0, 100.0];
     const m = buildLocalMatrix(pos, anchor, scale, 0.0, { rotateY: 30.0 });
-    const [dPos, dScale, dRz, dRx, dRy] = decomposeTransform(m, anchor);
+    const [, , , dRx, dRy] = decomposeTransform(m, anchor);
     _approx(dRy, 30.0);
     _approx(dRx, 0.0);
   });
@@ -316,7 +316,7 @@ describe("TestParentChild", () => {
     const parentM = buildLocalMatrix([0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [100.0, 100.0, 100.0], 90.0);
     const childM = buildLocalMatrix([100.0, 0.0, 0.0], [0.0, 0.0, 0.0], [100.0, 100.0, 100.0], 0.0);
     const world = parentM.multiply(childM);
-    const [dPos, dScale, dRz] = decomposeTransform(world, [0.0, 0.0, 0.0]);
+    const [dPos, , dRz] = decomposeTransform(world, [0.0, 0.0, 0.0]);
     _approx(dPos, [0.0, 100.0, 0.0]);
     _approx(dRz, 90.0);
   });
@@ -392,7 +392,7 @@ describe("TestEdgeCases", () => {
     const scale = [0.0, 100.0, 100.0];
     const m = buildLocalMatrix(pos, anchor, scale, 0.0);
     // Should not raise
-    const [dPos, dScale, dRz] = decomposeTransform(m, anchor);
+    const [dPos, ,] = decomposeTransform(m, anchor);
     _approx(dPos, pos);
   });
 
@@ -401,7 +401,7 @@ describe("TestEdgeCases", () => {
     const anchor = [0.0, 0.0, 0.0];
     const scale = [100.0, 100.0, 100.0];
     const m = buildLocalMatrix(pos, anchor, scale, 180.0);
-    const [dPos, dScale, dRz] = decomposeTransform(m, anchor);
+    const [, , dRz] = decomposeTransform(m, anchor);
     _approx(Math.abs(dRz), 180.0, 0.01);
   });
 

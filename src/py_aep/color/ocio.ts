@@ -17,7 +17,7 @@
 
 import * as host from "../../pyrt/host.ts";
 import { dep } from "../../pyrt/deps.ts";
-import type { Document, Node, DocumentOptions, ParseOptions, SchemaOptions, ToJSOptions } from "yaml";
+import type { DocumentOptions, ParseOptions, SchemaOptions, ToJSOptions } from "yaml";
 import {
   Path,
   lruCache,
@@ -50,7 +50,7 @@ import { aeGuid } from "./murmur3.ts";
  * parse options PyYAML's `SafeLoader` implies: YAML 1.1 resolution (`yes`/`on`
  * booleans, merge keys), no duplicate-key error and no alias-count cap.
  */
-export class _OcioLoader {
+class _OcioLoader {
   static readonly options: ParseOptions & DocumentOptions & SchemaOptions & ToJSOptions = {
     version: "1.1",
     mapAsMap: true,
@@ -67,10 +67,10 @@ export class _OcioLoader {
  * its shape is checked on load - py_aep never validates the config - so
  * each reader narrows the value where it reads it.
  */
-export type OcioValue = string | number | boolean | null | Date | Uint8Array | OcioValue[] | Set<OcioValue> | OcioNode;
+type OcioValue = string | number | boolean | null | Date | Uint8Array | OcioValue[] | Set<OcioValue> | OcioNode;
 
 /** An OCIO mapping. Its keys are YAML values too (`3: x`, `~: x`), not only strings. */
-export interface OcioNode extends Map<OcioValue, OcioValue> {}
+interface OcioNode extends Map<OcioValue, OcioValue> {}
 
 /**
  * Whether `value` holds a list, dict or set as a mapping key or set member.
@@ -79,7 +79,7 @@ export interface OcioNode extends Map<OcioValue, OcioValue> {}
  * Python's `_loadConfigCached` returns `None` for such a config; `yaml`
  * (npm) builds it. `seen` guards the cycles anchors can build.
  */
-export function _hasUnhashableKey(value: OcioValue, seen: Set<OcioValue> = new Set()): boolean {
+function _hasUnhashableKey(value: OcioValue, seen: Set<OcioValue> = new Set()): boolean {
   if (!(Array.isArray(value) || value instanceof Map || value instanceof Set) || seen.has(value)) return false;
   seen.add(value);
   const unhashable = (x: OcioValue): boolean => Array.isArray(x) || x instanceof Map || x instanceof Set;
@@ -96,26 +96,6 @@ export function _hasUnhashableKey(value: OcioValue, seen: Set<OcioValue> = new S
 }
 
 /**
- * `_ignore_tag(loader, suffix, node)`: the empty-prefix multi-constructor.
- *
- * OCIO writes tags as `!<ColorSpace>` etc.; these resolve to BARE tags
- * (`ColorSpace`, `View`, `Rule`, ...), so an empty-prefix multi-constructor
- * is required (a `"!"`-prefix one would not match). Return the underlying
- * value, discarding the tag.
- *
- * NOTE(port): yaml (npm) has no multi-constructors, so this is never
- * registered; `parse` in `_loadConfigCached` drops unresolved tags itself
- * (warning silenced by `logLevel: "error"`), which yields the same untagged
- * values as this constructor. `loader` is the yaml `Document`.
- */
-export function _ignoreTag(loader: Document, suffix: string, node: Node): OcioValue | null {
-  if (dep("yaml").isMap(node) || dep("yaml").isSeq(node) || dep("yaml").isScalar(node)) {
-    return node.toJS(loader, { mapAsMap: true });
-  }
-  return null;
-}
-
-/**
  * `@lru_cache(maxsize=8) def _load_config_cached(config_path, _stamp)`.
  *
  * Parses a `.ocio` file and returns its top-level mapping, or `null` if it
@@ -126,7 +106,7 @@ export function _ignoreTag(loader: Document, suffix: string, node: Node): OcioVa
  * (path string, `mtimeNs` bigint, `size`) to get real cache hits. The
  * `maxsize=8` eviction is unobservable: results are pure functions of the key.
  */
-export const _loadConfigCached = lruCache((configPath: string, _mtimeNs: bigint, _size: number): OcioNode | null => {
+const _loadConfigCached = lruCache((configPath: string, _mtimeNs: bigint, _size: number): OcioNode | null => {
   let doc: OcioValue;
   try {
     doc = dep("yaml").parse(decode(new Path(configPath).readBytes(), "utf-8"), {
@@ -150,7 +130,7 @@ export const _loadConfigCached = lruCache((configPath: string, _mtimeNs: bigint,
 });
 
 /** `(mtime_ns, size)` cache key for `configPath`, or `null` if unreadable. */
-export function _configStamp(configPath: Path): [bigint, number] | null {
+function _configStamp(configPath: Path): [bigint, number] | null {
   let st: host.HostBigStats;
   try {
     st = host.fs.statSync(configPath.path, { bigint: true });
@@ -174,7 +154,7 @@ export function _configStamp(configPath: Path): [bigint, number] | null {
  * The returned Map is shared with every other caller - treat it as
  * read-only.
  */
-export function _loadConfig(configPath: Path): OcioNode | null {
+function _loadConfig(configPath: Path): OcioNode | null {
   const stamp = _configStamp(configPath);
   if (stamp == null) return null;
   return _loadConfigCached(configPath.path, stamp[0], stamp[1]);
@@ -276,7 +256,7 @@ export function requireOcioConfig(config: string | null, purpose: string): Path 
  * into an OCIO project resolves the config once per file (every layer of
  * a layered PSD), so an install added while it runs goes unseen.
  */
-export const _builtinConfigRoots = lruCache((): Path[] => {
+const _builtinConfigRoots = lruCache((): Path[] => {
   // `platform.system() == "Windows"` -> `host.platform === "win32"`; macOS otherwise.
   const bases =
     host.platform === "win32"
@@ -298,13 +278,13 @@ export const _builtinConfigRoots = lruCache((): Path[] => {
 });
 
 /** Sort key for an install directory: its release year, then its name. */
-export function _installYear(installDir: Path): [number, string] {
+function _installYear(installDir: Path): [number, string] {
   const match = reSearch(String.raw`(\d{4})`, installDir.name);
   return [match ? Number.parseInt(match[1], 10) : 0, installDir.name];
 }
 
 /** `baseProfileType` for an OCIO color space (see `color/envelope.py`). */
-export const _OCIO_PROFILE_TYPE = 3;
+const _OCIO_PROFILE_TYPE = 3;
 
 /**
  * The 16-byte After Effects `Guid` of an OCIO color space.
@@ -316,7 +296,7 @@ export const _OCIO_PROFILE_TYPE = 3;
  * @param profileName - The `colorProfileName` (e.g. `"ACES/ACEScg yo"`).
  * @param profileData - The `colorProfileData` JSON (e.g. `{"colorSpace1":"ACEScg yo"}`).
  */
-export function _colorSpaceGuid(profileName: string, profileData: string): Uint8Array {
+function _colorSpaceGuid(profileName: string, profileData: string): Uint8Array {
   const inner = aeGuid(concat(ascii("DVAColorProfile"), encode(profileName, "utf-8"), encode(profileData, "utf-8")));
   return aeGuid(
     concat(ascii("DVAColorSpace"), inner, Bytes.intToBytes(_OCIO_PROFILE_TYPE, 4, "little"), new Uint8Array(1)),
@@ -324,7 +304,7 @@ export function _colorSpaceGuid(profileName: string, profileData: string): Uint8
 }
 
 /** A `.ocio` config indexed for output-color-space resolution (`NamedTuple`). */
-export class _ConfigIndex {
+class _ConfigIndex {
   // A family is whatever the config gives (`cs.get("family") or ""`), and a
   // role or display is whatever YAML key names it.
   constructor(
@@ -350,14 +330,14 @@ export class _ConfigIndex {
  * and write needs the index, and rebuilding it walks the whole config. The
  * returned index is shared with every other caller - treat it as read-only.
  */
-export function _configIndex(configPath: Path): _ConfigIndex {
+function _configIndex(configPath: Path): _ConfigIndex {
   const stamp = _configStamp(configPath);
   if (stamp == null) return new _ConfigIndex(new Map(), new Map(), new Map(), new Map());
   return _configIndexCached(configPath.path, stamp[0], stamp[1]);
 }
 
 /** Memoized body of `_configIndex` (`@lru_cache(maxsize=8)`; see `_loadConfigCached` TODO). */
-export const _configIndexCached = lruCache((configPath: string, mtimeNs: bigint, size: number): _ConfigIndex => {
+const _configIndexCached = lruCache((configPath: string, mtimeNs: bigint, size: number): _ConfigIndex => {
   const doc = _loadConfigCached(configPath, mtimeNs, size);
   if (doc == null) return new _ConfigIndex(new Map(), new Map(), new Map(), new Map());
   const families = new Map<string, OcioValue>();
@@ -398,7 +378,7 @@ export const _configIndexCached = lruCache((configPath: string, mtimeNs: bigint,
 });
 
 /** Python `x.items()` on a config value: `AttributeError` when it is not a dict. */
-export function _items(x: OcioValue): [OcioValue, OcioValue][] {
+function _items(x: OcioValue): [OcioValue, OcioValue][] {
   if (x instanceof Map) return [...x];
   throw new AttributeError(`'${typeName(x)}' object has no attribute 'items'`);
 }
@@ -418,7 +398,7 @@ export function _items(x: OcioValue): [OcioValue, OcioValue][] {
  *
  * @throws ValueError If `colorSpace` is not found in the config.
  */
-export function _outputEnvelope(index: _ConfigIndex, colorSpace: OcioValue): [string, string] {
+function _outputEnvelope(index: _ConfigIndex, colorSpace: OcioValue): [string, string] {
   // Only a string can be a color-space or alias name; any YAML key a role.
   if (typeof colorSpace === "string" && index.families.has(colorSpace)) {
     const family = getOrThrow(index.families, colorSpace);
@@ -455,7 +435,7 @@ export function _outputEnvelope(index: _ConfigIndex, colorSpace: OcioValue): [st
  * Yield every assignable OCIO output color-space name (color spaces,
  * aliases, roles, and `display/view` pairs).
  */
-export function* _iterOutputColorSpaces(index: _ConfigIndex): Generator<OcioValue> {
+function* _iterOutputColorSpaces(index: _ConfigIndex): Generator<OcioValue> {
   yield* index.families.keys();
   yield* index.aliases.keys();
   yield* index.roles.keys();
@@ -470,19 +450,17 @@ export function* _iterOutputColorSpaces(index: _ConfigIndex): Generator<OcioValu
  * Keys are `compositeKey(guid)` strings: a `Uint8Array` key would compare by identity
  * in a `Map`, the same way a Python `bytes` key compares by value.
  */
-export const _guidTableCached = lruCache(
-  (configPath: string, mtimeNs: bigint, size: number): Map<string, OcioValue> => {
-    const index = _configIndexCached(configPath, mtimeNs, size);
-    const table = new Map<string, OcioValue>();
-    for (const colorSpace of _iterOutputColorSpaces(index)) {
-      const [name, data] = _outputEnvelope(index, colorSpace);
-      // Two names can resolve to the same envelope (e.g. two roles sharing
-      // a target); keep the first, like the linear scan this table replaces.
-      getOrInsert(table, compositeKey(_colorSpaceGuid(name, data)), colorSpace);
-    }
-    return table;
-  },
-);
+const _guidTableCached = lruCache((configPath: string, mtimeNs: bigint, size: number): Map<string, OcioValue> => {
+  const index = _configIndexCached(configPath, mtimeNs, size);
+  const table = new Map<string, OcioValue>();
+  for (const colorSpace of _iterOutputColorSpaces(index)) {
+    const [name, data] = _outputEnvelope(index, colorSpace);
+    // Two names can resolve to the same envelope (e.g. two roles sharing
+    // a target); keep the first, like the linear scan this table replaces.
+    getOrInsert(table, compositeKey(_colorSpaceGuid(name, data)), colorSpace);
+  }
+  return table;
+});
 
 /**
  * Reverse-map a 16-byte `outputProfileId` to its OCIO color-space name.
@@ -569,7 +547,7 @@ export function ocioOutputProfileId(configPath: Path, colorSpace: string): Uint8
  * always, a `regex` rule by search, a `pattern` + `extension` rule by glob
  * (the extension case-insensitively).
  */
-export function _ruleMatches(rule: OcioNode, filePath: string): boolean {
+function _ruleMatches(rule: OcioNode, filePath: string): boolean {
   if ((rule.get("name") ?? null) === "Default") return true;
   const regex = rule.get("regex") ?? null;
   if (typeof regex === "string") {
@@ -595,7 +573,7 @@ export function _ruleMatches(rule: OcioNode, filePath: string): boolean {
  * `fnmatch.translate` (`*`, `?`, `[seq]`, `[!seq]`, everything else literal)
  * matched against the whole name (CPython 3.12 bracket handling).
  */
-export function fnmatchcase(name: string, pat: string): boolean {
+function fnmatchcase(name: string, pat: string): boolean {
   let reSrc = "";
   let i = 0;
   while (i < pat.length) {

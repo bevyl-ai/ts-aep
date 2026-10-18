@@ -23,33 +23,6 @@ import { makeTmpPath } from "../support/pytest.ts";
 const SAMPLES_DIR = new Path(import.meta.path).parent.parent.parent.div("samples");
 const PROPERTY_DIR = SAMPLES_DIR.div("models", "property");
 const LAYER_DIR = SAMPLES_DIR.div("models", "layer");
-const COMPOSITION_DIR = SAMPLES_DIR.div("models", "composition");
-const EG_DIR = SAMPLES_DIR.div("models", "essential_graphics");
-const VERSIONS_DIR = SAMPLES_DIR.div("versions");
-const BUGS_DIR = SAMPLES_DIR.div("bugs");
-const ROUNDTRIP_SAMPLES = [
-  // Version coverage - conditional fields across AE eras
-  VERSIONS_DIR.div("ae2018", "complete.aep"),
-  VERSIONS_DIR.div("ae2022", "complete.aep"),
-  VERSIONS_DIR.div("ae2023", "complete.aep"),
-  VERSIONS_DIR.div("ae2024", "complete.aep"),
-  VERSIONS_DIR.div("ae2025", "complete.aep"),
-  VERSIONS_DIR.div("ae2026", "complete.aep"),
-  // Feature coverage - unique binary patterns
-  PROPERTY_DIR.div("effects.aep"),
-  PROPERTY_DIR.div("2_gaussian.aep"),
-  PROPERTY_DIR.div("keyframe_spatial.aep"),
-  PROPERTY_DIR.div("keyframe_spatial_bezier_3D.aep"),
-  PROPERTY_DIR.div("keyframe_1D.aep"),
-  PROPERTY_DIR.div("shape_basic.aep"),
-  PROPERTY_DIR.div("mask_add.aep"),
-  EG_DIR.div("multiple_controllers.aep"),
-  COMPOSITION_DIR.div("bgColor_custom.aep"),
-  // Edge cases
-  BUGS_DIR.div("29.97_fps_time_scale_3.125.aep"),
-  BUGS_DIR.div("windows-1250_decoding_error.aep"),
-  BUGS_DIR.div("outputmodule_path.aep"),
-];
 
 /** Find a property by match_name anywhere in the layer's property tree. */
 function _findProperty(layer: Layer, matchName: string): Property | null {

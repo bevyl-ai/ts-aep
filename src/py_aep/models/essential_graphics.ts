@@ -6,8 +6,7 @@
  * can have an EGP definition stored in a `LIST:CIF3` chunk.
  */
 
-import { INSPECT, describe } from "../../pyrt/index.ts";
-import { descriptor } from "../../pyrt/index.ts";
+import { INSPECT, describe, descriptor } from "../../pyrt/index.ts";
 import { ChunkField } from "./descriptors.ts";
 import { validateName } from "./validators.ts";
 import type { U4Chunk, Utf8Chunk } from "../binary/scalar_chunks.ts";

@@ -286,7 +286,7 @@ export function patternFindall(re: RegExp, s: string): (string | string[])[] {
 }
 
 /** `%g` (and the bare `.Ng` spec when `keep_point_free` is false). */
-export function general(a: number, prec: number, reprStyle: boolean): string {
+function general(a: number, prec: number, reprStyle: boolean): string {
   if (!Number.isFinite(a)) return Number.isNaN(a) ? "nan" : "inf";
   const p = prec === 0 ? 1 : prec;
   if (a === 0) return reprStyle ? "0.0" : "0";
@@ -304,7 +304,7 @@ export function general(a: number, prec: number, reprStyle: boolean): string {
   return out;
 }
 
-export function expo(a: number, prec: number): string {
+function expo(a: number, prec: number): string {
   if (!Number.isFinite(a)) return Number.isNaN(a) ? "nan" : "inf";
   const [d, e] = sciDigits(a, prec);
   const m = prec ? `${d[0]}.${d.slice(1)}` : d;
@@ -312,7 +312,7 @@ export function expo(a: number, prec: number): string {
 }
 
 /** Correctly rounded fixed-point text of a non-negative double (ties to even on the exact value). */
-export function fixed(a: number, prec: number): string {
+function fixed(a: number, prec: number): string {
   if (!Number.isFinite(a)) return Number.isNaN(a) ? "nan" : "inf";
   const [d, e] = shortestDigits(a);
   const pad = prec - (d.length - 1 - e);
@@ -330,16 +330,16 @@ export function fixed(a: number, prec: number): string {
 }
 
 // One `str.isspace()` character (all are in the BMP).
-export const PY_WS = /^[\t\n\v\f\r\x1c-\x20\x85\xa0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000]$/;
+const PY_WS = /^[\t\n\v\f\r\x1c-\x20\x85\xa0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000]$/;
 
-export function rstrip(s: string, chars?: string | null): string {
+function rstrip(s: string, chars?: string | null): string {
   if (chars == null) return s.replace(/\s+$/u, "");
   let e = s.length;
   while (e > 0 && chars.includes(s[e - 1])) e--;
   return s.slice(0, e);
 }
 
-export function lstrip(s: string, chars?: string | null): string {
+function lstrip(s: string, chars?: string | null): string {
   if (chars == null) return s.replace(/^\s+/u, "");
   let i = 0;
   while (i < s.length && chars.includes(s[i])) i++;
@@ -347,7 +347,7 @@ export function lstrip(s: string, chars?: string | null): string {
 }
 
 /** Correctly rounded `%.{prec}e` digits: [mantissa digits, exponent]. */
-export function sciDigits(a: number, prec: number): [string, number] {
+function sciDigits(a: number, prec: number): [string, number] {
   if (a === 0) return ["0".repeat(prec + 1), 0];
   if (prec < 15 && a >= MIN_NORMAL) {
     const [d, e] = shortestDigits(a);
@@ -385,7 +385,8 @@ export class StringIO {
   /** `write(s)`: overwrite/extend at the position; returns the code points written. */
   write(s: string): number {
     const cs = Array.from(s);
-    if (this.pos > this.chars.length) this.chars.push(...new Array(this.pos - this.chars.length).fill("\0"));
+    if (this.pos > this.chars.length)
+      this.chars.push(...Array.from({ length: this.pos - this.chars.length }, () => "\0"));
     this.chars.splice(this.pos, cs.length, ...cs);
     this.pos += cs.length;
     return cs.length;

@@ -20,7 +20,6 @@ import { asInstance } from "../helpers.ts";
 // Python `Path(__file__).parent.parent.parent` is the repo root. A TS file's
 // `import.meta.dir` is already its directory, so two `.parent` steps reach it.
 const SAMPLES = new Path(import.meta.dir).parent.parent.div("samples", "models", "property");
-const SAMPLES_ROOT = new Path(import.meta.dir).parent.parent.div("samples");
 
 function _fresh(name: string): Application {
   return parseAep(str(SAMPLES.div(name)));

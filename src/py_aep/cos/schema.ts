@@ -79,7 +79,7 @@ export function read<K extends string, T extends CosNode>(
   return layout[key](value) ? value : undefined;
 }
 
-export const cosName: Kind<CosName> = (x): x is CosName => x instanceof CosName;
+const cosName: Kind<CosName> = (x): x is CosName => x instanceof CosName;
 
 /** A character style (run payload, document default and preset style). */
 export const charStyle = {

@@ -434,7 +434,7 @@ const _cache = new Map<string, Select[]>();
 // A path that selects children by one literal tag (`xpathTokenizer` yields one tag token).
 const PLAIN_TAG = /^[A-Za-z_][\w.-]*$/;
 
-export function* iterfind(elem: Element, path: string, namespaces: NsMap = null): Generator<Element> {
+function* iterfind(elem: Element, path: string, namespaces: NsMap = null): Generator<Element> {
   if (path.slice(-1) === "/") path = path + "*";
   const nsKey =
     namespaces instanceof Map

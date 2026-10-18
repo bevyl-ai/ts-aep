@@ -133,7 +133,7 @@ describe("TestVersionValidation", () => {
 
 describe("TestWorkingSpaceNone", () => {
   test("test_none_round_trips", () => {
-    const tmpPath = makeTmpPath();
+    makeTmpPath();
     // AE 2026 accepts workingSpace = "None": `PwCs` keeps `{}` and `cpid`
     // is all 0xFF, as in a new project.
     const app = py_aep.newProject();

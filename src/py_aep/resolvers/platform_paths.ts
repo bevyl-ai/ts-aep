@@ -11,10 +11,10 @@
 
 import { valueEquals, PurePath, PurePosixPath, PureWindowsPath } from "../../pyrt/index.ts";
 
-export const _DRIVE = /^([A-Za-z]):[\\\/]?(.*)$/s;
-export const _UNC = /^(?:\\\\|\/\/)[^\\\/]+[\\\/]([^\\\/]+)[\\\/]?(.*)$/s;
+const _DRIVE = /^([A-Za-z]):[\\/]?(.*)$/s;
+const _UNC = /^(?:\\\\|\/\/)[^\\/]+[\\/]([^\\/]+)[\\/]?(.*)$/s;
 
-export function _isPosix(path: string): boolean {
+function _isPosix(path: string): boolean {
   return path.startsWith("/") && !path.startsWith("//");
 }
 
@@ -64,7 +64,7 @@ export function platformPath(path: string, kw: { windows: boolean }): string {
   return rest !== "" || root === "" ? `${root}/${rest}` : root;
 }
 
-export function _purePath(path: string): PurePath | null {
+function _purePath(path: string): PurePath | null {
   if (_isPosix(path)) {
     return new PurePosixPath(path);
   }
@@ -76,7 +76,7 @@ export function _purePath(path: string): PurePath | null {
 
 /** How many leading parts name the volume: the drive or UNC share, or
  * on macOS `/Volumes/<name>` (else the root). */
-export function _volumeParts(path: PurePath): number {
+function _volumeParts(path: PurePath): number {
   if (path instanceof PurePosixPath) {
     return path.parts.length > 2 && path.parts[1] === "Volumes" ? 3 : 1;
   }

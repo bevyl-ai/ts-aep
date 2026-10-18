@@ -48,7 +48,7 @@ export const LdatItemType = defineEnum("LdatItemType", {
 export type LdatItemType = EnumValue<typeof LdatItemType>;
 
 // Dispatch table: (item_type_raw, item_size) -> LdatItemType
-export const _ITEM_TYPE_MAP = new Map<string, LdatItemType>([
+const _ITEM_TYPE_MAP = new Map<string, LdatItemType>([
   [compositeKey(1, 2246), LdatItemType.lrdr],
   [compositeKey(1, 128), LdatItemType.litm],
   [compositeKey(2, 16), LdatItemType.gide],
@@ -64,7 +64,7 @@ export const _ITEM_TYPE_MAP = new Map<string, LdatItemType>([
 ]);
 
 // num_value for multi-dimensional / spatial keyframe types
-export const _NUM_VALUE = new Map<number, number>([
+const _NUM_VALUE = new Map<number, number>([
   [LdatItemType.three_d, 3],
   [LdatItemType.three_d_spatial, 3],
   [LdatItemType.two_d, 2],
@@ -503,7 +503,7 @@ define(LdatItem, {
 // ---------------------------------------------------------------------------
 
 /** Dispatch item reading by type. */
-export function _readItem(data: Uint8Array, itemType: LdatItemType): FmtItem | LdatItem {
+function _readItem(data: Uint8Array, itemType: LdatItemType): FmtItem | LdatItem {
   if (itemType === LdatItemType.lrdr) return RenderSettingsItem.frombytes(data);
   if (itemType === LdatItemType.litm) return OutputModuleSettingsItem.frombytes(data);
   if (itemType === LdatItemType.shape) return ShapePoint.frombytes(data);

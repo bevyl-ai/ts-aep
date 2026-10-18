@@ -35,8 +35,7 @@ import { Path } from "../../src/pyrt/pathlib.ts";
 import { fs, memfs, useHostFs, useMemoryFs } from "../../src/pyrt/host.ts";
 import { CPY } from "./cpython_fixtures.ts";
 import { raises } from "../support/pytest.ts";
-import { dict, patternFindall } from "../support/python.ts";
-import { StringIO } from "../support/python.ts";
+import { dict, patternFindall, StringIO } from "../support/python.ts";
 
 /** `float.fromhex` for the `float.hex()` strings in the fixtures. */
 function fromhex(s: string): number {

@@ -86,7 +86,7 @@ export type _StructInfo = [
   number,
 ];
 
-export const _UNSET = Symbol("_UNSET");
+const _UNSET = Symbol("_UNSET");
 
 /**
  * The text of a fixed-size string field, read up to its first NUL,
@@ -99,13 +99,13 @@ export const _UNSET = Symbol("_UNSET");
  * bytes back keeps parse -\> save byte-identical; an assigned plain `str`
  * is encoded and NUL-padded as usual.
  */
-export class _NulTailStr extends String {
+class _NulTailStr extends String {
   declare raw: Uint8Array;
 }
 
 /** Decode a fixed-size string field up to its first NUL, keeping the
  * raw bytes when a non-zero tail follows it. */
-export function _decodeFixedStr(value: Uint8Array, encoding: string): string | _NulTailStr {
+function _decodeFixedStr(value: Uint8Array, encoding: string): string | _NulTailStr {
   const nul = value.indexOf(0);
   // surrogateescape keeps byte-exact round-trips even for legacy
   // non-UTF-8 bytes in old files.
@@ -120,12 +120,12 @@ export function _decodeFixedStr(value: Uint8Array, encoding: string): string | _
 }
 
 /** Runs on every assignment to a fixed-size string field: anything else assigned passes through. */
-export type FixedStrConverter = <T>(value: T) => T | string | _NulTailStr;
+type FixedStrConverter = <T>(value: T) => T | string | _NulTailStr;
 
 /** attrs converter for a fixed-size string field: a value holding a NUL
  * is stored as those field bytes, so it reads back as a re-parse of the
  * written file would (the text up to the NUL). */
-export function _fixedStrConverter(encoding: string, size: number): FixedStrConverter {
+function _fixedStrConverter(encoding: string, size: number): FixedStrConverter {
   function convert<T>(value: T): T | string | _NulTailStr {
     if (typeof value === "string" && value.includes("\x00")) {
       const raw = encode(value, encoding, "surrogateescape").slice(0, size);
@@ -167,8 +167,8 @@ export type FmtFieldOptions<V extends FieldValue = FieldValue> = {
  * - `coerce`: Type callable applied after unpacking (e.g. `bool`). On write, the inverse is applied
  *     (e.g. `int` for `bool`).
  */
-export function fmtField<V extends FieldValue>(fmt: string, kw?: FmtFieldOptions<V>): FieldSpec<V>;
-export function fmtField(fmt: string, kw: FmtFieldOptions = {}) {
+function fmtField<V extends FieldValue>(fmt: string, kw?: FmtFieldOptions<V>): FieldSpec<V>;
+function fmtField(fmt: string, kw: FmtFieldOptions = {}) {
   const {
     default: defaultGiven = _UNSET,
     repr = true,
@@ -329,7 +329,7 @@ export function boolField(kw: FmtFieldOptions<boolean> = {}): FieldSpec<boolean>
  *   and trailing-bytes handling.
  * - `expectedSize`: pre-computed `struct.calcsize('>' + fmt)`.
  */
-export function _structInfoUncached(cls: Function): _StructInfo | null {
+function _structInfoUncached(cls: Function): _StructInfo | null {
   const baseNames: ReadonlySet<string> =
     cls === _chunk.Chunk || _chunk.Chunk.isPrototypeOf(cls)
       ? new Set(fields(_chunk.Chunk).map((f) => f.name))
@@ -421,7 +421,7 @@ export function _structInfo(cls: Function): _StructInfo | null {
  * attrs strips the leading underscore from private field names for
  * the `__init__` signature: `_trailing` -\> `trailing=`.
  */
-export function _initName(name: string): string {
+function _initName(name: string): string {
   return name.startsWith("_") ? name.replace(/^_+/, "") : name;
 }
 

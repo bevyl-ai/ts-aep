@@ -6,7 +6,7 @@ import { CosField, type InstanceValue } from "../../cos/descriptors.ts";
 import { cosIter, cosNum } from "../../cos/kinds.ts";
 
 /** Decode the COS design vector (16.16 fixed-point ints) to floats. */
-export function _designVectorFromCos(raw: CosNode): number[] {
+function _designVectorFromCos(raw: CosNode): number[] {
   return cosIter(raw).map((v) => cosNum(v) / 65536.0);
 }
 

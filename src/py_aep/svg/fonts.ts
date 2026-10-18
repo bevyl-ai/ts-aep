@@ -13,21 +13,21 @@ import { dep } from "../../pyrt/deps.ts";
 import * as host from "../../pyrt/host.ts";
 import { Path, getOrInsert, StopIteration } from "../../pyrt/index.ts";
 
-export const _FONT_SUFFIXES: readonly string[] = [".ttf", ".otf", ".ttc"];
+const _FONT_SUFFIXES: readonly string[] = [".ttf", ".otf", ".ttc"];
 
 /**
  * family (lowercased) -\> \{subfamily (lowercased): (font file path, face index)\}
  * The face index addresses a face within a TrueType Collection (.ttc); it is
  * 0 for a single-face .ttf/.otf.
  */
-export let _index: Map<string, Map<string, [Path, number]>> | null = null;
+let _index: Map<string, Map<string, [Path, number]>> | null = null;
 
 /**
  * CSS generic families mapped to concrete fonts to try, in order. Used when a
  * requested family is not installed (an unknown family falls back to the
  * sans-serif chain, as a user agent would).
  */
-export const _GENERIC_FALLBACKS = new Map<string, readonly string[]>([
+const _GENERIC_FALLBACKS = new Map<string, readonly string[]>([
   [
     "sans-serif",
     [
@@ -60,10 +60,10 @@ export function _setFontDirs(fn: (() => Path[]) | null): void {
 export function _setIndex(v: Map<string, Map<string, [Path, number]>> | null): void {
   _index = v;
 }
-export let _fontDirsOverride: (() => Path[]) | null = null;
+let _fontDirsOverride: (() => Path[]) | null = null;
 
 /** The standard OS font directories that exist on this machine. */
-export function _fontDirs(): Path[] {
+function _fontDirs(): Path[] {
   if (_fontDirsOverride != null) {
     return _fontDirsOverride();
   }
@@ -89,7 +89,7 @@ export function _fontDirs(): Path[] {
 }
 
 /** fontTools name IDs -\> fontkit `getName` keys. */
-export const NAME_KEYS = new Map<number, string>([
+const NAME_KEYS = new Map<number, string>([
   [1, "fontFamily"],
   [2, "fontSubfamily"],
   [5, "version"],
@@ -106,7 +106,7 @@ export const NAME_KEYS = new Map<number, string>([
  * under a non-English or non-primary platform record: Python finds it, TS
  * returns null.
  */
-export function _name(font: fontkit.Font, ...ids: number[]): string | null {
+function _name(font: fontkit.Font, ...ids: number[]): string | null {
   // `table = font.get("name"); if table is None: return None`
   let table: fontkit.Font["name"] | null;
   try {
@@ -135,7 +135,7 @@ export function _name(font: fontkit.Font, ...ids: number[]): string | null {
  * Activated Adobe fonts live here as suffix-less OpenType files; AE
  * resolves text-layer fonts against them.
  */
-export function _adobeFontDirs(): Path[] {
+function _adobeFontDirs(): Path[] {
   const dirs: Path[] = [];
   if (host.platform === "win32") {
     const appdata = host.env.APPDATA;
@@ -152,7 +152,7 @@ export function _adobeFontDirs(): Path[] {
  * PostScript name (name ID 6, lowercased) -\>
  * (font file path, face index, version string from name ID 5 or `null`).
  */
-export let _psIndex: Map<string, [Path, number, string | null]> | null = null;
+let _psIndex: Map<string, [Path, number, string | null]> | null = null;
 
 /**
  * Yield `(face index, opened font)` for each face in a font file,
@@ -160,7 +160,7 @@ export let _psIndex: Map<string, [Path, number, string | null]> | null = null;
  *
  * Corrupt/unsupported files yield nothing rather than fail discovery.
  */
-export function* _iterFaces(path: Path): Generator<[number, fontkit.Font]> {
+function* _iterFaces(path: Path): Generator<[number, fontkit.Font]> {
   let fonts: fontkit.Font[];
   try {
     const opened = dep("fontkit").create(host.fs.readFileSync(path.toString()));
@@ -185,7 +185,7 @@ export function* _iterFaces(path: Path): Generator<[number, fontkit.Font]> {
   }
 }
 
-export function _indexPostscript(path: Path, idx: Map<string, [Path, number, string | null]>): void {
+function _indexPostscript(path: Path, idx: Map<string, [Path, number, string | null]>): void {
   for (const [face, font] of _iterFaces(path)) {
     const psName = _name(font, 6);
     if (!psName) {
@@ -211,7 +211,7 @@ export function _indexPostscript(path: Path, idx: Map<string, [Path, number, str
  * Yield every font file under the OS font directories. Both index
  * builders (`_buildIndex`, `_postscriptIndex`) walk the same tree.
  */
-export function* _walkFontFiles(): Generator<Path> {
+function* _walkFontFiles(): Generator<Path> {
   for (const directory of _fontDirs()) {
     for (const path of directory.rglob("*")) {
       if (_FONT_SUFFIXES.includes(path.suffix.toLowerCase())) {
@@ -225,7 +225,7 @@ export function* _walkFontFiles(): Generator<Path> {
  * The lazily built, cached PostScript-name index (one walk over the
  * OS and Adobe CoreSync font directories).
  */
-export function _postscriptIndex(): Map<string, [Path, number, string | null]> {
+function _postscriptIndex(): Map<string, [Path, number, string | null]> {
   if (_psIndex == null) {
     const idx = new Map<string, [Path, number, string | null]>();
     for (const path of _walkFontFiles()) {
@@ -276,7 +276,7 @@ export function fontVersionString(postScriptName: string): string | null {
   return entry[2];
 }
 
-export function _indexFile(path: Path, idx: Map<string, Map<string, [Path, number]>>): void {
+function _indexFile(path: Path, idx: Map<string, Map<string, [Path, number]>>): void {
   // A .ttc bundles several faces (e.g. cambria.ttc -> Cambria + Cambria
   // Math); index each by its own face number so a family that ships only
   // as a secondary face is still resolvable and loads the right face.
@@ -294,7 +294,7 @@ export function _indexFile(path: Path, idx: Map<string, Map<string, [Path, numbe
   }
 }
 
-export function _buildIndex(): Map<string, Map<string, [Path, number]>> {
+function _buildIndex(): Map<string, Map<string, [Path, number]>> {
   const idx = new Map<string, Map<string, [Path, number]>>();
   for (const path of _walkFontFiles()) {
     _indexFile(path, idx);
@@ -303,7 +303,7 @@ export function _buildIndex(): Map<string, Map<string, [Path, number]>> {
 }
 
 /** Choose the closest available face for the requested weight/style. */
-export function _pick(styles: Map<string, [Path, number]>, bold: boolean, italic: boolean): [Path, number] {
+function _pick(styles: Map<string, [Path, number]>, bold: boolean, italic: boolean): [Path, number] {
   let order: string[];
   if (bold && italic) {
     order = ["bold italic", "bolditalic", "bold oblique", "bold", "italic"];

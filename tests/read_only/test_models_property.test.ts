@@ -2691,8 +2691,8 @@ describe("TestEffectPointSpeed", () => {
     Object.defineProperty(proto, "_effectPointSpeedFactor", { get: counting, configurable: true });
     try {
       for (const keyframe of prop.keyframes) {
-        keyframe.inTemporalEase;
-        keyframe.outTemporalEase;
+        void keyframe.inTemporalEase;
+        void keyframe.outTemporalEase;
       }
     } finally {
       Object.defineProperty(proto, "_effectPointSpeedFactor", original);

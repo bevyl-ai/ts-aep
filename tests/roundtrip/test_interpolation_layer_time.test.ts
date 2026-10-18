@@ -143,16 +143,6 @@ class TestLinearOutSideKeepsTheNextEase {
 }
 
 /**
- * A LINEAR side's synthesized speed was the chord slope per COMPOSITION
- * second, where AE stores it per layer second.
- *
- * AE 2026 reads 25 %/s back from three keys at comp 1/4/7 (values 0/50/100)
- * on a 150 % layer - the span is 2 layer seconds, not 3 composition ones -
- * and -25 %/s on a -150 % layer, where layer time runs backwards.
- */
-class TestLinearEaseSpeedIsLayerTime {}
-
-/**
  * Roving times are derived in layer time but were written through a
  * composition-time conversion, scaling the run by the stretch factor: on a
  * 200 % layer a roving key was written PAST its own end anchor, which
@@ -314,7 +304,7 @@ describe("TestNegativeStretchInterpolates", () => {
 });
 
 describe("TestLinearOutSideKeepsTheNextEase", () => {
-  const self = new TestLinearOutSideKeepsTheNextEase();
+  new TestLinearOutSideKeepsTheNextEase();
 
   test("test_matches_after_effects", () => {
     const [_app, comp] = _newComp();

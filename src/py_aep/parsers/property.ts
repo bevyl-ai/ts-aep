@@ -31,7 +31,7 @@ import { late } from "../models/late.ts";
 
 // `logging.getLogger(__name__)`: this module logs nothing today, so only the
 // warning path is wired to pyrt `warn`.
-export const logger = {
+const logger = {
   debug() {},
   info() {},
   warning: (m: string) => warn(m),
@@ -42,7 +42,7 @@ export const logger = {
  *
  * NamedTuple: fields are positional, in declaration order.
  */
-export class _ParseContext {
+class _ParseContext {
   /** The match name shared by every chunk in the group. */
   readonly matchName: string;
 
@@ -106,10 +106,10 @@ export class _ParseContext {
   }
 }
 
-export const _PROPERTY_PARSERS: Map<string, (ctx: _ParseContext) => (Property | PropertyGroup)[]> = new Map();
+const _PROPERTY_PARSERS: Map<string, (ctx: _ParseContext) => (Property | PropertyGroup)[]> = new Map();
 
 /** Register a property parser for the given LIST subtype. */
-export function _propertyParser(
+function _propertyParser(
   listType: string,
 ): (
   func: (ctx: _ParseContext) => (Property | PropertyGroup)[],
@@ -171,7 +171,7 @@ export function parseProperties(
 }
 
 /** Parse effect chunks - iterates all sspc LISTs for the match name. */
-export function _dispatchSspc(ctx: _ParseContext): (Property | PropertyGroup)[] {
+function _dispatchSspc(ctx: _ParseContext): (Property | PropertyGroup)[] {
   const tdmns = filterByType(ctx.chunks, "tdmn");
   const sspcs = filterByListType(ctx.chunks, "sspc");
   const results: (Property | PropertyGroup)[] = [];
@@ -192,7 +192,7 @@ export function _dispatchSspc(ctx: _ParseContext): (Property | PropertyGroup)[] 
 _propertyParser("sspc")(_dispatchSspc);
 
 /** Parse property group chunks - handles masks and indexed groups. */
-export function _dispatchTdgp(ctx: _ParseContext): (Property | PropertyGroup)[] {
+function _dispatchTdgp(ctx: _ParseContext): (Property | PropertyGroup)[] {
   const tdmns = filterByType(ctx.chunks, "tdmn");
   if (ctx.matchName === "ADBE Mask Atom") {
     const tdgps = [...filterByListType(ctx.chunks, "tdgp")];
@@ -224,7 +224,7 @@ export function _dispatchTdgp(ctx: _ParseContext): (Property | PropertyGroup)[] 
 _propertyParser("tdgp")(_dispatchTdgp);
 
 /** Parse a leaf property from a tdbs chunk. */
-export function _dispatchTdbs(ctx: _ParseContext): (Property | PropertyGroup)[] {
+function _dispatchTdbs(ctx: _ParseContext): (Property | PropertyGroup)[] {
   const prop = parseProperty(ctx.firstChunk, ctx.matchName, ctx.composition, ctx.childDepth, ctx.tdmn);
   // A media-replacement slot (`ADBE Layer Source Alternate`) carries blsv/blsi
   // beside its tdbs in the group run; attach them so the Property can decode
@@ -262,35 +262,35 @@ export function _dispatchTdbs(ctx: _ParseContext): (Property | PropertyGroup)[] 
 _propertyParser("tdbs")(_dispatchTdbs);
 
 /** Parse an orientation property from an otst chunk. */
-export function _dispatchOtst(ctx: _ParseContext): (Property | PropertyGroup)[] {
+function _dispatchOtst(ctx: _ParseContext): (Property | PropertyGroup)[] {
   const prop = parseOrientation(ctx.firstChunk, ctx.matchName, ctx.childDepth, ctx.composition, ctx.tdmn);
   return [prop];
 }
 _propertyParser("otst")(_dispatchOtst);
 
 /** Parse a text document property from a btds chunk. */
-export function _dispatchBtds(ctx: _ParseContext): (Property | PropertyGroup)[] {
+function _dispatchBtds(ctx: _ParseContext): (Property | PropertyGroup)[] {
   const prop = parseTextDocument(ctx.firstChunk, ctx.matchName, ctx.childDepth, ctx.composition, ctx.tdmn);
   return [prop];
 }
 _propertyParser("btds")(_dispatchBtds);
 
 /** Parse a shape/mask-path property from an om-s chunk. */
-export function _dispatchOms(ctx: _ParseContext): (Property | PropertyGroup)[] {
+function _dispatchOms(ctx: _ParseContext): (Property | PropertyGroup)[] {
   const prop = parseShape(ctx.firstChunk, ctx.matchName, ctx.childDepth, ctx.composition, ctx.tdmn, ctx.layer);
   return [prop];
 }
 _propertyParser("om-s")(_dispatchOms);
 
 /** Parse a gradient color property from a GCst chunk. */
-export function _dispatchGcst(ctx: _ParseContext): (Property | PropertyGroup)[] {
+function _dispatchGcst(ctx: _ParseContext): (Property | PropertyGroup)[] {
   const prop = parseGradient(ctx.firstChunk, ctx.matchName, ctx.childDepth, ctx.composition, ctx.tdmn);
   return [prop];
 }
 _propertyParser("GCst")(_dispatchGcst);
 
 /** Parse markers from a mrst chunk. */
-export function _dispatchMrst(ctx: _ParseContext): (Property | PropertyGroup)[] {
+function _dispatchMrst(ctx: _ParseContext): (Property | PropertyGroup)[] {
   const prop = parseMarkers(ctx.firstChunk, ctx.composition, ctx.childDepth, ctx.tdmn);
   return [prop];
 }
@@ -310,7 +310,7 @@ _propertyParser("mrst")(_dispatchMrst);
  * is_modified) reflects the Essential Graphics source property rather than the
  * override leaf's own partial-copy chunks - the leaf's `value` stays its own.
  */
-export function _dispatchOvg2(ctx: _ParseContext): (Property | PropertyGroup)[] {
+function _dispatchOvg2(ctx: _ParseContext): (Property | PropertyGroup)[] {
   const tdgps = [...filterByListType(ctx.chunks, "tdgp")];
   if (tdgps.length === 0) return [];
   const group = parsePropertyGroup(
@@ -332,7 +332,7 @@ _propertyParser("OvG2")(_dispatchOvg2);
  * `_EssentialOverrideProperty`. Group nodes recurse; any `Property` subclass
  * (e.g. a specialized property) is left as-is - only plain leaves convert.
  */
-export function _reclassOverrideLeaves(group: PropertyGroup): void {
+function _reclassOverrideLeaves(group: PropertyGroup): void {
   for (const child of group.properties) {
     if (child instanceof PropertyGroup) {
       _reclassOverrideLeaves(child);

@@ -16,19 +16,10 @@ import { parseOutputTemplates, parseRenderTemplates } from "../../src/py_aep/par
 import { resolveOutputFilename } from "../../src/py_aep/resolvers/output.ts";
 import { makeTmpPath } from "../support/pytest.ts";
 
-const SAMPLES_DIR = new Path(import.meta.dir, "..", "..", "samples", "models", "renderqueue");
-const OM_SAMPLES_DIR = new Path(import.meta.dir, "..", "..", "samples", "models", "output_module");
-const BUGS_DIR = new Path(import.meta.dir, "..", "..", "samples", "bugs");
-const AE_PREFS_DIR = process.env.AE_PREFS_DIR ?? null;
-const OCS_SAMPLES_DIR = new Path(
-  import.meta.dir,
-  "..",
-  "..",
-  "samples",
-  "models",
-  "output_module",
-  "output_color_space",
-);
+new Path(import.meta.dir, "..", "..", "samples", "models", "renderqueue");
+new Path(import.meta.dir, "..", "..", "samples", "models", "output_module");
+new Path(import.meta.dir, "..", "..", "samples", "bugs");
+new Path(import.meta.dir, "..", "..", "samples", "models", "output_module", "output_color_space");
 
 /**
  * The keyword arguments of `resolve_output_filename` after `file_template`, in

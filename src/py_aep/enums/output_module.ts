@@ -35,7 +35,7 @@ export const OutputChannels = defineEnum(
 );
 export type OutputChannels = EnumValue<typeof OutputChannels>;
 
-export const _OUTPUT_CHANNELS_LABELS: Readonly<Record<OutputChannels, string>> = {
+const _OUTPUT_CHANNELS_LABELS: Readonly<Record<OutputChannels, string>> = {
   0: "RGB",
   1: "RGB + Alpha",
   2: "Alpha",
@@ -74,7 +74,7 @@ export const OutputColorDepth = defineEnum(
 );
 export type OutputColorDepth = EnumValue<typeof OutputColorDepth>;
 
-export const _OUTPUT_COLOR_DEPTH_LABELS: Readonly<Record<OutputColorDepth, string>> = {
+const _OUTPUT_COLOR_DEPTH_LABELS: Readonly<Record<OutputColorDepth, string>> = {
   "-32": "Floating Point Gray",
   8: "256 Colors",
   24: "Millions of Colors",
@@ -108,7 +108,7 @@ export const OutputColorMode = defineEnum(
 );
 export type OutputColorMode = EnumValue<typeof OutputColorMode>;
 
-export const _OUTPUT_COLOR_MODE_LABELS: Readonly<Record<OutputColorMode, string>> = {
+const _OUTPUT_COLOR_MODE_LABELS: Readonly<Record<OutputColorMode, string>> = {
   0: "Straight (Unmatted)",
   1: "Premultiplied (Matted)",
 };
@@ -136,7 +136,7 @@ export const OutputAudio = defineEnum(
 );
 export type OutputAudio = EnumValue<typeof OutputAudio>;
 
-export const _OUTPUT_AUDIO_LABELS: Readonly<Record<OutputAudio, string>> = {
+const _OUTPUT_AUDIO_LABELS: Readonly<Record<OutputAudio, string>> = {
   1: "Off",
   2: "On",
   3: "Auto",
@@ -249,7 +249,7 @@ export const _OUTPUT_FORMAT_LABELS = {
 
 // Explicit classification (see FormatKind): never derive this from names -
 // OM/template names are user-defined and the binary has no category flag.
-export const _OUTPUT_FORMAT_KINDS: Map<number, FormatKind> = new Map<number, FormatKind>([
+const _OUTPUT_FORMAT_KINDS: Map<number, FormatKind> = new Map<number, FormatKind>([
   [OutputFormat.AIFF, FormatKind.AUDIO],
   [OutputFormat.AVI, FormatKind.MOVIE],
   [OutputFormat.DPX_CINEON_SEQUENCE, FormatKind.SEQUENCE],
@@ -268,7 +268,7 @@ export const _OUTPUT_FORMAT_KINDS: Map<number, FormatKind> = new Map<number, For
   [OutputFormat.WAV, FormatKind.AUDIO],
 ]);
 
-export const _FORMAT_ID_TO_OUTPUT_FORMAT: Map<string, OutputFormat> = new Map<string, OutputFormat>([
+const _FORMAT_ID_TO_OUTPUT_FORMAT: Map<string, OutputFormat> = new Map<string, OutputFormat>([
   ["AIFF", OutputFormat.AIFF],
   [".AVI", OutputFormat.AVI],
   ["sDPX", OutputFormat.DPX_CINEON_SEQUENCE],
@@ -287,7 +287,7 @@ export const _FORMAT_ID_TO_OUTPUT_FORMAT: Map<string, OutputFormat> = new Map<st
   ["wao_", OutputFormat.WAV],
 ]);
 
-export const _OUTPUT_FORMAT_TO_FORMAT_ID: Map<number, string> = new Map<number, string>(
+const _OUTPUT_FORMAT_TO_FORMAT_ID: Map<number, string> = new Map<number, string>(
   Array.from(_FORMAT_ID_TO_OUTPUT_FORMAT, ([k, v]): [number, string] => [v, k]),
 );
 
@@ -327,7 +327,7 @@ export const AudioBitDepth = defineEnum(
 );
 export type AudioBitDepth = EnumValue<typeof AudioBitDepth>;
 
-export const _AUDIO_BIT_DEPTH_LABELS: Readonly<Record<AudioBitDepth, string>> = {
+const _AUDIO_BIT_DEPTH_LABELS: Readonly<Record<AudioBitDepth, string>> = {
   1: "8 Bit",
   2: "16 Bit",
   3: "24 Bit",
@@ -364,7 +364,7 @@ export const AudioChannels = defineEnum(
 );
 export type AudioChannels = EnumValue<typeof AudioChannels>;
 
-export const _AUDIO_CHANNELS_LABELS: Readonly<Record<AudioChannels, string>> = {
+const _AUDIO_CHANNELS_LABELS: Readonly<Record<AudioChannels, string>> = {
   1: "Mono",
   2: "Stereo",
 };
@@ -391,7 +391,7 @@ export const ResizeQuality = defineEnum(
 );
 export type ResizeQuality = EnumValue<typeof ResizeQuality>;
 
-export const _RESIZE_QUALITY_LABELS: Readonly<Record<ResizeQuality, string>> = {
+const _RESIZE_QUALITY_LABELS: Readonly<Record<ResizeQuality, string>> = {
   0: "Low",
   1: "High",
 };
@@ -486,7 +486,7 @@ export const ConvertToLinearLight = defineEnum(
 );
 export type ConvertToLinearLight = EnumValue<typeof ConvertToLinearLight>;
 
-export const _CONVERT_TO_LINEAR_LIGHT_LABELS: Readonly<Record<ConvertToLinearLight, string>> = {
+const _CONVERT_TO_LINEAR_LIGHT_LABELS: Readonly<Record<ConvertToLinearLight, string>> = {
   0: "Off",
   1: "On",
   2: "On for 32 bpc",

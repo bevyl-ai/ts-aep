@@ -18,7 +18,7 @@ import { resolveFont as _resolveFontImpl } from "./fonts.ts";
  * `monkeypatch.setattr(reader, "resolveFont", fn)` hook: ESM exports are
  * read-only, so the Python module-global lookup goes through this holder.
  */
-export let _resolveFontOverride: typeof _resolveFontImpl | null = null;
+let _resolveFontOverride: typeof _resolveFontImpl | null = null;
 export function _setResolveFont(fn: typeof _resolveFontImpl | null): void {
   _resolveFontOverride = fn;
 }
@@ -45,10 +45,10 @@ import { Path, encode, fspath, isdigit, warn, zip, type PathLike } from "../../p
 
 import { Element, ParseError, fromstring } from "../../pyrt/etree.ts";
 
-export type Bbox = [number, number, number, number];
-export type Paint = SolidPaint | GradientPaint | null;
+type Bbox = [number, number, number, number];
+type Paint = SolidPaint | GradientPaint | null;
 
-export const _DRAWABLE_TAGS: ReadonlySet<string> = new Set([
+const _DRAWABLE_TAGS: ReadonlySet<string> = new Set([
   "path",
   "rect",
   "circle",
@@ -57,10 +57,10 @@ export const _DRAWABLE_TAGS: ReadonlySet<string> = new Set([
   "polyline",
   "polygon",
 ]);
-export const _CONTAINER_TAGS: ReadonlySet<string> = new Set(["g", "a", "svg"]);
+const _CONTAINER_TAGS: ReadonlySet<string> = new Set(["g", "a", "svg"]);
 // Non-rendered or definition-only elements skipped without recursing into
 // them for drawables (gradients/symbols are resolved on demand elsewhere).
-export const _SKIP_TAGS: ReadonlySet<string> = new Set([
+const _SKIP_TAGS: ReadonlySet<string> = new Set([
   "defs",
   "symbol",
   "title",
@@ -87,31 +87,31 @@ export const _SKIP_TAGS: ReadonlySet<string> = new Set([
 // Unsupported as standalone elements: `<tspan>`/`<textPath>` outside a `<text>`
 // (invalid SVG); within a `<text>`, _visit_text renders both. Raster `<image>` is
 // handled in _visit (skipped with a warning - it is not yet rendered).
-export const _UNSUPPORTED_TAGS: ReadonlySet<string> = new Set(["tspan", "textPath"]);
+const _UNSUPPORTED_TAGS: ReadonlySet<string> = new Set(["tspan", "textPath"]);
 
 // Bound on container nesting (<g>/<svg>/<use>) so a pathologically deep
 // document raises a clean UnsupportedSVGError instead of a RecursionError.
 // Each level costs ~2 Python frames (walk -> _visit -> walk), so this stays
 // well under the interpreter's ~1000-frame recursion limit; no real SVG nests
 // anywhere near this deep.
-export const _MAX_SVG_DEPTH = 250;
+const _MAX_SVG_DEPTH = 250;
 
 // Maps are used (not object literals) so lookups of arbitrary attribute values
 // such as "constructor" cannot hit Object.prototype.
-export const _CAP: Map<string, number> = new Map([
+const _CAP: Map<string, number> = new Map([
   ["butt", 1],
   ["round", 2],
   ["square", 3],
 ]);
-export const _JOIN: Map<string, number> = new Map([
+const _JOIN: Map<string, number> = new Map([
   ["miter", 1],
   ["round", 2],
   ["bevel", 3],
 ]);
 // Python `re.match` anchors at the start of the string, hence the `^`.
 // `\s` is spelled out: CPython's str `\s` matches \x1c-\x1f and \x85 but not \ufeff.
-export const _PY_WS = "\\t\\n\\v\\f\\r\\x1c-\\x1f \\x85\\xa0\\u1680\\u2000-\\u200a\\u2028\\u2029\\u202f\\u205f\\u3000";
-export const _URL_RE = new RegExp(`^url\\([${_PY_WS}]*#([^)${_PY_WS}]+)[${_PY_WS}]*\\)`);
+const _PY_WS = "\\t\\n\\v\\f\\r\\x1c-\\x1f \\x85\\xa0\\u1680\\u2000-\\u200a\\u2028\\u2029\\u202f\\u205f\\u3000";
+const _URL_RE = new RegExp(`^url\\([${_PY_WS}]*#([^)${_PY_WS}]+)[${_PY_WS}]*\\)`);
 
 /**
  * Parse an SVG file into a flattened {@link SvgDocument}.
@@ -154,7 +154,7 @@ export function readSvg(source: string | PathLike | Uint8Array): SvgDocument {
   return new SvgDocument(width, height, drawables);
 }
 
-export class _Reader {
+class _Reader {
   private _gradients: Map<string, GradientDef>;
   _css: CssRule[];
   private _byId: Map<string, Element>;
@@ -638,7 +638,7 @@ export class _Reader {
   }
 }
 
-export function _bbox(subpaths: Subpath[]): Bbox {
+function _bbox(subpaths: Subpath[]): Bbox {
   const xs: number[] = [];
   const ys: number[] = [];
   for (const sp of subpaths) {
@@ -651,7 +651,7 @@ export function _bbox(subpaths: Subpath[]): Bbox {
   return [Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)];
 }
 
-export const _WS_RE = new RegExp(`[${_PY_WS}]+`, "g");
+const _WS_RE = new RegExp(`[${_PY_WS}]+`, "g");
 
 /**
  * Collapse internal whitespace runs (incl. newlines/tabs) to one space.
@@ -661,6 +661,6 @@ export const _WS_RE = new RegExp(`[${_PY_WS}]+`, "g");
  * is laid out as leading glyph advances. Edge spaces are kept here and
  * trimmed once across the whole run sequence by the caller.
  */
-export function _collapseWs(text: string): string {
+function _collapseWs(text: string): string {
   return text.replace(_WS_RE, " ");
 }

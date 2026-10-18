@@ -55,28 +55,26 @@ export type RuleValue = number | string | boolean;
 export type Rule = [Map<string, RuleValue | RuleValue[]>, Map<string, ReadonlySet<RuleValue>>];
 export type Constraints = Map<string, ReadonlySet<RuleValue>>;
 
-export const _MILLIONS = OutputColorDepth.MILLIONS_OF_COLORS;
-export const _MILLIONS_PLUS = OutputColorDepth.MILLIONS_OF_COLORS_PLUS;
-export const _TRILLIONS = OutputColorDepth.TRILLIONS_OF_COLORS;
-export const _TRILLIONS_PLUS = OutputColorDepth.TRILLIONS_OF_COLORS_PLUS;
-export const _FLOAT = OutputColorDepth.FLOATING_POINT;
-export const _FLOAT_PLUS = OutputColorDepth.FLOATING_POINT_PLUS;
+const _MILLIONS = OutputColorDepth.MILLIONS_OF_COLORS;
+const _MILLIONS_PLUS = OutputColorDepth.MILLIONS_OF_COLORS_PLUS;
+const _TRILLIONS = OutputColorDepth.TRILLIONS_OF_COLORS;
+const _TRILLIONS_PLUS = OutputColorDepth.TRILLIONS_OF_COLORS_PLUS;
+const _FLOAT = OutputColorDepth.FLOATING_POINT;
+const _FLOAT_PLUS = OutputColorDepth.FLOATING_POINT_PLUS;
 
-export const _8_TO_16_BPC: ReadonlySet<RuleValue> = new Set([_MILLIONS, _MILLIONS_PLUS, _TRILLIONS, _TRILLIONS_PLUS]);
-export const _8_TO_32_BPC: ReadonlySet<RuleValue> = new Set([..._8_TO_16_BPC, _FLOAT, _FLOAT_PLUS]);
+const _8_TO_16_BPC: ReadonlySet<RuleValue> = new Set([_MILLIONS, _MILLIONS_PLUS, _TRILLIONS, _TRILLIONS_PLUS]);
+const _8_TO_32_BPC: ReadonlySet<RuleValue> = new Set([..._8_TO_16_BPC, _FLOAT, _FLOAT_PLUS]);
 
-export const _RGB_OR_ALPHA: ReadonlySet<RuleValue> = new Set([OutputChannels.RGB, OutputChannels.ALPHA]);
+const _RGB_OR_ALPHA: ReadonlySet<RuleValue> = new Set([OutputChannels.RGB, OutputChannels.ALPHA]);
 
 // Rates AE offers for plain PCM-style audio (AIFF, WAV Uncompressed, AVI).
-export const _PCM_RATES: ReadonlySet<RuleValue> = new Set([
-  8000, 11025, 16000, 22050, 32000, 44100, 48000, 88200, 96000,
-]);
+const _PCM_RATES: ReadonlySet<RuleValue> = new Set([8000, 11025, 16000, 22050, 32000, 44100, 48000, 88200, 96000]);
 
 // WAV ADPCM/GSM codecs offer this reduced set; A-Law/u-Law add 16000.
-export const _ADPCM_RATES: ReadonlySet<RuleValue> = new Set([8000, 11025, 22050, 44100]);
-export const _CCITT_RATES: ReadonlySet<RuleValue> = new Set([..._ADPCM_RATES, 16000]);
+const _ADPCM_RATES: ReadonlySet<RuleValue> = new Set([8000, 11025, 22050, 44100]);
+const _CCITT_RATES: ReadonlySet<RuleValue> = new Set([..._ADPCM_RATES, 16000]);
 
-export const _SIXTEEN_BIT_ONLY: ReadonlySet<RuleValue> = new Set([AudioBitDepth.SIXTEEN_BIT]);
+const _SIXTEEN_BIT_ONLY: ReadonlySet<RuleValue> = new Set([AudioBitDepth.SIXTEEN_BIT]);
 
 export const _KIND_RULES = new Map<FormatKind, Constraints>([
   [
@@ -249,7 +247,7 @@ getOrThrow(_FORMAT_RULES, OutputFormat.QUICKTIME).set(
 // The H.264 AAC audio-bitrate matrix: (codec, rate group, channels) ->
 // allowed kbps. The kbps ladders are irregular (not simple slices), so
 // they are transcribed literally from the AE dialog research.
-export function _aacBitrateRows(): Rule[] {
+function _aacBitrateRows(): Rule[] {
   const rows: Rule[] = [];
   const matrix: [AudioCodec, [number[], AudioChannels, number[]][]][] = [
     [
@@ -568,7 +566,7 @@ getOrThrow(_CONDITIONAL_RULES, OutputFormat.H264).push(..._aacBitrateRows());
 // generated conditional rows so Depth writes, validate_state and batch
 // exits all enforce it through the ordinary lookup. Inserted FIRST so
 // codec-specific Depth rows still win the general->specific merge.
-export const _PLUS_DEPTHS: ReadonlySet<RuleValue> = new Set([_MILLIONS_PLUS, _TRILLIONS_PLUS, _FLOAT_PLUS]);
+const _PLUS_DEPTHS: ReadonlySet<RuleValue> = new Set([_MILLIONS_PLUS, _TRILLIONS_PLUS, _FLOAT_PLUS]);
 for (const [_fmt, _fmtRules] of _FORMAT_RULES) {
   const _depths = _fmtRules.get("Depth") ?? null;
   if (_depths == null) continue;
@@ -609,7 +607,7 @@ export const CLAMP_DEPENDENTS: Map<string, readonly string[]> = new Map<string, 
  * An array condition value means "in"; a context key that is absent
  * never matches (permissive degradation).
  */
-export function _conditionsMatch(
+function _conditionsMatch(
   conditions: Map<string, RuleValue | RuleValue[]>,
   context: ReadonlyMap<string, RuleValue>,
 ): boolean {

@@ -1,4 +1,14 @@
-import { descriptor } from "../../../pyrt/index.ts";
+import {
+  descriptor,
+  AttributeError,
+  typeName,
+  NotImplementedError,
+  ValueError,
+  floatRepr,
+  assert,
+  truthyOr,
+  literal,
+} from "../../../pyrt/index.ts";
 // Port of py_aep/models/layers/av_layer.py
 
 import {
@@ -9,16 +19,6 @@ import {
   LayerType,
   TrackMatteType,
 } from "../../enums/index.ts";
-import {
-  AttributeError,
-  typeName,
-  NotImplementedError,
-  ValueError,
-  floatRepr,
-  assert,
-  truthyOr,
-  literal,
-} from "../../../pyrt/index.ts";
 import { requiresVersion } from "../../ae_version.ts";
 import { LdtaChunk } from "../../binary/layer_chunks.ts";
 import { findByListType, findByType } from "../../binary/utils.ts";
@@ -59,7 +59,7 @@ import { late } from "../late.ts";
  * `point`, or `ValueError` when a coordinate overflowed to inf / nan
  * (an input near the float limit).
  */
-export function _finite(point: number[]): number[] {
+function _finite(point: number[]): number[] {
   if (!point.every((v) => Number.isFinite(v))) {
     throw new ValueError(`the converted point overflows: [${point.map((v) => floatRepr(v)).join(", ")}]`);
   }
@@ -73,7 +73,7 @@ export function _finite(point: number[]): number[] {
  * `true` if `newSource` is found among the ancestors, meaning the
  * replacement would create a circular reference chain.
  */
-export function _wouldCreateCycle(targetComp: CompItem, newSource: AVItem): boolean {
+function _wouldCreateCycle(targetComp: CompItem, newSource: AVItem): boolean {
   if (!("layers" in newSource)) return false;
   // Python tracks visited comps by id(); object identity in a Set is the same check.
   const visited = new Set<CompItem>();
@@ -106,7 +106,7 @@ export function _unregisterSourceUsage(source: AVItem, comp: CompItem, kw: { exc
   source._usedIn.delete(comp);
 }
 
-export function _validateCollapseTransformation(value: boolean, obj: AVLayer): void {
+function _validateCollapseTransformation(value: boolean, obj: AVLayer): void {
   validateBool(value);
   if (!obj.canSetCollapseTransformation) {
     throw new AttributeError("'collapseTransformation' is read-only when 'canSetCollapseTransformation' is false.");

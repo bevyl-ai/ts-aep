@@ -555,7 +555,7 @@ register("fips")(FipsChunk);
 // NOTE(port): Python lets a subclass attrs field replace the base property; attrs `define` assigns
 // with `self[name] = v`, so a writable data property on each variant prototype (applied after
 // `_PARD_VARIANTS`) gives the same behavior.
-export function shadowProperty(cls: Function, name: string): void {
+function shadowProperty(cls: Function, name: string): void {
   Object.defineProperty(cls.prototype, name, {
     configurable: true,
     enumerable: true,
@@ -677,7 +677,7 @@ define(GenericPardChunk, {
 });
 
 /** `bytes(list_of_ints)`: raises like CPython outside 0..255 instead of wrapping. */
-export function _bytesFromInts(value: number[]): Uint8Array {
+function _bytesFromInts(value: number[]): Uint8Array {
   const out = new Uint8Array(value.length);
   for (let i = 0; i < value.length; i++) {
     const v = value[i];
@@ -1163,7 +1163,7 @@ define(OtlnChunk, {
 });
 register("otln")(OtlnChunk);
 
-export const _PARD_VARIANTS = new Map<number, typeof PardChunk>([
+const _PARD_VARIANTS = new Map<number, typeof PardChunk>([
   [0, GenericPardChunk],
   [1, IntegerPardChunk],
   [2, ScalarPardChunk],
@@ -1229,8 +1229,6 @@ define(FeatherPointItem, {
   cornerAngle: f4Field({ default: 0.0 }),
   tension: f4Field({ default: 0.0 }),
 });
-
-export const _FTH5_ITEM_SIZE = 32;
 
 /** Variable-width mask feather points (32 bytes per point). */
 export class Fth5Chunk extends Chunk {

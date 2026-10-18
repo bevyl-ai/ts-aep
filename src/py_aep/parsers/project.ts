@@ -34,7 +34,7 @@ import { parseRenderQueue } from "./render_queue.ts";
  * @returns The `Utf8Chunk` holding the profile envelope, or `null` when the marker is absent or its
  *   slot is unset.
  */
-export function _colorProfileUtf8(rootChunks: Chunk[], marker: string): Utf8Chunk | null {
+function _colorProfileUtf8(rootChunks: Chunk[], marker: string): Utf8Chunk | null {
   for (const [i, chunk] of rootChunks.entries()) {
     if (chunk.chunkType !== marker || i + 1 >= rootChunks.length) continue;
     const following = rootChunks[i + 1];
@@ -45,7 +45,7 @@ export function _colorProfileUtf8(rootChunks: Chunk[], marker: string): Utf8Chun
 }
 
 // The project settings nhed holds as nnhd does, in its older layout.
-export const _NHED_SETTINGS = [
+const _NHED_SETTINGS = [
   "_displayByte",
   "footageTimecodeDisplayStartType",
   "_feetByte",

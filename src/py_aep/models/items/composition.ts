@@ -126,37 +126,37 @@ import * as _composition from "../../parsers/composition.ts";
 
 // The binary prin chunk stores internal plugin match_names (e.g. ADBE Escher)
 // but ExtendScript exposes different module names (e.g. ADBE Advanced 3d).
-export const _RENDERER_BINARY_TO_EXTENDSCRIPT: Map<string, string> = new Map([
+const _RENDERER_BINARY_TO_EXTENDSCRIPT: Map<string, string> = new Map([
   ["ADBE Escher", "ADBE Advanced 3d"],
   ["ADBE Calder", "ADBE Calder"],
   ["ADBE Ernst", "ADBE Ernst"],
   ["ADBE Picasso", "ADBE Picasso"],
 ]);
 
-export const _RENDERER_EXTENDSCRIPT_TO_BINARY: Map<string, string> = new Map(
+const _RENDERER_EXTENDSCRIPT_TO_BINARY: Map<string, string> = new Map(
   [..._RENDERER_BINARY_TO_EXTENDSCRIPT].map(([k, v]) => [v, k] as const),
 );
 
-export const _RENDERER_DISPLAY_NAMES: Map<string, string> = new Map([
+const _RENDERER_DISPLAY_NAMES: Map<string, string> = new Map([
   ["ADBE Escher", "Classic 3D"],
   ["ADBE Calder", "Advanced 3D"],
   ["ADBE Ernst", "Cinema 4D"],
   ["ADBE Picasso", "Ray-traced 3D"],
 ]);
 
-export const _LAYER_BOUNDARY_TYPES: ReadonlySet<string> = new Set(["Layr", "DLay", "SLay", "CLay", "SecL", "CIFO"]);
+const _LAYER_BOUNDARY_TYPES: ReadonlySet<string> = new Set(["Layr", "DLay", "SLay", "CLay", "SecL", "CIFO"]);
 
-export const _validateRenderer = validateOneOf([..._RENDERER_EXTENDSCRIPT_TO_BINARY.keys()]);
+const _validateRenderer = validateOneOf([..._RENDERER_EXTENDSCRIPT_TO_BINARY.keys()]);
 
 // The NTSC internal timebase (23.976, 29.97, 59.94 fps and their multiples).
-export const _NTSC_TIMEBASE = 23976;
+const _NTSC_TIMEBASE = 23976;
 
 // On the NTSC timebase AE keeps a display start stored as a float32 time
 // (`displayStartTime = 52 / 29.97`) on the frame it is a hair past: 1/10000
 // of a frame is the best fit to 490 such starts per rate measured on AE 2026
 // (472 match; AE's own rounding of the rest is not reproduced). On every other
 // timebase the same measurement is exact with no tolerance.
-export const _NTSC_FRAME_TOLERANCE = new Fraction(1, 10000);
+const _NTSC_FRAME_TOLERANCE = new Fraction(1, 10000);
 
 /**
  * The composition's frame grid: `(timebase, units per frame)` from its
@@ -164,12 +164,12 @@ export const _NTSC_FRAME_TOLERANCE = new Fraction(1, 10000);
  * rate only approximates the grid's rate (29.970001220703125 for 23976 /
  * 800), so comp times snap to the grid, never to the 16.16 value.
  */
-export function _grid(cdta: CdtaChunk): [number, number] {
+function _grid(cdta: CdtaChunk): [number, number] {
   return frameGrid(cdta.frameRate);
 }
 
 /** Frames per second of the composition's frame grid. */
-export function _gridRate(cdta: CdtaChunk): number {
+function _gridRate(cdta: CdtaChunk): number {
   const [timebase, unitsPerFrame] = _grid(cdta);
   return timebase / unitsPerFrame;
 }
@@ -177,30 +177,30 @@ export function _gridRate(cdta: CdtaChunk): number {
 // NOTE(port): exact bigint arithmetic, identical to Python's Fraction. These two helpers are the
 // exact rational `math.ceil` / `math.floor` over `num / den` (den > 0) that the
 // Python code takes of `Fraction` expressions.
-export function _ceilRatio(num: bigint, den: bigint): number {
+function _ceilRatio(num: bigint, den: bigint): number {
   const q = num / den;
   return Number(num % den !== 0n && num > 0n ? q + 1n : q);
 }
 
-export function _floorRatio(num: bigint, den: bigint): number {
+function _floorRatio(num: bigint, den: bigint): number {
   const q = num / den;
   return Number(num % den !== 0n && num < 0n ? q - 1n : q);
 }
 
 /** `math.ceil(k * Fraction(*_grid(cdta)))` */
-export function _ceilKGrid(k: number, cdta: CdtaChunk): number {
+function _ceilKGrid(k: number, cdta: CdtaChunk): number {
   const [timebase, unitsPerFrame] = _grid(cdta);
   return _ceilRatio(BigInt(k) * BigInt(timebase), BigInt(unitsPerFrame));
 }
 
 /** `math.floor(k * Fraction(*_grid(cdta)))` */
-export function _floorKGrid(k: number, cdta: CdtaChunk): number {
+function _floorKGrid(k: number, cdta: CdtaChunk): number {
   const [timebase, unitsPerFrame] = _grid(cdta);
   return _floorRatio(BigInt(k) * BigInt(timebase), BigInt(unitsPerFrame));
 }
 
 // NOTE(port): exact bigint arithmetic, identical to Python's Fraction; exact `Fraction(n, d) * k >= rhs` for d > 0.
-export function _ratioScaledGe(n: number, d: number, k: number, rhs: number): boolean {
+function _ratioScaledGe(n: number, d: number, k: number, rhs: number): boolean {
   return BigInt(n) * BigInt(k) >= BigInt(rhs) * BigInt(d);
 }
 
@@ -238,7 +238,7 @@ export function _frameNumber(cdta: CdtaChunk, dividend: number, divisor: number)
 }
 
 // Top-level layer groups not every release writes: (match name, part).
-export const _VERSION_GATED_GROUPS = [
+const _VERSION_GATED_GROUPS = [
   ["ADBE Layer Sets", "layer sets"],
   ["ADBE Source Options Group", "source options"],
 ] as const;
@@ -261,7 +261,7 @@ export const _VERSION_GATED_GROUPS = [
  * Group end markers are already present in each tdgp (added during
  * synthesis) and get flipped to non-synthetic by _ensure_materialized().
  */
-export function _materializeLayer(layer: Layer): void {
+function _materializeLayer(layer: Layer): void {
   const camLight = ["ADBE Camera Layer", "ADBE Light Layer"].includes(layer.matchName);
 
   function _materializeProp(prop: Property, inTransform: boolean): void {
@@ -352,7 +352,7 @@ export function _materializeLayer(layer: Layer): void {
  * with zero), which is what this reproduces: the `LIST:OvG2` is replaced
  * by the empty one AE writes for a layer that has never had an override.
  */
-export function _dropEssentialOverrides(layer: Layer): void {
+function _dropEssentialOverrides(layer: Layer): void {
   const root = layer._tdgp;
   if (root == null) {
     return;
@@ -393,7 +393,7 @@ export function _dropEssentialOverrides(layer: Layer): void {
  * `LIST:OvG2(CprC)` after the Layer Overrides tdmn and `blsv`/`blsi`
  * after the Layer Source Alternate tdmn.
  */
-export function _insertLayerSkeletonExtras(layer: Layer): void {
+function _insertLayerSkeletonExtras(layer: Layer): void {
   const root = layer._tdgp;
   if (root == null) {
     return;
@@ -440,7 +440,7 @@ export function _insertLayerSkeletonExtras(layer: Layer): void {
  * `CLId` at the duplicate. Layer-side OvG2 override uuids are NOT
  * touched: they reference controllers of other (source) comps.
  */
-export function _rewriteEgIdentity(
+function _rewriteEgIdentity(
   clonedItem: ListChunk,
   oldCompId: number,
   newCompId: number,

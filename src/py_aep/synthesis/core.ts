@@ -62,7 +62,7 @@ import { late } from "../models/late.ts";
  * `properties` are first accessed. Layer Styles keeps its collapsed
  * `enabled` state eagerly derived to preserve existing behavior.
  */
-export function synthesizeChildren(group: PropertyGroup, aeMajor: number): void {
+function synthesizeChildren(group: PropertyGroup, aeMajor: number): void {
   if (group.matchName === "ADBE Layer Styles") {
     _deriveLayerStylesEnabled(group, aeMajor, { synthesizeSubgroups: false });
   }
@@ -81,7 +81,7 @@ export function synthesizeChildren(group: PropertyGroup, aeMajor: number): void 
  * groups that contain data.  This function synthesizes the missing empty
  * groups and reorders all groups to match the canonical ExtendScript order.
  */
-export function _synthesizeMissingTopLevelGroups(layer: Layer, aeMajor: number): void {
+function _synthesizeMissingTopLevelGroups(layer: Layer, aeMajor: number): void {
   let specs: ReadonlyArray<PropSpec | GroupSpec> = _TOP_LEVEL_SPECS;
   let skipGroups: ReadonlySet<string>;
   if (layer instanceof CameraLayer) {
@@ -143,7 +143,7 @@ export function _synthesizeMissingTopLevelGroups(layer: Layer, aeMajor: number):
  * on a camera zoom - and are computed here; all other defaults are fixed
  * constants defined in `_TRANSFORM_FIXED_DEFAULTS`.
  */
-export function _setTransformDefaults(layer: Layer, aeMajor: number): void {
+function _setTransformDefaults(layer: Layer, aeMajor: number): void {
   const transform = layer.transform;
   if (transform == null) return;
 
@@ -300,7 +300,7 @@ export function followSourceAnchor(anchor: Property): void {
 }
 
 /** One component of the vector `source` returns, read on each call. */
-export function _component(source: () => number[], dim: number): () => number {
+function _component(source: () => number[], dim: number): () => number {
   return () => source()[dim];
 }
 
@@ -313,7 +313,7 @@ export function _component(source: () => number[], dim: number): () => number {
  * aspect. `Layer._write_out_moved_defaults` writes them once moved (AE
  * 2026 keeps a Point of Interest where it was, modified, on a resize).
  */
-export function _followLiveDefaults(layer: Layer): void {
+function _followLiveDefaults(layer: Layer): void {
   const transform = layer.transform;
   const position = transform.property("ADBE Position");
   position._defaultValueSource = () => layer._defaultPosition();
@@ -344,7 +344,7 @@ export function _followLiveDefaults(layer: Layer): void {
  * A 2-D layer's Z is dead data; AE normalizes it to 100 whenever it touches
  * the layer rather than leaving a stale number behind.
  */
-export function _flattenScaleZ(scaleProp: Property): void {
+function _flattenScaleZ(scaleProp: Property): void {
   if (scaleProp.keyframes?.length > 0) {
     for (const kf of scaleProp.keyframes) {
       const value = kf.value;

@@ -29,8 +29,7 @@ import { Curves } from "../../src/py_aep/models/properties/curves.ts";
 import { Property } from "../../src/py_aep/models/properties/property.ts";
 import { PropertyGroup } from "../../src/py_aep/models/properties/property_group.ts";
 import { getCompFromJsonByName, loadExpected, parseProject } from "../conftest.ts";
-import { jsonField, type ExpectedKeyframe } from "../helpers.ts";
-import { asInstance } from "../helpers.ts";
+import { jsonField, type ExpectedKeyframe, asInstance } from "../helpers.ts";
 import { approx, raises } from "../support/pytest.ts";
 import { max, min, range } from "../support/python.ts";
 

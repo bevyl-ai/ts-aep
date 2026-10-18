@@ -269,7 +269,7 @@ export class FootageItem extends AVItem {
       source.isStill,
       source.nativeFrameRate,
       source.mediaColorSpace,
-      attrs?.size > 0 ? [...Array.from(attrs.entries())].sort(compare) : [],
+      attrs?.size > 0 ? Array.from(attrs.entries()).sort(compare) : [],
     );
   }
 

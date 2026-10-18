@@ -102,7 +102,7 @@ export class SolidSource extends FootageSource {
     return new this({ _sspc: sspc, _opti: opti });
   }
 
-  _resolveName(rawName: string): string {
+  _resolveName(_rawName: string): string {
     return this._opti.solidName;
   }
 

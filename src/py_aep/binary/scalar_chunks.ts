@@ -29,9 +29,8 @@ export class _StringChunkBase extends Chunk {
 
   static read(fp: ByteStream, size: number, kwargs: ChunkReadKwargs = {}): _StringChunkBase {
     const { chunkType = "" } = kwargs;
-    const cls = this;
     const raw = readBytes(fp, size);
-    return new cls({ chunkType, value: decode(raw, cls._ENCODING) });
+    return new this({ chunkType, value: decode(raw, this._ENCODING) });
   }
 
   write(fp: ByteStream): number {

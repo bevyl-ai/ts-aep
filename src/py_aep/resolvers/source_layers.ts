@@ -105,7 +105,7 @@ export function layerIndexForStored(file: PathLike, storedIndex: number): number
   throw new ValueError(`layerIndexForStored supports layered .psd/.psb/.ai/.pdf ` + `files, got ${literal(suffix)}`);
 }
 
-export function _outOfRange(file: PathLike, layerIndex: number, names: string[]): ValueError {
+function _outOfRange(file: PathLike, layerIndex: number, names: string[]): ValueError {
   return new ValueError(
     `${new Path(file).name}: layerIndex ${layerIndex} out of range; the ` +
       `file has ${names.length} selectable layers (top first): ${literal(names)}`,

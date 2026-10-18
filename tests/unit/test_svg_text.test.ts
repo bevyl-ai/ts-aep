@@ -147,7 +147,7 @@ test("test_anchor_middle_centers", () => {
 
 test("test_reader_outlines_text", () => {
   const testFont = fixtureTestFont();
-  monkeypatchSetattr(reader_mod, "resolve_font", (...a) => [testFont, 0]);
+  monkeypatchSetattr(reader_mod, "resolve_font", (..._a) => [testFont, 0]);
   const svg =
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 100">' +
     '<text x="10" y="80" font-size="100" fill="#ff0000">AB</text></svg>';
@@ -162,7 +162,7 @@ test("test_reader_outlines_text", () => {
 test("test_reader_tspan_per_run_fill", () => {
   const testFont = fixtureTestFont();
   // Parent text and a <tspan> with its own fill become two drawables.
-  monkeypatchSetattr(reader_mod, "resolve_font", (...a) => [testFont, 0]);
+  monkeypatchSetattr(reader_mod, "resolve_font", (..._a) => [testFont, 0]);
   const svg =
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 100">' +
     '<text x="10" y="80" font-size="100" fill="#000000">A' +
@@ -181,7 +181,7 @@ test("test_reader_tspan_inherits_font_size", () => {
   const testFont = fixtureTestFont();
   // The <tspan> has no font-size; it must inherit 100 from the parent <text>
   // (advance 60), so 'B' lands at x 70..110 just like the single-run case.
-  monkeypatchSetattr(reader_mod, "resolve_font", (...a) => [testFont, 0]);
+  monkeypatchSetattr(reader_mod, "resolve_font", (..._a) => [testFont, 0]);
   const svg =
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 100">' +
     '<text x="0" y="100" font-size="100">A<tspan>B</tspan></text></svg>';
@@ -192,7 +192,7 @@ test("test_reader_tspan_inherits_font_size", () => {
 });
 
 test("test_reader_text_skipped_without_font", () => {
-  monkeypatchSetattr(reader_mod, "resolve_font", (...a) => null);
+  monkeypatchSetattr(reader_mod, "resolve_font", (..._a) => null);
   const svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">' + '<text x="0" y="50">hi</text></svg>';
   expect(valueEquals(readSvg(svg).drawables, [])).toBe(true);
 });
@@ -208,7 +208,7 @@ test("test_letter_spacing", () => {
 test("test_reader_text_stroke", () => {
   const testFont = fixtureTestFont();
   // A stroked, unfilled <text> yields a stroked drawable with no fill.
-  monkeypatchSetattr(reader_mod, "resolve_font", (...a) => [testFont, 0]);
+  monkeypatchSetattr(reader_mod, "resolve_font", (..._a) => [testFont, 0]);
   const svg =
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 100">' +
     '<text x="10" y="80" font-size="100" fill="none" ' +
@@ -245,7 +245,7 @@ test("test_textpath_offpath_glyphs_dropped", () => {
 
 test("test_reader_textpath", () => {
   const testFont = fixtureTestFont();
-  monkeypatchSetattr(reader_mod, "resolve_font", (...a) => [testFont, 0]);
+  monkeypatchSetattr(reader_mod, "resolve_font", (..._a) => [testFont, 0]);
   const svg =
     '<svg xmlns="http://www.w3.org/2000/svg" ' +
     'xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 300 200">' +
@@ -263,7 +263,7 @@ test("test_reader_textpath_applies_path_transform", () => {
   const testFont = fixtureTestFont();
   // The referenced path's OWN transform must apply: translate(0,100) puts the
   // baseline at y=100, so 'A' spans y 30..100 (x is unchanged by the y-shift).
-  monkeypatchSetattr(reader_mod, "resolve_font", (...a) => [testFont, 0]);
+  monkeypatchSetattr(reader_mod, "resolve_font", (..._a) => [testFont, 0]);
   const svg =
     '<svg xmlns="http://www.w3.org/2000/svg" ' +
     'xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 300 200">' +
@@ -337,7 +337,7 @@ test("test_glyphs_handles_font_without_unicode_cmap", () => {
   // Regression: getBestCmap() returns None for symbol fonts; _glyphs used to
   // crash with AttributeError, taking down the whole read_svg(). It must now
   // map every char to no glyph so the run is simply dropped.
-  const [names, advances, upm, _] = _glyphs(new _NoCmapFont(), "AB");
+  const [names, advances, , _] = _glyphs(new _NoCmapFont(), "AB");
   expect(valueEquals(names, [null, null])).toBe(true);
   expect(valueEquals(advances, [0.0, 0.0])).toBe(true);
 });
@@ -347,7 +347,7 @@ test("test_reader_collapses_indentation_whitespace", () => {
   // Regression: a pretty-printed <text> with leading/trailing indentation
   // used to render those spaces as glyph advances, shifting the text right.
   // SVG collapses internal whitespace and trims the run's edges.
-  monkeypatchSetattr(reader_mod, "resolve_font", (...a) => [testFont, 0]);
+  monkeypatchSetattr(reader_mod, "resolve_font", (..._a) => [testFont, 0]);
   const head = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 200">';
 
   const minX = (svg: string): number =>
@@ -378,7 +378,7 @@ test("test_reader_per_tspan_text_anchor", () => {
   const testFont = fixtureTestFont();
   // A <tspan> that resets x and sets its own text-anchor establishes its own
   // chunk with that anchor; the parent run keeps the default start anchor.
-  monkeypatchSetattr(reader_mod, "resolve_font", (...a) => [testFont, 0]);
+  monkeypatchSetattr(reader_mod, "resolve_font", (..._a) => [testFont, 0]);
   const svg =
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 200">' +
     '<text x="0" y="100" font-size="100">A' +

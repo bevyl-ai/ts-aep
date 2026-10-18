@@ -79,7 +79,7 @@ export function skip(reason = ""): void {
 }
 
 /** `pytest.fail.Exception` */
-export class Failed extends Error {
+class Failed extends Error {
   constructor(message = "") {
     super(message);
     this.name = "Failed";

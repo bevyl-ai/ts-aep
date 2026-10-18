@@ -10,7 +10,7 @@ import { AttributeError, ValueError, descriptor, compare } from "../../../pyrt/i
 import type { CompItem } from "../items/composition.ts";
 
 /** Environment lights and their light source arrived in AE 24.3. */
-export function _requireEnvironmentLights(comp: CompItem, what: string): void {
+function _requireEnvironmentLights(comp: CompItem, what: string): void {
   const head = comp._project._head;
   if (compare([head.aeVersionMajor, head.aeVersionMinor], [24, 3]) < 0) {
     throw new AttributeError(
@@ -19,7 +19,7 @@ export function _requireEnvironmentLights(comp: CompItem, what: string): void {
   }
 }
 
-export function _validateLightType(value: number, obj: LightLayer): void {
+function _validateLightType(value: number, obj: LightLayer): void {
   if (value === LightType.ENVIRONMENT) {
     _requireEnvironmentLights(obj.containingComp, "LightType.ENVIRONMENT");
   }

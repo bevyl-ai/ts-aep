@@ -32,7 +32,7 @@ import { Bytes, decode, encode, getOrInsert, ValueError, compare } from "../../p
 import type { Path } from "../../pyrt/index.ts";
 
 // One glob per preference file category; file names embed the AE version.
-export const _PREF_FILE_GLOBS: Readonly<Record<PREFType, string>> = {
+const _PREF_FILE_GLOBS: Readonly<Record<PREFType, string>> = {
   [PREFType.PREF_Type_MACHINE_SPECIFIC]: "* Prefs.txt",
   [PREFType.PREF_Type_MACHINE_INDEPENDENT]: "*Prefs-indep-general.txt",
   [PREFType.PREF_Type_MACHINE_INDEPENDENT_RENDER]: "*Prefs-indep-render.txt",
@@ -43,8 +43,8 @@ export const _PREF_FILE_GLOBS: Readonly<Record<PREFType, string>> = {
 };
 
 // Python's `.` matches everything except "\n" (JS `.` also excludes "\r", U+2028, U+2029), so use [^\n].
-export const _SECTION_RE = /^\["([^\n]*)"\]/;
-export const _KEY_RE = /^\t"([^\n]+?)" = ([^\n]*)$/;
+const _SECTION_RE = /^\["([^\n]*)"\]/;
+const _KEY_RE = /^\t"([^\n]+?)" = ([^\n]*)$/;
 
 /** Locate the preference file for `prefType` under `prefsDir`. */
 export function findPrefsFile(prefsDir: Path, prefType: PREFType): Path | null {

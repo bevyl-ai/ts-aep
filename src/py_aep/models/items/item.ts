@@ -27,7 +27,7 @@ import { late } from "../late.ts";
 
 // NOTE(port): list.remove shim; Python compares with `==` (Item.__eq__ is by
 // id), so the match uses py_eq (which dispatches to __eq__) rather than identity.
-export function listRemove<T>(xs: T[], x: T): void {
+function listRemove<T>(xs: T[], x: T): void {
   const i = xs.findIndex((y) => valueEquals(y, x));
   if (i < 0) throw new ValueError("list.remove(x): x not in list");
   xs.splice(i, 1);

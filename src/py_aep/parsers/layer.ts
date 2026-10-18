@@ -16,7 +16,7 @@ import type { Layer } from "../models/layers/layer.ts";
 import { late } from "../models/late.ts";
 
 // NOTE(port): eager module-level table exactly as in Python; the ESM import order (tests and py_aep/index.ts load the models first) keeps the layer classes out of the TDZ.
-export const _LAYER_CLASSES: Map<number, typeof Layer> = new Map<number, typeof Layer>([
+const _LAYER_CLASSES: Map<number, typeof Layer> = new Map<number, typeof Layer>([
   [LayerType.AV, AVLayer],
   [LayerType.LIGHT, LightLayer],
   [LayerType.CAMERA, CameraLayer],

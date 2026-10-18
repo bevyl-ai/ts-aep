@@ -142,7 +142,7 @@ export function parseRenderQueue(rootChunks: Chunk[], project: Project): RenderQ
  * @param project - The Project object, used to resolve comp references.
  * @param renderQueue - The parent RenderQueue being constructed.
  */
-export function parseRenderQueueItems(
+function parseRenderQueueItems(
   litmChunk: ListChunk,
   renderSettings: RenderSettingsItem[],
   routItems: RoutItem[],
@@ -200,7 +200,7 @@ export function parseRenderQueueItems(
  * @param project - The Project object, used to resolve comp references.
  * @param renderQueue - The parent RenderQueue being constructed.
  */
-export function parseRenderQueueItem(
+function parseRenderQueueItem(
   listChunk: ListChunk,
   lomChunk: ListChunk,
   ldatBody: RenderSettingsItem,

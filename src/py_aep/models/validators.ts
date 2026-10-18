@@ -23,7 +23,7 @@ export type Validator = (value: unknown, instance?: unknown) => void;
 /** A validator whose bounds are computed from the model `instance` being written. */
 export type InstanceValidator<O> = (value: unknown, instance: O) => void;
 /** A bound: a number, or computed from the model instance being validated. */
-export type NumBound<O> = number | ((instance: O) => number | null) | null;
+type NumBound<O> = number | ((instance: O) => number | null) | null;
 /** Keyword arguments of `_validateNumber`; a callable bound reads the model instance `O`. */
 export type NumberKw<O> = { min?: NumBound<O>; max?: NumBound<O>; integer?: boolean; exclusiveMin?: boolean };
 /** Keyword arguments of `validateSequence`. */
@@ -148,7 +148,7 @@ export function validateSequence<O>(kw: SequenceKw<O | null> = {}): InstanceVali
  * `DocumentWideCosField.enum` for the same field - would otherwise hold
  * distinct instances; memoizing keeps them identity-equal.
  */
-export const _ENUM_VALIDATORS = new Map<EnumHelpers<number>, Validator>();
+const _ENUM_VALIDATORS = new Map<EnumHelpers<number>, Validator>();
 
 /**
  * Return a validator that checks value is a member of `enumCls`.
@@ -163,7 +163,7 @@ export function validateEnum(enumCls: EnumHelpers<number>): Validator {
   const cached = _ENUM_VALIDATORS.get(enumCls) ?? null;
   if (cached != null) return cached;
 
-  const _validator = function (value: unknown, instance: unknown = null): void {
+  const _validator = function (value: unknown, _instance: unknown = null): void {
     // NOTE(port): enum members are plain numbers, so `has` also accepts member ints; Python's int branch accepts those too (enum_cls(value) succeeds), so outcomes match.
     if (enumCls.has(value)) return;
     // Before the int branch: `bool` subclasses `int`, so `om.format =
@@ -194,7 +194,7 @@ export function validateOneOf<T>(allowed: Iterable<T>): Validator {
   const allowedSet = new Set<unknown>(allowedList);
   const formatted = allowedList.map((v) => String(v)).join(", ");
 
-  return function _validator(value: unknown, instance: unknown = null): void {
+  return function _validator(value: unknown, _instance: unknown = null): void {
     if (!allowedSet.has(value instanceof String ? String(value) : value)) {
       throw new ValueError(`must be one of [${formatted}], got ${literal(value)}`);
     }
@@ -215,12 +215,12 @@ export const validatePlatform = validateOneOf(["windows", "macos"]);
  * - `allowNull`: When `false`, reject strings containing a NUL (`\x00`) character, which corrupt
  *     the COS/text blobs AE reads.
  */
-export function _validateStr(
+function _validateStr(
   kw: { allowEmpty?: boolean; maxLength?: number | null; maxBytes?: number | null; allowNull?: boolean } = {},
 ): Validator {
   const { allowEmpty = true, maxLength = null, maxBytes = null, allowNull = true } = kw;
 
-  return function _validator(value: unknown, instance: unknown = null): void {
+  return function _validator(value: unknown, _instance: unknown = null): void {
     // `_NulTailStr` (a `str` subclass) arrives as a String object.
     if (!(typeof value === "string" || value instanceof String)) {
       throw new TypeError(`expected a string, got ${typeName(value)}`);
@@ -252,10 +252,10 @@ export function _validateStr(
  *     this a directory passes `mustExist` and only fails later, deep in a reader, as an
  *     OS-specific error (`PermissionError` on Windows, `IsADirectoryError` elsewhere).
  */
-export function _validatePath(kw: { mustExist?: boolean | null; mustBeFile?: boolean } = {}): Validator {
+function _validatePath(kw: { mustExist?: boolean | null; mustBeFile?: boolean } = {}): Validator {
   const { mustExist = null, mustBeFile = false } = kw;
 
-  return function _validator(value: unknown, instance: unknown = null): void {
+  return function _validator(value: unknown, _instance: unknown = null): void {
     if (!(typeof value === "string" || value instanceof String || value instanceof Path)) {
       throw new TypeError(`expected a file system path, got ${typeName(value)}`);
     }
@@ -271,7 +271,7 @@ export function _validatePath(kw: { mustExist?: boolean | null; mustBeFile?: boo
 }
 
 /** Validate that a value is a `bool` (rejects 0/1 integers). */
-export function validateBool(value: unknown, instance: unknown = null): void {
+export function validateBool(value: unknown, _instance: unknown = null): void {
   if (typeof value !== "boolean") {
     throw new TypeError(`expected a bool, got ${typeName(value)}`);
   }
@@ -397,7 +397,7 @@ export const validateF4Point = validateSequence({ length: 2, min: -FLOAT32_MAX, 
  * The head chunk holds the major in 8 bits, the minor in 4 and the build
  * in 8.
  */
-export function validateAeVersion(value: unknown, instance: unknown = null): void {
+export function validateAeVersion(value: unknown, _instance: unknown = null): void {
   if (!(typeof value === "string" || value instanceof String)) {
     throw new TypeError(`expected a version string, got ${typeName(value)}`);
   }
@@ -415,10 +415,10 @@ export function validateAeVersion(value: unknown, instance: unknown = null): voi
  * release py_aep has a file-format stamp for (`FORMAT_VERSIONS`: AE 15-18
  * and 22-26, there was no AE 19-21), or a newer one.
  */
-export function validateAeRelease(value: unknown, instance: unknown = null): void {
+export function validateAeRelease(value: unknown, _instance: unknown = null): void {
   validateAeVersion(value);
   const major = Number.parseInt(String(value).split(".")[0], 10);
-  if (!FORMAT_VERSIONS.has(major) && major < Math.max(...[...FORMAT_VERSIONS.keys()])) {
+  if (!FORMAT_VERSIONS.has(major) && major < Math.max(...FORMAT_VERSIONS.keys())) {
     throw new ValueError(
       `After Effects ${major} is not a release py_aep writes; ` +
         `supported majors: ${String([...FORMAT_VERSIONS.keys()].sort((a, b) => a - b))} and later`,

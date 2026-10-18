@@ -52,7 +52,7 @@ export type StyleValue = number | number[] | Gradient;
 export type _Box = [number, number, number, number];
 
 /** A style instance uses a construct AE's import cannot represent. */
-export class UnsupportedStyleError extends ValueError {}
+class UnsupportedStyleError extends ValueError {}
 
 /** One layer's styles resolved to AE Layer Styles values. */
 export class PsdLayerStyles {
@@ -121,7 +121,7 @@ export class PsdLayerStyles {
 // ActionDescriptor reader
 // ---------------------------------------------------------------------------
 
-export class _Reader {
+class _Reader {
   data: Uint8Array;
   pos: number;
 
@@ -155,7 +155,7 @@ export class _Reader {
 /** A parsed descriptor value: Objc/GlbO become Maps, VlLs arrays, tdta/alis null. */
 export type _Value = number | string | boolean | null | _Value[] | Map<string, _Value>;
 
-export function _parseItem(reader: _Reader, osType: string): _Value {
+function _parseItem(reader: _Reader, osType: string): _Value {
   if (["Objc", "GlbO"].includes(osType)) {
     reader.ustr(); // name from classID (unused)
     const cls = reader.key();
@@ -206,7 +206,7 @@ export function _parseItem(reader: _Reader, osType: string): _Value {
 }
 
 /** Parse an `lmfx`/`lfx2` block body: version u4s (ending 16) + root Objc. */
-export function _parseEffectsDescriptor(body: Uint8Array): Map<string, _Value> {
+function _parseEffectsDescriptor(body: Uint8Array): Map<string, _Value> {
   const reader = new _Reader(body);
   let found = false;
   for (let i = 0; i < 4; i++) {
@@ -233,7 +233,7 @@ export function _parseEffectsDescriptor(body: Uint8Array): Map<string, _Value> {
 // 4CCs (lbrn/dkCl/lddg/lgCl/vLit/lLit/pLit/hMix/fsub/fdiv - no legacy
 // writer ever produced them): it silently keeps the default mode, so those
 // stay unmapped here and py_aep warns where AE is silent.
-export const _BLEND_MODE2 = new Map<string, number>([
+const _BLEND_MODE2 = new Map<string, number>([
   ["Nrml", 1.0],
   ["Dslv", 2.0],
   ["Drkn", 4.0],
@@ -280,32 +280,32 @@ export const _BLEND_MODE2 = new Map<string, number>([
   ["blendDivide", 33.0],
 ]);
 
-export const _GLOW_TECHNIQUE = new Map<string, number>([
+const _GLOW_TECHNIQUE = new Map<string, number>([
   ["SfBL", 1.0],
   ["PrBL", 2.0],
 ]);
-export const _INNER_GLOW_SOURCE = new Map<string, number>([
+const _INNER_GLOW_SOURCE = new Map<string, number>([
   ["SrcE", 1.0],
   ["SrcC", 2.0],
 ]);
 // Bevel style/technique/direction: InrB(2)/Embs(3), PrBL(2) and Out(2) are
 // fixture-pinned; the rest follow AE's dropdown order.
-export const _BEVEL_STYLE = new Map<string, number>([
+const _BEVEL_STYLE = new Map<string, number>([
   ["OtrB", 1.0],
   ["InrB", 2.0],
   ["Embs", 3.0],
   ["PlEb", 4.0],
 ]);
-export const _BEVEL_TECHNIQUE = new Map<string, number>([
+const _BEVEL_TECHNIQUE = new Map<string, number>([
   ["SfBL", 1.0],
   ["PrBL", 2.0],
   ["Slmt", 3.0],
 ]);
-export const _BEVEL_DIRECTION = new Map<string, number>([
+const _BEVEL_DIRECTION = new Map<string, number>([
   ["In  ", 1.0],
   ["Out ", 2.0],
 ]);
-export const _GRADIENT_TYPE = new Map<string, number>([
+const _GRADIENT_TYPE = new Map<string, number>([
   ["Lnr ", 1.0],
   ["Rdl ", 2.0],
   ["Angl", 3.0],
@@ -313,13 +313,13 @@ export const _GRADIENT_TYPE = new Map<string, number>([
   ["Dmnd", 5.0],
 ]);
 // Stroke position: OutF=1 (default), InsF=2, CtrF=3 (probe-pinned).
-export const _STROKE_POSITION = new Map<string, number>([
+const _STROKE_POSITION = new Map<string, number>([
   ["OutF", 1.0],
   ["InsF", 2.0],
   ["CtrF", 3.0],
 ]);
 
-export function _enum(table: Map<string, number>): (value: _Value) => number {
+function _enum(table: Map<string, number>): (value: _Value) => number {
   return function convert(value: _Value): number {
     // Map.get, not a plain-object lookup: descriptor strings such as
     // "constructor" must not reach Object.prototype.
@@ -329,39 +329,39 @@ export function _enum(table: Map<string, number>): (value: _Value) => number {
   };
 }
 
-export function _number(value: _Value): number {
+function _number(value: _Value): number {
   if (typeof value !== "number") {
     throw new UnsupportedStyleError(`expected a number, got ${literal(value)}`);
   }
   return value;
 }
 
-export function _bool01(value: _Value): number {
+function _bool01(value: _Value): number {
   return truthy(value) ? 1.0 : 0.0;
 }
 
 /** Python int/float/bool operand for `/`: bool counts as 0/1, anything else raises. */
-export function _arith(value: _Value): number {
+function _arith(value: _Value): number {
   if (typeof value === "number") return value;
   if (typeof value === "boolean") return value ? 1 : 0;
   throw new TypeError(`unsupported operand type for /: ${literal(value)}`);
 }
 
 /** Python `obj[key]` for a descriptor value: only dicts (Maps) are subscriptable here. */
-export function _subscript(obj: _Value, key: string): _Value {
+function _subscript(obj: _Value, key: string): _Value {
   if (obj instanceof Map) return getOrThrow(obj, key);
   throw new TypeError(`${literal(obj)} is not subscriptable with ${literal(key)}`);
 }
 
 /** Python `for x in value` over a parsed descriptor value. */
-export function _pyIter(value: _Value): _Value[] {
+function _pyIter(value: _Value): _Value[] {
   if (Array.isArray(value)) return value;
   if (value instanceof Map) return [...value.keys()];
   if (typeof value === "string") return Array.from(value);
   throw new TypeError(`${literal(value)} object is not iterable`);
 }
 
-export function _color(value: _Value): number[] {
+function _color(value: _Value): number[] {
   if (!(value instanceof Map) || value.get("_class") !== "RGBC") {
     throw new UnsupportedStyleError(`unsupported color model ${literal(value)}`);
   }
@@ -373,14 +373,14 @@ export function _color(value: _Value): number[] {
   ];
 }
 
-export function _point(value: _Value): number[] {
+function _point(value: _Value): number[] {
   if (!(value instanceof Map)) {
     throw new UnsupportedStyleError(`expected a point, got ${literal(value)}`);
   }
   return [_number(getOrThrow(value, "Hrzn")), _number(getOrThrow(value, "Vrtc"))];
 }
 
-export function _gradient(value: _Value): Gradient {
+function _gradient(value: _Value): Gradient {
   if (!(value instanceof Map) || value.get("_class") !== "Grdn") {
     throw new UnsupportedStyleError(`expected a gradient, got ${literal(value)}`);
   }
@@ -416,7 +416,7 @@ export function _gradient(value: _Value): Gradient {
   return new Gradient(colorStops, alphaStops);
 }
 
-export class _Param {
+class _Param {
   descriptorKey: string;
   suffix: string;
   convert: (value: _Value) => StyleValue;
@@ -434,7 +434,7 @@ export class _Param {
   }
 }
 
-export const _SHADOW_PARAMS: readonly _Param[] = [
+const _SHADOW_PARAMS: readonly _Param[] = [
   new _Param("Md  ", "mode2", _enum(_BLEND_MODE2)),
   new _Param("Clr ", "color", _color),
   new _Param("Opct", "opacity", _number),
@@ -445,7 +445,7 @@ export const _SHADOW_PARAMS: readonly _Param[] = [
   new _Param("blur", "blur", _number),
   new _Param("Nose", "noise", _number),
 ];
-export const _GLOW_PARAMS: readonly _Param[] = [
+const _GLOW_PARAMS: readonly _Param[] = [
   new _Param("Md  ", "mode2", _enum(_BLEND_MODE2)),
   new _Param("Opct", "opacity", _number),
   new _Param("Nose", "noise", _number),
@@ -459,7 +459,7 @@ export const _GLOW_PARAMS: readonly _Param[] = [
 ];
 
 // Style key in the effects descriptor -> (AE match-name prefix, params).
-export const _STYLES = new Map<string, [string, readonly _Param[]]>([
+const _STYLES = new Map<string, [string, readonly _Param[]]>([
   ["DrSh", ["dropShadow", [..._SHADOW_PARAMS, new _Param("layerConceals", "layerConceals", _bool01)]]],
   ["IrSh", ["innerShadow", _SHADOW_PARAMS]],
   ["OrGl", ["outerGlow", _GLOW_PARAMS]],
@@ -559,7 +559,7 @@ export const _STYLES = new Map<string, [string, readonly _Param[]]>([
 ]);
 
 // `<style>Multi` list keys (the lmfx multi-instance containers).
-export const _MULTI_KEYS = new Map<string, string>(
+const _MULTI_KEYS = new Map<string, string>(
   [..._STYLES].map(([key, [prefix]]): [string, string] => [`${prefix}Multi`, key]),
 );
 
@@ -569,7 +569,7 @@ export const _MULTI_KEYS = new Map<string, string>(
  * Single-instance styles appear as a plain object under the style key,
  * multi-instance ones as an array under the `<style>Multi` key.
  */
-export function _styleInstances(descriptor: Map<string, _Value>): Map<string, _Value[]> {
+function _styleInstances(descriptor: Map<string, _Value>): Map<string, _Value[]> {
   const instances = new Map<string, _Value[]>();
   for (const [key, value] of descriptor) {
     if (_STYLES.has(key)) {
@@ -586,14 +586,14 @@ export function _styleInstances(descriptor: Map<string, _Value>): Map<string, _V
 // whenever the key exists, even with `present=False` (psd_noise_gradient
 // fixtures). Every other style imports its parameters iff the instance has
 // `present=True` - see `parseLayerStyles`.
-export const _ALWAYS_WHEN_PRESENT: ReadonlySet<string> = new Set(["outerGlow", "innerGlow", "bevelEmboss", "chromeFX"]);
+const _ALWAYS_WHEN_PRESENT: ReadonlySet<string> = new Set(["outerGlow", "innerGlow", "bevelEmboss", "chromeFX"]);
 
 // Styles whose gradient carries the editor's Smoothness slider as `Intr`
 // (0..4096 = 0..100%); AE maps it onto the `gradientSmoothness` leaf
 // (psd_styles_smoothness fixture: 2048 -> 50, 1024 -> 25).
-export const _GRADIENT_SMOOTHNESS_PREFIXES: ReadonlySet<string> = new Set(["outerGlow", "innerGlow", "gradientFill"]);
+const _GRADIENT_SMOOTHNESS_PREFIXES: ReadonlySet<string> = new Set(["outerGlow", "innerGlow", "gradientFill"]);
 
-export function _convertStyle(
+function _convertStyle(
   prefix: string,
   params: readonly _Param[],
   instance: Map<string, _Value>,
@@ -672,7 +672,7 @@ export function readGlobalLight(file: PathLike): [number, number] {
   return [angle, altitude];
 }
 
-export function _blendOptionsValues(blocks: PsdStyleBlocks, globalLight: [number, number]): Map<string, StyleValue> {
+function _blendOptionsValues(blocks: PsdStyleBlocks, globalLight: [number, number]): Map<string, StyleValue> {
   const [angle, altitude] = globalLight;
   const values = new Map<string, StyleValue>([
     ["ADBE Global Angle2", angle],
@@ -794,7 +794,7 @@ export function hasEnabledStyles(node: PsdLayer | PsdGroup): boolean {
 }
 
 /** `(key, instance)` of every enabled style instance in a descriptor. */
-export function* _enabledInstances(descriptor: Map<string, _Value>): Generator<[string, Map<string, _Value>]> {
+function* _enabledInstances(descriptor: Map<string, _Value>): Generator<[string, Map<string, _Value>]> {
   for (const [key, instances] of _styleInstances(descriptor)) {
     for (const instance of instances) {
       if (instance instanceof Map && truthy(instance.get("enab"))) {
@@ -832,13 +832,13 @@ export function* _enabledInstances(descriptor: Map<string, _Value>): Generator<[
 // - The box is the union of the layer's own bounds and every enabled style
 //   instance's box. The effects-scale percentage has no effect.
 
-export function _roundAway(value: number): number {
+function _roundAway(value: number): number {
   // The epsilon lands exact halves (a 30 degree light: sin * 11 = 5.4999...
   // in doubles) where AE does.
   return Math.trunc(copysign(Math.floor(Math.abs(value) + 0.5 + 1e-9), value));
 }
 
-export function _blurReach(size: number, spread: number, precise: boolean): number {
+function _blurReach(size: number, spread: number, precise: boolean): number {
   const spreadPx = Math.floor((size * spread) / 100 + 0.5);
   const radius = size - spreadPx;
   let reach: number;
@@ -851,12 +851,12 @@ export function _blurReach(size: number, spread: number, precise: boolean): numb
 }
 
 /** The px a style covers before (left, above) and after (right, below). */
-export function _pads(reach: number, antiAliased: boolean, shift = 0.0): [number, number] {
+function _pads(reach: number, antiAliased: boolean, shift = 0.0): [number, number] {
   const lead = Math.ceil(reach - shift) - (antiAliased ? 0 : 1);
   return [lead, Math.floor(reach + shift)];
 }
 
-export function _bevelPads(instance: Map<string, _Value>, name: string): [number, number] | null {
+function _bevelPads(instance: Map<string, _Value>, name: string): [number, number] | null {
   const style = instance.has("bvlS") ? instance.get("bvlS") : "InrB";
   if (style === "InrB") return null;
   const size = jsonFloat(instance.has("blur") ? (instance.get("blur") as _Value) : 0);

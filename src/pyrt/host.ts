@@ -33,14 +33,14 @@ export interface HostDirent {
 }
 
 /** An open directory (`fs.opendirSync`): entries in the OS's readdir order, then null. */
-export interface HostDir {
+interface HostDir {
   readSync(): HostDirent | null;
   closeSync(): void;
 }
 
 /** The sync `node:fs` subset py_aep uses. */
 /** Text encodings the port writes with (a host-neutral subset of Node's `BufferEncoding`). */
-export type HostEncoding = "utf8" | "utf-8" | "latin1" | "ascii";
+type HostEncoding = "utf8" | "utf-8" | "latin1" | "ascii";
 
 export interface HostFs {
   existsSync(path: string): boolean;
@@ -105,7 +105,7 @@ export function homedir(): string {
   return _os ? _os.homedir() : "/";
 }
 
-export function cwd(): string {
+function cwd(): string {
   return typeof _process?.cwd === "function" ? _process.cwd() : "/";
 }
 
@@ -129,7 +129,7 @@ function _normalizePosix(path: string): string {
 }
 
 /** `node:path`'s POSIX flavour, for hosts without `node:path`. */
-export const posixPath: HostPath = {
+const posixPath: HostPath = {
   sep: "/",
   join(...parts: string[]): string {
     const joined = parts.filter((p) => p.length > 0).join("/");
@@ -201,7 +201,7 @@ interface _MemFd {
 }
 
 /** A sync, in-memory `node:fs` subset over absolute POSIX-style keys. */
-export class MemoryFs implements HostFs {
+class MemoryFs implements HostFs {
   readonly files = new Map<string, _MemFile>();
   readonly dirs = new Set<string>(["/"]);
   private readonly fds = new Map<number, _MemFd>();

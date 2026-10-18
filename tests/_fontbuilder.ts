@@ -258,8 +258,8 @@ export class FontBuilder {
     os2
       .tag("NONE")
       .u16(0x40)
-      .u16(Math.min(...[...this.cmap.keys()]))
-      .u16(Math.max(...[...this.cmap.keys()]))
+      .u16(Math.min(...this.cmap.keys()))
+      .u16(Math.max(...this.cmap.keys()))
       .i16(this.ascent)
       .i16(this.descent)
       .i16(0)

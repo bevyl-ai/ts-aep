@@ -19,9 +19,7 @@ export {
   Factory,
   AttrsBase,
   NO_INIT,
-  attrsInit,
   attrsEq,
-  initName,
   type Attribute,
   type FieldSpec,
 } from "./attrs.ts";
@@ -38,7 +36,6 @@ export {
   instanceDict,
   hasInstanceDict,
   type ClassAttributes,
-  type Descriptor,
 } from "./dunder.ts";
 export * as etree from "./etree.ts";
 export { hypot } from "./math.ts";
@@ -51,9 +48,5 @@ export {
   jsonInt,
   JSONDecodeError,
   type JsonValue,
-  encodeBasestring,
-  encodeBasestringAscii,
-  type ParseJsonOptions,
-  type StringifyJsonOptions,
 } from "./json.ts";
-export { pyRe, reSearch, reMatch, reEscape, reFlags, patternMatch, PyReError } from "./re.ts";
+export { pyRe, reSearch, reMatch, reEscape, reFlags, patternMatch } from "./re.ts";

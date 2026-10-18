@@ -3,11 +3,6 @@
 import { describe, expect, test } from "bun:test";
 
 import { autoName } from "../../src/py_aep/models/naming.ts";
-import { Path } from "../../src/pyrt/index.ts";
-
-const SAMPLES_DIR = new Path(import.meta.path).parent.parent.parent.div("samples", "models", "layer");
-const BUGS_DIR = new Path(import.meta.path).parent.parent.parent.div("samples", "bugs");
-const VERSIONS_DIR = new Path(import.meta.path).parent.parent.parent.div("samples", "versions");
 
 describe("TestAutoName", () => {
   /** Tests for auto_name helper. */

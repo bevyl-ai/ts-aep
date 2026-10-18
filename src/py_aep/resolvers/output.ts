@@ -12,7 +12,7 @@ import type { RenderSettingValues } from "../models/renderqueue/render_queue_ite
 import type { SettingsView } from "../models/renderqueue/settings.ts";
 
 /** A malformed replacement template (Python `re.error`, `re.PatternError` since 3.13). */
-export class PatternError extends AepError {}
+class PatternError extends AepError {}
 
 // Roou format_id (4-char) to file extension.
 export const FORMAT_ID_EXTENSIONS: Map<string, string> = new Map<string, string>([
@@ -33,13 +33,13 @@ export const FORMAT_ID_EXTENSIONS: Map<string, string> = new Map<string, string>
   ["RHDR", "hdr"],
 ]);
 
-export const FIELD_ORDER_NAMES: Map<number, string> = new Map<number, string>([
+const FIELD_ORDER_NAMES: Map<number, string> = new Map<number, string>([
   [0, "Both"], // Off/Progressive - renders both fields
   [1, "UFF"], // Upper field first
   [2, "LFF"], // Lower field first
 ]);
 
-export const PULLDOWN_PHASE_NAMES: Map<number, string> = new Map<number, string>([
+const PULLDOWN_PHASE_NAMES: Map<number, string> = new Map<number, string>([
   [0, ""],
   [1, "WSSWW"],
   [2, "SSWWW"],
@@ -48,13 +48,13 @@ export const PULLDOWN_PHASE_NAMES: Map<number, string> = new Map<number, string>
   [5, "WWSSW"],
 ]);
 
-export const OUTPUT_CHANNELS_NAMES: Map<OutputChannels, string> = new Map<OutputChannels, string>([
+const OUTPUT_CHANNELS_NAMES: Map<OutputChannels, string> = new Map<OutputChannels, string>([
   [OutputChannels.RGB, "RGB"],
   [OutputChannels.RGBA, "RGBA"],
   [OutputChannels.ALPHA, "Alpha"],
 ]);
 
-export const OUTPUT_COLOR_DEPTH_NAMES: Map<OutputColorDepth, string> = new Map<OutputColorDepth, string>([
+const OUTPUT_COLOR_DEPTH_NAMES: Map<OutputColorDepth, string> = new Map<OutputColorDepth, string>([
   [OutputColorDepth.MILLIONS_OF_COLORS, "Millions"],
   [OutputColorDepth.MILLIONS_OF_COLORS_PLUS, "Millions+"],
   [OutputColorDepth.TRILLIONS_OF_COLORS, "Trillions"],
@@ -63,7 +63,7 @@ export const OUTPUT_COLOR_DEPTH_NAMES: Map<OutputColorDepth, string> = new Map<O
   [OutputColorDepth.FLOATING_POINT_PLUS, "Floating Point+"],
 ]);
 
-export const PROJECT_COLOR_DEPTH_NAMES: Map<number, string> = new Map<number, string>([
+const PROJECT_COLOR_DEPTH_NAMES: Map<number, string> = new Map<number, string>([
   [8, "8bit"],
   [16, "16bit"],
   [32, "32bit"],
@@ -83,7 +83,7 @@ export const VIDEO_CODEC_NAMES: Map<string, string> = new Map<string, string>([
 
 // NOTE(port): local port of CPython 3.12 re._parser.parse_template for a pattern with
 // zero capture groups (the only use: re.sub(rf"\[{key}\]", ...)); same escapes and errors.
-export function _expandTemplate(template: string, match: string): string {
+function _expandTemplate(template: string, match: string): string {
   if (!template.includes("\\")) {
     return template;
   }
@@ -175,7 +175,7 @@ export function _expandTemplate(template: string, match: string): string {
   return out.join("");
 }
 
-export function gcd(a: number, b: number): number {
+function gcd(a: number, b: number): number {
   let x = Math.abs(a);
   let y = Math.abs(b);
   while (y !== 0) {
@@ -191,7 +191,7 @@ export function gcd(a: number, b: number): number {
  * @param height - Frame height in pixels.
  * @returns Aspect ratio string like '16x9', '4x3', etc.
  */
-export function calculateAspectRatio(width: number, height: number): string {
+function calculateAspectRatio(width: number, height: number): string {
   const gcd_ = gcd(width, height);
   return `${Math.floor(width / gcd_)}x${Math.floor(height / gcd_)}`;
 }
@@ -203,10 +203,10 @@ export function calculateAspectRatio(width: number, height: number): string {
  * film). Format is FFFF+RR where FFFF is feet and RR is remaining frames.
  *
  * @param frame - Frame number (0-based).
- * @param fps - Frames per second (not used in this format).
+ * @param _fps - Frames per second (not used in this format).
  * @returns Formatted frame string like '0045+00' (45 feet, 0 frames).
  */
-export function formatFrameNumber(frame: number, fps: number): string {
+function formatFrameNumber(frame: number, _fps: number): string {
   const framesPerFoot = 16; // Standard 35mm film: 16 frames per foot
   const feet = Math.floor(frame / framesPerFoot);
   const remainingFrames = ((frame % framesPerFoot) + framesPerFoot) % framesPerFoot;
@@ -222,7 +222,7 @@ export function formatFrameNumber(frame: number, fps: number): string {
  *   durations). If false, uses floor (for absolute times).
  * @returns Timecode string like '0-00-00-00' (hours-minutes-seconds-frames).
  */
-export function formatTimecode(seconds: number, fps: number, isDuration = false): string {
+function formatTimecode(seconds: number, fps: number, isDuration = false): string {
   const fpsInt = fps !== 0 ? Math.trunc(fps) : 1;
   // Use ceiling for durations, floor for absolute times
   let totalFrames: number;

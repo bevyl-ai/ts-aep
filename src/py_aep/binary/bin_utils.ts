@@ -17,12 +17,10 @@ import {
   struct,
   type ByteStream,
 } from "../../pyrt/index.ts";
+const _STRUCT_CACHE = new Map<string, struct.Struct>();
 
-export const _HEADER_STRUCT = new struct.Struct(">4sI");
-export const _STRUCT_CACHE = new Map<string, struct.Struct>();
-
-export const _INT32_MIN = -(2 ** 31);
-export const _INT32_MAX = 2 ** 31 - 1;
+const _INT32_MIN = -(2 ** 31);
+const _INT32_MAX = 2 ** 31 - 1;
 
 /**
  * Seconds between the Mac epoch (1904-01-01) AE stamps file and item times
@@ -81,7 +79,7 @@ export function toFixed1616(value: number): [number, number] {
 }
 
 /** Return a cached `struct.Struct` for `fullFmt`. */
-export function _getStruct(fullFmt: string): struct.Struct {
+function _getStruct(fullFmt: string): struct.Struct {
   let s = _STRUCT_CACHE.get(fullFmt);
   if (s == null) {
     s = new struct.Struct(fullFmt);

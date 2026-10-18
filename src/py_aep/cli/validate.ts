@@ -1645,14 +1645,14 @@ export function compareViewer(expectedViewer: Dict, parsedViewer: Dict, result: 
  * @param aepPath - Path to .aep file.
  * @param jsonPath - Path to expected JSON (from ExtendScript export).
  * @param verbose - Whether to print detailed progress.
- * @param categoryFilter - Only show differences from this category.
+ * @param _categoryFilter - Only show differences from this category.
  * @returns ValidationResult containing all differences.
  */
 export function validateAep(
   aepPath: Path,
   jsonPath: Path,
   verbose = false,
-  categoryFilter: string | null = null,
+  _categoryFilter: string | null = null,
 ): ValidationResult {
   const result = new ValidationResult();
 
@@ -1803,7 +1803,7 @@ export function printResults(result: ValidationResult, verbose = false, category
 /** Print field coverage report. */
 export function printCoverage(result: ValidationResult): void {
   const compared = [...result.comparedFields].sort(compare);
-  const notCompared = [...[...result.definedFields].filter((x) => !result.comparedFields.has(x))].sort(compare);
+  const notCompared = [...result.definedFields].filter((x) => !result.comparedFields.has(x)).sort(compare);
 
   console.log(`\n${"=".repeat(60)}`);
   console.log("FIELD COVERAGE REPORT");

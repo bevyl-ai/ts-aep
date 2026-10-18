@@ -45,8 +45,8 @@ import {
 import { approx, raises } from "../support/pytest.ts";
 
 const ASSETS = new Path(import.meta.dir, "..", "..", "samples", "assets");
-const BASE = new Path(import.meta.dir, "..", "..", "samples", "models", "folder", "folder.aep");
-const IMPORT_DIR = new Path(import.meta.dir, "..", "..", "samples", "models", "import");
+new Path(import.meta.dir, "..", "..", "samples", "models", "folder", "folder.aep");
+new Path(import.meta.dir, "..", "..", "samples", "models", "import");
 
 describe("TestMediaProbe", () => {
   /** Media-header probing matches the values AE reads on import. */

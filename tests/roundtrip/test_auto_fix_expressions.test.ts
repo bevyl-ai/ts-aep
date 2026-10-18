@@ -28,7 +28,7 @@ function _opacity(project: Project) {
 
 describe("TestAutoFixExpressions", () => {
   test("test_double_quoted_reference_replaced", () => {
-    const tmpPath = makeTmpPath();
+    makeTmpPath();
     const project = parseProjectFresh(SAMPLE);
     const prop = _opacity(project);
     prop.expression = 'thisComp.layer("Ghost").transform.opacity';
@@ -37,7 +37,7 @@ describe("TestAutoFixExpressions", () => {
   });
 
   test("test_single_quoted_reference_replaced", () => {
-    const tmpPath = makeTmpPath();
+    makeTmpPath();
     const project = parseProjectFresh(SAMPLE);
     const prop = _opacity(project);
     prop.expression = "thisComp.layer('Ghost').transform.opacity / 2";
@@ -46,7 +46,7 @@ describe("TestAutoFixExpressions", () => {
   });
 
   test("test_disabled_expression_untouched", () => {
-    const tmpPath = makeTmpPath();
+    makeTmpPath();
     const project = parseProjectFresh(SAMPLE);
     const prop = _opacity(project);
     prop.expression = 'thisComp.layer("Ghost").transform.opacity';
@@ -59,7 +59,7 @@ describe("TestAutoFixExpressions", () => {
   test("test_unquoted_text_untouched", () => {
     // AE parity for the probed comment case: an unquoted mention is
     // not a reference and is never rewritten.
-    const tmpPath = makeTmpPath();
+    makeTmpPath();
     const project = parseProjectFresh(SAMPLE);
     const prop = _opacity(project);
     prop.expression = "// Ghost mentioned in comment only\n50";
@@ -70,7 +70,7 @@ describe("TestAutoFixExpressions", () => {
   test("test_comment_occurrence_in_rewritten_expression", () => {
     // AE replaces plain-text across the whole broken expression,
     // including quoted occurrences inside comments (probed case_c).
-    const tmpPath = makeTmpPath();
+    makeTmpPath();
     const project = parseProjectFresh(SAMPLE);
     const prop = _opacity(project);
     prop.expression = '// see "Ghost" for details\nthisComp.layer("Ghost").transform.opacity';
@@ -79,7 +79,7 @@ describe("TestAutoFixExpressions", () => {
   });
 
   test("test_empty_old_text_is_noop", () => {
-    const tmpPath = makeTmpPath();
+    makeTmpPath();
     const project = parseProjectFresh(SAMPLE);
     const prop = _opacity(project);
     prop.expression = 'thisComp.layer("Ghost").transform.opacity';
@@ -88,7 +88,7 @@ describe("TestAutoFixExpressions", () => {
   });
 
   test("test_non_string_raises", () => {
-    const tmpPath = makeTmpPath();
+    makeTmpPath();
     const project = parseProjectFresh(SAMPLE);
     // @ts-expect-error deliberately passes a non-string to check runtime validation
     raises(TypeError, () => project.autoFixExpressions(5, "Real"));

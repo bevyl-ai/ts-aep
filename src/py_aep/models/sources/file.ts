@@ -95,9 +95,9 @@ import {
  * `NamedTuple._replace(**kw)` for the translated NamedTuples (`MediaInfo`,
  * `FileFormat`) that may not carry a `_replace` method.
  */
-export function _replace(obj: MediaInfo, kw: Partial<MediaInfoFields>): MediaInfo;
-export function _replace(obj: FileFormat, kw: Partial<FileFormat>): FileFormat;
-export function _replace(
+function _replace(obj: MediaInfo, kw: Partial<MediaInfoFields>): MediaInfo;
+function _replace(obj: FileFormat, kw: Partial<FileFormat>): FileFormat;
+function _replace(
   obj: MediaInfo | FileFormat,
   kw: Partial<MediaInfoFields> & Partial<FileFormat>,
 ): MediaInfo | FileFormat {
@@ -106,7 +106,7 @@ export function _replace(
 }
 
 /** `os.path.splitext(name)[1]` */
-export function _splitextExt(name: string): string {
+function _splitextExt(name: string): string {
   // Leading dots belong to the stem, as in os.path.splitext.
   const stripped = name.replace(/^\.+/, "");
   const i = stripped.lastIndexOf(".");
@@ -118,7 +118,7 @@ export function _splitextExt(name: string): string {
  * `Path` lets raw Node errors through, which are not `OSError` instances, so
  * the `errno` check matches Python's `except OSError` for fs failures.
  */
-export function _isOsError(e: unknown): boolean {
+function _isOsError(e: unknown): boolean {
   return e instanceof OSError || (typeof e === "object" && e !== null && "errno" in e && typeof e.errno === "number");
 }
 
@@ -152,7 +152,7 @@ export function _isOsError(e: unknown): boolean {
  *   embedded as big-endian u16; an Illustrator/PDF document adds its
  *   layer count, page count and page-size tail, an EPS file does not.
  */
-export function _optiData(
+function _optiData(
   fmt: FileFormat,
   info: MediaInfo,
   path: Path,
@@ -200,7 +200,7 @@ export function _optiData(
  * truncated PDF objects) counts 0 as well: the count only annotates the
  * footage, which imports without it.
  */
-export function _aiLayerCount(path: Path, data: Uint8Array | null = null): number {
+function _aiLayerCount(path: Path, data: Uint8Array | null = null): number {
   try {
     return readAiLayerOcgs(path, data).length;
   } catch (e) {
@@ -217,7 +217,7 @@ export function _aiLayerCount(path: Path, data: Uint8Array | null = null): numbe
  * instead: `w * h * channels * bytes per channel` (`MediaInfo.pixel_channels`;
  * choose_layer_merged / flattened_rgb_comp / footage_depth.aep fixtures).
  */
-export function _stillDataSize(fmt: FileFormat, info: MediaInfo, path: Path): number {
+function _stillDataSize(fmt: FileFormat, info: MediaInfo, path: Path): number {
   if (!["psd", "tiff"].includes(fmt.opti)) return path.stat().size;
   return pixelBufferSize(info.width, info.height, info.pixelChannels, info.bitDepth);
 }
@@ -308,7 +308,7 @@ export function psdLayerFootage(
  * imported by script or through the Import dialog; AE on macOS keeps the
  * alpha channel (`format_options/heic` fixture).
  */
-export function _platformMediaInfo(info: MediaInfo, fmt: FileFormat, kw: { windows: boolean }): MediaInfo {
+function _platformMediaInfo(info: MediaInfo, fmt: FileFormat, kw: { windows: boolean }): MediaInfo {
   const { windows } = kw;
   if (windows && fmt.sourceFormat === "AIDE" && info.hasAlpha) {
     // The same channels without the alpha one (32 -> 24 on Windows).
@@ -320,7 +320,7 @@ export function _platformMediaInfo(info: MediaInfo, fmt: FileFormat, kw: { windo
 /**
  * The profile AE falls back to for media that carries none of its own.
  */
-export const _DEFAULT_PROFILE = "sRGB IEC61966-2.1";
+const _DEFAULT_PROFILE = "sRGB IEC61966-2.1";
 
 /**
  * What AE assigns instead to video it decodes itself - an animated GIF, an
@@ -328,8 +328,8 @@ export const _DEFAULT_PROFILE = "sRGB IEC61966-2.1";
  * keeps the default, and QuickTime/MP4 name their space instead. STIL and
  * IMIO are BMP/GIF on Windows and macOS (see `GENERIC_STILL_FORMATS`).
  */
-export const _VIDEO_PROFILE = "Rec.709 Gamma 2.4";
-export const _VIDEO_DECODED_FORMATS = new Set(["STIL", "IMIO", "SWF ", "MPEO", "WMED"]);
+const _VIDEO_PROFILE = "Rec.709 Gamma 2.4";
+const _VIDEO_DECODED_FORMATS = new Set(["STIL", "IMIO", "SWF ", "MPEO", "WMED"]);
 
 /**
  * Formats whose importer embeds After Effects' own catalogued copy of the
@@ -339,20 +339,20 @@ export const _VIDEO_DECODED_FORMATS = new Set(["STIL", "IMIO", "SWF ", "MPEO", "
  * An Illustrator/PDF file's RGB profile is recorded the same way (AE 2026,
  * complex.ai).
  */
-export const _CATALOGUED_PROFILE_FORMATS = new Set(["TIF ", "8BPS"]);
+const _CATALOGUED_PROFILE_FORMATS = new Set(["TIF ", "8BPS"]);
 
 /**
  * DPX and Cineon: AE records no profile at all and interprets the footage
  * in the working space (`ipws` 1; AE 2026 on Windows and the macOS
  * media_gap_formats.aep fixture).
  */
-export const _UNPROFILED_FORMATS = new Set(["sDPX"]);
+const _UNPROFILED_FORMATS = new Set(["sDPX"]);
 
 /**
  * The profile AE embeds for a Camera Raw file, which carries none: the
  * catalogued ProPhoto RGB Camera Raw develops into (AE 2026, crw.crw).
  */
-export const _CAMERA_RAW_PROFILES = new Map<string, string>([["Craw", "ProPhoto RGB"]]);
+const _CAMERA_RAW_PROFILES = new Map<string, string>([["Craw", "ProPhoto RGB"]]);
 
 /**
  * The profile AE records by name only (`empd`, no ICC data, interpreted in
@@ -361,13 +361,13 @@ export const _CAMERA_RAW_PROFILES = new Map<string, string>([["Craw", "ProPhoto 
  * depth/*.psd and *.tif). A 32-bit float grayscale TIFF names the linear
  * one; a bitmap (1-bit) image is assigned sRGB like any untagged media.
  */
-export const _MODE_PROFILE_NAMES = new Map<number, string>([
+const _MODE_PROFILE_NAMES = new Map<number, string>([
   [1, "Dot Gain 20%"],
   [2, "sRGB IEC61966-2.1"],
   [4, "U.S. Web Coated (SWOP) v2"],
   [9, "Lab D50"],
 ]);
-export const _LINEAR_GRAY_PROFILE_NAME = "Linear Grayscale Profile";
+const _LINEAR_GRAY_PROFILE_NAME = "Linear Grayscale Profile";
 
 /**
  * Formats AE leaves without any profile record when the file carries none:
@@ -375,8 +375,8 @@ export const _LINEAR_GRAY_PROFILE_NAME = "Linear Grayscale Profile";
  * (`empd` + e.g. "Rec. 709") from data py_aep cannot read yet. The record
  * still counts as managed - AE fills the name in when it opens the project.
  */
-export const _UNRECORDED_PROFILE_FORMATS = new Set(["ZPEG"]);
-export const _VIDEO_CONTAINER_FORMATS = new Set(["MOoV", "XCEX"]);
+const _UNRECORDED_PROFILE_FORMATS = new Set(["ZPEG"]);
+const _VIDEO_CONTAINER_FORMATS = new Set(["MOoV", "XCEX"]);
 
 /**
  * Formats AE imports with Interpret As Linear Light off rather than the
@@ -385,20 +385,10 @@ export const _VIDEO_CONTAINER_FORMATS = new Set(["MOoV", "XCEX"]);
  * default. The setting is inert below 32 bpc either way. HEIC (`AIDE`) is
  * one of them: off in every AE 2026 HEIC import (Windows and macOS).
  */
-export const _LINEAR_LIGHT_OFF_FORMATS = new Set([
-  "ZPEG",
-  "STIL",
-  "IMIO",
-  "SWF ",
-  "MPEO",
-  "WMED",
-  "MOoV",
-  "XCEX",
-  "AIDE",
-]);
+const _LINEAR_LIGHT_OFF_FORMATS = new Set(["ZPEG", "STIL", "IMIO", "SWF ", "MPEO", "WMED", "MOoV", "XCEX", "AIDE"]);
 
 /** After Effects' own copy of the named profile, if it is installed. */
-export function _cataloguedProfile(name: string): Uint8Array | null {
+function _cataloguedProfile(name: string): Uint8Array | null {
   try {
     return defaultIccLibrary().bytesFor(name);
   } catch (e) {
@@ -407,7 +397,7 @@ export function _cataloguedProfile(name: string): Uint8Array | null {
   }
 }
 
-export function _profileRecord(blob: Uint8Array): ColorProfileRecord {
+function _profileRecord(blob: Uint8Array): ColorProfileRecord {
   const name = iccProfileDescription(blob) || "";
   return new ColorProfileRecord(iccProfileId(blob), buildIccEnvelope(name, blob));
 }
@@ -469,7 +459,7 @@ export function aiDocumentProfile(path: Path, data: Uint8Array | null = null): [
  *   {@link MediaInfo | MediaInfo.color_mode}); an untagged bitmap
  *   TIFF/PSD is assigned sRGB rather than taken as carrying it.
  */
-export function _mediaProfileRecords(
+function _mediaProfileRecords(
   iccProfile: Uint8Array | null,
   sourceFormat: string,
   hasVideo: boolean,
@@ -510,7 +500,7 @@ export function _mediaProfileRecords(
  * The `sspc` alpha byte AE stores: 3 = no alpha, 1 = premultiplied,
  * 0 = straight.
  */
-export function _alphaModeRaw(hasAlpha: boolean, premultiplied: boolean): number {
+function _alphaModeRaw(hasAlpha: boolean, premultiplied: boolean): number {
   if (!hasAlpha) return 3;
   return premultiplied ? 1 : 0;
 }
@@ -524,7 +514,7 @@ export function _alphaModeRaw(hasAlpha: boolean, premultiplied: boolean): number
  * a premultiplied black background; measured against an AE-resaved
  * crystal.fbx).
  */
-export function _syncPremultiplied(sspc: SspcChunk): void {
+function _syncPremultiplied(sspc: SspcChunk): void {
   sspc.premultiplied = sspc.alphaModeRaw === 1 || sspc.sourceFormatType === FORMAT_3D_MODEL_SCENE;
 }
 
@@ -538,19 +528,19 @@ export const PSD_LAYER_STYLES_C8 = new Map<string, Uint8Array>([
   ["merge", Uint8Array.of(0x00, 0x01)],
   ["editable", Uint8Array.of(0x00, 0x02)],
 ]);
-export const _C9_TO_LAYER_STYLES = new Map<number, string>(
+const _C9_TO_LAYER_STYLES = new Map<number, string>(
   [...PSD_LAYER_STYLES_C8].map(([k, v]): [number, string] => [v[1], k]),
 );
 
 // A sequence frame number is at most the last 9 digits of the file stem; any
 // digits before them belong to the prefix (AE 2026: f_99999999998.png and
 // f_99999999999.png import as `f_99[999999998-999999999].png`).
-export const _FRAME_NUMBER_RE = pyRe(String.raw`(\d{1,9})$`);
+const _FRAME_NUMBER_RE = pyRe(String.raw`(\d{1,9})$`);
 
 // AE reads the `sspc` width and height as signed 16-bit values: a py_aep file
 // holding a 65535-px-wide PNG opens -1 px wide in AE 2026, and 65536 does not
 // fit the field at all.
-export const _MAX_FOOTAGE_SIZE = 32767;
+const _MAX_FOOTAGE_SIZE = 32767;
 
 /**
  * Reject footage dimensions After Effects cannot store or read back.
@@ -573,7 +563,7 @@ export function checkFootageSize(name: string, width: number, height: number): v
  * splits any embedded `/`, while `PurePosixPath` leaves a native POSIX path
  * intact (`PureWindowsPath` would rewrite its forward slashes to `\`).
  */
-export function _joinSequenceFrame(folder: string, frameName: string): string {
+function _joinSequenceFrame(folder: string, frameName: string): string {
   if (folder.includes("\\")) return String(new PureWindowsPath(folder).div(frameName));
   return String(new PurePosixPath(folder).div(frameName));
 }
@@ -1369,12 +1359,11 @@ export class FileSource extends FootageSource {
       const suffix = file.suffix.toLowerCase();
       // scandir's entries know their type, and the cheap name test runs
       // first: no stat per file of a large frame folder.
-      fileNames = [
-        ...host
-          .scandir(file.parent.path)
-          .map((ent) => ent.name)
-          .filter((name) => _splitextExt(name).toLowerCase() === suffix && file.parent.div(name).isFile()),
-      ].sort((a, b) => compare(a.toLowerCase(), b.toLowerCase()));
+      fileNames = host
+        .scandir(file.parent.path)
+        .map((ent) => ent.name)
+        .filter((name) => _splitextExt(name).toLowerCase() === suffix && file.parent.div(name).isFile())
+        .sort((a, b) => compare(a.toLowerCase(), b.toLowerCase()));
       firstFrame = fileNames[0];
       startFrame = endFrame = UNDEFINED_FRAME;
       padding = 0;

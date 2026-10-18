@@ -277,7 +277,7 @@ const ESCAPE_DCT: Record<string, string> = {
 };
 
 /** `json.encoder.encode_basestring_ascii` (per UTF-16 unit, lowercase hex, as CPython). */
-export function encodeBasestringAscii(s: string): string {
+function encodeBasestringAscii(s: string): string {
   let out = '"';
   for (let i = 0; i < s.length; i++) {
     const ch = s[i];
@@ -291,7 +291,7 @@ export function encodeBasestringAscii(s: string): string {
 }
 
 /** `json.encoder.encode_basestring` (`ensure_ascii=False`). */
-export function encodeBasestring(s: string): string {
+function encodeBasestring(s: string): string {
   let out = '"';
   for (let i = 0; i < s.length; i++) {
     const ch = s[i];

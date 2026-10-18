@@ -198,7 +198,7 @@ export class GroupSpec {
 // repeating it. (ExtendScript reports color properties as spatial.) Value types
 // absent here - NO_VALUE, CUSTOM_VALUE, MARKER, TEXT_DOCUMENT - have no single
 // kind, so those specs pass `dimensions`/`isSpatial`/`color` explicitly.
-export const _PVT_KIND: Map<number, [number, boolean, boolean]> = new Map<number, [number, boolean, boolean]>([
+const _PVT_KIND: Map<number, [number, boolean, boolean]> = new Map<number, [number, boolean, boolean]>([
   [PropertyValueType.ThreeD_SPATIAL, [3, true, false]],
   [PropertyValueType.ThreeD, [3, false, false]],
   [PropertyValueType.TwoD_SPATIAL, [2, true, false]],
@@ -212,7 +212,7 @@ export const _PVT_KIND: Map<number, [number, boolean, boolean]> = new Map<number
  * Build a `PropSpec`, deriving `dimensions`/`isSpatial`/`color` from
  * `pvt` via `_PVT_KIND` unless given explicitly.
  */
-export function _spec(
+function _spec(
   matchName: string,
   autoName: string,
   value: number | number[] | null,
@@ -425,7 +425,7 @@ export const _COMPOSITING_OPTIONS_SPECS: (PropSpec | GroupSpec)[] = [
   }),
 ];
 
-export const _3D_COMPOSITING_OPTIONS_SPECS: PropSpec[] = [
+const _3D_COMPOSITING_OPTIONS_SPECS: PropSpec[] = [
   _spec("ADBE Casts Shadows", "Casts Shadows", 1.0, PropertyValueType.OneD, {
     // ExtendScript reports isModified=True on mesh layers: the value
     // is On (1) but the shared Casts Shadows default is Off (0).
@@ -534,7 +534,7 @@ export const _LIGHT_SPECS: (PropSpec | GroupSpec)[] = [
 ];
 
 // Canonical children of "ADBE3D Para Mat Parade" as reported by ExtendScript.
-export const _PARA_MAT_SPEC: PropSpec[] = [
+const _PARA_MAT_SPEC: PropSpec[] = [
   _spec("ADBE3D Material Projection", "Projection Mode", 1.0, PropertyValueType.OneD, {
     minValue: 1,
     maxValue: 2,
@@ -588,7 +588,7 @@ export const _PARA_MAT_SPEC: PropSpec[] = [
 // Every mesh option / bevel stream sets `chunk_bounds_are_hints=True`: their
 // tdum/tduM store 0/100 UI slider hints regardless of the actual clamp
 // (verified against AE 2026 ExtendScript min/max).
-export const _CUBE_MESH_OPTIONS_SPEC: PropSpec[] = [
+const _CUBE_MESH_OPTIONS_SPEC: PropSpec[] = [
   _spec("ADBE CubeWidthStrm", "Width", 200.0, PropertyValueType.OneD, {
     minValue: 0,
     chunkBoundsAreHints: true,
@@ -610,7 +610,7 @@ export const _CUBE_MESH_OPTIONS_SPEC: PropSpec[] = [
 ];
 
 // Canonical children of "ADBE CubeBevelOptionsSGrp".
-export const _CUBE_BEVEL_OPTIONS_SPEC: PropSpec[] = [
+const _CUBE_BEVEL_OPTIONS_SPEC: PropSpec[] = [
   _spec("ADBE CubeBevelRadiusStrm", "Radius", 0.0, PropertyValueType.OneD, {
     minValue: 0,
     chunkBoundsAreHints: true,
@@ -623,7 +623,7 @@ export const _CUBE_BEVEL_OPTIONS_SPEC: PropSpec[] = [
 ];
 
 // Canonical children of "ADBE SphereMeshOptionsSGrp".
-export const _SPHERE_MESH_OPTIONS_SPEC: PropSpec[] = [
+const _SPHERE_MESH_OPTIONS_SPEC: PropSpec[] = [
   _spec("ADBE SphereRadiusStrm", "Radius", 100.0, PropertyValueType.OneD, {
     minValue: 0,
     chunkBoundsAreHints: true,
@@ -658,7 +658,7 @@ export const _SPHERE_MESH_OPTIONS_SPEC: PropSpec[] = [
 ];
 
 // Canonical children of "ADBE PlaneMeshOptionsSGrp".
-export const _PLANE_MESH_OPTIONS_SPEC: PropSpec[] = [
+const _PLANE_MESH_OPTIONS_SPEC: PropSpec[] = [
   _spec("ADBE PlaneWidthStrm", "Width", 200.0, PropertyValueType.OneD, {
     minValue: 0,
     chunkBoundsAreHints: true,
@@ -687,7 +687,7 @@ export const _PLANE_MESH_OPTIONS_SPEC: PropSpec[] = [
 ];
 
 // Canonical children of "ADBE TorusMeshOptionsSGrp".
-export const _TORUS_MESH_OPTIONS_SPEC: PropSpec[] = [
+const _TORUS_MESH_OPTIONS_SPEC: PropSpec[] = [
   _spec("ADBE TorusRingRadiusStrm", "Ring Radius", 100.0, PropertyValueType.OneD, {
     minValue: 0,
     chunkBoundsAreHints: true,
@@ -731,7 +731,7 @@ export const _TORUS_MESH_OPTIONS_SPEC: PropSpec[] = [
 ];
 
 // Canonical children of "ADBE ConeMeshOptionsSGrp".
-export const _CONE_MESH_OPTIONS_SPEC: PropSpec[] = [
+const _CONE_MESH_OPTIONS_SPEC: PropSpec[] = [
   _spec("ADBE ConeTopRadiusStrm", "Top Radius", 0.0, PropertyValueType.OneD, {
     minValue: 0,
     chunkBoundsAreHints: true,
@@ -780,7 +780,7 @@ export const _CONE_MESH_OPTIONS_SPEC: PropSpec[] = [
 ];
 
 // Canonical children of "ADBE ConeBevelBevelSGrp".
-export const _CONE_BEVEL_OPTIONS_SPEC: PropSpec[] = [
+const _CONE_BEVEL_OPTIONS_SPEC: PropSpec[] = [
   _spec("ADBE ConeBevelTopRadiusStrm", "Top Radius", 0.0, PropertyValueType.OneD, {
     minValue: 0,
     chunkBoundsAreHints: true,
@@ -802,7 +802,7 @@ export const _CONE_BEVEL_OPTIONS_SPEC: PropSpec[] = [
 ];
 
 // Canonical children of "ADBE CylinderMeshOptionsSGrp".
-export const _CYLINDER_MESH_OPTIONS_SPEC: PropSpec[] = [
+const _CYLINDER_MESH_OPTIONS_SPEC: PropSpec[] = [
   _spec("ADBE CylinderRadiusStrm", "Radius", 100.0, PropertyValueType.OneD, {
     minValue: 0,
     chunkBoundsAreHints: true,
@@ -847,7 +847,7 @@ export const _CYLINDER_MESH_OPTIONS_SPEC: PropSpec[] = [
 ];
 
 // Canonical children of "ADBE CylinderBevelOptionsSGrp".
-export const _CYLINDER_BEVEL_OPTIONS_SPEC: PropSpec[] = [
+const _CYLINDER_BEVEL_OPTIONS_SPEC: PropSpec[] = [
   _spec("ADBE CylinderBevelRadiusStrm", "Radius", 0.0, PropertyValueType.OneD, {
     minValue: 0,
     chunkBoundsAreHints: true,
@@ -863,7 +863,7 @@ export const _CYLINDER_BEVEL_OPTIONS_SPEC: PropSpec[] = [
 // layers). AE 26.0 does not write the group for a new mesh layer; 26.1+
 // writes and reports it, so it is synthesized for ExtendScript parity but
 // never materialized at creation.
-export const _DISPLACEMENT_OPTIONS_SPEC: PropSpec[] = [
+const _DISPLACEMENT_OPTIONS_SPEC: PropSpec[] = [
   _spec("ADBE Displacement Intensity", "Intensity", 100.0, PropertyValueType.OneD, {
     minValue: -1000,
     maxValue: 1000,
@@ -1030,12 +1030,12 @@ export const _VECTOR_STAR_SPECS: PropSpec[] = [
 
 // Shared vector property specs used across Fill, G-Fill, G-Stroke, Stroke,
 // and Group lists.
-export const _VECTOR_BLEND_MODE: PropSpec = _spec("ADBE Vector Blend Mode", "Blend Mode", 1.0, PropertyValueType.OneD, {
+const _VECTOR_BLEND_MODE: PropSpec = _spec("ADBE Vector Blend Mode", "Blend Mode", 1.0, PropertyValueType.OneD, {
   minValue: 1,
   maxValue: 29,
   canVaryOverTime: false,
 });
-export const _VECTOR_COMPOSITE_ORDER: PropSpec = _spec(
+const _VECTOR_COMPOSITE_ORDER: PropSpec = _spec(
   "ADBE Vector Composite Order",
   "Composite",
   1.0,
@@ -1046,39 +1046,33 @@ export const _VECTOR_COMPOSITE_ORDER: PropSpec = _spec(
     canVaryOverTime: false,
   },
 );
-export const _VECTOR_FILL_RULE: PropSpec = _spec("ADBE Vector Fill Rule", "Fill Rule", 1.0, PropertyValueType.OneD, {
+const _VECTOR_FILL_RULE: PropSpec = _spec("ADBE Vector Fill Rule", "Fill Rule", 1.0, PropertyValueType.OneD, {
   minValue: 1,
   maxValue: 2,
   canVaryOverTime: false,
 });
-export const _VECTOR_FILL_OPACITY: PropSpec = _spec(
-  "ADBE Vector Fill Opacity",
-  "Opacity",
-  100.0,
-  PropertyValueType.OneD,
-  {
-    minValue: 0,
-    maxValue: 100,
-  },
-);
-export const _VECTOR_GRAD_TYPE: PropSpec = _spec("ADBE Vector Grad Type", "Type", 1.0, PropertyValueType.OneD, {
+const _VECTOR_FILL_OPACITY: PropSpec = _spec("ADBE Vector Fill Opacity", "Opacity", 100.0, PropertyValueType.OneD, {
+  minValue: 0,
+  maxValue: 100,
+});
+const _VECTOR_GRAD_TYPE: PropSpec = _spec("ADBE Vector Grad Type", "Type", 1.0, PropertyValueType.OneD, {
   minValue: 1,
   maxValue: 2,
   canVaryOverTime: false,
 });
-export const _VECTOR_GRAD_START_PT: PropSpec = _spec(
+const _VECTOR_GRAD_START_PT: PropSpec = _spec(
   "ADBE Vector Grad Start Pt",
   "Start Point",
   [0.0, 0.0],
   PropertyValueType.TwoD_SPATIAL,
 );
-export const _VECTOR_GRAD_END_PT: PropSpec = _spec(
+const _VECTOR_GRAD_END_PT: PropSpec = _spec(
   "ADBE Vector Grad End Pt",
   "End Point",
   [100.0, 0.0],
   PropertyValueType.TwoD_SPATIAL,
 );
-export const _VECTOR_GRAD_HILITE_LENGTH: PropSpec = _spec(
+const _VECTOR_GRAD_HILITE_LENGTH: PropSpec = _spec(
   "ADBE Vector Grad HiLite Length",
   "Highlight Length",
   0.0,
@@ -1088,7 +1082,7 @@ export const _VECTOR_GRAD_HILITE_LENGTH: PropSpec = _spec(
     maxValue: 100,
   },
 );
-export const _VECTOR_GRAD_HILITE_ANGLE: PropSpec = _spec(
+const _VECTOR_GRAD_HILITE_ANGLE: PropSpec = _spec(
   "ADBE Vector Grad HiLite Angle",
   "Highlight Angle",
   0.0,
@@ -1097,54 +1091,24 @@ export const _VECTOR_GRAD_HILITE_ANGLE: PropSpec = _spec(
 // Grad Scale / Grad Rotation were added to the gradient fill/stroke groups in
 // AE 2026 (major 26); 2018-2025 stop at HiLite Angle -> Colors. Probed across
 // AE CC 2018, 2022, 2023, 2024, 2025, 2026 (only 26.0 exposes them).
-export const _VECTOR_GRAD_SCALE: PropSpec = _spec(
-  "ADBE Vector Grad Scale",
-  "Scale",
-  [100.0, 100.0],
-  PropertyValueType.TwoD,
-  {
-    minMajor: 26,
-  },
-);
-export const _VECTOR_GRAD_ROTATION: PropSpec = _spec(
-  "ADBE Vector Grad Rotation",
-  "Rotation",
-  0.0,
-  PropertyValueType.OneD,
-  {
-    minMajor: 26,
-  },
-);
-export const _VECTOR_GRAD_COLORS: PropSpec = _spec(
-  "ADBE Vector Grad Colors",
-  "Colors",
-  null,
-  PropertyValueType.NO_VALUE,
-  {
-    isSpatial: true,
-  },
-);
-export const _VECTOR_STROKE_OPACITY: PropSpec = _spec(
-  "ADBE Vector Stroke Opacity",
-  "Opacity",
-  100.0,
-  PropertyValueType.OneD,
-  {
-    minValue: 0,
-    maxValue: 100,
-  },
-);
-export const _VECTOR_STROKE_WIDTH: PropSpec = _spec(
-  "ADBE Vector Stroke Width",
-  "Stroke Width",
-  2.0,
-  PropertyValueType.OneD,
-  {
-    minValue: 0,
-    chunkBoundsAreHints: true,
-  },
-);
-export const _VECTOR_STROKE_LINE_CAP: PropSpec = _spec(
+const _VECTOR_GRAD_SCALE: PropSpec = _spec("ADBE Vector Grad Scale", "Scale", [100.0, 100.0], PropertyValueType.TwoD, {
+  minMajor: 26,
+});
+const _VECTOR_GRAD_ROTATION: PropSpec = _spec("ADBE Vector Grad Rotation", "Rotation", 0.0, PropertyValueType.OneD, {
+  minMajor: 26,
+});
+const _VECTOR_GRAD_COLORS: PropSpec = _spec("ADBE Vector Grad Colors", "Colors", null, PropertyValueType.NO_VALUE, {
+  isSpatial: true,
+});
+const _VECTOR_STROKE_OPACITY: PropSpec = _spec("ADBE Vector Stroke Opacity", "Opacity", 100.0, PropertyValueType.OneD, {
+  minValue: 0,
+  maxValue: 100,
+});
+const _VECTOR_STROKE_WIDTH: PropSpec = _spec("ADBE Vector Stroke Width", "Stroke Width", 2.0, PropertyValueType.OneD, {
+  minValue: 0,
+  chunkBoundsAreHints: true,
+});
+const _VECTOR_STROKE_LINE_CAP: PropSpec = _spec(
   "ADBE Vector Stroke Line Cap",
   "Line Cap",
   1.0,
@@ -1155,7 +1119,7 @@ export const _VECTOR_STROKE_LINE_CAP: PropSpec = _spec(
     canVaryOverTime: false,
   },
 );
-export const _VECTOR_STROKE_LINE_JOIN: PropSpec = _spec(
+const _VECTOR_STROKE_LINE_JOIN: PropSpec = _spec(
   "ADBE Vector Stroke Line Join",
   "Line Join",
   1.0,
@@ -1166,7 +1130,7 @@ export const _VECTOR_STROKE_LINE_JOIN: PropSpec = _spec(
     canVaryOverTime: false,
   },
 );
-export const _VECTOR_STROKE_MITER_LIMIT: PropSpec = _spec(
+const _VECTOR_STROKE_MITER_LIMIT: PropSpec = _spec(
   "ADBE Vector Stroke Miter Limit",
   "Miter Limit",
   4.0,
@@ -1190,7 +1154,7 @@ export const _VECTOR_FILL_SPECS: PropSpec[] = [
 ];
 
 // Canonical children of "ADBE Vector Graphic - G-Fill".
-export const _VECTOR_G_FILL_SPECS: PropSpec[] = [
+const _VECTOR_G_FILL_SPECS: PropSpec[] = [
   _VECTOR_BLEND_MODE,
   _VECTOR_COMPOSITE_ORDER,
   _VECTOR_FILL_RULE,
@@ -1206,7 +1170,7 @@ export const _VECTOR_G_FILL_SPECS: PropSpec[] = [
 ];
 
 // Canonical children of "ADBE Vector Graphic - G-Stroke".
-export const _VECTOR_G_STROKE_SPECS: (PropSpec | GroupSpec)[] = [
+const _VECTOR_G_STROKE_SPECS: (PropSpec | GroupSpec)[] = [
   _VECTOR_BLEND_MODE,
   _VECTOR_COMPOSITE_ORDER,
   _VECTOR_GRAD_TYPE,
@@ -1339,7 +1303,7 @@ export const _VECTOR_TRANSFORM_SPECS: PropSpec[] = [
 ];
 
 /** Return 12 material property specs for one face (Front/Bevel/Side/Back). */
-export function _vec3dFaceSpecs(face: string): PropSpec[] {
+function _vec3dFaceSpecs(face: string): PropSpec[] {
   return [
     _spec(`ADBE Vec3D ${face} RGB`, `${face} Color`, [1.0, 0.0, 0.0, 1.0], PropertyValueType.COLOR, {
       minValue: _COLOR_MIN,
@@ -1465,7 +1429,7 @@ export const _VECTOR_REPEATER_SPECS: (PropSpec | GroupSpec)[] = [
 // export_project_json; min/max/units match what ExtendScript reports).
 
 // "ADBE Vector Shape - Group" (Path): Shape Direction + the bezier path.
-export const _VECTOR_PATH_SPECS: PropSpec[] = [
+const _VECTOR_PATH_SPECS: PropSpec[] = [
   _spec("ADBE Vector Shape Direction", "Shape Direction", 1.0, PropertyValueType.OneD, {
     minValue: 1,
     maxValue: 3,
@@ -1477,7 +1441,7 @@ export const _VECTOR_PATH_SPECS: PropSpec[] = [
 ];
 
 // "ADBE Vector Filter - Merge".
-export const _VECTOR_MERGE_SPECS: PropSpec[] = [
+const _VECTOR_MERGE_SPECS: PropSpec[] = [
   _spec("ADBE Vector Merge Type", "Mode", 1.0, PropertyValueType.OneD, {
     minValue: 1,
     maxValue: 5,
@@ -1486,7 +1450,7 @@ export const _VECTOR_MERGE_SPECS: PropSpec[] = [
 ];
 
 // "ADBE Vector Filter - Offset".
-export const _VECTOR_OFFSET_SPECS: PropSpec[] = [
+const _VECTOR_OFFSET_SPECS: PropSpec[] = [
   _spec("ADBE Vector Offset Amount", "Amount", 10.0, PropertyValueType.OneD, {
     boundChunks: true,
     chunkBoundsAreHints: true,
@@ -1510,14 +1474,14 @@ export const _VECTOR_OFFSET_SPECS: PropSpec[] = [
 ];
 
 // "ADBE Vector Filter - PB" (Pucker & Bloat).
-export const _VECTOR_PUCKER_BLOAT_SPECS: PropSpec[] = [
+const _VECTOR_PUCKER_BLOAT_SPECS: PropSpec[] = [
   _spec("ADBE Vector PuckerBloat Amount", "Amount", 10.0, PropertyValueType.OneD, {
     chunkBoundsAreHints: true,
   }),
 ];
 
 // "ADBE Vector Filter - RC" (Round Corners).
-export const _VECTOR_ROUND_CORNERS_SPECS: PropSpec[] = [
+const _VECTOR_ROUND_CORNERS_SPECS: PropSpec[] = [
   _spec("ADBE Vector RoundCorner Radius", "Radius", 10.0, PropertyValueType.OneD, {
     minValue: 0,
     chunkBoundsAreHints: true,
@@ -1525,7 +1489,7 @@ export const _VECTOR_ROUND_CORNERS_SPECS: PropSpec[] = [
 ];
 
 // "ADBE Vector Filter - Trim" (Trim Paths).
-export const _VECTOR_TRIM_SPECS: PropSpec[] = [
+const _VECTOR_TRIM_SPECS: PropSpec[] = [
   _spec("ADBE Vector Trim Start", "Start", 0.0, PropertyValueType.OneD, {
     minValue: 0,
     maxValue: 100,
@@ -1543,7 +1507,7 @@ export const _VECTOR_TRIM_SPECS: PropSpec[] = [
 ];
 
 // "ADBE Vector Filter - Twist".
-export const _VECTOR_TWIST_SPECS: PropSpec[] = [
+const _VECTOR_TWIST_SPECS: PropSpec[] = [
   _spec("ADBE Vector Twist Angle", "Angle", 10.0, PropertyValueType.OneD, {
     chunkBoundsAreHints: true,
   }),
@@ -1551,7 +1515,7 @@ export const _VECTOR_TWIST_SPECS: PropSpec[] = [
 ];
 
 // "ADBE Vector Filter - Roughen" (Wiggle Paths).
-export const _VECTOR_ROUGHEN_SPECS: PropSpec[] = [
+const _VECTOR_ROUGHEN_SPECS: PropSpec[] = [
   _spec("ADBE Vector Roughen Size", "Size", 10.0, PropertyValueType.OneD, {
     minValue: 0,
     chunkBoundsAreHints: true,
@@ -1580,7 +1544,7 @@ export const _VECTOR_ROUGHEN_SPECS: PropSpec[] = [
 ];
 
 // Canonical children of "ADBE Vector Wiggler Transform".
-export const _VECTOR_WIGGLER_TRANSFORM_SPECS: PropSpec[] = [
+const _VECTOR_WIGGLER_TRANSFORM_SPECS: PropSpec[] = [
   _spec("ADBE Vector Wiggler Anchor", "Anchor Point", [0.0, 0.0], PropertyValueType.TwoD_SPATIAL),
   _spec("ADBE Vector Wiggler Position", "Position", [0.0, 0.0], PropertyValueType.TwoD_SPATIAL),
   _spec("ADBE Vector Wiggler Scale", "Scale", [0.0, 0.0], PropertyValueType.TwoD),
@@ -1588,7 +1552,7 @@ export const _VECTOR_WIGGLER_TRANSFORM_SPECS: PropSpec[] = [
 ];
 
 // "ADBE Vector Filter - Wiggler" (Wiggle Transform).
-export const _VECTOR_WIGGLER_SPECS: (PropSpec | GroupSpec)[] = [
+const _VECTOR_WIGGLER_SPECS: (PropSpec | GroupSpec)[] = [
   _spec("ADBE Vector Xform Temporal Freq", "Wiggles/Second", 2.0, PropertyValueType.OneD, {
     chunkBoundsAreHints: true,
   }),
@@ -1606,7 +1570,7 @@ export const _VECTOR_WIGGLER_SPECS: (PropSpec | GroupSpec)[] = [
 ];
 
 // "ADBE Vector Filter - Zigzag" (Zig Zag).
-export const _VECTOR_ZIGZAG_SPECS: PropSpec[] = [
+const _VECTOR_ZIGZAG_SPECS: PropSpec[] = [
   _spec("ADBE Vector Zigzag Size", "Size", 5.0, PropertyValueType.OneD, {
     minValue: 0,
     chunkBoundsAreHints: true,
@@ -1624,7 +1588,7 @@ export const _VECTOR_ZIGZAG_SPECS: PropSpec[] = [
 // Text-selector child specs (AE 2026 ExtendScript ground truth).
 
 // "ADBE Text Range Advanced" - the Range Selector's Advanced subgroup.
-export const _TEXT_RANGE_ADVANCED_SPECS: PropSpec[] = [
+const _TEXT_RANGE_ADVANCED_SPECS: PropSpec[] = [
   _spec("ADBE Text Range Units", "Units", 1.0, PropertyValueType.OneD, {
     minValue: 1,
     maxValue: 2,
@@ -1670,7 +1634,7 @@ export const _TEXT_RANGE_ADVANCED_SPECS: PropSpec[] = [
 ];
 
 // "ADBE Text Selector" - Range Selector.
-export const _TEXT_RANGE_SELECTOR_SPECS: (PropSpec | GroupSpec)[] = [
+const _TEXT_RANGE_SELECTOR_SPECS: (PropSpec | GroupSpec)[] = [
   _spec("ADBE Text Percent Start", "Start", 0.0, PropertyValueType.OneD, {
     minValue: -100,
     maxValue: 100,
@@ -1699,7 +1663,7 @@ export const _TEXT_RANGE_SELECTOR_SPECS: (PropSpec | GroupSpec)[] = [
 ];
 
 // "ADBE Text Wiggly Selector".
-export const _TEXT_WIGGLY_SELECTOR_SPECS: PropSpec[] = [
+const _TEXT_WIGGLY_SELECTOR_SPECS: PropSpec[] = [
   _spec("ADBE Text Selector Mode", "Mode", 1.0, PropertyValueType.OneD, {
     minValue: 1,
     maxValue: 6,
@@ -1738,7 +1702,7 @@ export const _TEXT_WIGGLY_SELECTOR_SPECS: PropSpec[] = [
 ];
 
 // "ADBE Text Expressible Selector" - Expression Selector.
-export const _TEXT_EXPRESSIBLE_SELECTOR_SPECS: PropSpec[] = [
+const _TEXT_EXPRESSIBLE_SELECTOR_SPECS: PropSpec[] = [
   _spec("ADBE Text Range Type2", "Based On", 1.0, PropertyValueType.OneD, {
     minValue: 1,
     maxValue: 4,
@@ -1806,7 +1770,7 @@ export const _ADV_BLEND_SPECS: PropSpec[] = [
  * synthesizes it so the group matches ExtendScript. Units are carried
  * on the spec (`unitsText`) to keep the bulk table self-contained.
  */
-export function _buildTextAnimatorPoolSpecs(): PropSpec[] {
+function _buildTextAnimatorPoolSpecs(): PropSpec[] {
   const specs: PropSpec[] = [];
   for (const e of TEXT_ANIMATOR_POOL) {
     const pvt = PropertyValueType.of(e.pvt);
@@ -1831,7 +1795,7 @@ export function _buildTextAnimatorPoolSpecs(): PropSpec[] {
   return specs;
 }
 
-export const _TEXT_ANIMATOR_POOL_SPECS: PropSpec[] = _buildTextAnimatorPoolSpecs();
+const _TEXT_ANIMATOR_POOL_SPECS: PropSpec[] = _buildTextAnimatorPoolSpecs();
 
 // Canonical children for Layer Styles sub-groups.
 
@@ -2251,7 +2215,7 @@ export const _STYLE_HINT_BOUNDS_EXCEPTIONS: Map<string, [number, number]> = new 
 ]);
 
 /** Stamp the AE materialization canon onto a Layer Styles leaf spec. */
-export function _styleLeafCanon(spec: PropSpec): PropSpec {
+function _styleLeafCanon(spec: PropSpec): PropSpec {
   const suffix = spec.matchName.slice(spec.matchName.lastIndexOf("/") + 1);
   if (spec.color) return spec._replace({ pad2a: 1 });
   if (_STYLE_ENUM_SUFFIXES.has(suffix)) return spec._replace({ integer: true, valueHintType: 1 });
@@ -2261,7 +2225,7 @@ export function _styleLeafCanon(spec: PropSpec): PropSpec {
   return spec;
 }
 
-export function _styleCanonList(specs: PropSpec[]): PropSpec[] {
+function _styleCanonList(specs: PropSpec[]): PropSpec[] {
   return specs.map((spec) => _styleLeafCanon(spec));
 }
 
@@ -2284,7 +2248,7 @@ export const _LAYER_STYLE_CHILD_SPECS: Map<string, PropSpec[]> = new Map<string,
 // only Blending Options is enabled+collapsed (3). Synthesizing a style toggle
 // as enabled (1) makes AE apply that style on open - e.g. a default-red Color
 // Overlay - so the whole layer renders red.
-export const _LAYER_STYLES_SPECS: GroupSpec[] = [
+const _LAYER_STYLES_SPECS: GroupSpec[] = [
   new GroupSpec("ADBE Blend Options Group", "Blending Options", undefined, 3),
   new GroupSpec("dropShadow/enabled", "Drop Shadow", undefined, 2),
   new GroupSpec("innerShadow/enabled", "Inner Shadow", undefined, 2),
@@ -2427,7 +2391,7 @@ export const _GROUP_CHILD_SPECS: Map<string, (PropSpec | GroupSpec)[]> = new Map
   ["ADBE Displacement Options", _DISPLACEMENT_OPTIONS_SPEC],
 ]);
 
-export const _MARKER_SPEC: PropSpec = _spec("ADBE Marker", "Marker", null, PropertyValueType.MARKER, { dimensions: 0 });
+const _MARKER_SPEC: PropSpec = _spec("ADBE Marker", "Marker", null, PropertyValueType.MARKER, { dimensions: 0 });
 
 export const _TOP_LEVEL_SPECS: (PropSpec | GroupSpec)[] = [
   _MARKER_SPEC,
@@ -2493,30 +2457,30 @@ export const _PARAMETRIC_MESH_TOP_LEVEL_SPECS: (PropSpec | GroupSpec)[] = [
 ];
 
 // Groups only present on camera / light layers.
-export const _CAMERA_LIGHT_GROUPS: ReadonlySet<string> = new Set<string>([
+const _CAMERA_LIGHT_GROUPS: ReadonlySet<string> = new Set<string>([
   "ADBE Camera Options Group",
   "ADBE Light Options Group",
 ]);
 
 // Groups only present on regular AVLayers, NOT on TextLayer or ShapeLayer.
-export const _REGULAR_AV_ONLY_GROUPS: ReadonlySet<string> = new Set<string>([
+const _REGULAR_AV_ONLY_GROUPS: ReadonlySet<string> = new Set<string>([
   "ADBE Time Remapping",
   "ADBE MTrackers",
   "ADBE Data Group",
   "ADBE Layer Overrides",
 ]);
-export const _REGULAR_AV_AND_PARAMETRIC_MESH_ONLY_GROUPS: ReadonlySet<string> = new Set<string>([
+const _REGULAR_AV_AND_PARAMETRIC_MESH_ONLY_GROUPS: ReadonlySet<string> = new Set<string>([
   "ADBE Source Options Group",
   "ADBE Plane Options Group",
 ]);
 
 // Layer-type-specific groups that should be skipped for other types.
-export const _TEXT_ONLY_GROUPS: ReadonlySet<string> = new Set<string>(["ADBE Text Properties"]);
-export const _SHAPE_ONLY_GROUPS: ReadonlySet<string> = new Set<string>(["ADBE Root Vectors Group"]);
+const _TEXT_ONLY_GROUPS: ReadonlySet<string> = new Set<string>(["ADBE Text Properties"]);
+const _SHAPE_ONLY_GROUPS: ReadonlySet<string> = new Set<string>(["ADBE Root Vectors Group"]);
 // Groups only present on Advanced-3D-native layers (parametric mesh /
 // 3D model); still listed in _TOP_LEVEL_SPECS so a parsed occurrence keeps
 // its canonical position, but never synthesized for other layer types.
-export const _ADVANCED_3D_ONLY_GROUPS: ReadonlySet<string> = new Set<string>([
+const _ADVANCED_3D_ONLY_GROUPS: ReadonlySet<string> = new Set<string>([
   "ADBE Compositing Options Group",
   "ADBE3D Para Mat Parade",
 ]);
@@ -2548,7 +2512,7 @@ export const _SKIP_FOR_REGULAR_AV: ReadonlySet<string> = new Set<string>([
 ]);
 
 /** Cameras/lights expose only Marker, Transform and their own options. */
-export function _cameraLightSkip(ownOptions: string): ReadonlySet<string> {
+function _cameraLightSkip(ownOptions: string): ReadonlySet<string> {
   return new Set<string>(
     _TOP_LEVEL_SPECS
       .filter((s) => !["ADBE Marker", "ADBE Transform Group", ownOptions].includes(s.matchName))

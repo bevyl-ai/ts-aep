@@ -27,8 +27,10 @@
  *   and lines that fall wholly outside raise.
  */
 
-import { INSPECT, describe, compare } from "../../../pyrt/index.ts";
 import {
+  INSPECT,
+  describe,
+  compare,
   AttributeError,
   NotImplementedError,
   ValueError,
@@ -105,13 +107,13 @@ import {
 import { FontObject } from "./font_object.ts";
 import type { TextDocument } from "./text_document.ts";
 
-export const bool = (x: CosNode): boolean => truthy(x);
+const bool = (x: CosNode): boolean => truthy(x);
 
 // AE's exact error strings (AE 26.3, English locale); py_aep raises these
 // from ValueError so behavior parity does not depend on hosting AE.
 export const CHARACTER_RANGE_OOB = "Character index range is outside of TextDocument bounds.";
-export const PARAGRAPH_RANGE_OOB = "Paragraph index range is outside of TextDocument bounds.";
-export const COMPOSED_LINE_OOB = "ComposedLine index range is outside of TextDocument composed lines.";
+const PARAGRAPH_RANGE_OOB = "Paragraph index range is outside of TextDocument bounds.";
+const COMPOSED_LINE_OOB = "ComposedLine index range is outside of TextDocument composed lines.";
 export const NOT_ASSOCIATED = "Unable to set value as it is not associated with a layer.";
 
 // ---------------------------------------------------------------------------
@@ -173,7 +175,7 @@ export function _paraRunSpans(doc: TextDocument): [number, number, CosDict][] {
 }
 
 /** Manual-kerning run spans; payload key `"0"` holds the value. */
-export function _kernRunSpans(doc: TextDocument): [number, number, CosDict][] {
+function _kernRunSpans(doc: TextDocument): [number, number, CosDict][] {
   return runSpans(doc._doc, "8", null);
 }
 
@@ -371,7 +373,7 @@ export function _buildColorPaint(rgb: number[]): CosDict {
 }
 
 /** Build a COS CoolTypeFont entry for a font PostScript name. */
-export function _buildFontEntry(postScriptName: string): CosDict {
+function _buildFontEntry(postScriptName: string): CosDict {
   return new Map<string, CosNode>([
     [
       "0",
@@ -529,12 +531,7 @@ export function _replaceLayerFont(docs: TextDocument[], fromName: string, toName
  * version - rather than appending one and leaving the now-unused font
  * behind (probed AE 2026: Verdana's record becomes Georgia's).
  */
-export function _repointUsedFontRecord(
-  doc: TextDocument,
-  fromIndices: Set<number>,
-  toIndex: number,
-  toName: string,
-): void {
+function _repointUsedFontRecord(doc: TextDocument, fromIndices: Set<number>, toIndex: number, toName: string): void {
   const version = fontVersionString(toName);
   const sessions = cosGet(doc._cosData, "1", "5");
   if (!Array.isArray(sessions)) return;
@@ -562,7 +559,7 @@ export function _repointUsedFontRecord(
  * gates, stroke geometry); every other style write marks the layout
  * dirty so the composed-line APIs know the cache no longer applies.
  */
-export const _NON_LAYOUT_CHAR_KEYS: ReadonlySet<string> = new Set(["53", "54", "56", "57", "58", "62", "63"]);
+const _NON_LAYOUT_CHAR_KEYS: ReadonlySet<string> = new Set(["53", "54", "56", "57", "58", "62", "63"]);
 
 /**
  * Flag a layout-affecting write on documents that track it.
@@ -572,7 +569,7 @@ export const _NON_LAYOUT_CHAR_KEYS: ReadonlySet<string> = new Set(["53", "54", "
  * `TextDocument._mark_layout_dirty`). Duck-typed test documents
  * without the hook are skipped.
  */
-export function _markLayoutDirty(doc: TextDocument): void {
+function _markLayoutDirty(doc: TextDocument): void {
   // Python `getattr(doc, "_markLayoutDirty", None)`: duck-typed test
   // documents may lack the hook.
   if (typeof doc._markLayoutDirty === "function") doc._markLayoutDirty();
@@ -585,7 +582,7 @@ export function _markLayoutDirty(doc: TextDocument): void {
  * dict by object identity; merges can replace that object, so every
  * structural op must end here.
  */
-export function _refreshStyleAliases(doc: TextDocument): void {
+function _refreshStyleAliases(doc: TextDocument): void {
   const char = cosGet(doc._doc, "0", "6", "0", 0, "0", "0", "6");
   if (char instanceof Map) doc._charStyle = char;
   const para = cosGet(doc._doc, "0", "5", "0", 0, "0", "0", "5");
@@ -715,7 +712,7 @@ export function _applyCharKey(doc: TextDocument, start: number, end: number, key
 /** Per-character manual-kern values decoded from the kern runs (the stored values; `null` where none). */
 export function _kernValues(doc: TextDocument): CosNode[] {
   const total = u16Len(_rawText(doc));
-  const values: CosNode[] = new Array<CosNode>(total).fill(null);
+  const values: CosNode[] = Array.from({ length: total }, () => null);
   for (const [start, end, payload] of _kernRunSpans(doc)) {
     const value = payload.get("0") ?? null;
     if (value != null) {
@@ -788,7 +785,7 @@ export function _rebuildKernRuns(doc: TextDocument, values: CosNode[]): void {
  * (`W_TEXT_*`, `X_TEXT_KERN`, `X_TEXT_END`). `insertRuns` /
  * `insertKern` override the donor styling for paste transplants.
  */
-export function _spliceText(
+function _spliceText(
   doc: TextDocument,
   start: number,
   end: number,
@@ -886,7 +883,7 @@ export function _spliceText(
     paraRuns.splice(0, paraRuns.length, ...newParaRuns);
   }
 
-  if (insertKern == null) insertKern = new Array<CosNode>(insertLen).fill(null);
+  if (insertKern == null) insertKern = Array.from({ length: insertLen }, () => null);
   _rebuildKernRuns(doc, [...kernValues.slice(0, start), ...insertKern, ...kernValues.slice(end)]);
   if (start === 0) {
     // Replacing the leading edge invalidates the pair-0 kern value
@@ -905,7 +902,7 @@ export function _spliceText(
  * range (paragraph runs are structural: never split, never merged -
  * `W_PARA_PARTIAL` styles the whole containing paragraph).
  */
-export function _applyParaKey(doc: TextDocument, start: number, end: number, key: string, value: CosNode): void {
+function _applyParaKey(doc: TextDocument, start: number, end: number, key: string, value: CosNode): void {
   if (start === end) return;
   _markLayoutDirty(doc);
   const runs = cosGet(doc._doc, "0", "5", "0");
@@ -999,7 +996,7 @@ export class RangeField<T extends InstanceValue> {
     this.publicName = name;
   }
 
-  get(obj: CharacterRange | null, objtype?: Function | null): T | null | this {
+  get(obj: CharacterRange | null, _objtype?: Function | null): T | null | this {
     if (obj == null) return this;
     return obj._resolveMixed(this.kind, this.key, this.transform, this.default_, this.gate);
   }
@@ -1161,7 +1158,7 @@ export class DocumentWideCosField<T extends InstanceValue> extends CosField<T, S
  * range is out of bounds). The public accessors and string forms below
  * are shared across all three range types.
  */
-export class _TextRange {
+class _TextRange {
   declare _docRef: TextDocument;
   declare _start: number;
   declare _signedEnd: number;
@@ -1215,7 +1212,7 @@ export class _TextRange {
  * Shares the index storage and the `characterRange()` snapshot; only
  * `_bounds()` (the per-kind span lookup and clamping) differs.
  */
-export class _IndexRange extends _TextRange {
+class _IndexRange extends _TextRange {
   /**
    * A {@link CharacterRange} fixed to the current character bounds.
    *

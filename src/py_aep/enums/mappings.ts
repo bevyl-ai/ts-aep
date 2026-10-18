@@ -144,7 +144,7 @@ export const _ICC_PROFILE_MAPPING: Map<string, string> = new Map<string, string>
  * Used to write a known Adobe profile's 16-byte ID (footage `apid`, output
  * `outputProfileId`) without needing the ICC file on disk.
  */
-export const _NAME_TO_ICC_PROFILE: Map<string, string> = new Map<string, string>(
+const _NAME_TO_ICC_PROFILE: Map<string, string> = new Map<string, string>(
   Array.from(_ICC_PROFILE_MAPPING, ([uid, name]): [string, string] => [name, uid]),
 );
 

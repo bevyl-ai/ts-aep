@@ -8,14 +8,7 @@ import { TdmnChunk, TdsnChunk } from "../../src/py_aep/binary/property_chunks.ts
 import { PropertyControlType } from "../../src/py_aep/enums/index.ts";
 import { _resolveEffectValue, type ParamDef } from "../../src/py_aep/parsers/effect.ts";
 import { parsePropertyGroup } from "../../src/py_aep/parsers/property.ts";
-import { Path, valueEquals } from "../../src/pyrt/index.ts";
-
-const SAMPLES_DIR = new Path(import.meta.path).parent.parent.parent.div("samples", "models", "property");
-const BUGS_DIR = new Path(import.meta.path).parent.parent.parent.div("samples", "bugs");
-const LAYER_SAMPLES_DIR = new Path(import.meta.path).parent.parent.parent.div("samples", "models", "layer");
-// NOTE(port): Python assigns LAYER_SAMPLES_DIR twice with the same value; the redundant redeclaration is dropped (no observable difference).
-const VERSIONS_DIR = new Path(import.meta.path).parent.parent.parent.div("samples", "versions");
-const PROPERTY_SAMPLES_DIR = new Path(import.meta.path).parent.parent.parent.div("samples", "models", "property");
+import { valueEquals } from "../../src/pyrt/index.ts";
 
 describe("TestResolveEffectValue", () => {
   /** Tests for _resolve_effect_value pure helper. */

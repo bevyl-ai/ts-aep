@@ -12,12 +12,12 @@ import { struct } from "../../pyrt/index.ts";
 import { Shape } from "../models/properties/shape.ts";
 
 // Path record selectors (PSD spec "Path resource format").
-export const _CLOSED_LENGTH = 0;
-export const _OPEN_LENGTH = 3;
-export const _KNOT_SELECTORS: ReadonlySet<number> = new Set([1, 2, 4, 5]);
+const _CLOSED_LENGTH = 0;
+const _OPEN_LENGTH = 3;
+const _KNOT_SELECTORS: ReadonlySet<number> = new Set([1, 2, 4, 5]);
 
 /** Decode a knot record to `[in_point, anchor, out_point]` pixel coords. */
-export function _knot(record: Uint8Array, canvasW: number, canvasH: number): number[][] {
+function _knot(record: Uint8Array, canvasW: number, canvasH: number): number[][] {
   const points: number[][] = [];
   for (let i = 0; i < 3; i++) {
     const [vert, horiz] = struct.unpack(">ii", record.slice(2 + i * 8, 10 + i * 8));

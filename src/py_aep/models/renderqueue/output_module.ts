@@ -110,7 +110,7 @@ import {
 
 // NOTE(port): Python's `isinstance(x, bool) or isinstance(x, int)` accepts bools as ints.
 // `isInt` keeps that so raw bool fields still count as ints in the checks below.
-export function isInt(v: RuleValue | null): v is number | boolean {
+function isInt(v: RuleValue | null): v is number | boolean {
   return (typeof v === "number" && Number.isInteger(v)) || typeof v === "boolean";
 }
 
@@ -121,7 +121,7 @@ export function isInt(v: RuleValue | null): v is number | boolean {
  */
 type KeyEnum = EnumHelpers<number> & { label?(v: number): string | null };
 
-export const _KEY_ENUM = new Map<string, KeyEnum>([
+const _KEY_ENUM = new Map<string, KeyEnum>([
   ["Channels", OutputChannels],
   ["Audio Channels", AudioChannels],
   ["Audio Sample Rate", AudioSampleRate],
@@ -137,7 +137,7 @@ export const _KEY_ENUM = new Map<string, KeyEnum>([
   ["Audio Bit Depth", AudioBitDepth],
 ]);
 
-export function _isEnumMember(key: string, value: RuleValue | null): value is RuleValue {
+function _isEnumMember(key: string, value: RuleValue | null): value is RuleValue {
   return getOrThrow(_KEY_ENUM, key).has(value);
 }
 
@@ -147,7 +147,7 @@ export function _isEnumMember(key: string, value: RuleValue | null): value is Ru
  * taking the member, `name` is `nameOf`). Values that are not members of the key's enum
  * (ints, strings, bools) fall through to `str(v)`.
  */
-export function _labelOrName(key: string | null, v: RuleValue): string {
+function _labelOrName(key: string | null, v: RuleValue): string {
   const E = key == null ? null : _KEY_ENUM.get(key);
   if (E != null && E.has(v)) {
     const label = typeof E.label === "function" ? E.label(v) : null;
@@ -158,7 +158,7 @@ export function _labelOrName(key: string | null, v: RuleValue): string {
 }
 
 /** Python `getattr(v, "name", None) or str(v)` (see `_labelOrName`). */
-export function _nameOrStr(key: string | null, v: RuleValue): string {
+function _nameOrStr(key: string | null, v: RuleValue): string {
   const E = key == null ? null : _KEY_ENUM.get(key);
   if (E != null && E.has(v)) return E.nameOf(v);
   return String(v);
@@ -166,14 +166,14 @@ export function _nameOrStr(key: string | null, v: RuleValue): string {
 
 // NOTE(port): `{value!r}` of an IntEnum member is `<Cls.NAME: n>` in Python but a raw int stays
 // `n`; both are the same number here, so a member of the key's enum always reprs as a member.
-export function _valueRepr(key: string, v: RuleValue): string {
+function _valueRepr(key: string, v: RuleValue): string {
   const E = _KEY_ENUM.get(key);
   if (E != null && E.has(v)) return `<${E.enumName}.${E.nameOf(v)}: ${v}>`;
   return literal(v);
 }
 
 /** Factory for crop validators that check range and final dimension. */
-export function _validateCrop(peerField: string, dimension: string): (value: number, obj: OutputModule) => void {
+function _validateCrop(peerField: string, dimension: string): (value: number, obj: OutputModule) => void {
   const rangeCheck = _validateNumber({ min: -30000, max: 30000, integer: true });
 
   return (value: number, obj: OutputModule): void => {
@@ -205,7 +205,7 @@ export const _DEPTH_MINUS = new Map<number, number>([
 
 // Audio sample encoding (1=unsigned PCM, 2=signed PCM, 3=float) AE stores
 // for each bytes-per-sample while the audio format has no channel count yet.
-export const _AUDIO_ENCODINGS = new Map<number, number>([
+const _AUDIO_ENCODINGS = new Map<number, number>([
   [1, 1],
   [2, 2],
   [4, 3],
@@ -215,7 +215,7 @@ export const _AUDIO_ENCODINGS = new Map<number, number>([
  * After Effects has no 24-bit audio output: AE 2026 crashes when a
  * script sets it and reads a stored 24-bit format back as 16 Bit.
  */
-export function _reject24BitAudio(value: RuleValue, obj: OutputModule): void {
+function _reject24BitAudio(value: RuleValue, _obj: OutputModule): void {
   if (value === AudioBitDepth.TWENTY_FOUR_BIT) {
     throw new ValueError(
       "Audio Bit Depth 24 Bit is not available: After Effects has no " + "24-bit audio output. Use 8, 16 or 32 Bit.",
@@ -231,7 +231,7 @@ export function _reject24BitAudio(value: RuleValue, obj: OutputModule): void {
  * fields whose forgiving read transform hides the enum class from
  * `ChunkField`).
  */
-export function _validateForFormat(
+function _validateForFormat(
   key: string,
   pre: ((value: RuleValue, obj: OutputModule) => void) | null = null,
 ): (value: RuleValue, obj: OutputModule) => void {
@@ -245,7 +245,7 @@ export function _validateForFormat(
 // Reading/writing through the module keeps _CLAMP_ACCESSORS free of
 // isinstance lambdas; every writer is a raw write (validation bypass).
 
-export function _xmlOptionsOf<
+function _xmlOptionsOf<
   K extends "audioBitrate" | "audioCodec" | "bitrate" | "mpegAudioFormat" | "mpegMultiplexer" | "videoCodec",
 >(om: OutputModule, attr: K): XmlFormatOptions[K] | null {
   const fo = om._formatOptions;
@@ -255,7 +255,7 @@ export function _xmlOptionsOf<
   return null;
 }
 
-export function _setXmlParamRaw(om: OutputModule, paramKey: string, value: number): void {
+function _setXmlParamRaw(om: OutputModule, paramKey: string, value: number): void {
   const fo = om._formatOptions;
   if (fo instanceof XmlFormatOptions) {
     fo._setParam(paramKey, String(value));
@@ -1064,7 +1064,10 @@ export class OutputModule {
         .map(
           ([key, value, allowed]) =>
             `${key}: ${_nameOrStr(key, value)} not in ` +
-            `{${[...[...allowed].map((v) => _nameOrStr(key, v))].sort(compare).join(", ")}}`,
+            `{${[...allowed]
+              .map((v) => _nameOrStr(key, v))
+              .sort(compare)
+              .join(", ")}}`,
         )
         .join("; ");
       throw new ValueError(`batchEdit rolled back, invalid final state: ${details}`);

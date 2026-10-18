@@ -23,7 +23,7 @@ export type FormatOptions =
   | XmlFormatOptions;
 
 // Format codes that use XML-based PremiereData options
-export const _XML_FORMAT_CODES: ReadonlySet<string> = new Set([".AVI", "H264", "Mp3 ", "MooV", "wao_"]);
+const _XML_FORMAT_CODES: ReadonlySet<string> = new Set([".AVI", "H264", "Mp3 ", "MooV", "wao_"]);
 
 /**
  * Parse format-specific options from the Ropt chunk, if present.

@@ -29,7 +29,7 @@ export class BitField<F extends string = string> {
     this.mask = 1 << bit;
   }
 
-  get(obj: Record<F, number>, objtype: Function | null = null): boolean {
+  get(obj: Record<F, number>, _objtype: Function | null = null): boolean {
     return (getMember(obj, this.byteField) & this.mask) !== 0;
   }
 

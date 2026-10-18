@@ -246,7 +246,7 @@ const _KNOWN_DIVERGENCES: Map<string, string> = new Map<string, string>([
 ]);
 
 const _REGISTRY_SPECS: [string, PropSpec | GroupSpec][] = _ALL_SPECS.filter(
-  ([sid, s]) => MATCH_NAME_TO_AUTO_NAME.has(s.matchName) && !_KNOWN_DIVERGENCES.has(s.matchName),
+  ([_sid, s]) => MATCH_NAME_TO_AUTO_NAME.has(s.matchName) && !_KNOWN_DIVERGENCES.has(s.matchName),
 );
 
 describe("TestSpecNamesMatchRegistry", () => {

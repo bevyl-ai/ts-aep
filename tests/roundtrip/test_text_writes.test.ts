@@ -186,7 +186,7 @@ describe("TestScalarWrites", () => {
 
   test("test_noop_write_keeps_structure", () => {
     const fixtureApp = getFixtureApp();
-    const probe = getProbe();
+    getProbe();
     const [_app, doc] = _baseDoc();
     doc.characterRange(2, 8).fontSize = 36;
     _assertAliasIntegrity(doc);
@@ -217,7 +217,7 @@ describe("TestScalarWrites", () => {
 
   test("test_zero_span_write_is_noop", () => {
     const fixtureApp = getFixtureApp();
-    const probe = getProbe();
+    getProbe();
     const [_app, doc] = _baseDoc();
     doc.characterRange(3, 3).fontSize = 90;
     _assertByteParity(doc, fixtureApp, "W_ZERO_STYLE");
@@ -400,7 +400,7 @@ describe("TestTextReplacement", () => {
 
   test("test_replace_adds_paragraph", () => {
     const fixtureApp = getFixtureApp();
-    const probe = getProbe();
+    getProbe();
     const [_app, doc] = _styledBase();
     doc.characterRange(3, 5).text = "A\nB";
     expect(doc.paragraphCount).toBe(2);
@@ -456,7 +456,7 @@ describe("TestPasteFrom", () => {
   });
 
   test("test_paste_cross_document_remaps_fonts", () => {
-    const fixtureApp = getFixtureApp();
+    getFixtureApp();
     const probe = getProbe();
     const [app, doc] = _baseDoc();
     const srcDoc = _docFor(app, "W_SPLIT");
@@ -470,8 +470,8 @@ describe("TestPasteFrom", () => {
   });
 
   test("test_paste_shorter_invalidates_target", () => {
-    const fixtureApp = getFixtureApp();
-    const probe = getProbe();
+    getFixtureApp();
+    getProbe();
     const [app, doc] = _baseDoc();
     const srcDoc = _docFor(app, "W_SPLIT");
     srcDoc.text = "QQQQ";
@@ -542,7 +542,7 @@ describe("TestPasteLeadingEdgeKern", () => {
   });
 
   test("test_paste_mid_maps_edge_to_preceding_pair", () => {
-    const fixture3App = getFixture3App();
+    getFixture3App();
     const probe3 = getProbe3();
     const [app, doc] = _baseDoc("abcdef");
     doc.characterRange(2, 5).pasteFrom(_edgeSource(app).characterRange(0, 3));

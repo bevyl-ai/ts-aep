@@ -18,14 +18,14 @@ import { collapseContinuationLines, parseHexValue } from "./prefs.ts";
 
 // Render settings prefs format:
 // RenderSettingsItem is 2182 bytes in prefs (2246 in AEP, difference = 64).
-export const _RS_PREFS_ITEM_SIZE = 2182;
-export const _RS_AEP_ITEM_SIZE = 2246;
-export const _RS_ITEM_SIZE_DIFF = _RS_AEP_ITEM_SIZE - _RS_PREFS_ITEM_SIZE;
-export const _HEADER_SIZE = 32; // bytes before first item
+const _RS_PREFS_ITEM_SIZE = 2182;
+const _RS_AEP_ITEM_SIZE = 2246;
+const _RS_ITEM_SIZE_DIFF = _RS_AEP_ITEM_SIZE - _RS_PREFS_ITEM_SIZE;
+const _HEADER_SIZE = 32; // bytes before first item
 
 // Output module prefs format:
 // OutputModuleSettingsItem is 128 bytes (same in prefs and AEP).
-export const _OM_PREFS_ITEM_SIZE = 128;
+const _OM_PREFS_ITEM_SIZE = 128;
 
 /**
  * An output module template parsed from AE preferences.
@@ -63,7 +63,7 @@ export class OutputModuleTemplate {
 }
 
 /** Extract a hex/ASCII value from a preference section. */
-export function _extractSectionValue(lines: string[], key: string): Uint8Array | null {
+function _extractSectionValue(lines: string[], key: string): Uint8Array | null {
   for (const [i, line] of lines.entries()) {
     if (!line.includes(key)) continue;
     const m = reMatch(String.raw`\s*"` + reEscape(key) + String.raw`"\s*=\s*(.+)`, line);
@@ -133,7 +133,7 @@ export function parseRenderTemplates(prefsDir: Path): [RenderSettingsItem[], num
 }
 
 /** Extract an integer value from a preference line like `"Key" = 42`. */
-export function _extractIntValue(lines: string[], key: string): number | null {
+function _extractIntValue(lines: string[], key: string): number | null {
   for (const line of lines) {
     const m = reMatch(String.raw`\s*"` + reEscape(key) + String.raw`"\s*=\s*"?(\d+)"?`, line);
     if (m) {
@@ -264,7 +264,7 @@ export function _parseIdHexSection(text: string, section: string, idPrefix: stri
 }
 
 /** Extract template names from Output Module Spec Strings section. */
-export function _extractTemplateNames(lines: string[]): Map<number, string> {
+function _extractTemplateNames(lines: string[]): Map<number, string> {
   const names = new Map<number, string>();
   for (const line of lines) {
     const m = reMatch(String.raw`\s*"Output Module Spec Strings Name #?(\d+)"\s*=\s*"(.*)"`, line);

@@ -43,7 +43,7 @@ export const _UNASSIGNED_PROFILE = Bytes.repeat(Uint8Array.of(0xff), 16);
  * it (clrs_ae20XX.aep fixtures) - and `Mcsp`/`ocsp` arrived with 93.40
  * (samples/versions: absent from the AE 2018 project, present from AE 2022).
  */
-export const _CLRS_RECORDS_SINCE: ReadonlyArray<readonly [string, readonly [number, number]]> = [
+const _CLRS_RECORDS_SINCE: ReadonlyArray<readonly [string, readonly [number, number]]> = [
   ["hdrm", [96, 9]],
   ["Mcsp", [93, 40]],
   ["ocsp", [93, 40]],
@@ -56,14 +56,14 @@ export const _CLRS_RECORDS_SINCE: ReadonlyArray<readonly [string, readonly [numb
  * writing a mode over it would claim an alpha channel the media does not
  * have. AE greys the whole alpha section out for such footage.
  */
-export function _validateHasAlpha(value: AlphaMode, instance: { hasAlpha?: boolean } | null = null): void {
+function _validateHasAlpha(value: AlphaMode, instance: { hasAlpha?: boolean } | null = null): void {
   if (instance != null && !instance.hasAlpha) {
     throw new ValueError("cannot set alphaMode: the footage has no alpha channel " + "(hasAlpha is false)");
   }
 }
 
 /** The smallest non-zero conform rate After Effects can open a project with. */
-export const _MIN_CONFORM_FRAME_RATE = 0.0005;
+const _MIN_CONFORM_FRAME_RATE = 0.0005;
 
 /**
  * Move an image sequence to `rate`, keeping its frame count.
@@ -73,7 +73,7 @@ export const _MIN_CONFORM_FRAME_RATE = 0.0005;
  * 29.9700012) and leaves the fraction unreduced: 12 frames is 12/24 at
  * 24 fps, 1200/2997 at 29.97 (measured on AE 2026).
  */
-export function _retimeSequence(sspc: SspcChunk, rate: number): void {
+function _retimeSequence(sspc: SspcChunk, rate: number): void {
   const frames = Math.round(sspc.duration * sspc.nativeFrameRate) + 0;
   sspc.nativeFrameRate = rate;
   _storeFramesOverRate(sspc, frames, Number(rate.toFixed(3)));
@@ -487,7 +487,7 @@ export class FootageSource {
    * method reads it back from, or the rename is lost on save. Only called
    * for a source that owns its name (see `_ownsName`).
    */
-  _storeName(value: string): void {
+  _storeName(_value: string): void {
     throw new NotImplementedError();
   }
 

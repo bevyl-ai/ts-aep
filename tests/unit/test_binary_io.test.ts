@@ -275,7 +275,7 @@ describe("TestListChunk", () => {
     writeChunk(buf, outer);
 
     buf.seek(0);
-    const [ct, lb] = readHeader(buf);
+    const [, lb] = readHeader(buf);
     const ctx = new ReadContext();
     const restored = ListChunk.read(buf, lb, { ctx });
     expect(restored.listType).toBe("outr");
@@ -295,7 +295,7 @@ describe("TestListChunk", () => {
     writeChunk(buf, lst);
 
     buf.seek(0);
-    const [ct, lb] = readHeader(buf);
+    const [, lb] = readHeader(buf);
     const ctx = new ReadContext();
     const restored = ListChunk.read(buf, lb, { ctx });
     expect(restored.listType).toBe("btdk");
@@ -310,7 +310,7 @@ describe("TestListChunk", () => {
     writeChunk(buf, lst);
 
     buf.seek(0);
-    const [ct, lb] = readHeader(buf);
+    const [, lb] = readHeader(buf);
     const ctx = new ReadContext();
     const restored = ListChunk.read(buf, lb, { ctx });
     expect(restored.listType).toBe("empt");
@@ -478,7 +478,7 @@ describe("TestRegistry", () => {
       writeChunk(buf, new Chunk({ chunkType: "disp", data: b("\xaa") }));
 
       buf.seek(0);
-      const [ct, lb] = readHeader(buf);
+      const [ct] = readHeader(buf);
       const cls = getOr(CHUNK_TYPES, ct, Chunk);
       expect(cls).toBe(DispChunk);
     } finally {
@@ -571,8 +571,7 @@ describe("TestFmtField", () => {
     const info = _structInfo(U4Chunk);
     expect(info != null).toBe(true);
     if (info == null) throw new AssertionError("U4Chunk has no struct info");
-    const [fmt, dataFields, encodings, optionalStart, endians, itemsInfo, coerces, initNames, simple, expectedSize] =
-      info;
+    const [fmt, dataFields, encodings, optionalStart, endians, itemsInfo, , initNames, simple] = info;
     expect(fmt).toBe("I");
     expect(dataFields.length).toBe(1);
     expect(dataFields[0].name).toBe("value");
@@ -612,7 +611,6 @@ describe("TestFmtField", () => {
     expect(info != null).toBe(true);
     if (info == null) throw new AssertionError("PrinChunk has no struct info");
     const encodings = info[2];
-    const simple = info[8];
     // PrinChunk has match_name (field index 1) and display_name (index 2)
     expect(encodings.has(1)).toBe(true);
     expect(getOrThrow(encodings, 1)).toBe("ascii");

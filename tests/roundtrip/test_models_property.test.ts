@@ -66,7 +66,7 @@ import { and } from "../support/python.ts";
 
 // `Path(__file__).parent.parent.parent / ...` in the Python source.
 const SAMPLES_DIR = new Path(import.meta.dir, "..", "..", "samples", "models", "property");
-const BUGS_DIR = new Path(import.meta.dir, "..", "..", "samples", "bugs");
+new Path(import.meta.dir, "..", "..", "samples", "bugs");
 const LAYER_SAMPLES_DIR = new Path(import.meta.dir, "..", "..", "samples", "models", "layer");
 // NOTE(port): upstream assigns LAYER_SAMPLES_DIR twice with the same value; a TS const cannot be redeclared, so the duplicate is dropped.
 const VERSIONS_DIR = new Path(import.meta.dir, "..", "..", "samples", "versions");
@@ -1687,11 +1687,11 @@ describe("TestAddProperty", () => {
     assert(layer2._tdgp != null);
     const chunks = layer2._tdgp.chunks;
     const paradeIdx = chunks.findIndex(
-      (c: Chunk, i: number) =>
+      (c: Chunk, _i: number) =>
         c.chunkType === "tdmn" && getMember(c, "value", null) === "ADBE Mask Parade" && !c.synthetic,
     );
     const transformIdx = chunks.findIndex(
-      (c: Chunk, i: number) => c.chunkType === "tdmn" && getMember(c, "value", null) === "ADBE Transform Group",
+      (c: Chunk, _i: number) => c.chunkType === "tdmn" && getMember(c, "value", null) === "ADBE Transform Group",
     );
     expect(paradeIdx >= 0).toBe(true); // `next(...)` raises StopIteration when nothing matches
     expect(transformIdx >= 0).toBe(true);
@@ -2151,11 +2151,11 @@ describe("TestAddEffect", () => {
     assert(layer2._tdgp != null);
     const chunks = layer2._tdgp.chunks;
     const paradeIdx = chunks.findIndex(
-      (c: Chunk, i: number) =>
+      (c: Chunk, _i: number) =>
         c.chunkType === "tdmn" && getMember(c, "value", null) === "ADBE Effect Parade" && !c.synthetic,
     );
     const transformIdx = chunks.findIndex(
-      (c: Chunk, i: number) => c.chunkType === "tdmn" && getMember(c, "value", null) === "ADBE Transform Group",
+      (c: Chunk, _i: number) => c.chunkType === "tdmn" && getMember(c, "value", null) === "ADBE Transform Group",
     );
     expect(paradeIdx >= 0).toBe(true); // `next(...)` raises StopIteration when nothing matches
     expect(transformIdx >= 0).toBe(true);
@@ -2654,7 +2654,7 @@ describe("TestAddInstalledEffect", () => {
   /** The Effect Parade's direct chunks, `engv` with its value. */
   function _paradeLayout(layer: Layer): string[] {
     assert(layer.effects != null);
-    [...asInstance(layer.effects, PropertyGroup).properties];
+    void [...asInstance(layer.effects, PropertyGroup).properties];
     const tdgp = asInstance(layer.effects, PropertyGroup)._tdgp;
     assert(tdgp != null);
     return tdgp.chunks

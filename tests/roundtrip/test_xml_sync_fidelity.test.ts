@@ -81,7 +81,7 @@ describe("TestNoOpSyncIsIdentity", () => {
     });
   }
 
-  test.each(PER_FORMAT)("test_no_op_sync_preserves_length_on_every_python[%#]", (sample, formatCode) => {
+  test.each(PER_FORMAT)("test_no_op_sync_preserves_length_on_every_python[%#]", (sample, _formatCode) => {
     // The part AE honours holds even on 3.7, where attribute reordering
     // costs byte-identity: same length, still self-consistent.
     const [, opts] = _options(sample);
@@ -94,7 +94,7 @@ describe("TestNoOpSyncIsIdentity", () => {
     expect(Bytes.endsWith(body, _XML_TERMINATOR)).toBe(true);
   });
 
-  test.each(PER_FORMAT)("test_ae_body_is_self_consistent[%#]", (sample, formatCode) => {
+  test.each(PER_FORMAT)("test_ae_body_is_self_consistent[%#]", (sample, _formatCode) => {
     // The invariant the fix maintains, as AE itself writes it.
     const [, opts] = _options(sample);
     expect(opts instanceof XmlFormatOptions).toBe(true);
@@ -110,7 +110,7 @@ describe("TestNoOpSyncIsIdentity", () => {
 
 /** A real param write must repatch the lengths, or AE truncates. */
 describe("TestWriteKeepsHeaderConsistent", () => {
-  test.each(PER_FORMAT)("test_param_write_updates_length_fields[%#]", (sample, formatCode) => {
+  test.each(PER_FORMAT)("test_param_write_updates_length_fields[%#]", (sample, _formatCode) => {
     // A param that exists on every XML format and changes the length.
     const [, opts] = _options(sample);
     expect(opts instanceof XmlFormatOptions).toBe(true);

@@ -30,7 +30,6 @@ import { makeTmpPath, raises } from "../support/pytest.ts";
 
 const SAMPLES_DIR = new Path(import.meta.path).parent.parent.parent.div("samples");
 const PROPERTY_DIR = SAMPLES_DIR.div("models", "property");
-const LAYER_DIR = SAMPLES_DIR.div("models", "layer");
 const COMPOSITION_DIR = SAMPLES_DIR.div("models", "composition");
 const EG_DIR = SAMPLES_DIR.div("models", "essential_graphics");
 const VERSIONS_DIR = SAMPLES_DIR.div("versions");

@@ -357,9 +357,9 @@ export function _compareChunkDicts(
   const paths1 = new Set(data1.keys());
   const paths2 = new Set(data2.keys());
 
-  const onlyIn1 = [...[...paths1].filter((p) => !paths2.has(p))].sort(compare);
-  const onlyIn2 = [...[...paths2].filter((p) => !paths1.has(p))].sort(compare);
-  const commonPaths = [...[...paths1].filter((p) => paths2.has(p))].sort(compare);
+  const onlyIn1 = [...paths1].filter((p) => !paths2.has(p)).sort(compare);
+  const onlyIn2 = [...paths2].filter((p) => !paths1.has(p)).sort(compare);
+  const commonPaths = [...paths1].filter((p) => paths2.has(p)).sort(compare);
 
   const differences: ChunkDifference[] = [];
   const suppressed: string[] = [];

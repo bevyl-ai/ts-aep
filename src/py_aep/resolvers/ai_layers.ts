@@ -44,22 +44,22 @@ export class AiLayer {
 
 // The leading `\b` skips every `endobj`: a header needs whitespace before
 // the keyword anyway.
-export const _OBJ_KEYWORD_RE = /\bobj\b/g;
-export const _OBJ_HEADER_RE = /(\d+)[ \t\r\n]+(\d+)[ \t\r\n]+$/;
+const _OBJ_KEYWORD_RE = /\bobj\b/g;
+const _OBJ_HEADER_RE = /(\d+)[ \t\r\n]+(\d+)[ \t\r\n]+$/;
 // How far before an `obj` keyword its `N G` header may start: far longer
 // than any header a PDF writer emits.
-export const _OBJ_HEADER_WINDOW = 64;
+const _OBJ_HEADER_WINDOW = 64;
 
 /**
  * Latin-1 text with one character per byte, so regex match offsets are the
  * byte offsets of the Python `bytes` patterns (`rb"..."`).
  */
-export function latin1(data: Uint8Array): string {
+function latin1(data: Uint8Array): string {
   return Bytes.latin1Str(data);
 }
 
 // TODO(port): Python's RecursionError (CPython limit 1000 frames) maps to V8's stack-overflow RangeError, which fires at an engine/stack-size dependent depth; PDF objects nested between the two limits parse in one runtime and are reported malformed (or not) in the other. No pyrt RecursionError exists and V8 gives no fixed depth to emulate.
-export function isMalformed(exc: unknown): boolean {
+function isMalformed(exc: unknown): boolean {
   return exc instanceof SyntaxError || (exc instanceof RangeError && /call stack/.test(exc.message));
 }
 
@@ -102,7 +102,7 @@ export function _parseObjectAt(data: Uint8Array, offset: number): CosNode {
 }
 
 /** Follow an indirect reference to its object; pass other values through. */
-export function _resolve(value: CosNode, data: Uint8Array, offsets: Map<number, number>): CosNode {
+function _resolve(value: CosNode, data: Uint8Array, offsets: Map<number, number>): CosNode {
   if (value instanceof IndirectReference) {
     const offset = offsets.get(value.objectNumber) ?? null;
     return offset == null ? null : _parseObjectAt(data, offset);
@@ -113,7 +113,7 @@ export function _resolve(value: CosNode, data: Uint8Array, offsets: Map<number, 
 /** Collect the OCG object numbers a `/D` `/Order` (or `/OFF`) tree
  * references, depth first, each once.
  */
-export function _orderObjectNumbers(value: CosNode, out: number[]): number[] {
+function _orderObjectNumbers(value: CosNode, out: number[]): number[] {
   if (Array.isArray(value)) {
     for (const entry of value) {
       _orderObjectNumbers(entry, out);
@@ -207,7 +207,7 @@ export function readAiLayerOcgs(file: PathLike, data: Uint8Array | null = null):
 /** `isinstance(x, (str, bytes))`. A `CosString` is a `str` subclass in Python,
  * so it is a `String` object here, not a primitive.
  */
-export function isStrOrBytes(x: CosNode | undefined): x is string | CosString | Uint8Array {
+function isStrOrBytes(x: CosNode | undefined): x is string | CosString | Uint8Array {
   return is(pyStr, x) || x instanceof Uint8Array;
 }
 
@@ -226,9 +226,9 @@ export function readAiLayers(file: PathLike, data: Uint8Array | null = null): st
   return readAiLayerOcgs(file, data).map((layer) => layer.name);
 }
 
-export const _STREAM_RE = /stream\r?\n([\s\S]*?)\r?\nendstream/g;
+const _STREAM_RE = /stream\r?\n([\s\S]*?)\r?\nendstream/g;
 
-export function inflateOrNull(body: string): Uint8Array | null {
+function inflateOrNull(body: string): Uint8Array | null {
   try {
     return zlib.decompress(Bytes.latin1Bytes(body));
   } catch (e) {

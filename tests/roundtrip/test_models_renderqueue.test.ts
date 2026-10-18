@@ -80,9 +80,7 @@ const TEST_FILE = new Path(import.meta.path);
 const SAMPLES_DIR = TEST_FILE.parent.parent.parent.div("samples", "models", "renderqueue");
 const OM_SAMPLES_DIR = TEST_FILE.parent.parent.parent.div("samples", "models", "output_module");
 const FO_SAMPLES_DIR = TEST_FILE.parent.parent.parent.div("samples", "models", "format_options");
-const BUGS_DIR = TEST_FILE.parent.parent.parent.div("samples", "bugs");
 const AE_PREFS_DIR: string | null = process.env.AE_PREFS_DIR ?? null;
-const OCS_SAMPLES_DIR = TEST_FILE.parent.parent.parent.div("samples", "models", "output_module", "output_color_space");
 
 /** `attrs.asdict(inst)` - field name to value, in field order. */
 // NOTE(port): no pyrt attrs.asdict; OutputModuleSettingsItem fields are flat (ints, bools, bytes), so Python's recursive asdict equals this shallow copy.

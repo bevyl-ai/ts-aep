@@ -49,25 +49,15 @@ import { TextDocument } from "../models/text/text_document.ts";
 import * as _composition from "../models/items/composition.ts";
 
 // AE stores this in a CPrp path node's index to mean "match by name".
-export const _BY_NAME_INDEX = 0xffffffff;
+const _BY_NAME_INDEX = 0xffffffff;
 
-export const _TEXT_DOCUMENT = "ADBE Text Document";
+const _TEXT_DOCUMENT = "ADBE Text Document";
 
 // Essential Graphics controller type ids (see EssentialGraphicsController).
 export const CONTROLLER_CHECKBOX = 1;
 export const CONTROLLER_SLIDER = 2;
 export const CONTROLLER_COLOR = 4;
-export const CONTROLLER_TEXT = 6;
-
-/** The `Layer` that owns `prop`, or `null` if not layer-owned. */
-export function _owningLayer(prop: Property): Layer | null {
-  let group: PropertyGroup | null = prop.parentProperty;
-  while (group != null) {
-    if (group._isLayer()) return group;
-    group = group.parentProperty;
-  }
-  return null;
-}
+const CONTROLLER_TEXT = 6;
 
 /**
  * One CPrp path node: a match name plus AE's child index.
@@ -100,7 +90,7 @@ export class PathNode {
  * (verified across the essential_graphics fixtures: `ADBE Fill-0002` -\> 3,
  * every `* Control-0001` -\> 1).
  */
-export function _effectParamIndex(layer: Layer, effectMn: string, paramMn: string): number | null {
+function _effectParamIndex(layer: Layer, effectMn: string, paramMn: string): number | null {
   const defs = layer.containingComp._project._effectParamDefs.get(effectMn) ?? null;
   if (defs == null || defs.size === 0) return null;
   const keys = [...defs.keys()];
@@ -115,7 +105,7 @@ export function _effectParamIndex(layer: Layer, effectMn: string, paramMn: strin
  * parT index; the parade itself resolves by name. Duplicate effect
  * instances are fine - the index disambiguates them.
  */
-export function _effectParamPath(prop: Property): [PathNode[], Layer] | null {
+function _effectParamPath(prop: Property): [PathNode[], Layer] | null {
   const effect: PropertyGroup | null = prop.parentProperty;
   if (effect == null || !effect.isEffect) return null;
   const parade: PropertyGroup | null = effect.parentProperty;
@@ -215,7 +205,7 @@ export function _pathJson(nodes: PathNode[]): string {
  * Opacity), with the Checkbox control type distinguishing a boolean from a
  * plain numeric slider (both are 1-D value types).
  */
-export function classifyProperty(prop: Property): number | null {
+function classifyProperty(prop: Property): number | null {
   if (prop.matchName === _TEXT_DOCUMENT) return CONTROLLER_TEXT;
   if (prop.propertyValueType === PropertyValueType.COLOR) return CONTROLLER_COLOR;
   if (prop.propertyControlType === PropertyControlType.BOOLEAN) return CONTROLLER_CHECKBOX;
@@ -242,7 +232,7 @@ export function classifyProperty(prop: Property): number | null {
  * (identical match names, different parade indices) stay independently
  * addable.
  */
-export function _alreadyAdded(comp: CompItem, layerId: number, nodes: PathNode[]): boolean {
+function _alreadyAdded(comp: CompItem, layerId: number, nodes: PathNode[]): boolean {
   const wanted = nodes.map((node) => [node.matchName, node.propIndex]);
   for (const ctrl of comp.motionGraphicsControllers) {
     if (ctrl.sourceLayerId !== layerId) continue;

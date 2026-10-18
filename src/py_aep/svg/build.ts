@@ -24,18 +24,18 @@ type _LeafName = {
 
 type _LeafValue<K extends _LeafName> = MatchNameTypes[K] extends Property<infer V> ? V : never;
 
-export const _GRAD_TYPE = new Map<string, number>([
+const _GRAD_TYPE = new Map<string, number>([
   ["linear", 1.0],
   ["radial", 2.0],
 ]);
 
 /** Return a child leaf property (narrowed from `Property | PropertyGroup`). */
-export function _leaf<K extends _LeafName>(group: PropertyGroup, matchName: K): MatchNameTypes[K] {
+function _leaf<K extends _LeafName>(group: PropertyGroup, matchName: K): MatchNameTypes[K] {
   return group.property(matchName);
 }
 
 /** Narrow an `addProperty` / child result to `PropertyGroup`. */
-export function _grp(prop: PropertyGroup): PropertyGroup {
+function _grp(prop: PropertyGroup): PropertyGroup {
   return prop;
 }
 
@@ -52,7 +52,7 @@ export function buildShapeLayerContents(contents: PropertyGroup, drawables: SvgD
   }
 }
 
-export function _addDrawable(contents: PropertyGroup, drawable: SvgDrawable): void {
+function _addDrawable(contents: PropertyGroup, drawable: SvgDrawable): void {
   const group = _grp(contents.addProperty("ADBE Vector Group"));
   const inner = _grp(group.property("ADBE Vectors Group"));
 
@@ -94,7 +94,7 @@ export function _addDrawable(contents: PropertyGroup, drawable: SvgDrawable): vo
 }
 
 /** Centre of the box of all the drawable's vertices and tangent handles. */
-export function _bboxCenter(drawable: SvgDrawable): [number, number] {
+function _bboxCenter(drawable: SvgDrawable): [number, number] {
   const points: [number, number][] = [];
   for (const sp of drawable.subpaths) {
     for (const [v, tIn, tOut] of zip(sp.vertices, sp.inTangents, sp.outTangents)) {
@@ -120,7 +120,7 @@ export function _bboxCenter(drawable: SvgDrawable): [number, number] {
  * 0.5 -\> 50.196). Returns `null` when fully opaque, since AE omits the
  * default 100%.
  */
-export function _opacityPct(alpha: number): number | null {
+function _opacityPct(alpha: number): number | null {
   const a8 = Math.floor(toF4(alpha) * 255.0 + 0.5);
   if (a8 >= 255) {
     return null;
@@ -141,14 +141,14 @@ export function _opacityPct(alpha: number): number | null {
  * AE reads the SVG opacity as float32 before scaling, so quantize to f4
  * first to match its exact byte (e.g. `0.3 -> 30.000001907`, not `30.0`).
  */
-export function _gradOpacityPct(opacity: number): number | null {
+function _gradOpacityPct(opacity: number): number | null {
   if (opacity >= 1.0) {
     return null;
   }
   return toF4(toF4(opacity) * 100.0);
 }
 
-export function _addFill(
+function _addFill(
   inner: PropertyGroup,
   paint: SolidPaint | GradientPaint,
   cx: number,
@@ -158,7 +158,7 @@ export function _addFill(
   _applyPaint(inner, paint, "Fill", cx, cy, opacity);
 }
 
-export function _addStroke(inner: PropertyGroup, stroke: StrokeStyle, cx: number, cy: number, opacity: number): void {
+function _addStroke(inner: PropertyGroup, stroke: StrokeStyle, cx: number, cy: number, opacity: number): void {
   const sg = _applyPaint(inner, stroke.paint, "Stroke", cx, cy, opacity);
   _leaf(sg, "ADBE Vector Stroke Width").value = stroke.width;
   _applyStrokeStyle(sg, stroke);
@@ -168,7 +168,7 @@ export function _addStroke(inner: PropertyGroup, stroke: StrokeStyle, cx: number
  * Add a paint group ("Fill"/"Stroke" match-name stem `kind`) and set
  * its gradient-or-solid color and opacity. Returns the added group.
  */
-export function _applyPaint(
+function _applyPaint(
   inner: PropertyGroup,
   paint: SolidPaint | GradientPaint,
   kind: "Fill" | "Stroke",
@@ -194,7 +194,7 @@ export function _applyPaint(
   return grp;
 }
 
-export function _applyStrokeStyle(sg: PropertyGroup, stroke: StrokeStyle): void {
+function _applyStrokeStyle(sg: PropertyGroup, stroke: StrokeStyle): void {
   _setOptional(sg, "ADBE Vector Stroke Line Cap", stroke.cap, 1.0);
   _setOptional(sg, "ADBE Vector Stroke Line Join", stroke.join, 1.0);
   _setOptional(sg, "ADBE Vector Stroke Miter Limit", stroke.miterLimit, 4.0);
@@ -206,7 +206,7 @@ export function _applyStrokeStyle(sg: PropertyGroup, stroke: StrokeStyle): void 
  * Start/end points are stored relative to the group centre `(cx, cy)`,
  * matching the centred vertex encoding.
  */
-export function _applyGradient(group: PropertyGroup, paint: GradientPaint, cx: number, cy: number): void {
+function _applyGradient(group: PropertyGroup, paint: GradientPaint, cx: number, cy: number): void {
   _leaf(group, "ADBE Vector Grad Type").value = _GRAD_TYPE.get(paint.kind) ?? 1.0;
   _leaf(group, "ADBE Vector Grad Start Pt").value = [paint.start[0] - cx, paint.start[1] - cy];
   _leaf(group, "ADBE Vector Grad End Pt").value = [paint.end[0] - cx, paint.end[1] - cy];
@@ -226,7 +226,7 @@ export function _applyGradient(group: PropertyGroup, paint: GradientPaint, cx: n
 }
 
 /** Convert reader gradient stops to an AE `Gradient` (color + alpha). */
-export function _gradientValue(paint: GradientPaint): Gradient {
+function _gradientValue(paint: GradientPaint): Gradient {
   const stops = paint.stops?.length > 0 ? paint.stops : [];
   if (!stops?.length) {
     return new Gradient();
@@ -248,12 +248,7 @@ export function _gradientValue(paint: GradientPaint): Gradient {
  * Set a leaf only when it differs from its AE default (keeps the
  * output minimal, matching AE which writes only non-defaults).
  */
-export function _setOptional<K extends _LeafName>(
-  group: PropertyGroup,
-  matchName: K,
-  value: number,
-  default_: number,
-): void {
+function _setOptional<K extends _LeafName>(group: PropertyGroup, matchName: K, value: number, default_: number): void {
   if (value !== default_) {
     _leaf(group, matchName).value = value;
   }
@@ -265,7 +260,7 @@ export function _setOptional<K extends _LeafName>(
  * Some leaves (e.g. the AE 2026 Grad Scale / Grad Rotation) are absent
  * when importing into an older project; skip them rather than raise.
  */
-export function _setIfPresent<K extends _LeafName>(group: PropertyGroup, matchName: K, value: _LeafValue<K>): void {
+function _setIfPresent<K extends _LeafName>(group: PropertyGroup, matchName: K, value: _LeafValue<K>): void {
   if (group.properties.some((p) => p.matchName === matchName)) {
     const leaf: Property = _leaf(group, matchName);
     leaf.value = value;

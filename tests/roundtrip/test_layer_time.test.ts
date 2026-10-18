@@ -189,7 +189,7 @@ describe("TestStretchRetimesKeyframes", () => {
 
   test("test_survives_a_roundtrip", () => {
     const tmpPath = makeTmpPath();
-    const [app, layer, op] = _animated();
+    const [app, layer] = _animated();
     layer.stretch = 200.0;
 
     const out = tmpPath.div("stretched.aep");

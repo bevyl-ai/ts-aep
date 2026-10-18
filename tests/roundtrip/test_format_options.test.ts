@@ -53,7 +53,6 @@ import { makeTmpPath, raises } from "../support/pytest.ts";
 import { sorted } from "../support/python.ts";
 
 const FORMAT_DIR = new Path(import.meta.dir, "..", "..", "samples", "models", "format_options");
-const CINEON_DIR = FORMAT_DIR.div("cineon");
 const AVI_DIR = FORMAT_DIR.div("avi");
 
 /** Parse without caching and return (project, format_options). */
@@ -639,7 +638,7 @@ describe("TestRoundtripPngFormatOptions", () => {
 
   test("test_bit_depth_accepts_valid", () => {
     // The only values AE writes (8 / 16 bits per channel; no 32-bit PNG).
-    const tmpPath = makeTmpPath();
+    makeTmpPath();
     const [, opts] = _parseFresh(FORMAT_DIR.div("png", "base.aep"));
     assert(opts instanceof PngFormatOptions);
     for (const depth of [8, 16]) {

@@ -21,7 +21,7 @@ import { GradientPaint, GradientStop } from "./types.ts";
 import type { Element } from "../../pyrt/etree.ts";
 export type { Element };
 
-export function _href(elem: Element): string | null {
+function _href(elem: Element): string | null {
   for (const key of ["href", "{http://www.w3.org/1999/xlink}href"]) {
     const ref = elem.get(key);
     if (ref) {
@@ -89,7 +89,7 @@ export function collectGradients(root: Element): Map<string, GradientDef> {
   return defs;
 }
 
-export function _parseStops(elem: Element): GradientStop[] {
+function _parseStops(elem: Element): GradientStop[] {
   const stops: GradientStop[] = [];
   for (const child of elem) {
     if (localName(child.tag) !== "stop") {
@@ -109,9 +109,9 @@ export function _parseStops(elem: Element): GradientStop[] {
   return stops;
 }
 
-export const _STOP_PROPS = ["stop-color", "stop-opacity"];
+const _STOP_PROPS = ["stop-color", "stop-opacity"];
 
-export function _stopStyle(elem: Element): Map<string, string> {
+function _stopStyle(elem: Element): Map<string, string> {
   const out = new Map<string, string>();
   for (const [k, v] of elem.attrib) {
     if (_STOP_PROPS.includes(k)) {
@@ -129,7 +129,7 @@ export function _stopStyle(elem: Element): Map<string, string> {
  * fraction of `span` (1.0 under objectBoundingBox, where `50%` and `0.5`
  * are the same fraction of the bounding box).
  */
-export function _coord(text: string, span: number): number {
+function _coord(text: string, span: number): number {
   return parseLength(text, 0.0, span);
 }
 

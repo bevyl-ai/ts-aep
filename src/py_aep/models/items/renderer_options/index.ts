@@ -27,7 +27,7 @@ export type RendererOptions =
   | RendererOptionsBase;
 
 // NOTE(port): Python builds _WRAPPERS at import time too, so the evaluation-time reads of the imported classes match.
-export const _WRAPPERS: Map<Function, typeof RendererOptionsBase> = new Map<Function, typeof RendererOptionsBase>([
+const _WRAPPERS: Map<Function, typeof RendererOptionsBase> = new Map<Function, typeof RendererOptionsBase>([
   [ClassicPrdaChunk, ClassicRendererOptions],
   [AdvancedPrdaChunk, AdvancedRendererOptions],
   [Cinema4DPrdaChunk, Cinema4DRendererOptions],

@@ -36,7 +36,7 @@ import type { RoptChunk } from "../../../binary/render_chunks.ts";
 import type { OutputModule } from "../output_module.ts";
 
 /** Adobe stores FPS as ticks-per-frame with a 254016000000 tick base. */
-export const _ADOBE_TICKS_PER_SECOND = 254016000000;
+const _ADOBE_TICKS_PER_SECOND = 254016000000;
 
 // -- Ropt body layout -------------------------------------------------------
 // The body is a 34-byte header followed by the XML region. Two big-endian
@@ -50,8 +50,8 @@ export const _LEN_BODY_OFFSET = 6;
 /** Offset of the u32 holding `len(xml region) - 2` (i.e. excluding the NULs). */
 export const _LEN_XML_OFFSET = 30;
 
-export const _XML_DECLARATION = ascii('<?xml version="1.0" encoding="UTF-8"?>\n');
-export const _XML_NULS = new Uint8Array(2);
+const _XML_DECLARATION = ascii('<?xml version="1.0" encoding="UTF-8"?>\n');
+const _XML_NULS = new Uint8Array(2);
 /** Every AE-authored body ends `>\n\x00\x00`. */
 export const _XML_TERMINATOR = concat(Uint8Array.of(0x0a), _XML_NULS);
 
@@ -59,13 +59,13 @@ export const _XML_TERMINATOR = concat(Uint8Array.of(0x0a), _XML_NULS);
  * An empty element with NO attributes; AE expands these (`<ParamName></ParamName>`)
  * while self-closing the ones that have attributes (`<Foo ObjectRef="1"/>`).
  */
-export const _EMPTY_ELEMENT_RE = /<([A-Za-z_][\p{L}\p{N}_.-]*)\/>/gu;
+const _EMPTY_ELEMENT_RE = /<([A-Za-z_][\p{L}\p{N}_.-]*)\/>/gu;
 
 // XML param -> rules key: params whose writes are gated by the module's
 // format rules (and whose changes re-clamp dependents, see
 // CLAMP_DEPENDENTS). Params not listed here (frame rate, VR fields, ...)
 // validate locally only.
-export const _PARAM_RULE_KEYS = new Map<string, string>([
+const _PARAM_RULE_KEYS = new Map<string, string>([
   ["ADBEAudioBitrate", "Audio Bitrate"],
   ["ADBEAudioCodec", "Audio Codec"],
   ["ADBEMPEGAudioFormat", "Audio Format"],
@@ -79,7 +79,7 @@ type ETElement = ET.Element;
 /** `dict(*args).items()` for `ParamsDict.update`. */
 export type DictSource = Map<string, string> | Iterable<[string, string]> | Record<string, string>;
 
-export function _dictItems(args: DictSource[]): Iterable<[string, string]> {
+function _dictItems(args: DictSource[]): Iterable<[string, string]> {
   if (args.length === 0) return [];
   const src = args[0];
   if (src instanceof Map) return src.entries();
@@ -88,7 +88,7 @@ export function _dictItems(args: DictSource[]): Iterable<[string, string]> {
 }
 
 /** Descriptor for XML enum parameters (read/write). */
-export class _EnumParam {
+class _EnumParam {
   declare _key: string;
   declare _enumCls: EnumHelpers<number>;
   declare _name: string;
@@ -102,7 +102,7 @@ export class _EnumParam {
     this._name = name;
   }
 
-  get(obj: XmlFormatOptions | null, objtype?: Function | null): number | null | this {
+  get(obj: XmlFormatOptions | null, _objtype?: Function | null): number | null | this {
     if (obj == null) return this;
     return obj._enumParam(this._key, this._enumCls);
   }
@@ -119,7 +119,7 @@ export class _EnumParam {
  * the raw string when it is non-numeric (the binary is trusted, like
  * `_tryEnumOrInt` for enums). Writes require an `int`.
  */
-export class _ScalarParam {
+class _ScalarParam {
   declare _key: string;
   declare _name: string;
 
@@ -131,7 +131,7 @@ export class _ScalarParam {
     this._name = name;
   }
 
-  get(obj: XmlFormatOptions | null, objtype?: Function | null): number | string | null | this {
+  get(obj: XmlFormatOptions | null, _objtype?: Function | null): number | string | null | this {
     if (obj == null) return this;
     const raw = obj.params.get(this._key) ?? "";
     if (!raw) return null;
@@ -194,7 +194,7 @@ function _copyTree(e: ETElement): ETElement {
   return copy;
 }
 
-export function _extractParams(root: ETElement): [Map<string, string>, Map<string, ETElement>, Map<string, ETElement>] {
+function _extractParams(root: ETElement): [Map<string, string>, Map<string, ETElement>, Map<string, ETElement>] {
   const params = new Map<string, string>();
   const valueElements = new Map<string, ETElement>();
   const paramElements = new Map<string, ETElement>();
@@ -213,7 +213,7 @@ export function _extractParams(root: ETElement): [Map<string, string>, Map<strin
 }
 
 /** Try to parse an int, then map to an enum; fall back to int. */
-export function _tryEnumOrInt(enumCls: EnumHelpers<number>, rawStr: string): number | null {
+function _tryEnumOrInt(enumCls: EnumHelpers<number>, rawStr: string): number | null {
   if (!/^\s*[+-]?\d+\s*$/.test(rawStr)) return null;
   const rawValue = Number(rawStr);
   return enumCls.ofOrNull(rawValue) ?? rawValue;

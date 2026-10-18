@@ -8,7 +8,7 @@
 
 // -- Hue bands (degrees 0-360) ----------------------------------------
 
-export const _HUE_BANDS: [number, string][] = [
+const _HUE_BANDS: [number, string][] = [
   [15, "Red"],
   [45, "Orange"],
   [75, "Yellow"],
@@ -25,7 +25,7 @@ export const _HUE_BANDS: [number, string][] = [
 ];
 
 /** Map a hue angle (0-360) to a color name. */
-export function _hueName(hDeg: number): string {
+function _hueName(hDeg: number): string {
   for (const [upper, name] of _HUE_BANDS) {
     if (hDeg < upper) {
       return name;
@@ -35,7 +35,7 @@ export function _hueName(hDeg: number): string {
 }
 
 // NOTE(port): line-for-line copy of CPython 3.12 colorsys.rgb_to_hsv (same operation order, Python-sign mod), so floats match.
-export function _rgbToHsv(r: number, g: number, b: number): [number, number, number] {
+function _rgbToHsv(r: number, g: number, b: number): [number, number, number] {
   const maxc = Math.max(r, g, b);
   const minc = Math.min(r, g, b);
   const v = maxc;

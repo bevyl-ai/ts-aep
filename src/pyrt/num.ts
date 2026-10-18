@@ -88,6 +88,7 @@ export function floordiv(a: number, b: number): number {
     if (div - floordiv > 0.5) return floordiv + 1;
     return floordiv;
   }
+  // oxlint-disable-next-line oxc/erasing-op -- the signed zero (-0 for a negative quotient) is the result
   return Math.sign(a / b) * 0;
 }
 
@@ -190,7 +191,7 @@ export function int(x: number | string | boolean | bigint | BoxedFloat | String,
       else {
         b = 10;
         // Base 0: a leading zero is only allowed for zero itself.
-        if (/^0/.test(t) && !/^0+(_0+)*$/.test(t)) bad();
+        if (t.startsWith("0") && !/^0+(_0+)*$/.test(t)) bad();
       }
     }
     if (prefixed) {

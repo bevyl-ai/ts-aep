@@ -6,8 +6,10 @@
  * model attribute (either a ChunkField descriptor or a `@property`).
  */
 
-import { INSPECT, describe, compare } from "../../../pyrt/index.ts";
 import {
+  INSPECT,
+  describe,
+  compare,
   AttributeError,
   KeyError,
   ValueError,
@@ -27,7 +29,7 @@ import type { Preferences } from "../preferences.ts";
 // `isinstance(value, IntEnum)` is unanswerable. NUMBER output is unaffected
 // (`int(member)` is the member itself); STRING output gets the label from the
 // spec's enum class in `settingsToString` instead.
-export const IntEnum = {
+const IntEnum = {
   has(_value: SettingValue): _value is number {
     return false;
   },
@@ -35,9 +37,9 @@ export const IntEnum = {
 
 // Python `member.label` property; the enum objects expose it as `E.label(member)`.
 /** An `defineEnum` class that also defines a `label(member)` method. */
-export type LabeledEnum = EnumHelpers<number> & { label(member: number): string };
+type LabeledEnum = EnumHelpers<number> & { label(member: number): string };
 
-export function enumLabel(enumClass: LabeledEnum, member: number): string {
+function enumLabel(enumClass: LabeledEnum, member: number): string {
   return enumClass.label(member);
 }
 
@@ -111,7 +113,7 @@ export class SettingsView<V extends SettingValues = SettingValues> {
     }
   }
 
-  delete(key: string): void {
+  delete(_key: string): void {
     throw new TypeError("Cannot delete settings keys");
   }
 
@@ -235,7 +237,7 @@ export class SettingsView<V extends SettingValues = SettingValues> {
  *     - An int matching an enum member's value
  *     - A string matching an enum member's label
  */
-export function _coerceEnum(enumClass: LabeledEnum, value: SettingValue | null): number {
+function _coerceEnum(enumClass: LabeledEnum, value: SettingValue | null): number {
   if (enumClass.has(value)) return value;
   if (typeof value === "boolean") {
     // bool is int: settings["Output Audio"] = True would silently
@@ -269,7 +271,7 @@ export function _coerceEnum(enumClass: LabeledEnum, value: SettingValue | null):
   throw new TypeError(`Expected ${enumClass.enumName}, int, or str, got ${typeName(value)}`);
 }
 
-export const _RESOLUTION_STRINGS: Map<string, string> = new Map<string, string>([
+const _RESOLUTION_STRINGS: Map<string, string> = new Map<string, string>([
   // [0, 0] is the "use the comp's own resolution" sentinel (probed AE
   // 2026: getSettings(STRING) reads back "Current Settings").
   [compositeKey(0, 0), "Current Settings"],
@@ -331,7 +333,7 @@ export function buildResizeToStrings(preferences: Preferences): Map<string, stri
  * IntEnum values are unwrapped to their integer value.
  * All other types pass through unchanged.
  */
-export function _toNumberValue(value: SettingValue): SettingValue {
+function _toNumberValue(value: SettingValue): SettingValue {
   if (IntEnum.has(value)) return Math.trunc(value);
   return value;
 }
@@ -352,19 +354,19 @@ function _tupleKey(value: SettingValue): string {
  * @param resizeMap - Resolution -\> label map for the "Resize to" key (the AE-preference-derived
  *   map, or the factory fallback).
  */
-export function _toStringValue(
+function _toStringValue(
   key: string,
   value: string,
   resizeMap?: Map<string, string>,
   enumClass?: LabeledEnum | null,
 ): string;
-export function _toStringValue(
+function _toStringValue(
   key: string,
   value: SettingValue,
   resizeMap?: Map<string, string>,
   enumClass?: LabeledEnum | null,
 ): string | Map<string, string>;
-export function _toStringValue(
+function _toStringValue(
   key: string,
   value: SettingValue,
   resizeMap: Map<string, string> = _RESIZE_TO_STRINGS,

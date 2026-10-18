@@ -31,9 +31,9 @@ import { SolidSource } from "../sources/solid.ts";
 // order). This emulates the 3.12 table (linear probes 9, perturb 5, resize at fill*5 >= mask*3)
 // for the add / discard / iterate surface that `AVItem._used_in` uses. Exact for ids in
 // [0, 2^31) (AE item ids); a generic pyrt set shim would supersede it.
-export class _IdHashSet<T extends { id: number }> {
-  private _keys: (T | null)[] = new Array(8).fill(null);
-  private _hashes: number[] = new Array(8).fill(0); // -1 = dummy
+class _IdHashSet<T extends { id: number }> {
+  private _keys: (T | null)[] = Array.from({ length: 8 }, () => null);
+  private _hashes: number[] = Array.from({ length: 8 }, () => 0); // -1 = dummy
   private _mask = 7;
   private _fill = 0;
   private _used = 0;
@@ -110,8 +110,8 @@ export class _IdHashSet<T extends { id: number }> {
     while (newsize <= minused) newsize <<= 1;
     const oldKeys = this._keys;
     const oldHashes = this._hashes;
-    this._keys = new Array(newsize).fill(null);
-    this._hashes = new Array(newsize).fill(0);
+    this._keys = Array.from({ length: newsize }, () => null);
+    this._hashes = Array.from({ length: newsize }, () => 0);
     this._mask = newsize - 1;
     this._fill = this._used;
     for (let n = 0; n < oldKeys.length; n++) {
@@ -141,14 +141,14 @@ export class _IdHashSet<T extends { id: number }> {
   }
 }
 
-export function _validateUseProxy(value: boolean, obj: AVItem): void {
+function _validateUseProxy(value: boolean, obj: AVItem): void {
   validateBool(value);
   if (obj.proxySource == null && value) {
     throw new AttributeError("Cannot set useProxy to true when there is no proxy source.");
   }
 }
 
-export function _syncProxyActive(obj: AVItem): void {
+function _syncProxyActive(obj: AVItem): void {
   // idta 0x38 records that a proxy is assigned, not that it is in use:
   // AE 2026 keeps 1 after `useProxy = false` and writes 0 only on
   // `setProxyToNone()` (as in sample proxy.aep's `proxy_disabled` items).

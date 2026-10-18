@@ -2849,7 +2849,7 @@ describe("TestChooseLayerImport", () => {
     // `ai.ai`'s Calque 1 is `list_layers` index 1 (top layer first). The
     // whole binding lives in the opti box, which AE never recomputes, so
     // compare against AE's own bytes rather than against our own maths.
-    const [aeName, aeSspc, aeOpti] = _footageParts(parseAep(IMPORT_DIR.div("ai_choose_layer1_size.aep")).project);
+    const [aeName, , aeOpti] = _footageParts(parseAep(IMPORT_DIR.div("ai_choose_layer1_size.aep")).project);
     const project = parseAep(BASE).project;
     const item = asInstance(project.importFile(_layerOpts(ASSETS.div("ai.ai"), 1, "layer")), FootageItem);
     const source = item.mainSource;
@@ -3377,7 +3377,7 @@ describe("TestFileSourceReload", () => {
 
   test("test_reload_updates_dimensions", () => {
     const tmpPath = makeTmpPath();
-    const [project, item, target] = _importPng(tmpPath);
+    const [, item, target] = _importPng(tmpPath);
     expect(valueEquals([item.width, item.height], [25, 26])).toBe(true);
     const newContent = ASSETS.div("image_with_alpha.png").readBytes();
     target.writeBytes(newContent);
@@ -3747,10 +3747,9 @@ describe("TestLayerStylesEditableImport", () => {
   });
 
   test("test_multi_instance_styles_warn_and_disable", () => {
-    let project: Project | null = null;
     let comp: FootageItem | CompItem | null = null;
     warns(() => {
-      [project, comp] = _stylesImport(STYLED_PSD, ImportAsType.COMP);
+      [, comp] = _stylesImport(STYLED_PSD, ImportAsType.COMP);
     }, "frameFX");
     const layer = asInstance(comp, CompItem).layer("Layer 1");
     const styles = layer.property("ADBE Layer Styles");

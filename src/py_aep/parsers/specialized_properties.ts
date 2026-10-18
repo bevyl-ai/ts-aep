@@ -29,7 +29,7 @@ import { ByteStream, OverflowError, ValueError, warn, zip, instanceDict } from "
 import { late } from "../models/late.ts";
 
 // `logging.getLogger(__name__)`: only the warning path is wired to pyrt `warn`.
-export const logger = {
+const logger = {
   debug(..._args: string[]) {},
   info(..._args: string[]) {},
   warning: (m: string) => warn(m),

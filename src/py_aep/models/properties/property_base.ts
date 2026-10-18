@@ -26,13 +26,13 @@ import * as _propertyValue from "../../parsers/property_value.ts";
 import { late } from "../late.ts";
 
 // NOTE(port): local twin of CPython `list.index` / `list.remove` (py_eq compare, ValueError "x is not in list"); no pyrt shim exists.
-export function listIndex<T>(xs: readonly T[], x: T): number {
+function listIndex<T>(xs: readonly T[], x: T): number {
   const i = xs.findIndex((y) => valueEquals(y, x));
   if (i < 0) throw new ValueError(`${literal(x)} is not in list`);
   return i;
 }
 
-export function listRemove<T>(xs: T[], x: T): void {
+function listRemove<T>(xs: T[], x: T): void {
   xs.splice(listIndex(xs, x), 1);
 }
 
@@ -54,14 +54,14 @@ export const _INDEXED_GROUP_MATCH_NAMES: ReadonlySet<string> = new Set<string>([
 ]);
 
 // Text animator + selectors expose an enable toggle (canSetEnabled).
-export const _TEXT_ANIMATOR_TOGGLEABLE: ReadonlySet<string> = new Set<string>([
+const _TEXT_ANIMATOR_TOGGLEABLE: ReadonlySet<string> = new Set<string>([
   "ADBE Text Animator",
   "ADBE Text Selector",
   "ADBE Text Wiggly Selector",
   "ADBE Text Expressible Selector",
 ]);
 
-export function _validateEnabled(value: boolean, obj: PropertyBase): void {
+function _validateEnabled(value: boolean, obj: PropertyBase): void {
   validateBool(value);
   if (!obj.canSetEnabled) {
     throw new AttributeError("'enabled' is read-only when 'canSetEnabled' is false.");
@@ -76,7 +76,7 @@ export function _validateEnabled(value: boolean, obj: PropertyBase): void {
  * fallbacks consistent. Explicit user names (stored in tdsn) take
  * precedence and are unaffected.
  */
-export function _renumberMaskAutoNames(parent: PropertyGroup): void {
+function _renumberMaskAutoNames(parent: PropertyGroup): void {
   let i = 1;
   for (const child of parent._properties) {
     if (child._isMask) {
@@ -94,7 +94,7 @@ export function _renumberMaskAutoNames(parent: PropertyGroup): void {
  * resets it to none, left out of the file as an untouched parameter is
  * (AE 2026), so a later mask reusing the id is not picked up.
  */
-export function _clearMaskReferences(mask: MaskPropertyGroup): void {
+function _clearMaskReferences(mask: MaskPropertyGroup): void {
   const maskId = mask._mkif.maskId;
   for (const prop of mask._containingLayer._leafProperties()) {
     if (prop.propertyValueType !== PropertyValueType.MASK_INDEX) continue;
@@ -115,11 +115,7 @@ export function _clearMaskReferences(mask: MaskPropertyGroup): void {
  * -\> id 4 `'Mask 4'`). A plain clone keeps the source's id and name,
  * colliding with it.
  */
-export function _assignDuplicateMaskIdentity(
-  source: PropertyBase,
-  newMask: MaskPropertyGroup,
-  parent: PropertyGroup,
-): void {
+function _assignDuplicateMaskIdentity(source: PropertyBase, newMask: MaskPropertyGroup, parent: PropertyGroup): void {
   const siblings = parent._properties.filter((m) => m._isMask && m !== newMask).filter((m) => m._isMaskGroup());
   const newId = Math.max(0, ...siblings.map((m) => m._mkif.maskId)) + 1;
   newMask._mkif.maskId = newId;

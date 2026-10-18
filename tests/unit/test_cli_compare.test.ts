@@ -27,9 +27,6 @@ import { Utf8Chunk } from "../../src/py_aep/binary/scalar_chunks.ts";
 import { Path, b, valueEquals } from "../../src/pyrt/index.ts";
 import { range, split, strip } from "../support/python.ts";
 
-// SAMPLES_DIR = Path(__file__).parent.parent.parent / "samples"
-const SAMPLES_DIR = new Path(import.meta.path).parent.parent.parent.div("samples");
-
 describe("TestByteDifference", () => {
   /** Test that single bit differences are detected and position calculated. */
   test("test_single_bit_difference_detected", () => {

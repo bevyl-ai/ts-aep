@@ -10,7 +10,7 @@ import { validateInt, validateMarkerDuration, validateString, validateU4 } from 
 import type { ListChunk } from "../../binary/chunk.ts";
 import type { Keyframe } from "./keyframe.ts";
 
-export function _validateParams(value: Map<string, string>): void {
+function _validateParams(value: Map<string, string>): void {
   if (!(value instanceof Map)) {
     throw new ValueError("params must be a dictionary of string key-value pairs");
   }

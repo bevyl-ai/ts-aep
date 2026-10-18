@@ -49,7 +49,7 @@ export function parseViewers(folderChunks: Chunk[], items: Item[]): Viewer[] {
  * @param viewer - The parent viewer that owns these views.
  * @returns A list of {@link View | View} objects.
  */
-export function _parseViews(block: Chunk[], item: Item | null, viewer: Viewer): View[] {
+function _parseViews(block: Chunk[], item: Item | null, viewer: Viewer): View[] {
   const fipsChunks = filterByType(block, "fips");
   const avItem = item instanceof AVItem ? item : null;
   // Each locked view owns 4 consecutive fips (3D viewport slots).
@@ -77,7 +77,7 @@ export function _parseViews(block: Chunk[], item: Item | null, viewer: Viewer): 
  * @returns A {@link Viewer | Viewer} instance, or `null` if the block
  *   does not contain a recognised viewer type.
  */
-export function _buildViewer(block: Chunk[]): Viewer | null {
+function _buildViewer(block: Chunk[]): Viewer | null {
   const fitt = findByTypeOrNull(block, "fitt");
   if (fitt === null) return null;
 

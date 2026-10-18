@@ -35,7 +35,7 @@ for (const file of files) {
           .join("\n")
           .replace(/\\([<>{}@])/g, "$1");
         const line = text.slice(0, c.index).split("\n").length + i;
-        const name = `${path.relative(ROOT, file).replace(/[\/.]/g, "_")}_${n++}.ts`;
+        const name = `${path.relative(ROOT, file).replace(/[/.]/g, "_")}_${n++}.ts`;
         fs.writeFileSync(path.join(OUT, name), `export {};\n${code}\n`);
         origin.set(path.join(OUT, name), `${path.relative(ROOT, file)}:${line}`);
       }

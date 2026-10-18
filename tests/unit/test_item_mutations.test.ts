@@ -6,9 +6,7 @@ import { describe, expect, test } from "bun:test";
 import "../../src/py_aep/binary/_register.ts";
 import * as py_aep from "../../src/py_aep/index.ts";
 import { autoName } from "../../src/py_aep/models/naming.ts";
-import { Path, getOrThrow, valueEquals } from "../../src/pyrt/index.ts";
-
-const SAMPLES_DIR = new Path(import.meta.path).parent.parent.parent.div("samples", "models");
+import { getOrThrow, valueEquals } from "../../src/pyrt/index.ts";
 
 /** Tests for the auto_name naming helper. */
 describe("TestAutoName", () => {

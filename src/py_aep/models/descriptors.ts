@@ -25,13 +25,13 @@ import { getAeVersionMajor } from "../ae_version.ts";
 import { validateBool, validateEnum } from "./validators.ts";
 
 /** Callable applied to a chunk value on read (`transform`) or write (`reverse`). */
-export type ChunkTransform<R = FieldValue> = (value: FieldValue) => R;
+type ChunkTransform<R = FieldValue> = (value: FieldValue) => R;
 
 /**
  * The names of `O`'s methods that take no arguments (`preSet` / `postSet`
  * hooks); any name when the owner is not known (`O` is `object`).
  */
-export type HookName<O> = object extends O
+type HookName<O> = object extends O
   ? string
   : { [K in keyof O]-?: O[K] extends () => void ? K : never }[keyof O] & string;
 
@@ -113,7 +113,7 @@ export const _materializationAllowed = new ContextVar<boolean>("_materialization
 });
 
 /** Run `body` with descriptor writes forbidden; restores the previous state after. */
-export function _runSuppressed<R>(body: () => R): R {
+function _runSuppressed<R>(body: () => R): R {
   const token = _materializationAllowed.set(false);
   try {
     return body();
@@ -149,7 +149,7 @@ export function _suppressMaterialization() {
  * Python `isinstance(x, IntEnum)` for a py_enum object (pyrt/enum.ts).
  */
 // NOTE(port): int_enum === py_enum in pyrt, so this also admits non-int enums; the only non-IntEnum enum in py_aep (cos.TokenType) never reaches a descriptor, so the IntEnum check matches Python.
-export function isEnum(x: unknown): x is EnumHelpers<number> {
+function isEnum(x: unknown): x is EnumHelpers<number> {
   return x != null && typeof x === "object" && "allMembers" in x && "has" in x && typeof x.has === "function";
 }
 
@@ -159,7 +159,7 @@ export function isEnum(x: unknown): x is EnumHelpers<number> {
  * Detects a `fromBinary` method bound by `boundEnumMethod` (via its
  * `enumClass`) or a direct enum class reference.
  */
-export function _enumClass<R>(transform: ChunkTransform<R> | null | undefined): EnumHelpers<number> | null {
+function _enumClass<R>(transform: ChunkTransform<R> | null | undefined): EnumHelpers<number> | null {
   if (transform == null) return null;
   let enumCls: unknown = "enumClass" in transform ? transform.enumClass : null;
   if (enumCls == null && isEnum(transform)) enumCls = transform;
@@ -171,7 +171,7 @@ export function _enumClass<R>(transform: ChunkTransform<R> | null | undefined): 
  * The enum's `name` method bound to the enum, or `dflt`. The result carries
  * the enum as `enumClass`, which `_enumClass` reads back.
  */
-export function boundEnumMethod<V, R extends number>(
+function boundEnumMethod<V, R extends number>(
   enumCls: EnumHelpers<number>,
   name: string,
   dflt: EnumHelpers<R> | ((value: V) => R),
@@ -219,7 +219,7 @@ export function enumOrRaw<V, R>(convert: (value: V) => R): (value: V) => R | V {
  * Raw ints must appear in the enum's value map; any other type must
  * already be an instance of the enum.
  */
-export function _validateEnumMember(enumCls: EnumHelpers<number>, value: unknown, publicName: string): void {
+function _validateEnumMember(enumCls: EnumHelpers<number>, value: unknown, publicName: string): void {
   if (enumCls.has(value)) return;
   // NOTE(port): int/float — integral values are plain numbers by design (RULEBOOK §4); an integer-valued float such as 2.0 takes the int branch and gets the "Invalid value" message instead of "is not a valid".
   // A Python bool is an int that hashes like 0/1, so it is checked as its int value.
@@ -314,7 +314,7 @@ export class ChunkField<
     this.publicName = name;
   }
 
-  get(obj: O | null, objtype?: Function | null): T | ChunkField<T, O> {
+  get(obj: O | null, _objtype?: Function | null): T | ChunkField<T, O> {
     if (obj == null) return this;
     // Parse-time overrides (e.g. ExtendScript-compatible values that
     // differ from the binary) are stored in the instance dict and take

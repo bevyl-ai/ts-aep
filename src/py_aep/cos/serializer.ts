@@ -36,7 +36,7 @@ export function serialize(data: CosNode): Uint8Array {
 }
 
 /** Write a space separator unless the buffer already ends with whitespace. */
-export function _space(buf: ByteStream): void {
+function _space(buf: ByteStream): void {
   const pos = buf.tell();
   if (pos === 0) return;
   buf.seek(pos - 1);
@@ -46,7 +46,7 @@ export function _space(buf: ByteStream): void {
 }
 
 /** Dispatch `value` to the appropriate serialization handler. */
-export function _writeValue(buf: ByteStream, value: CosNode, kw: { topLevel?: boolean } = {}): void {
+function _writeValue(buf: ByteStream, value: CosNode, kw: { topLevel?: boolean } = {}): void {
   const { topLevel = false } = kw;
   if (value instanceof Map) {
     if (topLevel) {
@@ -108,7 +108,7 @@ export function _writeValue(buf: ByteStream, value: CosNode, kw: { topLevel?: bo
  * not `0` / `9`), which distinguishes them from COS integers and keeps
  * the serialized blob byte-faithful.
  */
-export function _formatFloat(value: number): Uint8Array {
+function _formatFloat(value: number): Uint8Array {
   let text = String(Number(value.toPrecision(10)));
   // no '.', exponent, 'nan'/'inf'
   if (![".", "e", "E", "n", "i"].some((c) => text.includes(c))) text += ".0";
@@ -122,7 +122,7 @@ export function _formatFloat(value: number): Uint8Array {
 }
 
 /** Write a COS dictionary: `<< /key value /key value >>`. */
-export function _writeDict(buf: ByteStream, d: CosDict): void {
+function _writeDict(buf: ByteStream, d: CosDict): void {
   buf.write(ascii("<<"));
   _writeDictContent(buf, d);
   _space(buf);
@@ -130,7 +130,7 @@ export function _writeDict(buf: ByteStream, d: CosDict): void {
 }
 
 /** Write Map key/value pairs without the `<<`/`>>` delimiters. */
-export function _writeDictContent(buf: ByteStream, d: CosDict): void {
+function _writeDictContent(buf: ByteStream, d: CosDict): void {
   for (const [key, val] of d) {
     _space(buf);
     _writeIdentifier(buf, key);
@@ -139,7 +139,7 @@ export function _writeDictContent(buf: ByteStream, d: CosDict): void {
 }
 
 /** Write a COS array: `[ val val val ]`. */
-export function _writeArray(buf: ByteStream, lst: CosNode[]): void {
+function _writeArray(buf: ByteStream, lst: CosNode[]): void {
   buf.write(ascii("["));
   _writeArrayContent(buf, lst);
   _space(buf);
@@ -147,7 +147,7 @@ export function _writeArray(buf: ByteStream, lst: CosNode[]): void {
 }
 
 /** Write array elements without `[`/`]` delimiters. */
-export function _writeArrayContent(buf: ByteStream, lst: CosNode[]): void {
+function _writeArrayContent(buf: ByteStream, lst: CosNode[]): void {
   for (const item of lst) {
     _writeValue(buf, item);
   }
@@ -158,7 +158,7 @@ const PRINTABLE_ASCII = /^[!-~]*$/;
 const IDENTIFIER_ESCAPED = /[()[\]<>{}/%#]/;
 
 /** Write a COS identifier (name object): `/foo`. */
-export function _writeIdentifier(buf: ByteStream, name: string): void {
+function _writeIdentifier(buf: ByteStream, name: string): void {
   buf.write(SLASH);
   if (PRINTABLE_ASCII.test(name) && !IDENTIFIER_ESCAPED.test(name)) {
     buf.write(encode(name, "ascii"));
@@ -184,7 +184,7 @@ export function _writeIdentifier(buf: ByteStream, name: string): void {
  * raw ASCII / UTF-8 (e.g. bit-flag strings), in which case the original
  * single-byte encoding is reproduced for byte fidelity.
  */
-export function _writeString(buf: ByteStream, s: string | CosString): void {
+function _writeString(buf: ByteStream, s: string | CosString): void {
   let raw: Uint8Array;
   if (!(s instanceof CosString) || s.cosUtf16) {
     raw = concat(Uint8Array.of(0xfe, 0xff), encode(String(s), "utf-16-be"));
@@ -205,7 +205,7 @@ export function _writeString(buf: ByteStream, s: string | CosString): void {
  * raw inside string literals, so they are left unescaped to keep the
  * serialized blob byte-faithful.
  */
-export function _escapeString(raw: Uint8Array): Uint8Array {
+function _escapeString(raw: Uint8Array): Uint8Array {
   // `raw` is always freshly encoded, so with nothing to escape it is the result.
   if (!raw.some((byte) => byte === 0x28 || byte === 0x29 || byte === 0x5c)) return raw;
   const out: number[] = [];
@@ -218,14 +218,14 @@ export function _escapeString(raw: Uint8Array): Uint8Array {
 }
 
 /** Write a COS hex string: `<hexdata>`. */
-export function _writeHexString(buf: ByteStream, data: Uint8Array): void {
+function _writeHexString(buf: ByteStream, data: Uint8Array): void {
   buf.write(ascii("<"));
   buf.write(encode(Bytes.toHex(data), "ascii"));
   buf.write(ascii(">"));
 }
 
 /** Write `N G obj <data> endobj`. */
-export function _writeIndirectObject(buf: ByteStream, obj: IndirectObject): void {
+function _writeIndirectObject(buf: ByteStream, obj: IndirectObject): void {
   buf.write(encode(`${obj.objectNumber}`, "ascii"));
   buf.write(ascii(" "));
   buf.write(encode(`${obj.generationNumber}`, "ascii"));
@@ -235,7 +235,7 @@ export function _writeIndirectObject(buf: ByteStream, obj: IndirectObject): void
 }
 
 /** Write `N G R`. */
-export function _writeIndirectReference(buf: ByteStream, ref: IndirectReference): void {
+function _writeIndirectReference(buf: ByteStream, ref: IndirectReference): void {
   buf.write(encode(`${ref.objectNumber}`, "ascii"));
   buf.write(ascii(" "));
   buf.write(encode(`${ref.generationNumber}`, "ascii"));
@@ -243,7 +243,7 @@ export function _writeIndirectReference(buf: ByteStream, ref: IndirectReference)
 }
 
 /** Write `<< dict >> stream\n<bytes>endstream`. */
-export function _writeStream(buf: ByteStream, stream: Stream): void {
+function _writeStream(buf: ByteStream, stream: Stream): void {
   _writeDict(buf, stream.dictionary);
   buf.write(ascii("stream\n"));
   buf.write(stream.data);

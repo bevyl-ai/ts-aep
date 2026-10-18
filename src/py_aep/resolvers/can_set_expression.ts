@@ -46,18 +46,15 @@ import * as _avLayer from "../models/layers/av_layer.ts";
 
 // PVT sets where can_set_expression is always True / False regardless
 // of other signals.
-export const _PVT_ALWAYS_TRUE: ReadonlySet<number> = new Set<number>([
+const _PVT_ALWAYS_TRUE: ReadonlySet<number> = new Set<number>([
   PropertyValueType.TEXT_DOCUMENT,
   PropertyValueType.SHAPE,
 ]);
-export const _PVT_ALWAYS_FALSE: ReadonlySet<number> = new Set<number>([
-  PropertyValueType.NO_VALUE,
-  PropertyValueType.MARKER,
-]);
+const _PVT_ALWAYS_FALSE: ReadonlySet<number> = new Set<number>([PropertyValueType.NO_VALUE, PropertyValueType.MARKER]);
 
 // Effect parameter types that never take an expression: a layer or mask
 // reference, and group markers.
-export const _NON_EXPRESSION_PARAM_TYPES: ReadonlySet<number> = new Set<number>([
+const _NON_EXPRESSION_PARAM_TYPES: ReadonlySet<number> = new Set<number>([
   PropertyControlType.LAYER,
   PropertyControlType.PAINT_GROUP,
   PropertyControlType.MASK,
@@ -66,16 +63,16 @@ export const _NON_EXPRESSION_PARAM_TYPES: ReadonlySet<number> = new Set<number>(
 ]);
 
 // Hidden, but still expressionable: AE exempts these paint streams.
-export const _HIDDEN_BUT_EXPRESSIONABLE: ReadonlySet<string> = new Set<string>([
+const _HIDDEN_BUT_EXPRESSIONABLE: ReadonlySet<string> = new Set<string>([
   "ADBE Paint Transfer Mode",
   "ADBE Paint Duration",
 ]);
 
 // `CompItem.renderer` of Classic 3D, which draws a 3D layer as a flat plane.
-export const _CLASSIC_3D = "ADBE Advanced 3d";
+const _CLASSIC_3D = "ADBE Advanced 3d";
 
 // Shape stroke Line Join value for a miter join.
-export const _MITER_JOIN = 1;
+const _MITER_JOIN = 1;
 
 /**
  * Compute `canSetExpression` for a property.
@@ -243,7 +240,7 @@ export function resolveCanSetExpression(prop: Property): boolean {
 }
 
 /** Determine can_set_expression for a property on a light layer. */
-export function _canSetExpressionLight(layer: Layer, mn: string): boolean {
+function _canSetExpressionLight(layer: Layer, mn: string): boolean {
   if (_LIGHT_NO_EXPRESSION.has(mn)) {
     return false;
   }
@@ -279,7 +276,7 @@ export function _canSetExpressionLight(layer: Layer, mn: string): boolean {
  *   to the layer's ACTIVE mesh type; checkbox toggles (caps / invert
  *   slice) are expressionable regardless of active type.
  */
-export function _canSetExpressionParametricMesh(prop: Property, layer: Layer, mn: string): boolean | null {
+function _canSetExpressionParametricMesh(prop: Property, layer: Layer, mn: string): boolean | null {
   if (_PARAMETRIC_MESH_NO_EXPRESSION.has(mn)) {
     return false;
   }

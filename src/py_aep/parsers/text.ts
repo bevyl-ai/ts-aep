@@ -27,20 +27,12 @@
  * `data["1"]["3"]` (paragraph).
  */
 
-import { truthy, warn } from "../../pyrt/index.ts";
+import { truthy } from "../../pyrt/index.ts";
 import { cosGet } from "../cos/index.ts";
 import type { CosDict, CosNode } from "../cos/cos.ts";
 import { FontObject } from "../models/text/font_object.ts";
 import { TextDocument } from "../models/text/text_document.ts";
 import type { ListChunk } from "../binary/chunk.ts";
-
-// `logging.getLogger(__name__)`: this module logs nothing today, so only the
-// warning path is wired to pyrt `warn`.
-export const logger = {
-  debug() {},
-  info() {},
-  warning: (m: string) => warn(m),
-};
 
 // ---------------------------------------------------------------------------
 // Font parsing
@@ -60,7 +52,7 @@ export const logger = {
  * @returns Array of {@link FontObject} instances in the same order as the COS
  *   array (the index is referenced by character styles).
  */
-export function parseFonts(cosData: CosDict): FontObject[] {
+function parseFonts(cosData: CosDict): FontObject[] {
   const fontArray = cosGet(cosData, "0", "1", "0");
   if (!truthy(fontArray) || !Array.isArray(fontArray)) {
     return [];
@@ -92,7 +84,7 @@ export function parseFonts(cosData: CosDict): FontObject[] {
  *
  * Path: `doc["0"]["6"]["0"][0]["0"]["0"]["6"]`
  */
-export function _getFirstCharStyle(doc: CosNode): CosDict | null {
+function _getFirstCharStyle(doc: CosNode): CosDict | null {
   const result = cosGet(doc, "0", "6", "0", 0, "0", "0", "6");
   if (result instanceof Map) {
     return result;
@@ -105,7 +97,7 @@ export function _getFirstCharStyle(doc: CosNode): CosDict | null {
  *
  * Path: `doc["0"]["5"]["0"][0]["0"]["0"]["5"]`
  */
-export function _getFirstParaStyle(doc: CosNode): CosDict | null {
+function _getFirstParaStyle(doc: CosNode): CosDict | null {
   const result = cosGet(doc, "0", "5", "0", 0, "0", "0", "5");
   if (result instanceof Map) {
     return result;
@@ -126,7 +118,7 @@ export function _getFirstParaStyle(doc: CosNode): CosDict | null {
  * @param btdkBody - The btdk chunk body for COS write-back.
  * @returns Array of {@link TextDocument} instances (one per keyframe).
  */
-export function parseTextDocuments(cosData: CosDict, fonts: FontObject[], btdkBody: ListChunk): TextDocument[] {
+function parseTextDocuments(cosData: CosDict, fonts: FontObject[], btdkBody: ListChunk): TextDocument[] {
   const docArray = cosGet(cosData, "1", "1");
   if (!truthy(docArray) || !Array.isArray(docArray)) {
     return [];

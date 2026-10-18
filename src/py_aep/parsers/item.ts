@@ -1,5 +1,5 @@
 import { ValueError } from "../../pyrt/index.ts";
-import type { ListChunk } from "../binary/chunk.ts";
+import type { ListChunk, Chunk } from "../binary/chunk.ts";
 import type { CmtaChunk, IdtaChunk } from "../binary/item_chunks.ts";
 import type { Utf8Chunk } from "../binary/scalar_chunks.ts";
 import {
@@ -15,7 +15,6 @@ import { FolderItem } from "../models/items/folder.ts";
 import { parseComposition } from "./composition.ts";
 import { parseFootage } from "./footage.ts";
 import { parseViewers } from "./view.ts";
-import type { Chunk } from "../binary/chunk.ts";
 import type { CompItem } from "../models/items/composition.ts";
 import type { FootageItem } from "../models/items/footage.ts";
 import type { Project } from "../models/project.ts";
@@ -142,7 +141,7 @@ export function parseFolder(
  * @param childChunks - child chunks of the item LIST chunk.
  * @returns List of Guide objects, empty if no guides are defined.
  */
-export function _parseGuides(childChunks: Chunk[]): Guide[] {
+function _parseGuides(childChunks: Chunk[]): Guide[] {
   const gideList = findByListTypeOrNull(childChunks, "Gide");
   if (gideList === null) return [];
 

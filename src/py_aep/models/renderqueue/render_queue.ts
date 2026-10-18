@@ -17,7 +17,7 @@ import { RenderQueueItem } from "./render_queue_item.ts";
  * subtree so the populated queue is serialized. A no-op for a normal AE file
  * whose `LRdr` is already fully present and non-synthetic.
  */
-export function _ensureMaterialized(chunk: Chunk): void {
+function _ensureMaterialized(chunk: Chunk): void {
   chunk.synthetic = false;
   if (chunk instanceof ListChunk) {
     for (const child of chunk.chunks) {

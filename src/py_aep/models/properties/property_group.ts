@@ -69,12 +69,12 @@ import { late } from "../late.ts";
 // group's own contents carries lock-flag 0x04, like the Root Vectors Group.
 // Enable-flags is 1 (enabled) except the Materials Group, which AE writes
 // as 3 (enabled + collapsed) - matching its default-collapsed UI state.
-export const _STROKE_SUBGROUPS: ReadonlyArray<readonly [string, number, number]> = [
+const _STROKE_SUBGROUPS: ReadonlyArray<readonly [string, number, number]> = [
   ["ADBE Vector Stroke Dashes", 0, 1],
   ["ADBE Vector Stroke Taper", 0, 1],
   ["ADBE Vector Stroke Wave", 0, 1],
 ];
-export const _VECTOR_SUBGROUPS = new Map<string, ReadonlyArray<readonly [string, number, number]>>([
+const _VECTOR_SUBGROUPS = new Map<string, ReadonlyArray<readonly [string, number, number]>>([
   [
     "ADBE Vector Group",
     [
@@ -91,7 +91,7 @@ export const _VECTOR_SUBGROUPS = new Map<string, ReadonlyArray<readonly [string,
 
 // AE's creation names for shape elements, where they differ from the
 // auto-name table ("Rectangle Path 1" vs auto-name "Rectangle").
-export const _VECTOR_CREATION_NAMES = new Map<string, string>([
+const _VECTOR_CREATION_NAMES = new Map<string, string>([
   ["ADBE Vector Shape - Rect", "Rectangle Path"],
   ["ADBE Vector Shape - Ellipse", "Ellipse Path"],
   ["ADBE Vector Shape - Star", "Polystar Path"],
@@ -99,7 +99,7 @@ export const _VECTOR_CREATION_NAMES = new Map<string, string>([
 
 // Per-type creation-name base for text selectors. The Range Selector
 // also carries an empty Advanced subgroup in binary.
-export const _TEXT_SELECTOR_NAMES = new Map<string, string>([
+const _TEXT_SELECTOR_NAMES = new Map<string, string>([
   ["ADBE Text Selector", "Range Selector"],
   ["ADBE Text Wiggly Selector", "Wiggly Selector"],
   ["ADBE Text Expressible Selector", "Expression Selector"],
@@ -110,7 +110,7 @@ export const _TEXT_SELECTOR_NAMES = new Map<string, string>([
 // its EfdG definition, and an AE 15 project's stored 1 on resave). Without
 // the atom AE loads the instance with the Legacy engine: Puppet Engine reads 1
 // and the Advanced-only parameters are hidden.
-export const _PUPPET_ENGINE_VERSION = Bytes.intToBytes(2, 4, "big");
+const _PUPPET_ENGINE_VERSION = Bytes.intToBytes(2, 4, "big");
 
 /**
  * Resolve `name` against the baked built-in effect templates.
@@ -155,12 +155,12 @@ export function _insertBeforeGroupEnd(tdgp: ListChunk, chunk: Chunk): void {
 }
 
 /** The instance `tdgp` (param container) inside an effect sspc. */
-export function _effectTdgp(sspc: ListChunk): ListChunk | null {
+function _effectTdgp(sspc: ListChunk): ListChunk | null {
   return findByListTypeOrNull(sspc.chunks, "tdgp");
 }
 
 /** Replace the instance display name (tdsn) in a cloned effect sspc. */
-export function _setEffectInstanceName(sspc: ListChunk, name: string): void {
+function _setEffectInstanceName(sspc: ListChunk, name: string): void {
   const tdgp = _effectTdgp(sspc);
   if (tdgp == null) return;
   for (const [i, inner] of tdgp.chunks.entries()) {
@@ -174,14 +174,14 @@ export function _setEffectInstanceName(sspc: ListChunk, name: string): void {
 // A sibling mask name the next "Mask N" counts: "Mask" (number 1) or "Mask"
 // plus 1 to 6 ASCII digits (AE 2026 ignores 7-digit numbers, other digit
 // sets and any other spacing).
-export const _NUMBERED_MASK = /^Mask(?: ([0-9]{1,6}))?$/;
+const _NUMBERED_MASK = /^Mask(?: ([0-9]{1,6}))?$/;
 
 /**
  * The name AE 2026 gives a new mask beside masks named `names`: one past
  * the highest number, keeping the zero padding of the first name holding
  * it ("Mask 007" -\> "Mask 008"; "Mask 0" counts as unnumbered).
  */
-export function _nextMaskName(names: Iterable<string>): string {
+function _nextMaskName(names: Iterable<string>): string {
   let highest = 0;
   let width = 1;
   for (const name of names) {
@@ -208,7 +208,7 @@ export function _nextMaskName(names: Iterable<string>): string {
  * default are reset. Leaves with no known default keep their value but
  * are still de-animated / de-expressioned.
  */
-export function _resetToDefaultValues(group: PropertyGroup): void {
+function _resetToDefaultValues(group: PropertyGroup): void {
   for (const child of group.properties) {
     if (child instanceof PropertyGroup) {
       _resetToDefaultValues(child);
@@ -977,7 +977,7 @@ export class PropertyGroup extends PropertyBase {
     tdb4ApplyVfAxisTemplate(slot._tdb4);
     assert(slot._cdat != null);
     // AE writes [value, tag] plus eight zero-padding slots.
-    slot._cdat.values = [axis.defaultValue, tagRaw, ...new Array(8).fill(0)];
+    slot._cdat.values = [axis.defaultValue, tagRaw, ...Array.from({ length: 8 }, () => 0)];
     slot._value = null;
     // Axis bounds come from the font's range (single-component).
     for (const [attr, chunkType, bound] of [
@@ -1342,6 +1342,6 @@ function hasClassStatic(ctor: Function, name: string): boolean {
 }
 
 /** The attribute a child is reachable by: its display name in camelCase ("Anchor Point" is `anchorPoint`). */
-export function _attrName(displayName: string): string {
+function _attrName(displayName: string): string {
   return displayName.toLowerCase().replace(/ (.)/g, (_m, c: string) => c.toUpperCase());
 }

@@ -155,7 +155,7 @@ export class CosField<T extends InstanceValue, A extends string = string, O exte
     return this.accepts(value) ? { value } : null;
   }
 
-  get(obj: O | null, objtype?: Function): T | this {
+  get(obj: O | null, _objtype?: Function): T | this {
     if (obj == null) return this;
     // Instance-dict overrides (set by parser or user when no dict)
     const override = this._override(obj);

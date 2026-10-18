@@ -105,7 +105,7 @@ import {
  * `baselineLocs` entry for a line with no visible characters: the
  * maximum 32-bit float, as After Effects reports (`3.402823466e+38`).
  */
-export const _EMPTY_LINE_LOC = 3.4028234663852886e38;
+const _EMPTY_LINE_LOC = 3.4028234663852886e38;
 
 /**
  * Build the 16-vertex box outline AE stores for paragraph text.
@@ -113,7 +113,7 @@ export const _EMPTY_LINE_LOC = 3.4028234663852886e38;
  * Coordinates trace the rectangle corners (each corner duplicated, AE's
  * bezier vertex layout), anchored at the top-left `(left, top)`.
  */
-export function _boxCoords(left: number, top: number, width: number, height: number): BoxedFloat[] {
+function _boxCoords(left: number, top: number, width: number, height: number): BoxedFloat[] {
   const right = left + width;
   const bottom = top + height;
   const coords: BoxedFloat[] = [];
@@ -146,7 +146,7 @@ export function _boxCoords(left: number, top: number, width: number, height: num
  * AE stores the box-frame metadata keys in ascending numeric order;
  * matching that order keeps serialized output byte-identical.
  */
-export function _numericSort(d: CosDict): void {
+function _numericSort(d: CosDict): void {
   const items = [...d.entries()].sort((a, b) => Number.parseInt(a[0], 10) - Number.parseInt(b[0], 10));
   d.clear();
   for (const [k, v] of items) d.set(k, v);
@@ -158,7 +158,7 @@ export function _numericSort(d: CosDict): void {
  * AE flips these metadata values when a point text layer becomes a box
  * (paragraph) text layer; other keys in the sub-dict are preserved.
  */
-export function _applyBoxConversion(meta: CosNode): void {
+function _applyBoxConversion(meta: CosNode): void {
   cosSetitem(meta, "0", 1);
   cosSetitem(meta, "6", [boxFloat(-2.0), boxFloat(-2.0)]);
   const eleven = cosSetdefault(meta, "11", new Map());
@@ -1612,7 +1612,7 @@ export class TextDocument {
 // The Python decorator wraps each setter; the gate runs before the body. The
 // setters above forward to these wrappers.
 
-export const _boxInsetSpacingSet = requiresVersion(24)(
+const _boxInsetSpacingSet = requiresVersion(24)(
   /** Setter body for `boxInsetSpacing`. */
   function box_inset_spacing(this: TextDocument, value: number): void {
     validatePositiveNumber(value);
@@ -1623,7 +1623,7 @@ export const _boxInsetSpacingSet = requiresVersion(24)(
   },
 );
 
-export const _boxVerticalAlignmentSet = requiresVersion(24)(
+const _boxVerticalAlignmentSet = requiresVersion(24)(
   /** Setter body for `boxVerticalAlignment`. */
   function box_vertical_alignment(this: TextDocument, value: BoxVerticalAlignment): void {
     const meta = cosSetdefault(this._ensureFrame(), "2", new Map());
@@ -1633,7 +1633,7 @@ export const _boxVerticalAlignmentSet = requiresVersion(24)(
   },
 );
 
-export const _boxAutoFitPolicySet = requiresVersion(24)(
+const _boxAutoFitPolicySet = requiresVersion(24)(
   /** Setter body for `boxAutoFitPolicy`. */
   function box_auto_fit_policy(this: TextDocument, value: BoxAutoFitPolicy): void {
     const meta = cosSetdefault(this._ensureFrame(), "2", new Map());
@@ -1643,7 +1643,7 @@ export const _boxAutoFitPolicySet = requiresVersion(24)(
   },
 );
 
-export const _boxFirstBaselineAlignmentSet = requiresVersion(24)(
+const _boxFirstBaselineAlignmentSet = requiresVersion(24)(
   /** Setter body for `boxFirstBaselineAlignment`. */
   function box_first_baseline_alignment(this: TextDocument, value: BoxFirstBaselineAlignment): void {
     const meta = cosSetdefault(this._ensureFrame(), "2", new Map());
@@ -1656,7 +1656,7 @@ export const _boxFirstBaselineAlignmentSet = requiresVersion(24)(
   },
 );
 
-export const _boxFirstBaselineAlignmentMinimumSet = requiresVersion(24)(
+const _boxFirstBaselineAlignmentMinimumSet = requiresVersion(24)(
   /** Setter body for `boxFirstBaselineAlignmentMinimum`. */
   function box_first_baseline_alignment_minimum(this: TextDocument, value: number): void {
     const meta = cosSetdefault(this._ensureFrame(), "2", new Map());

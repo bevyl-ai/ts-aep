@@ -772,7 +772,7 @@ export function buildDpxOptiData(): Uint8Array {
 }
 
 /** Length of the `oEXR` opti body AE 2026 writes for every OpenEXR file. */
-export const _OEXR_OPTI_SIZE = 9750;
+const _OEXR_OPTI_SIZE = 9750;
 
 /**
  * Build the 9750-byte OpenEXR (`oEXR`) `opti` asset-info body.
@@ -1290,7 +1290,7 @@ define(PlaceholderOptiChunk, {
   placeholderName: strField(256, { default: "", encoding: "utf-8" }),
 });
 
-export const _OPTI_VARIANTS = new Map<string, typeof OptiChunk>([
+const _OPTI_VARIANTS = new Map<string, typeof OptiChunk>([
   ["Soli", SoliOptiChunk],
   ["8BPS", PsdOptiChunk],
   ["TEXT", TextOptiChunk],

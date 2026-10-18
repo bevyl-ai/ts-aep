@@ -30,10 +30,10 @@ export class RawSubpath {
   }
 }
 
-export const _COMMANDS = new Set("MmLlHhVvCcSsQqTtAaZz");
-export const _CMD_RE = /^[MmLlHhVvCcSsQqTtAaZz]/;
+const _COMMANDS = new Set("MmLlHhVvCcSsQqTtAaZz");
+const _CMD_RE = /^[MmLlHhVvCcSsQqTtAaZz]/;
 // Argument count per command (per coordinate-set repetition).
-export const _ARGC: Record<string, number> = { M: 2, L: 2, H: 1, V: 1, C: 6, S: 4, Q: 4, T: 2, A: 7 };
+const _ARGC: Record<string, number> = { M: 2, L: 2, H: 1, V: 1, C: 6, S: 4, Q: 4, T: 2, A: 7 };
 
 /**
  * Split a path `d` string into command and argument tokens.
@@ -47,7 +47,7 @@ export const _ARGC: Record<string, number> = { M: 2, L: 2, H: 1, V: 1, C: 6, S: 
  * positions of an `A`/`a` command. Every other token matches the same
  * number grammar as before, so non-arc paths tokenize identically.
  */
-export function _tokenize(d: string): string[] {
+function _tokenize(d: string): string[] {
   const tokens: string[] = [];
   // Python indexes code points; `i` is the UTF-16 offset of the current code
   // point and advances by its width, so the scan visits the same characters.
@@ -104,7 +104,7 @@ export function parsePath(d: string): RawSubpath[] {
   return parser.run();
 }
 
-export class _PathParser {
+class _PathParser {
   private _tokens: string[];
   private _i: number;
   cx: number;

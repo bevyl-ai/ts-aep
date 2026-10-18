@@ -311,7 +311,7 @@ describe("TestTemporalEaseSetterWritesThrough", () => {
     raises(
       ValueError,
       () => {
-        keyframe.inTemporalEase = new Array(99).fill(new KeyframeEase(0.0, 5.0));
+        keyframe.inTemporalEase = Array.from({ length: 99 }, () => new KeyframeEase(0.0, 5.0));
       },
       "expects",
     );
@@ -345,7 +345,7 @@ describe("TestMotionGraphicsPredicateAgreesWithBuilder", () => {
     const app = parseAep(EG);
     let checked = 0;
     for (const comp of app.project.compositions) {
-      for (const prop of _leaves(app, (p) => true)) {
+      for (const prop of _leaves(app, (_p) => true)) {
         if (prop.canAddToMotionGraphicsTemplate(comp)) {
           prop.addToMotionGraphicsTemplate(comp);
           checked += 1;

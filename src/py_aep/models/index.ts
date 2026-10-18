@@ -1,7 +1,6 @@
 /** Data models for After Effects project structure. */
 
 export { Application } from "./application.ts";
-export { EssentialGraphicsController } from "./essential_graphics.ts";
 export { Guide } from "./guide.ts";
 export { CURRENT_VALUE, ImportOptions } from "./import_options.ts";
 export { AVItem } from "./items/av_item.ts";

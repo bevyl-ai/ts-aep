@@ -25,7 +25,7 @@ import { late } from "../late.ts";
 // sessions, so its exact choice is not reproducible from file content;
 // py_aep cycles the same palette deterministically instead (RGB bytes,
 // observed on AE 2026 defaults).
-export const _MASK_COLOR_CYCLE: readonly (readonly [number, number, number])[] = [
+const _MASK_COLOR_CYCLE: readonly (readonly [number, number, number])[] = [
   [30, 64, 30],
   [181, 56, 56],
   [228, 216, 76],

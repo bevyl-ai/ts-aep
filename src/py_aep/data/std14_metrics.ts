@@ -33,7 +33,7 @@ export const STD14_FIRST_CODE = 32;
  * Last character code the width tables cover. Codes above this need the
  * encoding's glyph names, which are not tabulated - see `STD14_WIDTHS`.
  */
-export const STD14_LAST_CODE = 126;
+const STD14_LAST_CODE = 126;
 
 /**
  * `/FontBBox` bottom and top, in glyph space.
@@ -67,7 +67,7 @@ export const STD14_EXTENT: Map<string, [number, number]> = new Map<string, [numb
   ["TimesNewRoman", [-218.0, 898.0]],
 ]);
 
-export const _MONOSPACE: readonly number[] = new Array<number>(STD14_LAST_CODE - STD14_FIRST_CODE + 1).fill(600);
+const _MONOSPACE: readonly number[] = Array.from({ length: STD14_LAST_CODE - STD14_FIRST_CODE + 1 }, () => 600);
 
 /**
  * Advances in glyph space for codes `STD14_FIRST_CODE`..`STD14_LAST_CODE`,

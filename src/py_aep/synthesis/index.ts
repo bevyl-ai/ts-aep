@@ -1,2 +1,0 @@
-/** Property synthesis package. */
-export {};

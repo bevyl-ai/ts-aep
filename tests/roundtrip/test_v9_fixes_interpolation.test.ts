@@ -32,11 +32,11 @@ import {
   PropertyGroup,
   Shape,
   parse,
+  KeyframeInterpolationType as KIT,
 } from "../../src/py_aep/index.ts";
 import type { PropertyValue } from "../../src/py_aep/models/properties/keyframe.ts";
 import { TdumChunk } from "../../src/py_aep/binary/property_chunks.ts";
 import { KfNoValue } from "../../src/py_aep/binary/ldat_chunks.ts";
-import { KeyframeInterpolationType as KIT } from "../../src/py_aep/index.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { asInstance, projectBytes } from "../helpers.ts";
 import { approx, makeTmpPath, raises, type ApproxOperand } from "../support/pytest.ts";

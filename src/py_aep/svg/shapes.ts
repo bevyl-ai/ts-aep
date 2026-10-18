@@ -18,12 +18,12 @@ import { Subpath } from "./types.ts";
 import { getMember, valueEquals, pySlice, zip } from "../../pyrt/index.ts";
 
 // Control-point distance for a 90-degree circular arc as a cubic bezier.
-export const _KAPPA = 0.5522847498307936;
+const _KAPPA = 0.5522847498307936;
 
 // The viewport dimension (`LengthContext` attribute) a percentage of each
 // geometry attribute refers to (SVG 1.1 7.10): the width, the height, or the
 // normalized diagonal.
-export const _PERCENT_AXIS: Record<string, string> = {
+const _PERCENT_AXIS: Record<string, string> = {
   x: "width",
   width: "width",
   cx: "width",
@@ -43,14 +43,14 @@ export const _PERCENT_AXIS: Record<string, string> = {
  * A geometry attribute in user units: units converted and a percentage
  * resolved against `ctx` (kept as the bare number without one).
  */
-export function _f(attrs: Map<string, string>, key: string, ctx: LengthContext | null, default_: number = 0.0): number {
+function _f(attrs: Map<string, string>, key: string, ctx: LengthContext | null, default_: number = 0.0): number {
   if (ctx == null) return parseLength(attrs.get(key) ?? null, default_);
   const ref = getMember(ctx, _PERCENT_AXIS[key]);
   return parseLength(attrs.get(key) ?? null, default_, ref, ctx.fontSize);
 }
 
 /** An absent or `auto` corner radius, which takes the other radius. */
-export function _isAuto(raw: string | null): boolean {
+function _isAuto(raw: string | null): boolean {
   return raw == null || ["", "auto"].includes(raw.trim());
 }
 
@@ -89,7 +89,7 @@ export function elementSubpaths(
   throw new UnsupportedSVGError(`Unsupported drawable element: <${tag}>`);
 }
 
-export function _rect(attrs: Map<string, string>, ctx: LengthContext | null): RawSubpath[] {
+function _rect(attrs: Map<string, string>, ctx: LengthContext | null): RawSubpath[] {
   const [x, y] = [_f(attrs, "x", ctx), _f(attrs, "y", ctx)];
   const [w, h] = [_f(attrs, "width", ctx), _f(attrs, "height", ctx)];
   if (w <= 0 || h <= 0) {
@@ -150,7 +150,7 @@ export function _rect(attrs: Map<string, string>, ctx: LengthContext | null): Ra
   return [new RawSubpath(segs, true)];
 }
 
-export function _ellipse(tag: string, attrs: Map<string, string>, ctx: LengthContext | null): RawSubpath[] {
+function _ellipse(tag: string, attrs: Map<string, string>, ctx: LengthContext | null): RawSubpath[] {
   const cx = _f(attrs, "cx", ctx);
   const cy = _f(attrs, "cy", ctx);
   let rx: number;
@@ -190,7 +190,7 @@ export function _ellipse(tag: string, attrs: Map<string, string>, ctx: LengthCon
   return [new RawSubpath(segs, true)];
 }
 
-export function _poly(attrs: Map<string, string>, closed: boolean): RawSubpath[] {
+function _poly(attrs: Map<string, string>, closed: boolean): RawSubpath[] {
   const nums = Array.from((attrs.get("points") ?? "").matchAll(NUMBER_RE), (n) => Number(n[0]));
   const pts = zip(pySlice(nums, 0, null, 2), pySlice(nums, 1, null, 2));
   if (pts.length < 2) {

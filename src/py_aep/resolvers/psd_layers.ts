@@ -350,7 +350,7 @@ export type PsdNode = PsdLayer | PsdGroup;
 // Adjustment-layer additional-info keys (one is present per adjustment type).
 // Bytes keys are held as their hex spelling, since a JS Set cannot hash a
 // Uint8Array by value.
-export const _ADJUSTMENT_KEYS: ReadonlySet<string> = new Set(
+const _ADJUSTMENT_KEYS: ReadonlySet<string> = new Set(
   [
     "brit",
     "levl",
@@ -373,21 +373,21 @@ export const _ADJUSTMENT_KEYS: ReadonlySet<string> = new Set(
 );
 
 // Fill-layer additional-info keys: solid color, gradient and pattern fills.
-export const _FILL_KEYS: ReadonlySet<string> = new Set(["SoCo", "GdFl", "PtFl"].map((k) => Bytes.toHex(ascii(k))));
+const _FILL_KEYS: ReadonlySet<string> = new Set(["SoCo", "GdFl", "PtFl"].map((k) => Bytes.toHex(ascii(k))));
 
 // Maps every byte to 0 (zero) or 1 (non-zero), so rows of samples can be
 // combined with integer AND / OR.
-export const _NONZERO = Uint8Array.from([0, ...new Array<number>(255).fill(1)]);
+const _NONZERO = Uint8Array.from([0, ...Array.from({ length: 255 }, () => 1)]);
 
 // The largest document the PSB format allows (PSD: 30,000 px). No canvas,
 // layer or mask Photoshop writes is wider or taller, so a larger rectangle is
 // a corrupt record - decoding it would allocate rows of absurd size.
-export const _MAX_EXTENT = 300_000;
+const _MAX_EXTENT = 300_000;
 
 // The most a channel's bytes can inflate when decoded: deflate's 1032:1
 // limit (raw data is 1:1, PackBits at most 64:1). A rectangle whose decoded
 // size would need more than that from its bytes is a corrupt record.
-export const _MAX_INFLATION = 1032;
+const _MAX_INFLATION = 1032;
 
 /** One raw layer record, before the group tree is rebuilt. */
 export class _Record {
@@ -476,7 +476,7 @@ export class _Record {
  * An enabled raster layer mask painted by the user (not the one
  * Photoshop renders from a vector mask).
  */
-export class _UserMask {
+class _UserMask {
   readonly channelId: number;
   readonly bounds: [number, number, number, number];
   // `default` is a reserved word in TS; the field keeps Python's name with a suffix.
@@ -662,7 +662,7 @@ export function readPsdLayers(file: PathLike, kw: { maskBoxes?: boolean } = {}):
  * 3); AE ignores that copy and applies the path itself. When a layer has
  * both, the painted mask is the "real" one (channel -3).
  */
-export function _userMask(mask: Uint8Array, fileName: string, layerName: string): _UserMask | null {
+function _userMask(mask: Uint8Array, fileName: string, layerName: string): _UserMask | null {
   if (mask.length < 18) return null;
   let [top, left, bottom, right] = struct.unpack(">iiii", mask.slice(0, 16));
   const default_ = mask[16];
@@ -701,7 +701,7 @@ export function _userMask(mask: Uint8Array, fileName: string, layerName: string)
  * crops a masked layer (measured on AE 2026 with alpha holes under the
  * mask). An empty result is `(0, 0, 0, 0)`.
  */
-export function _visibleBox(
+function _visibleBox(
   region: [number, number, number, number],
   alpha: Uint8Array | null,
   mask: _UserMask,
@@ -811,7 +811,7 @@ export function _channelFlags(
   return rows;
 }
 
-export function _unpackBits(data: Uint8Array, size: number): Uint8Array {
+function _unpackBits(data: Uint8Array, size: number): Uint8Array {
   const out: number[] = [];
   let i = 0;
   while (out.length < size && i < data.length) {
@@ -836,7 +836,7 @@ export function _unpackBits(data: Uint8Array, size: number): Uint8Array {
  * sample for 16-bit documents, over the whole row's bytes (stored as byte
  * planes) for 8 and 32-bit ones.
  */
-export function _undoPrediction(row: Uint8Array, width: number, sample: number): Uint8Array {
+function _undoPrediction(row: Uint8Array, width: number, sample: number): Uint8Array {
   if (sample === 2) {
     const values = struct.unpack(`>${width}H`, row);
     // NOTE(port): equals struct.pack(">{width}H", *(acc & 0xFFFF)) (Python's running sum masked to u16); written via DataView because pyrt struct.pack spreads args and overflows on wide rows.
@@ -913,7 +913,7 @@ export function _buildLayerTree(records: _Record[]): PsdNode[] {
  * `isFill` is `true` when a fill-layer key is present. `maskData` is the
  * layer mask data sub-block body (empty when the layer has no mask).
  */
-export function _parseLayerExtra(
+function _parseLayerExtra(
   extra: Uint8Array,
   isPsb: boolean,
 ): [string, number | null, number, boolean, PsdStyleBlocks | null, Uint8Array | null, boolean, Uint8Array] {
@@ -1018,29 +1018,29 @@ export function _parseLayerExtra(
 }
 
 // NOTE(port): bytes.translate(table) for a 256-entry table; pyrt/bytes.ts has no translate shim.
-export function translate(data: Uint8Array, table: Uint8Array): Uint8Array {
+function translate(data: Uint8Array, table: Uint8Array): Uint8Array {
   const out = new Uint8Array(data.length);
   for (let i = 0; i < data.length; i++) out[i] = table[data[i]];
   return out;
 }
 
 // NOTE(port): bytes[start::step] via py_slice (which returns a plain array for bytes), re-wrapped as Uint8Array.
-export function strided(row: Uint8Array, start: number, step: number): Uint8Array {
+function strided(row: Uint8Array, start: number, step: number): Uint8Array {
   return Uint8Array.from(pySlice(row, start, null, step));
 }
 
 // NOTE(port): int.from_bytes(data, "big") as an exact bigint; pyrt's int_from_bytes returns a Number and loses bits past 2^53.
-export function intFromBytesBig(data: Uint8Array): bigint {
+function intFromBytesBig(data: Uint8Array): bigint {
   return data.length ? BigInt("0x" + Bytes.toHex(data)) : 0n;
 }
 
 // Only called on positive values.
-export function bitLength(x: bigint): number {
+function bitLength(x: bigint): number {
   return x.toString(2).length;
 }
 
 // NOTE(port): b"".join(parts); pyrt concat spreads its parts as call arguments and overflows with tens of thousands of rows.
-export function joinAll(parts: Uint8Array[]): Uint8Array {
+function joinAll(parts: Uint8Array[]): Uint8Array {
   let n = 0;
   for (const p of parts) n += p.length;
   const out = new Uint8Array(n);
@@ -1062,11 +1062,11 @@ export function joinAll(parts: Uint8Array[]): Uint8Array {
 // cannot stop inside a push and misreads codes split across pushes, so it inflates the whole
 // stream: such a fault raises zlib.error here, and a stream that expands far beyond max_length
 // costs its full size. Exact parity needs an inflater that stops where zlib's does.
-export function inflateBounded(body: Uint8Array, maxLength: number): Uint8Array {
+function inflateBounded(body: Uint8Array, maxLength: number): Uint8Array {
   return zlib.decompressobj().decompress(body, maxLength);
 }
 
 /** `except zlib.error` */
-export function isZlibError(e: unknown): boolean {
+function isZlibError(e: unknown): boolean {
   return e instanceof zlib.error;
 }

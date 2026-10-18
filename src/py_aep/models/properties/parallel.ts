@@ -100,7 +100,7 @@ export class ParallelKind {
   }
 
   /** Build the parallel-container value chunk holding `value`. */
-  buildValueChunk(prop: Property, value: PropertyValue): Chunk {
+  buildValueChunk(_prop: Property, _value: PropertyValue): Chunk {
     throw new NotImplementedError();
   }
 
@@ -111,31 +111,31 @@ export class ParallelKind {
    * a newly added keyframe can be edited in place (the source model
    * passed to `buildValueChunk` is backed by a different chunk).
    */
-  wrapValueChunk(prop: Property, valueChunk: Chunk): PropertyValue {
+  wrapValueChunk(_prop: Property, _valueChunk: Chunk): PropertyValue {
     return null;
   }
 
   /** Attach kind-specific back-references after a value is set. */
-  bindKeyframe(value: PropertyValue, kf: Keyframe): void {}
+  bindKeyframe(_value: PropertyValue, _kf: Keyframe): void {}
 
   /** Build the keyframe header ldat item for `value`. */
-  buildHeaderItem(value: PropertyValue): LdatItem {
+  buildHeaderItem(_value: PropertyValue): LdatItem {
     return buildParallelLdatItem(this.headerItemType);
   }
 
   /** Refresh value data mirrored into an existing header item. */
-  updateHeaderItem(item: LdatItem, value: PropertyValue): void {}
+  updateHeaderItem(_item: LdatItem, _value: PropertyValue): void {}
 
   /** The cdat AE writes when the property reverts to static. */
-  staticCdat(removedValue: PropertyValue): CdatChunk {
+  staticCdat(_removedValue: PropertyValue): CdatChunk {
     return new CdatChunk({ pad: _EMPTY_CDAT_PAD });
   }
 
   /** Kind-specific tdb4 / model fixups after wrapping a bare tdbs. */
-  onWrap(prop: Property): void {}
+  onWrap(_prop: Property): void {}
 }
 
-export class _OrientationKind extends ParallelKind {
+class _OrientationKind extends ParallelKind {
   name = "orientation";
   wrapperType = "otst";
   containerType = "otky";
@@ -194,7 +194,7 @@ export class _OrientationKind extends ParallelKind {
   }
 }
 
-export class _MarkerKind extends ParallelKind {
+class _MarkerKind extends ParallelKind {
   name = "marker";
   wrapperType = "mrst";
   containerType = "mrky";
@@ -202,7 +202,7 @@ export class _MarkerKind extends ParallelKind {
   keepsValueOnRevert = false;
   canMaterializeWrapper = true;
 
-  heldValue(prop: Property, time: number): PropertyValue {
+  heldValue(_prop: Property, _time: number): PropertyValue {
     return new MarkerValue();
   }
 
@@ -260,7 +260,7 @@ export class _MarkerKind extends ParallelKind {
   }
 }
 
-export class _ShapeKind extends ParallelKind {
+class _ShapeKind extends ParallelKind {
   name = "shape";
   wrapperType = "om-s";
   containerType = "omks";
@@ -293,7 +293,7 @@ export class _ShapeKind extends ParallelKind {
   }
 }
 
-export class _GradientKind extends ParallelKind {
+class _GradientKind extends ParallelKind {
   name = "gradient";
   wrapperType = "GCst";
   containerType = "GCky";
@@ -337,7 +337,7 @@ export class _GradientKind extends ParallelKind {
  * per keyframe), so the add / remove / animate algorithms are the
  * dedicated text paths on {@link Property}, not the generic container ones.
  */
-export class _TextKind extends ParallelKind {
+class _TextKind extends ParallelKind {
   name = "text";
   wrapperType = "btds";
   containerType = null;

@@ -1,7 +1,9 @@
 /** Gradient color data model for gradient fill/stroke properties. */
 
-import { INSPECT, describe, compare } from "../../../pyrt/index.ts";
 import {
+  INSPECT,
+  describe,
+  compare,
   ValueError,
   descriptor,
   objectGetattr,
@@ -19,7 +21,7 @@ import { validateNormalizedFloat, validatePositiveInt, validateRgbColor, type Va
  * Used on `GradientColorStop`, `GradientAlphaStop`, and `Gradient` to
  * automatically re-serialize gradient XML when a field is modified.
  */
-export class _GradientField<T> {
+class _GradientField<T> {
   declare ["constructor"]: ClassAttributes<typeof _GradientField>;
   static _VALIDATORS: Map<string, Validator> = new Map<string, Validator>([
     ["offset", validateNormalizedFloat],
@@ -36,7 +38,7 @@ export class _GradientField<T> {
     this._name = name;
   }
 
-  get(obj: object | null, objtype?: Function | null): T | this {
+  get(obj: object | null, _objtype?: Function | null): T | this {
     if (obj == null) return this;
     const value: T = objectGetattr(obj, this._slot);
     return value;
@@ -369,12 +371,12 @@ export class Gradient {
  * AE stores stop values as float32 and prints them at up to 8
  * significant digits (e.g. `0.83` becomes `0.82999998`).
  */
-export function _formatFloat(value: number): string {
+function _formatFloat(value: number): string {
   return String(Number(toF4(value).toPrecision(8)));
 }
 
 /** XML lines for one `Alpha Stops` / `Color Stops` prop.pair. */
-export function _stopsLines(kind: string, stops: number[][]): string[] {
+function _stopsLines(kind: string, stops: number[][]): string[] {
   const lines: string[] = [
     "<prop.pair>",
     `<key>${kind} Stops</key>`,
@@ -387,9 +389,7 @@ export function _stopsLines(kind: string, stops: number[][]): string[] {
   // LEXICOGRAPHIC key order (Stop-0, Stop-1, Stop-10, ..., Stop-15,
   // Stop-2, ...), not numeric order. Match that so gradients with >9
   // stops are byte-identical (identical for <=10 stops).
-  for (const i of [...Array.from({ length: stops.length }, (_, i) => i)].sort((a, b) =>
-    compare(String(a), String(b)),
-  )) {
+  for (const i of Array.from({ length: stops.length }, (_, i) => i).sort((a, b) => compare(String(a), String(b)))) {
     const values = stops[i];
     lines.push(
       "<prop.pair>",

@@ -1,6 +1,22 @@
 // Port of py_aep/models/layers/layer.py
 
-import { INSPECT, describe } from "../../../pyrt/index.ts";
+import {
+  INSPECT,
+  describe,
+  KeyError,
+  ValueError,
+  descriptor,
+  getMember,
+  setMember,
+  objectSetattr,
+  assert,
+  truthy,
+  valueEquals,
+  truthyOr,
+  literal,
+  warn,
+  type ClassAttributes,
+} from "../../../pyrt/index.ts";
 import type { LdtaChunk } from "../../binary/layer_chunks.ts";
 import type { Keyframe } from "../properties/keyframe.ts";
 import type { MarkerValue } from "../properties/marker.ts";
@@ -39,34 +55,19 @@ import {
 import { ChunkField, _suppressMaterialization, type EffectParamDefs } from "../descriptors.ts";
 import { autoName } from "../naming.ts";
 import { Property } from "../properties/property.ts";
-import { PropertyBase } from "../properties/property_base.ts";
+import type { PropertyBase } from "../properties/property_base.ts";
 import { PropertyGroup } from "../properties/property_group.ts";
 import { _validateNumber, validateInt, validateNumber, validateString } from "../validators.ts";
 import type { AVItem } from "../items/av_item.ts";
 import type { CompItem } from "../items/composition.ts";
 import type { AVLayer } from "./av_layer.ts";
-import {
-  KeyError,
-  ValueError,
-  descriptor,
-  getMember,
-  setMember,
-  objectSetattr,
-  assert,
-  truthy,
-  valueEquals,
-  truthyOr,
-  literal,
-  warn,
-  type ClassAttributes,
-} from "../../../pyrt/index.ts";
 import type { MatchNameTypes } from "../properties/match_name_types.ts";
 import * as _avLayer from "./av_layer.ts";
 import * as _composition from "../items/composition.ts";
 import { late } from "../late.ts";
 
 // logging.getLogger(__name__)
-export const logger = {
+const logger = {
   debug() {},
   info() {},
   warning: (m: string) => warn(m),
@@ -74,17 +75,17 @@ export const logger = {
 
 // AE turns any stretch under 1 % into 655 / 65536 (1 % in 16.16, rounded
 // down), in percent.
-export const _MIN_STRETCH = (655 * 100) / 65536;
+const _MIN_STRETCH = (655 * 100) / 65536;
 
 // The stretch is a float32 stored as a ratio with a signed 32-bit dividend;
 // 2147483520 is the largest float32 under 2**31.
-export const _validateStretch = _validateNumber({
+const _validateStretch = _validateNumber({
   min: -2147483520 * 100.0,
   max: 2147483520 * 100.0,
 });
 
 // The start time is a signed 32-bit count of the layer's timebase ticks.
-export const _validateStartTime = _validateNumber({
+const _validateStartTime = _validateNumber({
   min: (layer: Layer) => -0x80000000 / layer._layerTimebase(),
   max: (layer: Layer) => 0x7fffffff / layer._layerTimebase(),
 });
@@ -110,7 +111,7 @@ export function _noSourceId(comp: CompItem): number {
  * @returns A list of controller UUID strings from the OvG2/CPrp/Utf8 entries; each matches an
  *   `EssentialGraphicsController.uuid` on the source comp.
  */
-export function _parseOvg2Uuids(tdgpChunks: Chunk[]): string[] {
+function _parseOvg2Uuids(tdgpChunks: Chunk[]): string[] {
   const uuids: string[] = [];
   for (const ovg2List of filterByListType(tdgpChunks, "OvG2")) {
     for (const cprp of filterByListType(ovg2List.chunks, "CPrp")) {
@@ -124,19 +125,19 @@ export function _parseOvg2Uuids(tdgpChunks: Chunk[]): string[] {
 }
 
 /** World matrix a child of `parent` is placed in, at comp `time`. */
-export function _parentWorld(parent: Layer | null, time: number, childIs3d: boolean): Mat4 {
+function _parentWorld(parent: Layer | null, time: number, childIs3d: boolean): Mat4 {
   if (parent == null) return Mat4.identity();
   return buildWorldMatrix(parent, time, !childIs3d, { asParent: true });
 }
 
 /** `list.index(x)` with `==` (identity for layers) and CPython's ValueError. */
-export function _listIndex<T>(xs: T[], x: T): number {
+function _listIndex<T>(xs: T[], x: T): number {
   for (let i = 0; i < xs.length; i++) if (xs[i] === x) return i;
   throw new ValueError(`${literal(x)} is not in list`);
 }
 
 /** `list.remove(x)` with CPython's ValueError. */
-export function _listRemove<T>(xs: T[], x: T): void {
+function _listRemove<T>(xs: T[], x: T): void {
   for (let i = 0; i < xs.length; i++) {
     if (xs[i] === x) {
       xs.splice(i, 1);

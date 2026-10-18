@@ -54,7 +54,6 @@ import { raises } from "../support/pytest.ts";
 // `import.meta.dir` is already its directory, so two `.parent` steps reach it.
 const SAMPLES_DIR = new Path(import.meta.dir).parent.parent.div("samples", "models", "layer");
 const BUGS_DIR = new Path(import.meta.dir).parent.parent.div("samples", "bugs");
-const VERSIONS_DIR = new Path(import.meta.dir).parent.parent.div("samples", "versions");
 
 // NOTE(port): matches `list.index`: first match, ValueError "<repr> is not in list" when absent.
 function _listIndex(xs: string[], x: string): number {

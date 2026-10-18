@@ -27,7 +27,7 @@ describe("TestRotoBezierTangents", () => {
     const [ins, outs] = rotoBezierTangents(
       vertices,
       true,
-      new Array(4).fill(DEFAULT_TENSION),
+      Array.from({ length: 4 }, () => DEFAULT_TENSION),
       1920 / 1080 / 1920,
       1 / 1080,
     );
@@ -45,7 +45,13 @@ describe("TestRotoBezierTangents", () => {
       [1920, 1080],
       [1920, 0],
     ];
-    const [ins, outs] = rotoBezierTangents(vertices, true, new Array(4).fill(DEFAULT_TENSION), 1 / 1920, 1 / 1080);
+    const [ins, outs] = rotoBezierTangents(
+      vertices,
+      true,
+      Array.from({ length: 4 }, () => DEFAULT_TENSION),
+      1 / 1920,
+      1 / 1080,
+    );
     expect(approx(ins[0], [452.5483, -254.5584], { abs: 1e-3 })).toBe(true);
     expect(approx(outs[0], [-452.5483, 254.5584], { abs: 1e-3 })).toBe(true);
   });
@@ -58,7 +64,7 @@ describe("TestRotoBezierTangents", () => {
         [900, 100],
       ],
       false,
-      new Array(3).fill(0.0),
+      Array.from({ length: 3 }, () => 0.0),
       1.0,
       1.0,
     );
@@ -91,7 +97,13 @@ describe("TestRotoBezierTangents", () => {
     ],
     [[[300, 300]]],
   ])("test_degenerate_closed_paths_have_no_tangents[%#]", (vertices: number[][]) => {
-    const [ins, outs] = rotoBezierTangents(vertices, true, new Array(vertices.length).fill(0.0), 1.0, 1.0);
+    const [ins, outs] = rotoBezierTangents(
+      vertices,
+      true,
+      Array.from({ length: vertices.length }, () => 0.0),
+      1.0,
+      1.0,
+    );
     expect([..._flat(ins), ..._flat(outs)].some((x) => truthy(x))).toBe(false);
   });
 });

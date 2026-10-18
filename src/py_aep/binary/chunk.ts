@@ -5,8 +5,9 @@
  * the recursive reader/writer.
  */
 
-import { INSPECT, describe } from "../../pyrt/index.ts";
 import {
+  INSPECT,
+  describe,
   AttrsBase,
   ByteStream,
   ContextVar,
@@ -125,12 +126,11 @@ export class Chunk extends AttrsBase {
 
   static read(fp: ByteStream, size: number, kwargs: ChunkReadKwargs = {}): Chunk {
     const { chunkType = "" } = kwargs;
-    const cls = this;
     // Get fields
-    const info = _structInfo(cls);
+    const info = _structInfo(this);
     if (info == null) {
       const data = readBytes(fp, size);
-      return new cls({ chunkType, data });
+      return new this({ chunkType, data });
     }
     const [fmt, dataFields, encodings, optionalStart, endians, itemsInfo, coerces, initNames, simple, expected] = info;
     const mixedEndian = endians?.size > 0;
@@ -140,10 +140,10 @@ export class Chunk extends AttrsBase {
       // fields, or items. dict(zip()) replaces the _decode_fields
       // Python loop. Coerces (e.g. bool_field) are handled inline.
       const values = readFmt(fmt, fp);
-      let make = _SIMPLE_KW.get(cls);
+      let make = _SIMPLE_KW.get(this);
       if (make === undefined) {
         make = values.length === initNames.length ? _compileSimpleKw(initNames, coerces) : null;
-        _SIMPLE_KW.set(cls, make);
+        _SIMPLE_KW.set(this, make);
       }
       let kw: FieldKwargs;
       if (make !== null) {
@@ -161,11 +161,11 @@ export class Chunk extends AttrsBase {
       const trailingSize = size - expected;
       if (trailingSize > 0) {
         const extra = readBytes(fp, trailingSize);
-        const instance = new cls(kw);
+        const instance = new this(kw);
         instance._trailing = extra;
         return instance;
       }
-      return new cls(kw);
+      return new this(kw);
     }
 
     let values: (struct.PackValue | null)[];
@@ -235,7 +235,7 @@ export class Chunk extends AttrsBase {
     } else if (size > itemsStart) {
       extraTrailing = readBytes(fp, size - itemsStart);
     }
-    const instance = new cls(kw2);
+    const instance = new this(kw2);
     if (extraTrailing != null) instance._trailing = extraTrailing;
     return instance;
   }
@@ -405,7 +405,7 @@ define(ListChunk, {
 });
 register("LIST", "RIFX")(ListChunk);
 
-export const _TDGP: ReadonlySet<string> = new Set(["tdgp"]);
+const _TDGP: ReadonlySet<string> = new Set(["tdgp"]);
 
 /**
  * The children a deferred LIST keeps deferred in turn once decoded.
@@ -415,7 +415,7 @@ export const _TDGP: ReadonlySet<string> = new Set(["tdgp"]);
  * Effects, Masks, ...) to its own first access: the root's direct
  * properties, such as Time Remapping, are then readable on their own.
  */
-export function _deferredChildren(listType: string, parentListType: string): ReadonlySet<string> | null {
+function _deferredChildren(listType: string, parentListType: string): ReadonlySet<string> | null {
   if (listType === "Layr" || (listType === "tdgp" && parentListType === "Layr")) {
     return _TDGP;
   }
@@ -620,13 +620,13 @@ define(ContainerChunk, {
 });
 register("fnam", "pdnm", "RCom")(ContainerChunk);
 
-export const _LEGACY_FIXED_BUFFERS: Map<string, number> = new Map([["fnam", 48]]);
+const _LEGACY_FIXED_BUFFERS: Map<string, number> = new Map([["fnam", 48]]);
 /**
  * Legacy string bodies of a fixed size, whatever their string (a 48-byte
  * `fnam`); the others are sized to their string.
  */
 
-export const _LEGACY_NAME_TYPES: ReadonlySet<string> = new Set(["tdsn", "fnam", "pdnm", "RCom"]);
+const _LEGACY_NAME_TYPES: ReadonlySet<string> = new Set(["tdsn", "fnam", "pdnm", "RCom"]);
 /** The name containers older projects hold as bare strings. */
 
 export const LEGACY_NAME_FORMAT = 92;
@@ -638,14 +638,14 @@ export const LEGACY_NAME_FORMAT = 92;
  * 92.14).
  */
 
-export const _legacyNames = new ContextVar<boolean>("_legacy_names", { default: false });
+const _legacyNames = new ContextVar<boolean>("_legacy_names", { default: false });
 /**
  * Set by `writeAep` while writing a project older than `LEGACY_NAME_FORMAT`,
  * so name containers py_aep built are written as bare strings too.
  */
 
 /** The NUL-terminated string at the start of a legacy body. */
-export function _legacyText(data: Uint8Array): string {
+function _legacyText(data: Uint8Array): string {
   const nul = Bytes.indexOf(data, new Uint8Array(1));
   return decode(nul >= 0 ? data.slice(0, nul) : data, "UTF-8", "surrogateescape");
 }
@@ -659,7 +659,7 @@ export function _legacyText(data: Uint8Array): string {
  * name (`Fill`, `Glow`) reads as a `Fill` chunk of length 0 followed by
  * NUL padding. The body is walked by seeking; `fp` is left where it was.
  */
-export function _tilesAsChunks(fp: ByteStream, size: number): boolean {
+function _tilesAsChunks(fp: ByteStream, size: number): boolean {
   const start = fp.tell();
   let pos = 0;
   try {
@@ -697,7 +697,7 @@ export class ReadContext {
   }
 }
 
-export const EMPTY_CTX = new ReadContext();
+const EMPTY_CTX = new ReadContext();
 
 /** The keywords a context resolver adds for its chunk type's `read`. */
 export type ResolvedContext = {
@@ -751,7 +751,7 @@ export function _resolveLdatContext(siblings: Chunk[], ctx: ReadContext): Resolv
   return result;
 }
 
-export function _resolveTdumContext(siblings: Chunk[], ctx: ReadContext): ResolvedContext {
+export function _resolveTdumContext(siblings: Chunk[], _ctx: ReadContext): ResolvedContext {
   if (siblings.length > 2) {
     // `hasattr(tdb4, "color") and hasattr(tdb4, "integer")`: only Tdb4Chunk declares `integer`.
     const tdb4 = siblings[2];
@@ -762,7 +762,7 @@ export function _resolveTdumContext(siblings: Chunk[], ctx: ReadContext): Resolv
   return {};
 }
 
-export function _resolvePrdaContext(siblings: Chunk[], ctx: ReadContext): ResolvedContext {
+function _resolvePrdaContext(siblings: Chunk[], _ctx: ReadContext): ResolvedContext {
   // Registry lookup instead of a deferred import: misc_chunks subclasses Chunk,
   // so a top-level import would be circular.
   const PrinChunk = registered("prin");
@@ -781,13 +781,6 @@ export const _CONTEXT_RESOLVERS: Map<string, (siblings: Chunk[], ctx: ReadContex
   ["tdum", _resolveTdumContext],
   ["tduM", _resolveTdumContext],
 ]);
-
-/** Compute kwargs for parameterized chunk types. */
-export function _resolveContext(chunkType: string, siblings: Chunk[], ctx: ReadContext): ResolvedContext {
-  const resolver = _CONTEXT_RESOLVERS.get(chunkType);
-  if (resolver == null) return {};
-  return resolver(siblings, ctx);
-}
 
 // ---------------------------------------------------------------------------
 // Chunk header I/O

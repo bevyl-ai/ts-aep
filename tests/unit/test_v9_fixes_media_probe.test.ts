@@ -47,7 +47,7 @@ const _PSD_HEADER = concat(
  * equivalent exists in JS; this reports the growth of `arrayBuffers` memory
  * across the call, which approximates allocation but is not the peak.
  */
-function _run(fn: () => unknown, timeout = 20.0): [unknown, number] {
+function _run(fn: () => unknown, _timeout = 20.0): [unknown, number] {
   const before = process.memoryUsage().arrayBuffers;
   let value: unknown;
   try {

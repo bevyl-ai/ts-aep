@@ -1,9 +1,8 @@
 /** Chunk tree navigation helpers for the binary I/O layer. */
 
-import { DeferredListChunk, ListChunk } from "./chunk.ts";
+import { DeferredListChunk, ListChunk, Chunk } from "./chunk.ts";
 import { U4LeChunk, Utf8Chunk } from "./scalar_chunks.ts";
 import { AepError, ValueError, stringifyJson, parseJson, typeName, type JsonValue } from "../../pyrt/index.ts";
-import { Chunk } from "./chunk.ts";
 import type { ChunkOf } from "./chunk_types.ts";
 
 export class ChunkNotFoundError extends AepError {
@@ -117,7 +116,7 @@ export function blockSlice(chunks: Chunk[], target: Chunk, boundaryListTypes: Re
  *
  * @throws {@link ChunkNotFoundError} If no matching chunk is found.
  */
-export function _findAnchorIndex(chunks: Chunk[], anchorType: string): number {
+function _findAnchorIndex(chunks: Chunk[], anchorType: string): number {
   if (anchorType.startsWith("LIST:")) {
     const lt = anchorType.slice(5);
     for (const [i, c] of chunks.entries()) {
@@ -333,33 +332,6 @@ export function buildStvcList(fileNames: string[]): ListChunk {
     listType: "StVc",
     chunks: [new U4LeChunk({ chunkType: "StVS", value: fileNames.length }), ...names],
   });
-}
-
-/**
- * Return a text tree representation of chunks for debugging.
- *
- * @param chunks - List of chunks to visualize.
- * @param depth - Max depth to recurse (-1 for unlimited).
- * @param indent - Current indentation level (used internally).
- */
-export function chunkTree(chunks: Chunk[], depth = -1, indent = 0): string {
-  const lines: string[] = [];
-  const prefix = "  ".repeat(indent);
-  for (const chunk of chunks) {
-    const lt = chunk instanceof ListChunk ? chunk.listType : null;
-    const children = chunk instanceof ListChunk ? chunk.chunks : null;
-    const size = ("data" in chunk ? chunk.data : new Uint8Array()).length;
-    if (lt != null) {
-      const label = `LIST:${lt}`;
-      lines.push(`${prefix}${label}`);
-      if (depth !== 0 && children != null) {
-        lines.push(chunkTree(children, depth - 1, indent + 1));
-      }
-    } else {
-      lines.push(`${prefix}${chunk.chunkType} (${size} B)`);
-    }
-  }
-  return lines.join("\n");
 }
 
 /**

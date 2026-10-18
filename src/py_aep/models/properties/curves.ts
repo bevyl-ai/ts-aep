@@ -13,8 +13,17 @@
  * float32 evaluation lands on the other side of the tie).
  */
 
-import { INSPECT, describe, compare } from "../../../pyrt/index.ts";
-import { ValueError, bytesEqual, getOrThrow, valueEquals, literal, zip } from "../../../pyrt/index.ts";
+import {
+  INSPECT,
+  describe,
+  compare,
+  ValueError,
+  bytesEqual,
+  getOrThrow,
+  valueEquals,
+  literal,
+  zip,
+} from "../../../pyrt/index.ts";
 import { validateNumber } from "../validators.ts";
 import type { CurvesArbpChunk } from "../../binary/property_chunks.ts";
 
@@ -42,16 +51,16 @@ export class _NaturalSpline {
     this.ys = pts.map((p) => p[1]);
     const n = pts.length;
     // Second derivatives, 0 at both ends.
-    this.m = new Array<number>(n).fill(0.0);
+    this.m = Array.from({ length: n }, () => 0.0);
     if (n < 3) return;
     const xs = this.xs;
     const ys = this.ys;
     const h: number[] = [];
     for (let i = 0; i < n - 1; i++) h.push(xs[i + 1] - xs[i]);
-    const a = new Array<number>(n).fill(0.0);
-    const b = new Array<number>(n).fill(1.0);
-    const c = new Array<number>(n).fill(0.0);
-    const d = new Array<number>(n).fill(0.0);
+    const a = Array.from({ length: n }, () => 0.0);
+    const b = Array.from({ length: n }, () => 1.0);
+    const c = Array.from({ length: n }, () => 0.0);
+    const d = Array.from({ length: n }, () => 0.0);
     for (let i = 1; i < n - 1; i++) {
       a[i] = h[i - 1];
       b[i] = 2.0 * (h[i - 1] + h[i]);

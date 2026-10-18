@@ -18,7 +18,6 @@ import {
   type CompItem,
 } from "../../src/py_aep/index.ts";
 import { at, getMember, len, assert, truthy, StopIteration, zip } from "../../src/pyrt/index.ts";
-import type { Path } from "../../src/pyrt/index.ts";
 
 import { SAMPLES_DIR, asInstance, parseAppFresh } from "../helpers.ts";
 import { approx, makeTmpPath } from "../support/pytest.ts";
@@ -106,7 +105,7 @@ describe("TestFlatBezierSegment", () => {
 
   /** The absolute and normalized forms agree whenever `v1 != v0`. */
   test("test_still_linear_when_the_values_differ", () => {
-    const [app, comp] = _newComp(200, 200);
+    const [, comp] = _newComp(200, 200);
     const layer = comp.addSolid([1, 0, 0], "L", 100, 100, 1.0);
     const op = asInstance(asInstance(layer.property("Transform"), PropertyGroup).property("Opacity"), Property);
     op.setValueAtTime(0.0, 0.0);
@@ -409,7 +408,7 @@ describe("TestAddKeyPreservesTheCurve", () => {
    * influence), so the value never ramps.
    */
   test("test_hold_segment_stays_held", () => {
-    const [app, comp] = _newComp(200, 200);
+    const [, comp] = _newComp(200, 200);
     const layer = comp.addSolid([1, 0, 0], "L", 100, 100, 1.0);
     const op = asInstance(asInstance(layer.property("Transform"), PropertyGroup).property("Opacity"), Property);
     op.setValueAtTime(0.0, 100.0);
@@ -428,7 +427,7 @@ describe("TestAddKeyPreservesTheCurve", () => {
   });
 
   test("test_add_then_remove_restores_the_keyframes", () => {
-    const tmpPath: Path = makeTmpPath();
+    makeTmpPath();
     const app = parseAppFresh(PROPERTY_DIR.div("keyframe_bezier_ease_in_out_1D.aep"));
     const prop = app.project.compositions
       .flatMap((comp) => comp.layers.flatMap((layer) => [...layer.transform].filter((p) => p instanceof Property)))

@@ -265,7 +265,7 @@ export function buildRenderQueueNode(project: Project): Node {
 }
 
 /** Build a render queue item node with output modules. */
-export function buildRenderQueueItemNode(item: RenderQueueItem, index: number, project: Project): Node {
+export function buildRenderQueueItemNode(item: RenderQueueItem, index: number, _project: Project): Node {
   const attrs: Map<string, AttrValue> = new Map<string, AttrValue>([["outputModules", item.outputModules.length]]);
 
   // Try to find the comp name

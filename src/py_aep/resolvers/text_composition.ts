@@ -68,6 +68,7 @@ import type { TextDocument } from "../models/text/text_document.ts";
 // it cannot load (not served there; Cloudflare Workers, which refuse to
 // compile wasm from bytes) the module still loads and shaping raises instead.
 /** The subset of harfbuzzjs's `hbjs()` API this module calls; handles are opaque. */
+/** @public (named by src/types/harfbuzzjs.d.ts) */
 export interface HbJs {
   createBlob(data: Uint8Array): object;
   createFace(blob: object, index: number): HbJsFace;
@@ -75,10 +76,10 @@ export interface HbJs {
   createBuffer(): HbJsBuffer;
   shape(font: object, buffer: HbJsBuffer, features: string): void;
 }
-export interface HbJsFace {
+interface HbJsFace {
   upem: number;
 }
-export interface HbJsBuffer {
+interface HbJsBuffer {
   addText(text: string): void;
   guessSegmentProperties(): void;
   json(): _HbJsGlyph[];
@@ -114,7 +115,7 @@ function _hb(): HbJs {
 }
 
 /** One glyph of harfbuzzjs's `buffer.json()` output. */
-export interface _HbJsGlyph {
+interface _HbJsGlyph {
   g: number;
   cl: number;
   ax: number;
@@ -179,7 +180,7 @@ interface HbBinding {
   HarfBuzzError?: abstract new (...args: never[]) => object;
 }
 
-export let hb: HbBinding = {
+let hb: HbBinding = {
   Blob: _HbBlob,
   Face: _HbFace,
   Font: _HbFont,
@@ -192,14 +193,14 @@ export let hb: HbBinding = {
   },
 };
 
-export const _AUTO_LEADING_FACTOR = 1.2;
-export const _FAUX_BOLD_ADVANCE = 0.027;
-export const _SMALL_CAPS_SCALE = 0.7;
+const _AUTO_LEADING_FACTOR = 1.2;
+const _FAUX_BOLD_ADVANCE = 0.027;
+const _SMALL_CAPS_SCALE = 0.7;
 
 // The font index is process-lifetime, so an indexed file can vanish
 // (CoreSync eviction, uninstall) before its first shaping; those opens
 // must refuse, not leak OS/HarfBuzz errors into innocuous reads.
-export const _FONT_OPEN_ERRORS: (abstract new (...args: never[]) => object)[] = [OSError];
+const _FONT_OPEN_ERRORS: (abstract new (...args: never[]) => object)[] = [OSError];
 const _harfbuzzError = hb.HarfBuzzError;
 if (_harfbuzzError != null) {
   _FONT_OPEN_ERRORS.push(_harfbuzzError);
@@ -212,7 +213,7 @@ if (_harfbuzzError != null) {
  * `OSError` instances; the `code` check stands in for Python's OSError. Parse
  * failures (fontTools TTLibError / fontkit Error without `code`) propagate in both.
  */
-export function _isFontOpenError(exc: object): boolean {
+function _isFontOpenError(exc: object): boolean {
   if (_FONT_OPEN_ERRORS.some((cls) => exc instanceof cls)) return true;
   return exc instanceof Error && "code" in exc;
 }
@@ -232,8 +233,8 @@ export class ComposedLines {
   }
 }
 
-export const _hbCache = new Map<string, [_HbFont, number]>();
-export const _ascenderCache = new Map<string, number>();
+const _hbCache = new Map<string, [_HbFont, number]>();
+const _ascenderCache = new Map<string, number>();
 
 export function _resolveFace(psName: string): [Path, number] {
   const resolved = resolvePostscript(psName);
@@ -243,7 +244,7 @@ export function _resolveFace(psName: string): [Path, number] {
   return resolved;
 }
 
-export function _hbFont(psName: string): [_HbFont, number] {
+function _hbFont(psName: string): [_HbFont, number] {
   const [path, faceIndex] = _resolveFace(psName);
   const key = compositeKey(path.toString(), faceIndex);
   let cached = _hbCache.get(key);
@@ -270,7 +271,7 @@ export function _hbFont(psName: string): [_HbFont, number] {
  * glyph height (fixture-matched: Myriad 710/1000 while every table
  * ascent says 750), falling back to `hhea` when 'd' is missing.
  */
-export function _ascenderRatio(psName: string): number {
+function _ascenderRatio(psName: string): number {
   const [path, faceIndex] = _resolveFace(psName);
   const key = compositeKey(path.toString(), faceIndex);
   let ratio = _ascenderCache.get(key);
@@ -491,7 +492,7 @@ export function _shapeStretch(text: string, style: _CharStyle): number[] {
 export function _glyphAdvances(text: string, style: _CharStyle, buf: _HbBuffer, scale: number): number[] {
   // Text here is BMP-only (`_checkEnvelope` refuses astral characters
   // first), so UTF-16 indexing matches Python's code-point indexing.
-  const perCluster: number[] = new Array<number>(text.length).fill(0.0);
+  const perCluster: number[] = Array.from({ length: text.length }, () => 0.0);
   for (const [info, pos] of zip<[_HbBuffer["glyphInfos"], _HbBuffer["glyphPositions"]]>(
     buf.glyphInfos,
     buf.glyphPositions,
@@ -512,7 +513,7 @@ export function _glyphAdvances(text: string, style: _CharStyle, buf: _HbBuffer, 
 }
 
 /** Per-character advances for `text` at `offset` in the document. */
-export function _advances(text: string, styles: _CharStyle[], offset: number): number[] {
+function _advances(text: string, styles: _CharStyle[], offset: number): number[] {
   const out: number[] = [];
   let i = 0;
   while (i < text.length) {
@@ -544,7 +545,7 @@ export function _width(text: string, styles: _CharStyle[], offset: number): numb
  * against AE's breaks. Do not swap in prefix sums without re-running
  * the box_matrix parity suite on width-critical fixtures.
  */
-export function _breakParagraph(
+function _breakParagraph(
   paragraph: string,
   styles: _CharStyle[],
   offset: number,
