@@ -974,7 +974,7 @@ export class RangeField<T extends InstanceValue> {
    * probed AE 2026).
    */
   static int(kind: RangeKind, key: string, kwargs: RangeFieldExtras<number> = {}): RangeField<number> {
-    return new RangeField<number>(kind, key, { transform: cosInt, reverse: (x: number) => Math.round(x), ...kwargs });
+    return new RangeField<number>(kind, key, { transform: cosInt, reverse: (x: number) => Math.round(x) + 0, ...kwargs });
   }
 
   /**
@@ -1586,7 +1586,7 @@ export class CharacterRange extends _TextRange {
     // write, matching the sibling `tracking` field, whose `RangeField.int`
     // sets `reverse=round`. `round` also normalizes bools (a subclass of
     // int) so the serializer emits an integer, not a `true`/`false` token.
-    const rounded = Math.round(cosNum(value));
+    const rounded = Math.round(cosNum(value)) + 0;
     const doc = this._docRef;
     const raw = _rawText(doc);
     let [start, end] = this._bounds();

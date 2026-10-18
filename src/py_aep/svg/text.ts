@@ -22,8 +22,7 @@ import {
   type Path,
   fspath,
   valueEquals,
-  zip,
-} from "../../pyrt/index.ts";
+  zip, hypot } from "../../pyrt/index.ts";
 
 /** The subset of a fontkit glyph this module reads. */
 export interface FontkitGlyph {
@@ -363,7 +362,7 @@ export function _arcLengths(pts: [number, number][]): number[] {
   const cum = [0.0];
   for (let i = 1; i < pts.length; i++) {
     cum.push(
-      cum[cum.length - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]),
+      cum[cum.length - 1] + hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]),
     );
   }
   return cum;

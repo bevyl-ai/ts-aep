@@ -560,16 +560,16 @@ export class RenderQueueItem {
     const source = TimeSpanSource.fromBinary(this._ldat.timeSpanSource);
     const fr = this.comp.frameRate;
     if (source === TimeSpanSource.LENGTH_OF_COMP) {
-      return [0, Math.round(this.comp.duration * fr)];
+      return [0, Math.round(this.comp.duration * fr) + 0];
     }
     if (source === TimeSpanSource.WORK_AREA_ONLY) {
       return [
-        Math.round(this.comp.workAreaStart * fr),
-        Math.round(this.comp.workAreaDuration * fr),
+        Math.round(this.comp.workAreaStart * fr) + 0,
+        Math.round(this.comp.workAreaDuration * fr) + 0,
       ];
     }
     const [startSec, durSec] = this._resolvedTimeSpan();
-    return [Math.round(startSec * fr), Math.round(durSec * fr)];
+    return [Math.round(startSec * fr) + 0, Math.round(durSec * fr) + 0];
   }
 
   /**

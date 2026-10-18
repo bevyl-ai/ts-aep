@@ -245,7 +245,7 @@ export function floatField<D extends number | null, O>(kw: CosFieldExtras<D, O>)
 export function intField<D extends number | null, O>(kw: CosFieldExtras<D, O>): CosFieldOptions<number | D, O> {
   return {
     transform: cosInt,
-    reverse: (x: number) => Math.round(x),
+    reverse: (x: number) => Math.round(x) + 0,
     accepts: (v): v is number | D => (v === null ? kw.default === null : typeof v === "number"),
     ...kw,
   };

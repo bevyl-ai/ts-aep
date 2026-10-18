@@ -215,7 +215,7 @@ export function _buildCif(listType: string): ListChunk {
  * 16.16-accurate.
  */
 export function _frameUnits(seconds: number, timebase: number, unitsPerFrame: number): number {
-  const units = Math.round(seconds * timebase);
+  const units = Math.round(seconds * timebase) + 0;
   return Math.floor((units + Math.floor(unitsPerFrame / 2)) / unitsPerFrame) * unitsPerFrame;
 }
 

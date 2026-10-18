@@ -275,9 +275,9 @@ export class MkifChunk extends Chunk {
   }
 
   set color(value: number[]) {
-    this.colorR = Math.round(value[0] * 255);
-    this.colorG = Math.round(value[1] * 255);
-    this.colorB = Math.round(value[2] * 255);
+    this.colorR = (Math.round(value[0] * 255) + 0);
+    this.colorG = (Math.round(value[1] * 255) + 0);
+    this.colorB = (Math.round(value[2] * 255) + 0);
   }
 }
 define(MkifChunk, {
@@ -383,7 +383,7 @@ export class NmhdChunk extends Chunk {
   }
 
   set durationSeconds(value: number) {
-    this.durationValue = Math.round(value * 600);
+    this.durationValue = (Math.round(value * 600) + 0);
     this.durationScale = 600;
   }
 

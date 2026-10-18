@@ -1260,7 +1260,7 @@ export class OutputModule {
     const rqi = this._parentRqi;
     const startSeconds = rqi.timeSpanStart;
     const frameRate = rqi.comp.frameRate;
-    return Math.trunc(Math.round(startSeconds * frameRate));
+    return Math.trunc(Math.round(startSeconds * frameRate) + 0);
   }
 
   set _startingNumber(value: number) {

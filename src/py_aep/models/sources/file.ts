@@ -999,7 +999,7 @@ export class FileSource extends FootageSource {
       sspc._reservedBa = Uint8Array.of(0x01, 0x01);
     }
     if (isSequence) {
-      _storeFramesOverRate(sspc, Math.round(duration * frameRate), frameRate);
+      _storeFramesOverRate(sspc, Math.round(duration * frameRate) + 0, frameRate);
     }
 
     // Route through variant dispatch so a recognized asset type (e.g.

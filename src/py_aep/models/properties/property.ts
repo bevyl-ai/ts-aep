@@ -3452,9 +3452,9 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    */
   _keyframeUnitsAt(time: number): number {
     let timebase: number = this._layerTimebase;
-    if (timebase !== 0) return Math.round(this._evaluatedLayerTime(time) * timebase);
+    if (timebase !== 0) return Math.round(this._evaluatedLayerTime(time) * timebase) + 0;
     timebase = _timebaseUnits(this._keyframeFrameRate());
-    return Math.round(((time - this._startTimeOffset) / this._timeStretch) * timebase);
+    return Math.round(((time - this._startTimeOffset) / this._timeStretch) * timebase) + 0;
   }
 
   /**

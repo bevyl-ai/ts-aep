@@ -423,13 +423,13 @@ export function resolveTimeSpan(
     timeSpanStart = 0.0;
     durationTime = comp.duration;
     timeSpanEnd = comp.duration;
-    durationFrames = Math.round(comp.duration * effectiveFrameRate);
+    durationFrames = (Math.round(comp.duration * effectiveFrameRate) + 0);
     firstRenderedFrame = Math.trunc(comp.displayStartTime * effectiveFrameRate);
   } else {
     timeSpanStart = rqSettings.get("Time Span Start");
     durationTime = rqSettings.get("Time Span Duration");
     timeSpanEnd = rqSettings.get("Time Span End");
-    durationFrames = Math.round(durationTime * effectiveFrameRate);
+    durationFrames = (Math.round(durationTime * effectiveFrameRate) + 0);
     firstRenderedFrame =
       Math.trunc(comp.displayStartTime * effectiveFrameRate) +
       Math.trunc(timeSpanStart * effectiveFrameRate);

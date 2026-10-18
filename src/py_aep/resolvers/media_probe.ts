@@ -2363,8 +2363,8 @@ export function _probePdf(fp: ProbeStream): MediaInfo {
   const x1 = Number(m[3]);
   const y1 = Number(m[4]);
   return new MediaInfo({
-    width: Math.round(x1 - x0),
-    height: Math.round(y1 - y0),
+    width: Math.round(x1 - x0) + 0,
+    height: Math.round(y1 - y0) + 0,
     hasAlpha: true,
     depth: _VECTOR_DEPTH,
   });
@@ -2380,8 +2380,8 @@ export function _probeEps(fp: ProbeStream): MediaInfo {
       const nums = Bytes.split(Bytes.split(line, ascii(":"), 1)[1]);
       if (nums.length >= 4) {
         const [llx, lly, urx, ury] = nums.slice(0, 4).map((n) => Number(decode(n, "ascii")));
-        width = Math.round(urx - llx);
-        height = Math.round(ury - lly);
+        width = (Math.round(urx - llx) + 0);
+        height = (Math.round(ury - lly) + 0);
         hires = true;
       }
     } else if (!hires && Bytes.startsWith(line, ascii("%%BoundingBox:"))) {
@@ -2390,8 +2390,8 @@ export function _probeEps(fp: ProbeStream): MediaInfo {
         const nums = Bytes.split(rest);
         if (nums.length >= 4) {
           const [llx, lly, urx, ury] = nums.slice(0, 4).map((n) => Number(decode(n, "ascii")));
-          width = Math.round(urx - llx);
-          height = Math.round(ury - lly);
+          width = (Math.round(urx - llx) + 0);
+          height = (Math.round(ury - lly) + 0);
         }
       }
     } else if (Bytes.startsWith(line, ascii("%%EndComments"))) {
@@ -2546,7 +2546,7 @@ export function _probeWmv(fp: ProbeStream): MediaInfo {
   // a 1.96 s / 25 fps stream imports as 50 frames = 2.0 s, and the same
   // stream relabelled 29.97 fps imports as 60 frames = 2.002002 s.
   let duration: number;
-  if (frameRate && sendDuration) duration = (Math.round(sendDuration * frameRate) + 1) / frameRate;
+  if (frameRate && sendDuration) duration = ((Math.round(sendDuration * frameRate) + 0) + 1) / frameRate;
   else if (sendDuration) duration = sendDuration;
   else duration = Math.max(0.0, playDuration - preroll);
   return new MediaInfo({

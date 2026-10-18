@@ -17,7 +17,7 @@
  * Standard rotation matrices apply without sign flips.
  */
 
-import { INSPECT, describe } from "../../pyrt/index.ts";
+import { INSPECT, describe, hypot } from "../../pyrt/index.ts";
 import { AutoOrientType, LayerType, LightType } from "../enums/index.ts";
 import type { CompItem } from "../models/items/composition.ts";
 import type { AVLayer } from "../models/layers/av_layer.ts";
@@ -646,7 +646,7 @@ export function _vec3Norm(v: number[]): number {
   // hypot, not sqrt(x*x + y*y + z*z): squaring overflows to inf above ~1.34e154
   // and the norm then poisons every value derived from it. Nested 2-argument
   // calls because hypot only takes 3 arguments from Python 3.8.
-  return Math.hypot(Math.hypot(v[0], v[1]), v[2]);
+  return hypot(hypot(v[0], v[1]), v[2]);
 }
 
 /** Determinant of the upper-left 3x3 of a 4x4 matrix. */
@@ -839,7 +839,7 @@ export function _eulerXyz(
   // loses most of its digits as r02 approaches 1, which matters because
   // an orientation slerping towards a 90-degree Y passes near the pole
   // on almost every frame without ever reaching it.
-  const cosBeta = Math.hypot(r00, r01);
+  const cosBeta = hypot(r00, r01);
 
   let rxDeg: number;
   let ryDeg: number;

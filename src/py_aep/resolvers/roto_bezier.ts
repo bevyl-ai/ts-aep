@@ -25,7 +25,7 @@
  *   are both zero, 1/3 at any other.
  */
 
-import { zip } from "../../pyrt/index.ts";
+import { zip, hypot } from "../../pyrt/index.ts";
 
 export const DEFAULT_TENSION = 1.0 / 3.0;
 
@@ -59,14 +59,14 @@ export function rotoBezierTangents(
     const [vx, vy] = points[i];
     const [px, py] = points[(i + count - 1) % count];
     const [nx, ny] = points[(i + 1) % count];
-    const chord = Math.hypot(nx - px, ny - py);
+    const chord = hypot(nx - px, ny - py);
     if (chord < 1e-12) {
       continue;
     }
     const ux = (nx - px) / chord;
     const uy = (ny - py) / chord;
-    const before = Math.hypot(vx - px, vy - py) * ks[i];
-    const after = Math.hypot(nx - vx, ny - vy) * ks[i];
+    const before = hypot(vx - px, vy - py) * ks[i];
+    const after = hypot(nx - vx, ny - vy) * ks[i];
     ins[i] = [-ux * before, -uy * before];
     outs[i] = [ux * after, uy * after];
   }

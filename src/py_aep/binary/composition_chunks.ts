@@ -302,9 +302,9 @@ export class CdtaChunk extends Chunk {
   }
 
   set bgColor(value: number[]) {
-    this.bgColorR = Math.round(value[0] * 255);
-    this.bgColorG = Math.round(value[1] * 255);
-    this.bgColorB = Math.round(value[2] * 255);
+    this.bgColorR = (Math.round(value[0] * 255) + 0);
+    this.bgColorG = (Math.round(value[1] * 255) + 0);
+    this.bgColorB = (Math.round(value[2] * 255) + 0);
   }
 
   /** Resolution factor as [horizontal, vertical]. */
@@ -323,7 +323,7 @@ export class CdtaChunk extends Chunk {
    * the stored rate is only 16.16-accurate (51.999995 for 52 frames).
    */
   get frameDuration(): number {
-    return Math.round(this.duration * this.frameRate);
+    return Math.round(this.duration * this.frameRate) + 0;
   }
 
   /** Work area duration in seconds. */
@@ -336,7 +336,7 @@ export class CdtaChunk extends Chunk {
 
   /** Work area duration in frames, rounded like `frameDuration`. */
   get workAreaDurationFrame(): number {
-    return Math.round(this.workAreaDuration * this.frameRate);
+    return Math.round(this.workAreaDuration * this.frameRate) + 0;
   }
 
   static {

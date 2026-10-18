@@ -51,7 +51,7 @@ import {
   getOrInsert,
   warn,
   isReal,
-  ascii } from "../../pyrt/index.ts";
+  ascii, hypot } from "../../pyrt/index.ts";
 
 export type Box = [number, number, number, number];
 export type Matrix = number[];
@@ -754,8 +754,8 @@ export class _GState {
   strokeHalfWidth(): [number, number] {
     const half = this.lineWidth / 2.0;
     return [
-      half * Math.hypot(this.ctm[0], this.ctm[1]),
-      half * Math.hypot(this.ctm[2], this.ctm[3]),
+      half * hypot(this.ctm[0], this.ctm[1]),
+      half * hypot(this.ctm[2], this.ctm[3]),
     ];
   }
 }
@@ -1330,7 +1330,7 @@ export function readAiIccProfile(file: PathLike, data: Uint8Array | null = null)
  * @param box - An entry of `readAiLayerBounds`, or `null` for an empty layer.
  */
 export function footageSize(box: Box | null): [number, number] {
-  const [x0, y0, x1, y1] = (box == null ? EMPTY_BOX : box).map((v) => Math.round(v * 65536));
+  const [x0, y0, x1, y1] = (box == null ? EMPTY_BOX : box).map((v) => Math.round(v * 65536) + 0);
   return [
     Math.max(1, Math.ceil((x1 - x0) / 65536.0)),
     Math.max(1, Math.ceil((y1 - y0) / 65536.0)),

@@ -601,7 +601,7 @@ export class XmlFormatOptions extends FormatOptionsBase {
   set frameRate(value: number | null) {
     if (value == null) return;
     _validateNumber({ min: 1 / _ADOBE_TICKS_PER_SECOND })(value);
-    const ticks = Math.round(_ADOBE_TICKS_PER_SECOND / value);
+    const ticks = Math.round(_ADOBE_TICKS_PER_SECOND / value) + 0;
     // BigInt keeps Python's exact int spelling for ticks >= 1e21.
     this._setParam("ADBEVideoFPS", BigInt(ticks).toString());
   }

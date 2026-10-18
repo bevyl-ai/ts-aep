@@ -236,7 +236,7 @@ export class MarkerValue {
    *   composition frame rate.
    */
   get frameDuration(): number {
-    return Math.round(this.duration * this._frameRate());
+    return Math.round(this.duration * this._frameRate()) + 0;
   }
 
   set frameDuration(value: number) {

@@ -307,9 +307,9 @@ export class SspcChunk extends Chunk {
   }
 
   set premulColor(value: number[]) {
-    this.premulColorR = Math.round(value[0] * 255);
-    this.premulColorG = Math.round(value[1] * 255);
-    this.premulColorB = Math.round(value[2] * 255);
+    this.premulColorR = (Math.round(value[0] * 255) + 0);
+    this.premulColorG = (Math.round(value[1] * 255) + 0);
+    this.premulColorB = (Math.round(value[2] * 255) + 0);
   }
 
   /** Field separation type (0=off, 1=upper_first, 2=lower_first). */
@@ -899,7 +899,7 @@ export function buildAiLayerOptiData(
     // BE 16.16 values, replacing the full-page x0/y0/x1/y1 that the typed
     // fields wrote (the fractional/offset bytes live in TextOptiChunk
     // padding, so a parse round-trip stays byte-faithful).
-    struct.packInto(">4i", buf, 0x10, ...artworkBounds.map((v) => Math.round(v * 65536)));
+    struct.packInto(">4i", buf, 0x10, ...artworkBounds.map((v) => Math.round(v * 65536) + 0));
   }
   return buf;
 }

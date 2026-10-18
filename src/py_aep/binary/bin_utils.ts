@@ -79,7 +79,7 @@ export function toFloat32Ratio(value: number): [number, number] {
  * turns 23.99999999 into 23 + 65536/65536, which overflows a u2 fraction.
  */
 export function toFixed1616(value: number): [number, number] {
-  return divmod(Math.round(value * 65536), 65536);
+  return divmod(Math.round(value * 65536) + 0, 65536);
 }
 
 /** Return a cached `struct.Struct` for `fullFmt`. */

@@ -15,8 +15,7 @@ import {
   valueEquals,
   radians,
   literal,
-  patternMatch,
-} from "../../pyrt/index.ts";
+  patternMatch, hypot } from "../../pyrt/index.ts";
 
 /** A cubic segment: start, control 1, control 2, end. */
 export type CubicSeg = [number, number, number, number, number, number, number, number];
@@ -311,7 +310,7 @@ export class _PathParser {
     // Correct out-of-range radii. hypot of the ratios, not a sum of
     // squares over rx * rx: a tiny radius (1e-200) would underflow the
     // square to 0.
-    const s = Math.hypot(x1p / rx, y1p / ry);
+    const s = hypot(x1p / rx, y1p / ry);
     let co: number;
     if (s > 1) {
       // The scaled ellipse just reaches the end point, so its centre is
@@ -335,7 +334,7 @@ export class _PathParser {
 
     const angle = (ux: number, uy: number, vx: number, vy: number): number => {
       const dot = ux * vx + uy * vy;
-      const ln = Math.hypot(ux, uy) * Math.hypot(vx, vy);
+      const ln = hypot(ux, uy) * hypot(vx, vy);
       const ang = ln !== 0 ? Math.acos(Math.max(-1.0, Math.min(1.0, dot / ln))) : 0.0;
       return (ux * vy - uy * vx) < 0 ? -ang : ang;
     };

@@ -346,7 +346,7 @@ export function applyTextStylePrefs(document: TextDocument, preferences: Prefere
   const tracking = number("Tracking");
   if (tracking != null && differs(document.tracking, tracking)) {
     // tracking is an integer field, unlike the float Size/Baseline Shift.
-    document.tracking = Math.round(tracking);
+    document.tracking = (Math.round(tracking) + 0);
   }
 
   const baselineShift = number("Baseline Shift");

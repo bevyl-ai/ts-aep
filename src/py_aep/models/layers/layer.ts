@@ -720,7 +720,7 @@ export class Layer extends PropertyGroup {
    * (frames). Read / Write.
    */
   get frameInPoint(): number {
-    return Math.round(this.inPoint * this.containingComp.frameRate);
+    return Math.round(this.inPoint * this.containingComp.frameRate) + 0;
   }
 
   set frameInPoint(value: number) {
@@ -733,7 +733,7 @@ export class Layer extends PropertyGroup {
    * (frames). Read / Write.
    */
   get frameOutPoint(): number {
-    return Math.round(this.outPoint * this.containingComp.frameRate);
+    return Math.round(this.outPoint * this.containingComp.frameRate) + 0;
   }
 
   set frameOutPoint(value: number) {
@@ -746,7 +746,7 @@ export class Layer extends PropertyGroup {
    * (frames). Read / Write.
    */
   get frameStartTime(): number {
-    return Math.round(this.startTime * this.containingComp.frameRate);
+    return Math.round(this.startTime * this.containingComp.frameRate) + 0;
   }
 
   set frameStartTime(value: number) {

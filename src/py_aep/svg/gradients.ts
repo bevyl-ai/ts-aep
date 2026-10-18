@@ -11,7 +11,7 @@
  * module only produces the geometric/stop representation.
  */
 
-import { getOrInsert, degrees } from "../../pyrt/index.ts";
+import { getOrInsert, degrees, hypot } from "../../pyrt/index.ts";
 import { LengthContext, localName, parseLength, parseRatio } from "./_util.ts";
 import { parseColor } from "./colors.ts";
 import { _splitDeclarations } from "./style.ts";
@@ -201,8 +201,8 @@ export function resolveGradient(
   // angle in Grad Rotation, as 360 minus the clockwise screen angle (AE
   // 2026 imports an axis at 0 / 30 / -60 degrees as 360 / 330 / 420).
   const edgeY = base.apply(cx, cy + r);
-  const xRadius = Math.hypot(end[0] - start[0], end[1] - start[1]);
-  const yRadius = Math.hypot(edgeY[0] - start[0], edgeY[1] - start[1]);
+  const xRadius = hypot(end[0] - start[0], end[1] - start[1]);
+  const yRadius = hypot(edgeY[0] - start[0], edgeY[1] - start[1]);
   // Python truthiness of a float: NaN is truthy, so use py_bool, not `?:`.
   const scaleY = xRadius !== 0 ? (100.0 * yRadius) / xRadius : 100.0;
   const angle = degrees(Math.atan2(end[1] - start[1], end[0] - start[0]));

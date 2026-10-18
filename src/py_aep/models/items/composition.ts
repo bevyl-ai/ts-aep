@@ -697,7 +697,7 @@ export class CompItem extends AVItem {
   _keepTimesInside(): void {
     const cdta = this._cdta;
     const [timebase, unitsPerFrame] = _grid(cdta);
-    const endOfComp = Math.round(cdta.duration * timebase);
+    const endOfComp = Math.round(cdta.duration * timebase) + 0;
     const lastFrame = endOfComp - unitsPerFrame;
     if (cdta.timeDividend > lastFrame) {
       cdta.timeDividend = lastFrame;
@@ -895,7 +895,7 @@ export class CompItem extends AVItem {
     cdta.workAreaStartDivisor = timebase;
     let endUnits: number | null =
       end == null ? null : _frameUnits(end, timebase, unitsPerFrame);
-    if (endUnits == null || endUnits >= Math.round(cdta.duration * timebase)) {
+    if (endUnits == null || endUnits >= (Math.round(cdta.duration * timebase) + 0)) {
       endUnits = WORK_AREA_TO_END;
     }
     cdta.workAreaEndDividend = endUnits;
@@ -1694,8 +1694,8 @@ export class CompItem extends AVItem {
         uuidStr,
         source.width,
         source.height,
-        Math.round(layer.inPoint * timebase),
-        Math.round(layer.outPoint * timebase),
+        Math.round(layer.inPoint * timebase) + 0,
+        Math.round(layer.outPoint * timebase) + 0,
         timebase,
         thumbnail,
         this.id,

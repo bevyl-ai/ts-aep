@@ -90,7 +90,7 @@ export class ParametricMeshLayer extends AVLayer {
     const timeBase = containingComp._cdta.internalTimebase;
     layer._ldta.startTimeDivisor = timeBase;
     layer._ldta.inPointDivisor = timeBase;
-    layer._ldta.outPointDividend = Math.round(duration * timeBase);
+    layer._ldta.outPointDividend = (Math.round(duration * timeBase) + 0);
     layer._ldta.outPointDivisor = timeBase;
     layer.parametricMeshType = meshType;
     // AE writes the active mesh type's option/bevel groups expanded
