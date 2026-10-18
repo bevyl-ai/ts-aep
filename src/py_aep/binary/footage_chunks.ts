@@ -357,7 +357,7 @@ export class SspcChunk extends Chunk {
   }
 
   /** Recompute and store display_frame_rate from current settings. */
-  _updateDisplayFrameRate(): void {
+  private _updateDisplayFrameRate(): void {
     const conform = this.conformFrameRate;
     const base = conform !== 0 ? conform : this.nativeFrameRate;
     this.displayFrameRate = base * (this._removePulldownValue !== 0 ? 0.8 : 1.0);

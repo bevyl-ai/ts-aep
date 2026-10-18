@@ -244,7 +244,7 @@ export class MarkerValue {
     this.duration = value / this._frameRate();
   }
 
-  _frameRate(): number {
+  private _frameRate(): number {
     if (this._keyframe == null) {
       throw new ValueError(
         "frameDuration needs the composition frame rate: set the " +

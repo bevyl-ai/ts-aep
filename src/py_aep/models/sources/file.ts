@@ -633,7 +633,7 @@ export class FileSource extends FootageSource {
    * with `forceAlphabetical`) rather than numbered: AE leaves its frame
    * numbers undefined and keeps the file names in the Pin's StVc list.
    */
-  get _isAlphabetical(): boolean {
+  private get _isAlphabetical(): boolean {
     return (
       this._targetIsFolder &&
       this._sspc.startFrame === UNDEFINED_FRAME &&
@@ -742,7 +742,7 @@ export class FileSource extends FootageSource {
     return this._derivedFrame(this._sspc.endFrame, -1);
   }
 
-  _derivedFrame(stored: number, index: number): number {
+  private _derivedFrame(stored: number, index: number): number {
     if (stored !== UNDEFINED_FRAME || !this._fileNames?.length) return stored;
     const match = /(\d+)\D*$/.exec(this._fileNames.at(index)!);
     return match != null ? Number.parseInt(match[1], 10) : stored;
@@ -1622,7 +1622,7 @@ export class FileSource extends FootageSource {
   }
 
   /** Replace the pin's `opti` chunk (and this source's reference). */
-  _swapOpti(newOpti: OptiChunk): void {
+  private _swapOpti(newOpti: OptiChunk): void {
     const index = indexByIdentity(this._pin.chunks, this._opti);
     this._pin.chunks[index] = newOpti;
     this._opti = newOpti;
@@ -1634,7 +1634,7 @@ export class FileSource extends FootageSource {
    * size and source stamp (the file's new mtime: AE 2026 restamps the
    * source on reload), plus `fields`.
    */
-  _adoptMeasured(fresh: FileSource, ...fields: string[]): void {
+  private _adoptMeasured(fresh: FileSource, ...fields: string[]): void {
     const sspc = this._sspc;
     const freshSspc = fresh._sspc;
     for (const name of ["width", "height", "depth", "alphaModeRaw", ...fields]) {
@@ -1649,7 +1649,7 @@ export class FileSource extends FootageSource {
    * Set, update or remove the CLRS embedded-profile record (`empd`
    * flag + `Utf8` profile name, in AE's slot right after `apid`).
    */
-  _updateEmbeddedProfile(name: string | null): void {
+  private _updateEmbeddedProfile(name: string | null): void {
     if (this._clrs == null) return;
     const chunks = this._clrs.chunks;
     for (const [index, chunk] of chunks.entries()) {
@@ -1765,7 +1765,7 @@ export class FileSource extends FootageSource {
    * chunk inside the Pin LIST. An alphabetical sequence is named after
    * its folder instead, as AE 2026 does.
    */
-  _buildSequenceName(): string {
+  private _buildSequenceName(): string {
     if (this._isAlphabetical) return new PureWindowsPath(this._file).parent.name;
     const startFrame = this._startFrame;
     const endFrame = this._endFrame;

@@ -345,7 +345,7 @@ export class FolderItem extends Item {
    * chunk block per child item (the item's chunk list plus any
    * trailing non-item chunks, e.g. view data).
    */
-  _childChunkBlocks(): [Chunk[], [Item, Chunk[]][]] {
+  private _childChunkBlocks(): [Chunk[], [Item, Chunk[]][]] {
     // Keyed by object identity, as Python's `id()` was.
     const byItemList = new Map<Chunk, Item>(
       this.items.map((item): [Chunk, Item] => [item._itemList, item]),

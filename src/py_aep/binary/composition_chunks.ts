@@ -241,7 +241,7 @@ export class CdtaChunk extends Chunk {
    * Recalculate internal_timebase and time_scale (units per frame /
    * 256) for a new frame rate (see `frameGrid`).
    */
-  _updateTimebase(fps: number): void {
+  private _updateTimebase(fps: number): void {
     const [internalTimebase, unitsPerFrame] = frameGrid(fps);
     this.internalTimebase = internalTimebase;
     [this.timeScaleInteger, this.timeScaleFractional] = divmod(unitsPerFrame, 256);

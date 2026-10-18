@@ -51,14 +51,14 @@ export const CURRENT_VALUE = new _CurrentValue();
  */
 export class ImportOptions {
   _file: Path;
-  _importAs: ImportAsType;
-  _sequence: boolean;
-  _forceAlphabetical: boolean;
-  _layerIndex: number | null;
-  _layerDimensions: string | null;
-  _layerStyles: string | null;
-  _rangeStart: number;
-  _rangeEnd: number;
+  private _importAs: ImportAsType;
+  private _sequence: boolean;
+  private _forceAlphabetical: boolean;
+  private _layerIndex: number | null;
+  private _layerDimensions: string | null;
+  private _layerStyles: string | null;
+  private _rangeStart: number;
+  private _rangeEnd: number;
 
   constructor(file: string | PathLike) {
     validatePath(file);

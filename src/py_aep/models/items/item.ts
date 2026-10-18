@@ -275,7 +275,7 @@ export class Item {
   }
 
   /** Create the guides container if needed. */
-  _ensureGuidesContainer(): void {
+  private _ensureGuidesContainer(): void {
     if (this._ldat != null) return;
     this._ldat = new LdatChunk({
       items: [],
@@ -300,7 +300,7 @@ export class Item {
    * container entirely leaves the project in a state AE opens but cannot
    * re-save. So we drop only the `ldat` and keep `gide`/`lhd3`/`inner`.
    */
-  _emptyGuidesContainer(): void {
+  private _emptyGuidesContainer(): void {
     if (this._gide == null) return;
     if (this._ldat != null && this._inner != null) {
       this._inner.chunks.splice(indexByIdentity(this._inner.chunks, this._ldat), 1);
@@ -341,7 +341,7 @@ export class Item {
    * Returns the removed block so callers can relocate it (e.g. the
    * `parentFolder` setter); `remove()` discards it.
    */
-  _removeFromParentChunks(): Chunk[] {
+  private _removeFromParentChunks(): Chunk[] {
     const parent = this._parentFolder;
     assert(parent != null);
     const container = parent._childrenContainer;

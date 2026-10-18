@@ -616,7 +616,7 @@ export class PropertyGroup extends PropertyBase {
    * Looks up child specs for the group's match name, reorders/fills
    * children, and defers synthesis on child groups recursively.
    */
-  _runDeferredSynthesis(aeMajor: number): void {
+  private _runDeferredSynthesis(aeMajor: number): void {
     const specs = _GROUP_CHILD_SPECS.get(this.matchName) ?? null;
     if (specs != null) {
       _reorderAndFill(this, specs, this.propertyDepth + 1, {
@@ -646,7 +646,7 @@ export class PropertyGroup extends PropertyBase {
    * cannot express. Returns `null` for groups with no comp-dependent
    * defaults.
    */
-  _synthesisValueOverrides(): Map<string, [number | number[], number | number[]]> | null {
+  private _synthesisValueOverrides(): Map<string, [number | number[], number | number[]]> | null {
     if (this.matchName !== "ADBE Camera Options Group") return null;
     let zoom: number;
     try {
@@ -1039,7 +1039,7 @@ export class PropertyGroup extends PropertyBase {
    * scheme collides once an instance is removed or the existing names
    * are non-contiguous (e.g. `['Stroke 1', 'Stroke 3']`).
    */
-  _freeNumberedName(base: string, start: number): string {
+  private _freeNumberedName(base: string, start: number): string {
     const existing = new Set(this.properties.map((p) => p.name));
     let n = start;
     while (existing.has(`${base} ${n}`)) n += 1;
@@ -1053,13 +1053,13 @@ export class PropertyGroup extends PropertyBase {
    * instances (counted per match name, or per pseudo-effect namespace
    * for the Dropdown Control).
    */
-  _effectInstanceName(display: string, sameType: number): string {
+  private _effectInstanceName(display: string, sameType: number): string {
     if (sameType === 0) return TDSN_SENTINEL;
     return this._freeNumberedName(display, sameType + 1);
   }
 
   /** Add a new default mask atom to this Masks parade group. */
-  _addMaskAtom(): MaskPropertyGroup {
+  private _addMaskAtom(): MaskPropertyGroup {
     this._ensureMaterialized();
     // AE assigns a monotonic per-layer mask id (highest existing + 1),
     // not a positional count: len+1 collides after a mid-parade mask is
@@ -1080,7 +1080,7 @@ export class PropertyGroup extends PropertyBase {
   }
 
   /** Add a fresh expression-control effect to this Effect Parade. */
-  _addExpressionControl(matchName: string): PropertyGroup {
+  private _addExpressionControl(matchName: string): PropertyGroup {
     const skeleton = getOrThrow(EXPRESSION_CONTROLS, matchName);
     this._ensureMaterialized();
     const comp = this._containingLayer.containingComp;
@@ -1112,7 +1112,7 @@ export class PropertyGroup extends PropertyBase {
    * generated match name, so AE's "Name N" numbering counts existing
    * dropdowns by the `Pseudo/` namespace rather than by match name.
    */
-  _addDropdownControl(): PropertyGroup {
+  private _addDropdownControl(): PropertyGroup {
     this._ensureMaterialized();
     const comp = this._containingLayer.containingComp;
 
@@ -1168,7 +1168,7 @@ export class PropertyGroup extends PropertyBase {
    * one, and the parameter's keyframe times are then read against the
    * wrong base.
    */
-  _addInstalledEffect(
+  private _addInstalledEffect(
     matchName: string,
     display: string,
     defSspc: ListChunk,
@@ -1208,7 +1208,7 @@ export class PropertyGroup extends PropertyBase {
    * `engv` is the engine-version atom AE stores between an effect's
    * `tdmn` and its `sspc` (Puppet only).
    */
-  _attachEffect(
+  private _attachEffect(
     tdmn: TdmnChunk,
     sspc: ListChunk,
     matchName: string,
@@ -1246,7 +1246,7 @@ export class PropertyGroup extends PropertyBase {
    * deferred child synthesis); the shape, selector and animator
    * builders share it, as `_attachEffect` does for effects.
    */
-  _attachGroup(tdmn: TdmnChunk, tdgp: ListChunk, matchName: string): PropertyGroup {
+  private _attachGroup(tdmn: TdmnChunk, tdgp: ListChunk, matchName: string): PropertyGroup {
     const layer = this._containingLayer;
     const comp = layer.containingComp;
     const parentTdgp = this._tdgp;
@@ -1270,7 +1270,7 @@ export class PropertyGroup extends PropertyBase {
   }
 
   /** Add a fresh shape element to this contents group. */
-  _addVectorElement(matchName: string): PropertyGroup {
+  private _addVectorElement(matchName: string): PropertyGroup {
     this._ensureMaterialized();
     const comp = this._containingLayer.containingComp;
 
@@ -1300,7 +1300,7 @@ export class PropertyGroup extends PropertyBase {
    * position) rather than appending a new child. Idempotent: adding
    * an already-applied property is a no-op, as in AE.
    */
-  _addAnimatorProperty(matchName: string): Property | PropertyGroup {
+  private _addAnimatorProperty(matchName: string): Property | PropertyGroup {
     const prop = this.properties.find((p) => p.matchName === matchName) ?? null;
     // resolve_addable returns only pool match names, so the member exists.
     assert(prop != null);
@@ -1315,7 +1315,7 @@ export class PropertyGroup extends PropertyBase {
    * container; its (empty) Selectors group and the 103-property
    * Properties pool are synthesized on parse.
    */
-  _addTextAnimator(): PropertyGroup {
+  private _addTextAnimator(): PropertyGroup {
     this._ensureMaterialized();
     const sameType = this.properties.filter(
       (p) => p.matchName === "ADBE Text Animator",
@@ -1333,7 +1333,7 @@ export class PropertyGroup extends PropertyBase {
    * value children are synthesized; the Range Selector additionally
    * carries an empty `ADBE Text Range Advanced` subgroup in binary.
    */
-  _addTextSelector(matchName: string): PropertyGroup {
+  private _addTextSelector(matchName: string): PropertyGroup {
     this._ensureMaterialized();
     const base = getOrThrow(_TEXT_SELECTOR_NAMES, matchName);
     const sameType = this.properties.filter((p) => p.matchName === matchName).length;

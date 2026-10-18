@@ -275,11 +275,11 @@ export function _intersect(current: Box | null, added: Box | null): Box | null {
 
 /** Indirect-object and stream access for a PDF-compatible file. */
 export class _Document {
-  _data: Uint8Array;
-  _name: string;
-  _offsets: Map<number, number>;
-  _cache: Map<number, CosNode>;
-  _catalog: CosDict | null;
+  private _data: Uint8Array;
+  private _name: string;
+  private _offsets: Map<number, number>;
+  private _cache: Map<number, CosNode>;
+  private _catalog: CosDict | null;
 
   constructor(data: Uint8Array, name: string) {
     this._data = data;
@@ -290,7 +290,7 @@ export class _Document {
     this._checkSupported();
   }
 
-  _reject(why: string): UnsupportedAiLayersError {
+  private _reject(why: string): UnsupportedAiLayersError {
     return new UnsupportedAiLayersError(`${this._name}: ${why}`);
   }
 
@@ -302,7 +302,7 @@ export class _Document {
    * PDF from another producer would otherwise be measured from whatever
    * objects the scanner happened to find.
    */
-  _checkSupported(): void {
+  private _checkSupported(): void {
     if (Bytes.includes(this._data, ascii("/ObjStm"))) {
       throw this._reject(
         "the file uses compressed object streams (/ObjStm), which " +
@@ -388,7 +388,7 @@ export class _Document {
     return body;
   }
 
-  _rawStream(number: number, info: CosDict): Uint8Array | null {
+  private _rawStream(number: number, info: CosDict): Uint8Array | null {
     const offset = this._offsets.get(number) ?? null;
     if (offset == null) return null;
     let start = Bytes.indexOf(this._data, ascii("stream"), offset);
@@ -445,7 +445,7 @@ export class _Document {
     return pages;
   }
 
-  *_walkPages(node: CosNode, depth: number): Generator<CosDict> {
+  private *_walkPages(node: CosNode, depth: number): Generator<CosDict> {
     const table = _asDict(this.resolve(node));
     if (table == null || depth > 32) return;
     if (String(table.has("Type") ? table.get("Type") : "") === "Page") {
@@ -874,9 +874,9 @@ export function _baseFont(name: string): string {
 
 /** Accumulates each optional content group's artwork box. */
 export class _Measurer {
-  _doc: _Document;
+  private _doc: _Document;
   boxes: Map<number, _Acc>;
-  _stack: number[];
+  private _stack: number[];
 
   constructor(doc: _Document) {
     this._doc = doc;
@@ -885,7 +885,7 @@ export class _Measurer {
   }
 
   /** The box of the innermost open optional content group. */
-  _target(): _Acc | null {
+  private _target(): _Acc | null {
     for (let i = this._stack.length - 1; i >= 0; i--) {
       const number = this._stack[i];
       if (number >= 0) return getOrInsert(this.boxes, number, new _Acc());
@@ -893,11 +893,11 @@ export class _Measurer {
     return null;
   }
 
-  _resource(resources: CosNode, category: string, name: CosNode): CosNode {
+  private _resource(resources: CosNode, category: string, name: CosNode): CosNode {
     return this._doc.get(this._doc.get(resources, category), _operandStr(name));
   }
 
-  _resourceRef(resources: CosNode, category: string, name: CosNode): CosNode {
+  private _resourceRef(resources: CosNode, category: string, name: CosNode): CosNode {
     const table = _asDict(this._doc.resolve(this._doc.get(resources, category)));
     if (table == null) return null;
     return table.get(_operandStr(name)) ?? null;
@@ -1071,7 +1071,7 @@ export class _Measurer {
    * After Effects measures the hull, not the true curve bounds, so a
    * control point far outside the drawn curve still counts.
    */
-  _hull(gs: _GState, segments: Segment[]): Box | null {
+  private _hull(gs: _GState, segments: Segment[]): Box | null {
     const acc = new _Acc();
     for (const segment of segments) {
       const [, ...points] = segment;
@@ -1082,7 +1082,7 @@ export class _Measurer {
     return acc.box();
   }
 
-  _commitPath(gs: _GState, segments: Segment[], stroked: boolean, fromRect: boolean): void {
+  private _commitPath(gs: _GState, segments: Segment[], stroked: boolean, fromRect: boolean): void {
     const target = this._target();
     if (target == null) return;
     let hull = this._hull(gs, segments);
@@ -1110,7 +1110,7 @@ export class _Measurer {
   }
 
   /** A form or image XObject contributes its box with no expansion. */
-  _drawXobject(gs: _GState, resources: CosNode, name: CosNode): void {
+  private _drawXobject(gs: _GState, resources: CosNode, name: CosNode): void {
     const xobject = _asDict(this._resource(resources, "XObject", name));
     if (xobject == null) return;
     const target = this._target();
@@ -1143,7 +1143,7 @@ export class _Measurer {
   }
 
   /** An image contributes its unit square through the CTM, unexpanded. */
-  _addImage(ctm: Matrix): void {
+  private _addImage(ctm: Matrix): void {
     const target = this._target();
     if (target == null) return;
     const acc = new _Acc();
@@ -1153,7 +1153,7 @@ export class _Measurer {
   }
 
   /** Measure a text-showing operator and advance the text matrix. */
-  _showText(gs: _GState, textMatrix: Matrix, items: CosNode[]): Matrix {
+  private _showText(gs: _GState, textMatrix: Matrix, items: CosNode[]): Matrix {
     const [widths, default_, yMin, yMax, twoByte] = gs.metrics;
     const target = this._target();
     const scale = gs.hScale / 100.0;
@@ -1194,7 +1194,7 @@ export class _Measurer {
    * spacing widen the cell. Invisible render modes are measured too; the
    * stroking modes grow the cell by the stroke half-width.
    */
-  _addGlyphCell(
+  private _addGlyphCell(
     gs: _GState,
     target: _Acc,
     textMatrix: Matrix,

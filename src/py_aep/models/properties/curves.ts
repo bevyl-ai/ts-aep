@@ -76,7 +76,7 @@ export class _NaturalSpline {
     }
   }
 
-  _segment(x: number): number {
+  private _segment(x: number): number {
     const xs = this.xs;
     let lo = 0;
     let hi = xs.length - 2;

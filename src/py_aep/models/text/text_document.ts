@@ -137,7 +137,7 @@ export class TextDocument {
   // `True` for documents parsed from a layer's btdk data. The range API
   // (AE 24.3+) refuses documents never associated with a layer, exactly
   // as ExtendScript does for an unapplied `new TextDocument()`.
-  _associated: boolean = false;
+  private _associated: boolean = false;
 
   // Set by the first layout-affecting py-side write; while `False` the
   // persisted composed-line cache is authoritative. Underscore-prefixed,
@@ -178,7 +178,7 @@ export class TextDocument {
    * Runs before the mutation lands so each sibling still calibrates
    * against its own clean cache + text.
    */
-  _markFrameLayoutDirty(): void {
+  private _markFrameLayoutDirty(): void {
     const siblings = this._siblings;
     for (const doc of siblings != null && siblings.length > 0 ? siblings : [this]) {
       doc._markLayoutDirty();
@@ -503,18 +503,18 @@ export class TextDocument {
    * Set by `_fromBinary` fallback kwargs and by setters when the
    * backing style dict is `null`. Returns `null` when absent.
    */
-  _override(name: string): InstanceValue {
+  private _override(name: string): InstanceValue {
     return this._overrides.get(name) ?? null;
   }
 
   /** {@link TextDocument._override} when it holds a `T` (the setters only store their own type). */
-  _overrideOf<T extends InstanceValue>(name: string, accepts: (v: InstanceValue) => v is T): T | null {
+  private _overrideOf<T extends InstanceValue>(name: string, accepts: (v: InstanceValue) => v is T): T | null {
     const value = this._override(name);
     return value != null && accepts(value) ? value : null;
   }
 
   /** Store an instance override for a field without COS backing. */
-  _setOverride(name: string, value: InstanceValue): void {
+  private _setOverride(name: string, value: InstanceValue): void {
     this._overrides.set(name, value);
   }
 
@@ -561,7 +561,7 @@ export class TextDocument {
    *
    * @param raw - The new stored text, including the terminator `\r`.
    */
-  _rebuildRunsForText(raw: string): void {
+  private _rebuildRunsForText(raw: string): void {
     const inner = cosGetOr(this._doc, "0", new Map());
     const charRuns = cosGet(inner, "6", "0");
     if (Array.isArray(charRuns) && charRuns.length > 0) {
@@ -641,7 +641,7 @@ export class TextDocument {
   }
 
   /** The font the first character style's index (`isinstance(.., int)`) points at, if in range. */
-  _fontAtStyleIndex(): FontObject | null {
+  private _fontAtStyleIndex(): FontObject | null {
     if (this._charStyle == null) return null;
     const fontIdx = read(charStyle, this._charStyle, "0");
     if (fontIdx == null) return null;
@@ -664,7 +664,7 @@ export class TextDocument {
   }
 
   /** Return the index of a font in `_fonts`, or `null` if absent. */
-  _fontIndex(postScriptName: string): number | null {
+  private _fontIndex(postScriptName: string): number | null {
     for (const [idx, fo] of this._fonts.entries()) {
       if (fo.postScriptName === postScriptName) return idx;
     }
@@ -678,7 +678,7 @@ export class TextDocument {
    * font reference (probed via the `W_FONT` / `W_PASTE_XDOC` write
    * fixtures). Returns the new font's index (always 0).
    */
-  _registerFont(postScriptName: string): number {
+  private _registerFont(postScriptName: string): number {
     return _registerFontAt(this, postScriptName);
   }
 
@@ -878,7 +878,7 @@ export class TextDocument {
   }
 
   /** Return the COS box-frame dict, or `null` if absent. */
-  _boxFrame(): CosDict | null {
+  private _boxFrame(): CosDict | null {
     const frame = cosGet(this._cosData, "0", "8", "0", 0, "0");
     return frame instanceof Map ? frame : null;
   }
@@ -900,7 +900,7 @@ export class TextDocument {
   }
 
   /** Return the box's 16-vertex outline coordinates, or `null`. */
-  _boxOutline(): CosNode[] | null {
+  private _boxOutline(): CosNode[] | null {
     const frame = this._boxFrame();
     const coords = frame != null ? cosGet(frame, "1", "0") : null;
     if (Array.isArray(coords) && coords.length >= 14) return coords;
@@ -1275,7 +1275,7 @@ export class TextDocument {
    * The project's AE preferences, or an empty set (AE factory
    * defaults) for a document parsed without a preferences directory.
    */
-  _effectivePreferences(): Preferences {
+  private _effectivePreferences(): Preferences {
     if (this._preferences == null) return new Preferences();
     return this._preferences;
   }
@@ -1290,7 +1290,7 @@ export class TextDocument {
    * associated with a layer."); template-constructed documents
    * behave identically here.
    */
-  _requireAssociation(): void {
+  private _requireAssociation(): void {
     if (!this._associated) throw new ValueError(NOT_ASSOCIATED);
   }
 

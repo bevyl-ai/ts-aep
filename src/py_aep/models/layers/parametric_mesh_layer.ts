@@ -107,7 +107,7 @@ export class ParametricMeshLayer extends AVLayer {
   }
 
   /** Update the parametric mesh options from the layer's current state. */
-  _updateOptions(): void {
+  private _updateOptions(): void {
     // Plain instance attributes, read as own properties (Python's
     // `__dict__`): `getattr` on a missing one would search the layer's
     // properties for that name.

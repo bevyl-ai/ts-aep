@@ -376,7 +376,7 @@ export class AVLayer extends Layer {
    * After Effects clamps in/outPoint when queried via ExtendScript
    * for non-still footage layers without time remapping enabled.
    */
-  _shouldClampTimes(): boolean {
+  private _shouldClampTimes(): boolean {
     const source = this.source;
     if (source == null) {
       return false;
@@ -613,7 +613,7 @@ export class AVLayer extends Layer {
    * `time` (py_aep extension), else the comp's current time - what AE
    * uses, i.e. the playhead position saved in the file.
    */
-  _geometryTime(time: number | null): number {
+  private _geometryTime(time: number | null): number {
     if (time != null) {
       validateNumber(time);
       return time;
@@ -659,7 +659,7 @@ export class AVLayer extends Layer {
    * World matrix for the point conversions at comp `time`: a 2D
    * layer is placed as AE places it, its 3D ancestors flattened.
    */
-  _worldMatrix(time: number): Mat4 {
+  private _worldMatrix(time: number): Mat4 {
     return buildWorldMatrix(this, time, !this.threeDLayer, { autoOrient: true });
   }
 
@@ -811,7 +811,7 @@ export class AVLayer extends Layer {
     };
   }
 
-  _textInkRect(time: number): { top: number; left: number; width: number; height: number } {
+  private _textInkRect(time: number): { top: number; left: number; width: number; height: number } {
     const text = this.property("ADBE Text Properties");
     const animators = text.property("ADBE Text Animators");
     if (animators.properties?.length > 0) {
@@ -1027,7 +1027,7 @@ export class AVLayer extends Layer {
   // ------------------------------------------------------------------
 
   /** Re-enable `matte` if no other layer in the comp uses it. */
-  _reEnableMatte(matte: AVLayer): void {
+  private _reEnableMatte(matte: AVLayer): void {
     for (const layer of this.containingComp.avLayers) {
       if (layer !== this && layer._matteLayerId === matte.id) {
         return;
@@ -1112,7 +1112,7 @@ export class AVLayer extends Layer {
    * the user has set one, the value is theirs and a source swap must not
    * move it.
    */
-  _refreshFormerNullDefaults(): void {
+  private _refreshFormerNullDefaults(): void {
     // Circular: synthesis.core imports the layer classes it synthesizes for.
     const transform = this.transform;
     if (transform == null) {

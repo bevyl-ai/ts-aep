@@ -188,7 +188,7 @@ export function _xmlOptionsOf<K extends "audioBitrate" | "audioCodec" | "bitrate
 ): XmlFormatOptions[K] | null {
   const fo = om._formatOptions;
   if (fo instanceof XmlFormatOptions) {
-    return getMember(fo, attr);
+    return fo[attr];
   }
   return null;
 }
@@ -661,7 +661,7 @@ export class OutputModule {
    * its key absent, so the rules that condition on it simply do not
    * apply (permissive degradation).
    */
-  _rulesContext(): Map<string, RuleValue> {
+  private _rulesContext(): Map<string, RuleValue> {
     const context = new Map<string, RuleValue>();
     for (const key of ["Channels", "Audio Channels", "Audio Sample Rate"]) {
       let value: number;
@@ -834,7 +834,7 @@ export class OutputModule {
   }
 
   /** Capture the batch rollback state (settings + format header/options). */
-  _snapshotState(): [Uint8Array, Uint8Array, Uint8Array | null, string | null, boolean] {
+  private _snapshotState(): [Uint8Array, Uint8Array, Uint8Array | null, string | null, boolean] {
     const lomChunks = this._parentRqi._lom.chunks;
     let start: number;
     let end: number;
@@ -862,7 +862,7 @@ export class OutputModule {
   }
 
   /** Roll the module back to a `_snapshotState` capture. */
-  _restoreState(snapshot: [Uint8Array, Uint8Array, Uint8Array | null, string | null, boolean]): void {
+  private _restoreState(snapshot: [Uint8Array, Uint8Array, Uint8Array | null, string | null, boolean]): void {
     const [ldatBytes, roouBytes, roptBytes, hdr10Value, hadOptions] = snapshot;
     // In-place field copy keeps the item's identity in the ldat list.
     const restoredItem = OutputModuleSettingsItem.frombytes(ldatBytes);
@@ -984,7 +984,7 @@ export class OutputModule {
   }
 
   /** Re-pair the depth to the alpha choice (RGBA \<-\> `+` depths). */
-  _pairDepthToChannels(): void {
+  private _pairDepthToChannels(): void {
     const depthVal = Math.trunc(this._depth);
     const isRgba = this._omLdat.channels === Math.trunc(OutputChannels.RGBA);
     const target = isRgba ? _DEPTH_PLUS : _DEPTH_MINUS;
@@ -1072,7 +1072,7 @@ export class OutputModule {
   }
 
   /** Clamp writer for a `Rouu` audio-format field (no validation). */
-  _writeAudioFormatRaw(field: "audioChannels" | "audioBitDepth", value: number): void {
+  private _writeAudioFormatRaw(field: "audioChannels" | "audioBitDepth", value: number): void {
     this._roou[field] = value;
     this._syncAudioFormat();
   }
@@ -1082,7 +1082,7 @@ export class OutputModule {
    *
    * AE order: resolution -\> resize -\> crop/ROI.
    */
-  get _effectiveDimensions(): [number, number] {
+  private get _effectiveDimensions(): [number, number] {
     const comp = this._parentRqi.comp;
     const resX = this._parentRqi._ldat.resolutionX || 1;
     const resY = this._parentRqi._ldat.resolutionY || 1;
@@ -1108,7 +1108,7 @@ export class OutputModule {
   }
 
   /** Effective frame rate: custom if enabled, else comp frame rate. */
-  get _effectiveFrameRate(): number {
+  private get _effectiveFrameRate(): number {
     const rqi = this._parentRqi;
     if (rqi._ldat.useThisFrameRate) {
       return rqi._useThisFrameRate;
@@ -1155,7 +1155,7 @@ export class OutputModule {
    * 12.5 fps comp), and the comp-resolved output dimensions for video
    * formats (audio-only formats keep width/height=0).
    */
-  _finalizeRoou(): void {
+  private _finalizeRoou(): void {
     this._roou.appliedMarker = 1;
     this._setFrameRate();
     if (this._roou.width > 0) {
@@ -1165,7 +1165,7 @@ export class OutputModule {
   }
 
   /** Output color space derived from ICC profile and working space. */
-  get _outputColorSpace(): string | null {
+  private get _outputColorSpace(): string | null {
     return mapOutputColorSpace(
       this._omLdat.outputProfileId,
       this._omLdat.outputColorSpaceWorking !== 0,
@@ -1326,17 +1326,17 @@ export class OutputModule {
   }
 
   /** Whether the alas path points to a folder. */
-  get _isFolder(): boolean {
+  private get _isFolder(): boolean {
     return truthy(this._alasData.get("target_is_folder"));
   }
 
   /** The four-character video codec identifier. */
-  get _videoCodec(): string | null {
+  private get _videoCodec(): string | null {
     return this._roou.videoCodec || null;
   }
 
   /** Derive file extension from format_id, with Cineon special case. */
-  get _resolveExtension(): string | null {
+  private get _resolveExtension(): string | null {
     const formatId = this._roou.formatId;
     if (formatId === "sDPX") {
       const fo = this._formatOptions;
@@ -1349,12 +1349,12 @@ export class OutputModule {
   }
 
   /** The output folder path from the alas chunk. */
-  get _folderPath(): string {
+  private get _folderPath(): string {
     return String(this._alasData.has("fullpath") ? this._alasData.get("fullpath") : "");
   }
 
   /** The file name template from the Utf8 chunk. */
-  get _fileNameTemplate(): string {
+  private get _fileNameTemplate(): string {
     if (this._fileNameUtf8 == null) {
       return "";
     }
@@ -1415,7 +1415,7 @@ export class OutputModule {
    * settings' has-output-file bit (AE ignores the record without it), and
    * the item leaves "Needs Output" for "Queued" (measured on AE 2026).
    */
-  _addOutputPathRecord(): Utf8Chunk {
+  private _addOutputPathRecord(): Utf8Chunk {
     const lomChunks = this._parentRqi._lom.chunks;
     const als2 = buildAls2List("", { targetIsFolder: true });
     let position: number;
@@ -1591,7 +1591,7 @@ export class OutputModule {
    * representation, which AE transforms when it applies a template -
    * so those two are not yet byte-identical to AE's runtime output.
    */
-  _applyOutputTemplate(template: OutputModuleTemplate): void {
+  private _applyOutputTemplate(template: OutputModuleTemplate): void {
     const lomChunks = this._parentRqi._lom.chunks;
     this._omLdat.copySettingsFrom(template.settings);
 

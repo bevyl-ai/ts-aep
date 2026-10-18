@@ -94,7 +94,7 @@ export class KeyframeEase {
   }
 
   /** Whether the backing kf_data stores speed/influence as arrays. */
-  _isArray(): boolean {
+  private _isArray(): boolean {
     return Array.isArray(getMember(this._kfData, `${this._direction}Speed`));
   }
 

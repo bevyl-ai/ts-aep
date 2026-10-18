@@ -640,7 +640,7 @@ export class FootageItem extends AVItem {
   }
 
   /** Replace the first LIST:Pin in _item_list with a new source. */
-  _replaceMainSource(source: FileSource | PlaceholderSource | SolidSource): void {
+  private _replaceMainSource(source: FileSource | PlaceholderSource | SolidSource): void {
     const isSolid = source instanceof SolidSource;
     if (!isSolid) {
       // AE keeps the Interpret Footage settings across a replace; only

@@ -465,7 +465,7 @@ export class FootageSource {
    * new file's rules would pick another (AE 2026). The embedded profile
    * record is always the new file's.
    */
-  _carryColorManagementTo(new_: FootageSource): void {
+  private _carryColorManagementTo(new_: FootageSource): void {
     const oldClrs = this._clrs,
       newClrs = new_._clrs;
     if (oldClrs == null || newClrs == null) return;
@@ -504,7 +504,7 @@ export class FootageSource {
    * ICC library for Adobe-CMS profile writes - the owning project's
    * (honouring `iccProfileDirs`) when wired, else the global default.
    */
-  _iccLib(): IccProfileLibrary {
+  private _iccLib(): IccProfileLibrary {
     if (this._project != null) {
       return this._project._iccLib();
     }
@@ -622,7 +622,7 @@ export class FootageSource {
   }
 
   /** Build the OCIO envelope AE writes for `name` (see {@link py_aep.color.ocio.ocio_color_profile_envelope | ocio_color_profile_envelope}). */
-  _ocioEnvelope(name: string): string {
+  private _ocioEnvelope(name: string): string {
     const project = this._project;
     const config = requireOcioConfig(
       project != null ? project.ocioConfigurationFile : null,
@@ -651,7 +651,7 @@ export class FootageSource {
   }
 
   /** The embedded source profile envelope (CLRS `Mcsp` Utf8), or `{}`. */
-  _embeddedEnvelope(): string {
+  private _embeddedEnvelope(): string {
     if (this._clrs == null) return "{}";
     let after: Utf8Chunk[];
     try {

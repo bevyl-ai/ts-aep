@@ -88,7 +88,7 @@ export class PngFormatOptions extends FormatOptionsBase {
   declare compression: PngCompression | number;
 
   /** Serialize `_hdr10Meta` back to the Utf8 chunk body. */
-  _syncHdr10(): void {
+  private _syncHdr10(): void {
     if (this._hdr10Utf8 != null) {
       this._hdr10Utf8.value = stringifyJson(this._hdr10Meta, { separators: [",", ":"] });
     }

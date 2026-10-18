@@ -158,19 +158,19 @@ export function readSvg(source: string | PathLike | Uint8Array): SvgDocument {
 }
 
 export class _Reader {
-  _gradients: Map<string, GradientDef>;
+  private _gradients: Map<string, GradientDef>;
   _css: CssRule[];
-  _byId: Map<string, Element>;
-  _root: Element;
+  private _byId: Map<string, Element>;
+  private _root: Element;
   // Child -> parent map for reconstructing a by-id element's accumulated
   // transform (ElementTree has no parent links). Built lazily on first
   // _element_ctm call - only <textPath> needs it, so the common SVG with
   // no text path never pays for the whole-tree walk. `_rootCtm` is the
   // base (viewBox + root transform), set by read_svg before the walk.
-  _parents: Map<Element, Element> | null;
+  private _parents: Map<Element, Element> | null;
   _rootCtm: Affine;
   _viewport: [number, number];
-  _useStack: string[];
+  private _useStack: string[];
 
   constructor(root: Element) {
     this._gradients = collectGradients(root);
@@ -202,7 +202,7 @@ export class _Reader {
    * transform) composed with every ancestor's `transform` down to and
    * including `elem`'s own.
    */
-  _elementCtm(elem: Element): Affine {
+  private _elementCtm(elem: Element): Affine {
     if (this._parents == null) {
       this._parents = new Map();
       for (const parent of this._root.iter()) {
@@ -237,7 +237,7 @@ export class _Reader {
     return out;
   }
 
-  _visit(
+  private _visit(
     elem: Element,
     ctm: Affine,
     parentStyle: Map<string, string>,
@@ -294,7 +294,7 @@ export class _Reader {
    * What this element's percentage and `em` lengths resolve against:
    * the nearest viewport and its font size.
    */
-  _ctx(style: Map<string, string>): LengthContext {
+  private _ctx(style: Map<string, string>): LengthContext {
     const fontSize = parseLength(
       style.get("font-size") ?? null,
       DEFAULT_FONT_SIZE,
@@ -309,7 +309,7 @@ export class _Reader {
    * and its viewBox maps onto that box under `preserveAspectRatio`, as
    * AE 2026 imports it. Its content is not clipped (AE clips it).
    */
-  _visitViewport(
+  private _visitViewport(
     elem: Element,
     ctm: Affine,
     style: Map<string, string>,
@@ -329,7 +329,7 @@ export class _Reader {
    * onto the `x, y` box sized by `sizing`'s width / height (falling back
    * to the viewport's own, then 100 %).
    */
-  _walkViewport(
+  private _walkViewport(
     viewport: Element,
     sizing: Element,
     ctm: Affine,
@@ -370,7 +370,7 @@ export class _Reader {
     }
   }
 
-  _visitUse(
+  private _visitUse(
     elem: Element,
     ctm: Affine,
     style: Map<string, string>,
@@ -405,7 +405,7 @@ export class _Reader {
     }
   }
 
-  _visitText(
+  private _visitText(
     elem: Element,
     ctm: Affine,
     style: Map<string, string>,
@@ -472,7 +472,7 @@ export class _Reader {
     }
   }
 
-  _makeRun(text: string, style: Map<string, string>, elem: Element | null): TextRun | null {
+  private _makeRun(text: string, style: Map<string, string>, elem: Element | null): TextRun | null {
     // Font is resolved from the cascaded/inherited style; position
     // attributes (x/y/dx/dy) come from the run's own element.
     text = _collapseWs(text);
@@ -506,7 +506,7 @@ export class _Reader {
     );
   }
 
-  _addTextPath(
+  private _addTextPath(
     textElem: Element,
     tpElem: Element,
     parentStyle: Map<string, string>,
@@ -559,7 +559,7 @@ export class _Reader {
     out.push(this._emit(subpaths, style, ctm, textElem.get("id"), opacity));
   }
 
-  _buildDrawable(
+  private _buildDrawable(
     tag: string,
     elem: Element,
     ctm: Affine,
@@ -586,7 +586,7 @@ export class _Reader {
     return drawable;
   }
 
-  _emit(
+  private _emit(
     subpaths: Subpath[],
     style: Map<string, string>,
     ctm: Affine,
@@ -620,7 +620,7 @@ export class _Reader {
    * stop's. After Effects' own SVG import ignores both attributes
    * (AE 2026: a 0.5 stroke-opacity imports at 100 %).
    */
-  _paint(value: string | null, opacity: string | null, bbox: Bbox, ctm: Affine): Paint {
+  private _paint(value: string | null, opacity: string | null, bbox: Bbox, ctm: Affine): Paint {
     if (value == null) return null;
     value = value.trim();
     if (value === "none") return null;
@@ -644,7 +644,7 @@ export class _Reader {
     return new SolidPaint([color[0], color[1], color[2], color[3] * alpha]);
   }
 
-  _stroke(style: Map<string, string>, bbox: Bbox, ctm: Affine): StrokeStyle | null {
+  private _stroke(style: Map<string, string>, bbox: Bbox, ctm: Affine): StrokeStyle | null {
     const paint = this._paint(
       style.get("stroke") ?? "none",
       style.get("stroke-opacity") ?? null,
