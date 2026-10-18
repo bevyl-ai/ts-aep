@@ -6,7 +6,6 @@ import {
   deferred,
   mod,
   assert,
-  floordiv,
   min,
   max,
   descriptor,
@@ -252,7 +251,7 @@ export class Shape {
     assert(this._shph != null && this._points != null);
     if (3 * count !== this._points.length && !this._detached) {
       throw new ValueError(
-        `this path has ${floordiv(this._points.length, 3)} vertices; to change ` +
+        `this path has ${Math.floor(this._points.length / 3)} vertices; to change ` +
           "the vertex count assign a new Shape to the property",
       );
     }
@@ -455,7 +454,7 @@ export class Shape {
     }
     let inT: number[][];
     let outT: number[][];
-    if (value.length === floordiv(this._points.length, 3)) {
+    if (value.length === Math.floor(this._points.length / 3)) {
       inT = this._storedTangents(-1);
       outT = this._storedTangents(1);
     } else {

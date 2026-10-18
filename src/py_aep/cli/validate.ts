@@ -904,25 +904,25 @@ export function compareProperty(
       }
     } else if (!(parsedEps instanceof Map)) {
       result.addDiff(`${path}.essentialPropertySource`, expEps, null, "properties");
-    } else if (getOr(expEps, "sourceType") === "AVLayer") {
-      if (!valueEquals(getOr(expEps, "name"), parsedEps.get("name") ?? null)) {
+    } else if (expEps.get("sourceType") === "AVLayer") {
+      if (!valueEquals(expEps.get("name") ?? null, parsedEps.get("name") ?? null)) {
         result.addDiff(
           `${path}.essentialPropertySource.name`,
-          getOr(expEps, "name"),
+          expEps.get("name") ?? null,
           parsedEps.get("name") ?? null,
           "properties",
         );
       }
-      const expIdx = getOr<string, ToDictValue>(expEps, "index");
+      const expIdx = expEps.get("index") ?? null;
       const parsedIdx = parsedEps.get("index") ?? null;
       if (expIdx != null && parsedIdx != null && expIdx !== parsedIdx + 1) {
         result.addDiff(`${path}.essentialPropertySource.index`, expIdx, parsedIdx + 1, "properties");
       }
-    } else if (getOr(expEps, "sourceType") === "Property") {
-      if (!valueEquals(getOr(expEps, "matchName"), parsedEps.get("matchName") ?? null)) {
+    } else if (expEps.get("sourceType") === "Property") {
+      if (!valueEquals(expEps.get("matchName") ?? null, parsedEps.get("matchName") ?? null)) {
         result.addDiff(
           `${path}.essentialPropertySource.matchName`,
-          getOr(expEps, "matchName"),
+          expEps.get("matchName") ?? null,
           parsedEps.get("matchName") ?? null,
           "properties",
         );
@@ -1298,14 +1298,14 @@ export function compareFolderHierarchy(
 ): void {
   const expectedFolders = new Map<number, Dict>();
   for (const item of expectedItems) {
-    if ((item.get("itemType") ?? null) === "FolderItem") {
+    if (item.get("itemType") === "FolderItem") {
       expectedFolders.set(getOrThrow(item, "id"), item);
     }
   }
 
   const parsedFolders = new Map<number, Dict>();
   for (const [itemId, item] of parsedItems) {
-    if (getOr(item, "typeName") === "Folder") {
+    if (item.get("typeName") === "Folder") {
       parsedFolders.set(itemId, item);
     }
   }
@@ -1384,7 +1384,7 @@ export function compareFootageItem(
 
     // AE returns native_frame_rate when conformFrameRate is 0
     result.trackField("FootageSource", "conformFrameRate", expSource.has("conformFrameRate"));
-    const expCfr = getOr<string, ToDictValue>(expSource, "conformFrameRate");
+    const expCfr = expSource.get("conformFrameRate") ?? null;
     const parsedCfr = getOr<string, ToDictValue, number>(parsedSource, "conformFrameRate", 0);
     if (expCfr != null) {
       if (!compareValues(expCfr, parsedCfr)) {
@@ -1704,7 +1704,7 @@ export function validateAep(
 
   // Get expected items
   const expectedItems: Dict[] = getOr(expected, "items", []);
-  const comps = expectedItems.filter((i: Dict) => (i.get("itemType") ?? null) === "CompItem");
+  const comps = expectedItems.filter((i: Dict) => i.get("itemType") === "CompItem");
 
   // Compare compositions
   if (verbose) console.log("\n=== Comparing Compositions ===");
@@ -1740,11 +1740,11 @@ export function validateAep(
 
   // Compare footage items
   if (verbose) console.log("\n=== Comparing Footage Items ===");
-  const expectedFootage = expectedItems.filter((i: Dict) => (i.get("itemType") ?? null) === "FootageItem");
+  const expectedFootage = expectedItems.filter((i: Dict) => i.get("itemType") === "FootageItem");
   const parsedItemsDict: Map<number, Dict> = getOr(parsed, "items", new Map());
   const parsedFootageById = new Map<number, Dict>();
   for (const [itemId, item] of parsedItemsDict) {
-    if (getOr(item, "typeName") === "Footage") parsedFootageById.set(itemId, item);
+    if (item.get("typeName") === "Footage") parsedFootageById.set(itemId, item);
   }
 
   for (const expFi of expectedFootage) {

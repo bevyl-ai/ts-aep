@@ -11,7 +11,6 @@ import {
   AttrsBase,
   Factory,
   Bytes,
-  deferred,
   decode,
   encode,
   field,
@@ -26,8 +25,7 @@ import {
   type FieldSpec,
 } from "../../pyrt/index.ts";
 import { _structFor } from "./bin_utils.ts";
-
-const _chunk = deferred<typeof import("./chunk.ts")>("py_aep/binary/chunk");
+import * as _chunk from "./chunk.ts";
 
 /**
  * The value of one `fmtField`: what `struct` unpacks for its format (a
@@ -312,8 +310,8 @@ export function boolField(kw: FmtFieldOptions<boolean> = {}): FieldSpec<boolean>
  */
 export function _structInfoUncached(cls: Function): _StructInfo | null {
   const baseNames: ReadonlySet<string> =
-    cls === _chunk().Chunk || _chunk().Chunk.isPrototypeOf(cls)
-      ? new Set(fields(_chunk().Chunk).map((f) => f.name))
+    cls === _chunk.Chunk || _chunk.Chunk.isPrototypeOf(cls)
+      ? new Set(fields(_chunk.Chunk).map((f) => f.name))
       : new Set();
   const fmtParts: string[] = [];
   const dataFields: FmtAttribute[] = [];

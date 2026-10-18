@@ -1335,7 +1335,7 @@ export class OutputModule {
 
   /** Whether the alas path points to a folder. */
   get _isFolder(): boolean {
-    return truthy(getOr(this._alasData, "target_is_folder", false));
+    return truthy(this._alasData.get("target_is_folder"));
   }
 
   /** The four-character video codec identifier. */

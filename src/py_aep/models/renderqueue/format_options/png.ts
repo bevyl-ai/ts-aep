@@ -3,7 +3,6 @@
 import {
   ValueError,
   descriptor,
-  getOr,
   int,
   jsonDumps,
   jsonLoads,
@@ -102,7 +101,7 @@ export class PngFormatOptions extends FormatOptionsBase {
    * Options dialog. Only available for 16-bit output. Read / Write.
    */
   get includeHdr10Metadata(): boolean {
-    return truthy(getOr(this._hdr10Meta, "colorMetadataPresent", false));
+    return truthy(this._hdr10Meta.get("colorMetadataPresent"));
   }
 
   set includeHdr10Metadata(value: boolean) {

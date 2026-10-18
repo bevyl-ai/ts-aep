@@ -43,11 +43,10 @@ import type { Layer } from "../models/layers/layer.ts";
 import type { Property } from "../models/properties/property.ts";
 import type { PropertyGroup } from "../models/properties/property_group.ts";
 import { deferred, valueEquals, int, jsonDumps } from "../../pyrt/index.ts";
-
-const _composition = deferred<typeof import("../models/items/composition.ts")>("py_aep/models/items/composition");
 import { FootageItem } from "../models/items/footage.ts";
 import { SolidSource } from "../models/sources/solid.ts";
 import { TextDocument } from "../models/text/text_document.ts";
+import * as _composition from "../models/items/composition.ts";
 const _layer = deferred<typeof import("../models/layers/layer.ts")>("py_aep/models/layers/layer");
 
 // AE stores this in a CPrp path node's index to mean "match by name".
@@ -356,7 +355,7 @@ export function canAddLayer(layer: AVLayer, comp: CompItem): boolean {
   const source: AVItem | null = layer.source;
   if (source instanceof FootageItem) {
     if (source.mainSource instanceof SolidSource) return false;
-  } else if (!(source instanceof _composition().CompItem)) {
+  } else if (!(source instanceof _composition.CompItem)) {
     return false;
   }
   // Only an existing MEDIA controller blocks the layer; property

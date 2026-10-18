@@ -20,7 +20,6 @@ import {
   int,
   max,
   literal,
-  sorted,
   split,
   str,
   FileExistsError,
@@ -439,7 +438,7 @@ export function validateAeRelease(value: unknown, instance: unknown = null): voi
   if (!FORMAT_VERSIONS.has(major) && major < max([...FORMAT_VERSIONS.keys()])) {
     throw new ValueError(
       `After Effects ${major} is not a release py_aep writes; ` +
-        `supported majors: ${str(sorted([...FORMAT_VERSIONS.keys()]))} and later`,
+        `supported majors: ${str([...FORMAT_VERSIONS.keys()].sort((a, b) => a - b))} and later`,
     );
   }
 }

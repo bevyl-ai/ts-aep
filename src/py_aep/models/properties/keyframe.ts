@@ -14,7 +14,6 @@ import type { Curves } from "./curves.ts";
 import type { Property } from "./property.ts";
 import {
   ValueError,
-  deferred,
   descriptor,
   getattr,
   assert,
@@ -22,8 +21,7 @@ import {
   round,
   zip,
 } from "../../../pyrt/index.ts";
-
-const _property = deferred<typeof import("./property.ts")>("py_aep/models/properties/property");
+import * as _property from "./property.ts";
 
 /**
  * Any value a {@link Property} or {@link Keyframe} can hold; which one depends on
@@ -655,7 +653,7 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
       // Reuse the property's value validation (numeric bounds + finite
       // check); it is a no-op for complex value types. Keeps NaN/inf and
       // out-of-range values out of keyframe floats just as `.value=` does.
-      _property()._validateKeyValue(prop, value);
+      _property._validateKeyValue(prop, value);
 
       // Replacing a TEXT keyframe's value must mutate the EXISTING
       // btdk-wired TextDocument in place (text documents live in the

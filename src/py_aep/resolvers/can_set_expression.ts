@@ -18,14 +18,13 @@
  * type, the comp renderer) and stay stale once saved.
  */
 
-import { AttributeError, deferred } from "../../pyrt/index.ts";
+import { AttributeError } from "../../pyrt/index.ts";
 import { getAeVersionMajor } from "../ae_version.ts";
 import { LayerType, PropertyControlType, PropertyValueType } from "../enums/index.ts";
 import { _CAMERA_NO_EXPRESSION, _CANSETEXPR_2D_ONLY, _CANSETEXPR_3D_ONLY, _CANSETEXPR_EXTRUSION_DEPTHS, _CANSETEXPR_FALSE_OVERRIDES, _CANSETEXPR_RENDERER_3D_ONLY, _LIGHT_AMBIENT_NO_EXPRESSION, _LIGHT_ENVIRONMENT_NO_EXPRESSION, _LIGHT_NO_EXPRESSION, _LIGHT_PARALLEL_NO_EXPRESSION, _LIGHT_POINT_NO_EXPRESSION, _LIGHT_SPOT_NO_EXPRESSION, _MATERIAL_COEFFICIENTS, _MODEL_LAYER_HIDDEN_MATERIALS, _PARAMETRIC_MESH_CHECKBOX_STREAMS, _PARAMETRIC_MESH_GROUP_TYPE, _PARAMETRIC_MESH_NO_EXPRESSION } from "../models/properties/overrides.ts";
 import type { Property } from "../models/properties/property.ts";
 import type { Layer } from "../models/layers/layer.ts";
-
-const _avLayer = deferred<typeof import("../models/layers/av_layer.ts")>("py_aep/models/layers/av_layer");
+import * as _avLayer from "../models/layers/av_layer.ts";
 
 // PVT sets where can_set_expression is always True / False regardless
 // of other signals.
@@ -106,7 +105,7 @@ export function resolveCanSetExpression(prop: Property): boolean {
   if (mn === "ADBE Time Remapping") {
     // Only AV layers have one.
     const layer = prop._containingLayer;
-    if (!(layer instanceof _avLayer().AVLayer)) {
+    if (!(layer instanceof _avLayer.AVLayer)) {
       // NOTE(port): Python's `cast` reads the attribute anyway, which a non-AV layer answers by child lookup.
       throw new AttributeError(`'${layer.constructor.name}' has no property 'timeRemapEnabled'`);
     }

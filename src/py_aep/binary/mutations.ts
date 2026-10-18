@@ -9,7 +9,6 @@ import {
   BytesIO,
   copy,
   encode,
-  floordiv,
   getOrThrow,
   rstrip,
   struct,
@@ -417,7 +416,7 @@ export function buildShap(
   const shph = new ShphChunk();
   shph.open = openPath;
   [shph.topLeftX, shph.topLeftY, shph.bottomRightX, shph.bottomRightY] = bbox;
-  const nVerts = floordiv(points.length, 3);
+  const nVerts = Math.floor(points.length / 3);
   const lhd3 = new Lhd3Chunk({
     count: points.length,
     itemSize: 8,

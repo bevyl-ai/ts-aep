@@ -45,10 +45,10 @@ import {
   type ClassAttributes,
 } from "../../../pyrt/index.ts";
 import type { MatchNameTypes } from "../properties/match_name_types.ts";
+import * as _avLayer from "./av_layer.ts";
+import * as _composition from "../items/composition.ts";
 
 const _synthesisCore = deferred<typeof import("../../synthesis/core.ts")>("py_aep/synthesis/core");
-const _avLayer = deferred<typeof import("./av_layer.ts")>("py_aep/models/layers/av_layer");
-const _composition = deferred<typeof import("../items/composition.ts")>("py_aep/models/items/composition");
 const _layer = deferred<typeof import("../../parsers/layer.ts")>("py_aep/parsers/layer");
 
 // logging.getLogger(__name__)
@@ -1398,7 +1398,7 @@ export class Layer extends PropertyGroup {
     comp._project._ensureUsedInLinked();
     const source = this._sourceItem;
     if (source != null && "_usedIn" in source) {
-      _avLayer()._unregisterSourceUsage(source, comp, { exclude: this });
+      _avLayer._unregisterSourceUsage(source, comp, { exclude: this });
     }
 
     // Remove chunk block from comp's chunk list
@@ -1442,7 +1442,7 @@ export class Layer extends PropertyGroup {
    */
   copyToComp(intoComp: CompItem): Layer {
     // Circular: models.items.composition -> models.layers -> layer
-    if (!(intoComp instanceof _composition().CompItem)) {
+    if (!(intoComp instanceof _composition.CompItem)) {
       throw new ValueError("Target composition must be a CompItem.");
     }
     return this._cloneInto(intoComp, { duplicate: false });

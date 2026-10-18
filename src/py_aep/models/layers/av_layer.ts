@@ -33,7 +33,7 @@ import { Layer } from "./layer.ts";
 import { AVItem } from "../items/av_item.ts";
 import { FootageItem } from "../items/footage.ts";
 import { SolidSource } from "../sources/solid.ts";
-const _composition = deferred<typeof import("../items/composition.ts")>("py_aep/models/items/composition");
+import * as _composition from "../items/composition.ts";
 const _core = deferred<typeof import("../../synthesis/core.ts")>("py_aep/synthesis/core");
 
 /**
@@ -846,7 +846,7 @@ export class AVLayer extends Layer {
     if (source == null) {
       return false;
     }
-    if (source instanceof _composition().CompItem) {
+    if (source instanceof _composition.CompItem) {
       return true;
     }
     if (source instanceof FootageItem) {
