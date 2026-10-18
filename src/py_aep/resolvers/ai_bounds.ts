@@ -1353,5 +1353,3 @@ export function footageSize(box: Box | null): [number, number] {
     Math.max(1, Math.ceil((y1 - y0) / 65536.0)),
   ];
 }
-
-export const __all__ = ["EMPTY_BOX", "footage_size", "read_ai_icc_profile", "read_ai_layer_bounds"] as const;

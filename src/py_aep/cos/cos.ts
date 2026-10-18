@@ -102,13 +102,13 @@ export function reprBytes(x: Uint8Array): string {
 
 /** The enum-helper surface `enumStr` needs (a pyrt `pyEnum`). */
 interface NamedEnum {
-  __name__: string;
+  enumName: string;
   nameOf(v: number): string;
 }
 
 // `str(member)` / `repr(member)` for an Enum member.
 export function enumStr(E: NamedEnum, v: number): string {
-  return `${E.__name__}.${E.nameOf(v)}`;
+  return `${E.enumName}.${E.nameOf(v)}`;
 }
 
 /**

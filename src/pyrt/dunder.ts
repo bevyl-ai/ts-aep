@@ -1,5 +1,5 @@
-// Python's attribute protocol in TS: descriptors (`__get__` / `__set__` /
-// `__set_name__`) installed with `descriptor()`, a missing-attribute fallback
+// Python's attribute protocol in TS: descriptors (`get` / `set` /
+// `attach`) installed with `descriptor()`, a missing-attribute fallback
 // (`_missingAttribute(name)`, Python's `__getattr__`) and an assignment hook
 // (`_assignAttribute(name, value)`, Python's `__setattr__`), both wired with
 // `pyClassHooks(Cls)`.
@@ -18,14 +18,14 @@ import { AttributeError } from "./errors.ts";
 
 /**
  * A descriptor on instances of `O` whose reads produce a `V`. `descriptor()`
- * only reads through instances; a Python-style `__get__` that also accepts
+ * only reads through instances; a Python-style `get` that also accepts
  * `null` (a class read) returns the descriptor itself there.
  */
 export interface Descriptor<O extends object = object, V = unknown> {
-  __set_name__?(owner: Function, name: string): void;
-  __get__(obj: O, owner: Function): V | Descriptor<O, V>;
-  __set__?(obj: O, value: V): void;
-  __delete__?(obj: O): void;
+  attach?(owner: Function, name: string): void;
+  get(obj: O, owner: Function): V | Descriptor<O, V>;
+  set?(obj: O, value: V): void;
+  delete?(obj: O): void;
 }
 
 /**
@@ -39,7 +39,7 @@ export type ClassAttributes<C> = Function & Omit<C, "prototype">;
 const DESCRIPTORS = new WeakMap<Function, Map<string, Descriptor>>();
 
 /**
- * Install `d` as class attribute `name` of `cls` (runs `__set_name__`).
+ * Install `d` as class attribute `name` of `cls` (runs `attach`).
  * `name` must be declared on the instance type, and `d` must read as the
  * declared type on instances of `cls`, which a generic descriptor such as
  * `new ChunkField(...)` then infers (value and owner type). `P` is read from
@@ -52,7 +52,7 @@ export function descriptor<P extends object, K extends string & keyof P>(
   d: NoInfer<Descriptor<P, P[K]>>,
 ): Descriptor<P, P[K]>;
 export function descriptor<D extends Descriptor>(cls: Function, name: string, d: D): D {
-  d.__set_name__?.(cls, name);
+  d.attach?.(cls, name);
   let own = DESCRIPTORS.get(cls);
   if (!own) DESCRIPTORS.set(cls, (own = new Map()));
   own.set(name, d);
@@ -60,11 +60,11 @@ export function descriptor<D extends Descriptor>(cls: Function, name: string, d:
     configurable: true,
     enumerable: false,
     get(this: { constructor: Function }) {
-      return d.__get__(this, this.constructor);
+      return d.get(this, this.constructor);
     },
     set(this: object, value: unknown) {
-      if (!d.__set__) throw new AttributeError(`can't set attribute '${name}'`);
-      d.__set__(this, value);
+      if (!d.set) throw new AttributeError(`can't set attribute '${name}'`);
+      d.set(this, value);
     },
   });
   return d;
@@ -240,7 +240,7 @@ export function hasInstanceDict(obj: object): boolean {
 }
 
 /** The JS protocol methods pyrt's builtins probe for in place of Python's special methods. */
-const PROTOCOL = new Set(["equals", "has"]);
+const PROTOCOL = new Set(["equals", "has", "toBoolean", "deepCopy"]);
 
 /** Python looks special methods up on the type, never through `_missingAttribute`. */
 function _isSpecial(key: string): boolean {

@@ -244,7 +244,7 @@ export function _coerceEnum(enumClass: LabeledEnum, value: SettingValue | null):
   if (typeof value === "boolean") {
     // bool is int: settings["Output Audio"] = True would silently
     // coerce to OutputAudio.OFF (== 1). Reject rather than surprise.
-    throw new TypeError(`Expected ${enumClass.__name__}, int, or str, got bool`);
+    throw new TypeError(`Expected ${enumClass.enumName}, int, or str, got bool`);
   }
   if (typeof value === "number" && Number.isInteger(value)) {
     const member = enumClass.ofOrNull(value);
@@ -254,7 +254,7 @@ export function _coerceEnum(enumClass: LabeledEnum, value: SettingValue | null):
         .map((m) => `${enumClass.nameOf(m)} (${int(m)})`)
         .join(", ");
       throw new ValueError(
-        `Invalid int value ${literal(value)} for ${enumClass.__name__}. ` +
+        `Invalid int value ${literal(value)} for ${enumClass.enumName}. ` +
           `Valid members: ${members}`,
       );
     }
@@ -270,12 +270,12 @@ export function _coerceEnum(enumClass: LabeledEnum, value: SettingValue | null):
       .map((m) => literal(enumLabel(enumClass, m)))
       .join(", ");
     throw new ValueError(
-      `Invalid string ${literal(value)} for ${enumClass.__name__}. ` +
+      `Invalid string ${literal(value)} for ${enumClass.enumName}. ` +
         `Valid labels: ${labels}`,
     );
   }
   throw new TypeError(
-    `Expected ${enumClass.__name__}, int, or str, got ${typeName(value)}`,
+    `Expected ${enumClass.enumName}, int, or str, got ${typeName(value)}`,
   );
 }
 

@@ -30,13 +30,13 @@ export class PyFloat {
   [INSPECT](): string {
     return floatRepr(this.value);
   }
-  __bool__(): boolean {
+  toBoolean(): boolean {
     return this.value !== 0;
   }
   equals(other: unknown): boolean {
     return unbox(other) === this.value;
   }
-  __deepcopy__(): PyFloat {
+  deepCopy(): PyFloat {
     return this;
   }
 }

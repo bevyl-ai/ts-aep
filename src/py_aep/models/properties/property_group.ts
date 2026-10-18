@@ -567,7 +567,7 @@ export class PropertyGroup extends PropertyBase {
   /**
    * Flip synthetic flags so backing chunks become visible to write_aep().
    *
-   * Called automatically by `ChunkField.__set__` on first end-user write
+   * Called automatically by `ChunkField.set` on first end-user write
    * to a synthesized group. After this method, the group is
    * indistinguishable from one that was parsed from binary.
    */

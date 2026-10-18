@@ -199,13 +199,13 @@ export class ParaMeshField<T extends number | boolean = number> {
     this._propertyName = propertyName;
   }
 
-  __get__(obj: ParametricMeshOptions | ParametricBevelOptions | null, objtype: Function): T | this {
+  get(obj: ParametricMeshOptions | ParametricBevelOptions | null, objtype: Function): T | this {
     if (obj == null) return this;
     const value = obj._properties(this._propertyName).value;
     return value;
   }
 
-  __set__(obj: ParametricMeshOptions | ParametricBevelOptions, value: T): void {
+  set(obj: ParametricMeshOptions | ParametricBevelOptions, value: T): void {
     obj._properties(this._propertyName).value = value;
   }
 }

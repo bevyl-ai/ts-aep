@@ -1097,7 +1097,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
   /**
    * Flip synthetic flags so backing chunks become visible to write_aep().
    *
-   * Called automatically by `ChunkField.__set__` on first end-user write
+   * Called automatically by `ChunkField.set` on first end-user write
    * to a synthesized property. After this method, the property is
    * indistinguishable from one that was parsed from binary.
    */
@@ -2709,7 +2709,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    *
    * The `__dict__` overrides of `_noValue` / `_color` / `_vector` /
    * `dimensions` are not in the key. They are set once at parse or
-   * synthesis time before any read, and `ChunkField.__set__` pops them
+   * synthesis time before any read, and `ChunkField.set` pops them
    * on a real write, so they cannot change under a live memo.
    *
    * Uncached this ran on every `propertyValueType` and

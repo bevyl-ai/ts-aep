@@ -92,16 +92,16 @@ export class _EnumParam {
     this._enumCls = enumCls;
   }
 
-  __set_name__(owner: Function, name: string): void {
+  attach(owner: Function, name: string): void {
     this._name = name;
   }
 
-  __get__(obj: XmlFormatOptions | null, objtype?: Function | null): number | null | this {
+  get(obj: XmlFormatOptions | null, objtype?: Function | null): number | null | this {
     if (obj == null) return this;
     return obj._enumParam(this._key, this._enumCls);
   }
 
-  __set__(obj: XmlFormatOptions, value: number | null): void {
+  set(obj: XmlFormatOptions, value: number | null): void {
     obj._setEnumParam(this._key, value, this._enumCls);
   }
 }
@@ -121,11 +121,11 @@ export class _ScalarParam {
     this._key = key;
   }
 
-  __set_name__(owner: Function, name: string): void {
+  attach(owner: Function, name: string): void {
     this._name = name;
   }
 
-  __get__(obj: XmlFormatOptions | null, objtype?: Function | null): number | string | null | this {
+  get(obj: XmlFormatOptions | null, objtype?: Function | null): number | string | null | this {
     if (obj == null) return this;
     const raw = getOr(obj.params, this._key, "");
     if (!raw) return null;
@@ -137,7 +137,7 @@ export class _ScalarParam {
     }
   }
 
-  __set__(obj: XmlFormatOptions, value: number | null): void {
+  set(obj: XmlFormatOptions, value: number | null): void {
     if (value == null) return;
     validateInt(value);
     obj._checkParamRule(this._key, value);
@@ -296,7 +296,7 @@ export class ParamsDict extends Map<string, string> {
   // `|` (__or__) needs no override: it returns a new plain dict rather
   // than mutating, so it cannot desync the XML. Only `|=` does.
   /** Python `__ior__` (`|=`) */
-  __ior__(other: DictSource): ParamsDict {
+  merge(other: DictSource): ParamsDict {
     this.update(other);
     return this;
   }
@@ -478,7 +478,7 @@ export class XmlFormatOptions extends FormatOptionsBase {
         .join(", ");
       throw new ValueError(
         `Invalid value ${literal(value)} for ${literal(key)}. ` +
-          `Valid ${enumCls.__name__} values: ${members}`,
+          `Valid ${enumCls.enumName} values: ${members}`,
       );
     }
     const checked = enumCls != null ? enumCls.of(intValue) : intValue;

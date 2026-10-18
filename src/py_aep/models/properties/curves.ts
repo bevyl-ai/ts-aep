@@ -96,7 +96,7 @@ export class _NaturalSpline {
   }
 
   // NOTE(port): Python `__call__`; no rulebook mapping, so callers use `.__call__(x)` explicitly.
-  __call__(x: number): number {
+  evaluate(x: number): number {
     const xs = this.xs;
     const ys = this.ys;
     const m = this.m;
@@ -300,7 +300,7 @@ export class Curves {
     const ch = getOrThrow(this._channels, channel);
     let y: number;
     if (this.usesPoints) {
-      y = ch._spline.__call__(x * 255.0) / 255.0;
+      y = ch._spline.evaluate(x * 255.0) / 255.0;
     } else {
       const f = Math.min(Math.max(x, 0.0), 1.0) * 255.0;
       const i = Math.min(int(Math.floor(f)), 254);

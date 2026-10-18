@@ -936,16 +936,16 @@ export class RangeField<T extends InstanceValue> {
     this.readOnly = readOnly;
   }
 
-  __set_name__(owner: Function, name: string): void {
+  attach(owner: Function, name: string): void {
     this.publicName = name;
   }
 
-  __get__(obj: CharacterRange | null, objtype?: Function | null): T | null | this {
+  get(obj: CharacterRange | null, objtype?: Function | null): T | null | this {
     if (obj == null) return this;
     return obj._resolveMixed(this.kind, this.key, this.transform, this.default_, this.gate);
   }
 
-  __set__(obj: CharacterRange, value: T | null): void {
+  set(obj: CharacterRange, value: T | null): void {
     if (this.readOnly) throw new AttributeError(`${literal(this.publicName)} is read-only.`);
     let raw: CosNode = null;
     if (value != null) {
@@ -1015,7 +1015,7 @@ type StyleAttr = "_charStyle" | "_paraStyle";
  * override behavior.
  */
 export class DocumentWideCosField<T extends InstanceValue> extends CosField<T, StyleAttr, TextDocument> {
-  __set__(obj: TextDocument, value: T | null): void {
+  set(obj: TextDocument, value: T | null): void {
     const isChar = this.dictAttr === "_charStyle";
     const backing = obj[this.dictAttr];
     let runs: CosNode = null;
@@ -1025,7 +1025,7 @@ export class DocumentWideCosField<T extends InstanceValue> extends CosField<T, S
     if (!Array.isArray(runs) || !runs.length) {
       // Single style dict (or a parser fallback with no runs): the
       // base descriptor's first-run write is already document-wide.
-      super.__set__(obj, value);
+      super.set(obj, value);
       return;
     }
     this._checkWritable(obj);

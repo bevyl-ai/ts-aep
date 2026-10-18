@@ -182,15 +182,15 @@ export function validateEnum(enumCls: EnumHelpers<number>): Validator {
     // Before the int branch: `bool` subclasses `int`, so `om.format =
     // True` would otherwise silently select the member whose value is 1.
     if (typeof value === "boolean") {
-      throw new TypeError(`expected a ${enumCls.__name__}, got ${typeName(value)}`);
+      throw new TypeError(`expected a ${enumCls.enumName}, got ${typeName(value)}`);
     }
     if (typeof value === "number" && Number.isInteger(value)) {
       if (enumCls.ofOrNull(value) === null) {
-        throw new ValueError(`${literal(value)} is not a valid ${enumCls.__name__} value`);
+        throw new ValueError(`${literal(value)} is not a valid ${enumCls.enumName} value`);
       }
       return;
     }
-    throw new TypeError(`expected a ${enumCls.__name__}, got ${typeName(value)}`);
+    throw new TypeError(`expected a ${enumCls.enumName}, got ${typeName(value)}`);
   };
 
   _ENUM_VALIDATORS.set(enumCls, _validator);

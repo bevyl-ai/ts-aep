@@ -33,7 +33,7 @@ export function auto(): typeof AUTO {
 type Resolved<M> = { readonly [K in keyof M]: M[K] extends typeof AUTO ? number : M[K] };
 
 export type EnumHelpers<V> = {
-  readonly __name__: string;
+  readonly enumName: string;
   /** `Enum(value)` */
   of(value: unknown): V;
   /** `Enum(value)`, or `null` where it would raise ValueError. */
@@ -47,7 +47,7 @@ export type EnumHelpers<V> = {
   /** `Enum[name]` */
   byName(name: string): V;
   /** `Enum.__members__` (aliases included). */
-  readonly __members__: ReadonlyMap<string, V>;
+  readonly allMembers: ReadonlyMap<string, V>;
 };
 
 export type EnumValue<E> = E extends EnumHelpers<infer V> ? V : never;
@@ -73,7 +73,7 @@ export function pyEnum<const M extends Record<string, unknown>, X extends Record
   }
   const self = Object.fromEntries(byName);
   const helpers: EnumHelpers<V> = {
-    __name__: name,
+    enumName: name,
     of(value: unknown): V {
       const found = helpers.ofOrNull(value);
       if (found !== null) return found;
@@ -81,7 +81,7 @@ export function pyEnum<const M extends Record<string, unknown>, X extends Record
     },
     ofOrNull(value: unknown): V | null {
       if (helpers.has(value)) return value;
-      if (typeof self._missing_ === "function") return self._missing_(value) ?? null;
+      if (typeof self.missing === "function") return self.missing(value) ?? null;
       return null;
     },
     nameOf(value: V): string {
@@ -100,7 +100,7 @@ export function pyEnum<const M extends Record<string, unknown>, X extends Record
       if (v === undefined) throw new KeyError(`'${n}'`);
       return v;
     },
-    __members__: byName,
+    allMembers: byName,
   };
   for (const [k, v] of Object.entries(helpers)) Object.defineProperty(self, k, { value: v, enumerable: false });
   if (methods) {

@@ -86,11 +86,11 @@ export class ByteDifference {
     this.byte1 = byte1;
     this.byte2 = byte2;
     this.bitPosition = bitPosition;
-    this.__post_init__();
+    this._deriveFields();
   }
 
   /** Calculate bit position if only one bit differs. */
-  __post_init__(): void {
+  _deriveFields(): void {
     const xor = this.byte1 ^ this.byte2;
     if (xor !== 0 && (xor & (xor - 1)) === 0) {
       // Check if only one bit is set
@@ -142,12 +142,12 @@ export class MultiFileDifference {
     this.offset = offset;
     this.values = values;
     this.bitPosition = bitPosition;
-    this.__post_init__();
+    this._deriveFields();
   }
 
   /** Calculate bit position if exactly two distinct non-missing values
    * differ by one bit. */
-  __post_init__(): void {
+  _deriveFields(): void {
     const distinct = new Set(this.values.filter((v) => v !== MISSING_BYTE));
     if (distinct.size === 2) {
       const [a, b_] = sorted(distinct);

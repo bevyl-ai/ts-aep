@@ -1080,12 +1080,12 @@ export class Layer extends PropertyGroup {
     // (`buildLocalMatrix`); undo the two aspect scalings to decompose
     // the square-pixel `T(Sp pos) . R . S . T(-Sl anchor)`.
     const newLocal = aspectScale(newSpace)
-      .__matmul__(newParentInverse)
-      .__matmul__(childWorld)
-      .__matmul__(aspectScale(1.0 / ownAspect));
+      .multiply(newParentInverse)
+      .multiply(childWorld)
+      .multiply(aspectScale(1.0 / ownAspect));
     // Maps a point from the old parent's space into the new one; used by
     // both keyframed-Position branches below.
-    const parentRemap = newParentInverse.__matmul__(oldParentWorld);
+    const parentRemap = newParentInverse.multiply(oldParentWorld);
 
     const transform = this.transform;
 
@@ -1247,7 +1247,7 @@ export class Layer extends PropertyGroup {
     }
     const rotationDelta = rotationPart(squarePixels(newParentWorld, ...newAspects))
       .inverse()
-      .__matmul__(rotationPart(squarePixels(oldParentWorld, ...oldAspects)));
+      .multiply(rotationPart(squarePixels(oldParentWorld, ...oldAspects)));
     if (!is3d) {
       // A 2D layer has no Orientation to use, so AE puts the rotation
       // into Rotate Z (measured: a 2D child under a 30-degree parent

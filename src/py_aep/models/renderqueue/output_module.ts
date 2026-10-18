@@ -112,7 +112,7 @@ export function _nameOrStr(key: string | null, v: RuleValue): string {
 // `n`; both are the same number here, so a member of the key's enum always reprs as a member.
 export function _valueRepr(key: string, v: RuleValue): string {
   const E = _KEY_ENUM.get(key);
-  if (E != null && E.has(v)) return `<${E.__name__}.${E.nameOf(v)}: ${v}>`;
+  if (E != null && E.has(v)) return `<${E.enumName}.${E.nameOf(v)}: ${v}>`;
   return literal(v);
 }
 

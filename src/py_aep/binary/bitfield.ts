@@ -29,11 +29,11 @@ export class BitField<F extends string = string> {
     this.mask = lshift(1, bit);
   }
 
-  __get__(obj: Record<F, number>, objtype: Function | null = null): boolean {
+  get(obj: Record<F, number>, objtype: Function | null = null): boolean {
     return and(getattr(obj, this.byteField), this.mask) !== 0;
   }
 
-  __set__(obj: Record<F, number>, value: boolean): void {
+  set(obj: Record<F, number>, value: boolean): void {
     const raw = getattr(obj, this.byteField);
     if (value) {
       obj[this.byteField] = or(raw, this.mask);
