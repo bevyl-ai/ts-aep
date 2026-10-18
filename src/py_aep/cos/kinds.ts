@@ -10,7 +10,7 @@
  * type than {@link CosNode} after one of them has run on the value.
  */
 
-import { AttributeError, KeyError, BoxedFloat, at, float, literal, typeName } from "../../pyrt/index.ts";
+import { AttributeError, KeyError, BoxedFloat, at, literal, typeName } from "../../pyrt/index.ts";
 import { CosString, type CosDict, type CosNode } from "./cos.ts";
 
 /** A COS value kind: a guard that narrows a value to the kind's type. */
@@ -42,8 +42,8 @@ function bytesText(x: Uint8Array): string {
 
 /** Python `float(x)` on a COS value: `TypeError` for every kind `float()` refuses. */
 export function cosFloat(x: CosNode): number {
-  if (is(pyNumber, x) || is(pyStr, x)) return float(x);
-  if (x instanceof Uint8Array) return float(bytesText(x));
+  if (is(pyNumber, x) || is(pyStr, x)) return Number(x);
+  if (x instanceof Uint8Array) return Number(bytesText(x));
   throw new TypeError(`float() argument must be a string or a real number, not '${typeName(x)}'`);
 }
 
@@ -59,7 +59,7 @@ export function cosInt(x: CosNode): number {
  * behind an int, bool or float; `TypeError` for every other kind.
  */
 export function cosNum(x: CosNode): number {
-  if (is(pyNumber, x)) return float(x);
+  if (is(pyNumber, x)) return Number(x);
   throw new TypeError(`unsupported operand type(s) for numeric operation: '${typeName(x)}'`);
 }
 
@@ -167,7 +167,7 @@ export function cosInsert(x: CosNode, i: number, item: CosNode): void {
  */
 export function cosIn(x: CosNode | undefined, ints: ReadonlySet<number>): boolean {
   if (x === undefined || x == null) return false;
-  if (is(pyNumber, x)) return ints.has(float(x));
+  if (is(pyNumber, x)) return ints.has(Number(x));
   if (typeof x === "string" || x instanceof String || x instanceof Uint8Array) return false;
   throw new TypeError(`unhashable type: '${typeName(x)}'`);
 }
@@ -189,12 +189,12 @@ export function pyNum(x: CosNode): PyNum {
 
 /** Python `a + b` / `a - b` on numbers: a float (kept boxed) when either side is one. */
 export function pyAdd(a: PyNum, b: PyNum): PyNum {
-  const sum = float(a) + float(b);
+  const sum = Number(a) + Number(b);
   return isFloat(a) || isFloat(b) ? new BoxedFloat(sum) : sum;
 }
 
 export function pySub(a: PyNum, b: PyNum): PyNum {
-  const diff = float(a) - float(b);
+  const diff = Number(a) - Number(b);
   return isFloat(a) || isFloat(b) ? new BoxedFloat(diff) : diff;
 }
 

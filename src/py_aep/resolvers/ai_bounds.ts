@@ -44,14 +44,12 @@ import {
   Bytes,
   bytesEqual,
   decode,
-  float,
   getOrThrow,
   numStr,
   truthyOr,
   valueEquals,
   setdefault,
   warn,
-  round,
   isReal,
   ascii } from "../../pyrt/index.ts";
 
@@ -336,7 +334,7 @@ export class _Document {
   number(value: CosNode, default_: number = 0.0): number {
     const resolved = this.resolve(value);
     if (!isReal(resolved)) return default_;
-    return float(resolved);
+    return Number(resolved);
   }
 
   get(mapping: CosNode, key: string, default_: CosNode = null): CosNode {
@@ -545,13 +543,8 @@ export function* _tokenize(
     if (Bytes.includes(_NUMBER_START, char)) {
       let end = pos;
       while (end < size && Bytes.includes(NUMBER_CHARS, data.subarray(end, end + 1))) end += 1;
-      let value: number;
-      try {
-        value = float(decode(data.subarray(pos, end), "latin-1"));
-      } catch (e) {
-        if (!(e instanceof ValueError)) throw e;
-        value = 0.0;
-      }
+      const parsed = Number(decode(data.subarray(pos, end), "latin-1"));
+      const value = Number.isNaN(parsed) ? 0.0 : parsed;
       yield ["num", value];
       pos = end;
       continue;
@@ -711,12 +704,8 @@ export function _nextSimple(data: Uint8Array, pos: number): [CosNode, number] | 
   if (Bytes.includes(_NUMBER_START, char)) {
     let end = pos;
     while (end < size && Bytes.includes(NUMBER_CHARS, data.subarray(end, end + 1))) end += 1;
-    try {
-      return [float(decode(data.subarray(pos, end), "latin-1")), end];
-    } catch (e) {
-      if (!(e instanceof ValueError)) throw e;
-      return [0.0, end];
-    }
+    const parsed = Number(decode(data.subarray(pos, end), "latin-1"));
+    return [Number.isNaN(parsed) ? 0.0 : parsed, end];
   }
   let end = pos;
   while (end < size) {
@@ -1170,7 +1159,7 @@ export class _Measurer {
     const scale = gs.hScale / 100.0;
     for (const item of items) {
       if (isReal(item)) {
-        const shift = -float(item) / 1000.0 * gs.size * scale;
+        const shift = -Number(item) / 1000.0 * gs.size * scale;
         textMatrix = _matMul([1.0, 0.0, 0.0, 1.0, shift, 0.0], textMatrix);
         continue;
       }
@@ -1341,7 +1330,7 @@ export function readAiIccProfile(file: PathLike, data: Uint8Array | null = null)
  * @param box - An entry of `readAiLayerBounds`, or `null` for an empty layer.
  */
 export function footageSize(box: Box | null): [number, number] {
-  const [x0, y0, x1, y1] = (box == null ? EMPTY_BOX : box).map((v) => round(v * 65536));
+  const [x0, y0, x1, y1] = (box == null ? EMPTY_BOX : box).map((v) => Math.round(v * 65536));
   return [
     Math.max(1, Math.ceil((x1 - x0) / 65536.0)),
     Math.max(1, Math.ceil((y1 - y0) / 65536.0)),

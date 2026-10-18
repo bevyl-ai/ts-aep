@@ -1,6 +1,6 @@
 /** SVG root parsing: canvas size and the viewBox origin transform. */
 
-import { float, valueEquals } from "../../pyrt/index.ts";
+import { valueEquals } from "../../pyrt/index.ts";
 import { NUMBER_RE, parseLength } from "./_util.ts";
 import { Affine } from "./transform.ts";
 
@@ -17,7 +17,7 @@ export type ViewBox = readonly [number, number, number, number];
  */
 export function _viewBox(value: string | null): ViewBox | null {
   if (!value) return null;
-  const nums = Array.from(value.matchAll(NUMBER_RE), (n) => float(n[0]));
+  const nums = Array.from(value.matchAll(NUMBER_RE), (n) => Number(n[0]));
   if (nums.length !== 4 || !nums.every((n) => Number.isFinite(n))) return null;
   if (nums[2] <= 0 || nums[3] <= 0) return null;
   return [nums[0], nums[1], nums[2], nums[3]];

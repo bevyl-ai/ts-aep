@@ -32,7 +32,6 @@ import {
   Bytes,
   decode,
   encode,
-  float,
   setdefault,
   ValueError, compare } from "../../pyrt/index.ts";
 import type { Path } from "../../pyrt/index.ts";
@@ -112,7 +111,7 @@ export function parseHexValue(value: string): Uint8Array {
 export function parseNumberText(text: string): number {
   const stripped = text.trim();
   // "30.0" and "30" both read as 30: integral values are plain numbers. `+ 0` turns "-0" into 0.
-  return /^[+-]?\d+$/.test(stripped) ? Number(stripped) + 0 : float(stripped);
+  return /^[+-]?\d+$/.test(stripped) ? Number(stripped) + 0 : Number(stripped);
 }
 
 /** Decode a preference value as text (hex escapes become UTF-8). */

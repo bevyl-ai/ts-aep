@@ -10,7 +10,6 @@
 import { NUMBER_RE } from "./_util.ts";
 import { UnsupportedSVGError } from "./errors.ts";
 import {
-  float,
   islower,
   isspace,
   valueEquals,
@@ -174,7 +173,7 @@ export class _PathParser {
       if (this._i >= this._tokens.length || _COMMANDS.has(this._tokens[this._i])) {
         throw new UnsupportedSVGError("Path data ended mid-command");
       }
-      args.push(float(this._tokens[this._i]));
+      args.push(Number(this._tokens[this._i]));
       this._i += 1;
     }
     return args;

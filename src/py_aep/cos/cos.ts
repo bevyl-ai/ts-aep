@@ -9,7 +9,6 @@ import {
   auto,
   Bytes,
   decode,
-  float,
   isReal,
   unbox,
   IndexError,
@@ -653,7 +652,7 @@ export class CosParser {
       }
     }
     // Boxed so an integral float ("2.0") stays a float through copies and re-serialization.
-    return new Token(TokenType.Number, boxFloat(float(head)));
+    return new Token(TokenType.Number, boxFloat(Number(head)));
   }
 
   lexKeyword(char: number): Token {

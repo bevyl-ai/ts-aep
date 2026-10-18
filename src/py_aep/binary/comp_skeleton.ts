@@ -20,7 +20,7 @@ import { ClassicPrdaChunk, PrinChunk } from "./misc_chunks.ts";
 import { buildGideList, buildItemIdChunks, buildOvdg, buildOvg2 } from "./mutations.ts";
 import { CdatChunk, OtdaChunk, Tdb4Chunk, TdmnChunk, TdsbChunk, TdsnChunk, TdumChunk } from "./property_chunks.ts";
 import { S2Chunk, S4Chunk, U1Chunk, U4Chunk, Utf8Chunk } from "./scalar_chunks.ts";
-import { Bytes, float, literal, round, ValueError } from "../../pyrt/index.ts";
+import { Bytes, literal, ValueError } from "../../pyrt/index.ts";
 
 /** Build the `fvdv` ... `fifl` view-data septet AE writes after every
  * item's `LIST:Item` (and twice after each comp viewer layer). */
@@ -74,7 +74,7 @@ export function _buildTdbs(spec: PropSpec, env: Record<string, number>): ListChu
   const { cdat, tdum, tduM } = spec;
   if (cdat !== undefined) {
     chunks.push(
-      new CdatChunk({ values: cdat.map((v) => float(_evaluate(v, env))) }),
+      new CdatChunk({ values: cdat.map((v) => Number(_evaluate(v, env))) }),
     );
   }
   if (tdum !== undefined) {
@@ -117,7 +117,7 @@ export function _buildTdgp(
     } else if (kind === "prop") {
       chunks.push(_buildTdbs(body, env));
     } else if (kind === "orientation") {
-      const otdaValues = body.otda.map((v) => float(_evaluate(v, env)));
+      const otdaValues = body.otda.map((v) => Number(_evaluate(v, env)));
       const { otda: _otda, ...inner } = body;
       const otky = new ListChunk({
         listType: "otky",
@@ -215,7 +215,7 @@ export function _buildCif(listType: string): ListChunk {
  * 16.16-accurate.
  */
 export function _frameUnits(seconds: number, timebase: number, unitsPerFrame: number): number {
-  const units = round(seconds * timebase);
+  const units = Math.round(seconds * timebase);
   return Math.floor((units + Math.floor(unitsPerFrame / 2)) / unitsPerFrame) * unitsPerFrame;
 }
 

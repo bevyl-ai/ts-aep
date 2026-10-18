@@ -35,7 +35,7 @@ import { _EMPTY_CDAT_PAD, GRADIENT_KIND, MARKER_KIND, ORIENTATION_KIND, SHAPE_KI
 import { PropertyBase } from "./property_base.ts";
 import { Shape } from "./shape.ts";
 import type { PropertyGroup } from "./property_group.ts";
-import { deepcopy, getOrThrow, isclose, valueEquals, warn, round, ValueError, IndexError, AttributeError, NotImplementedError, StopIteration, assert, literal, zip, float, ord, descriptor, typeName, type ClassAttributes, truthyOr } from "../../../pyrt/index.ts";
+import { deepcopy, getOrThrow, isclose, valueEquals, warn, ValueError, IndexError, AttributeError, NotImplementedError, StopIteration, assert, literal, zip, ord, descriptor, typeName, type ClassAttributes, truthyOr } from "../../../pyrt/index.ts";
 import { AVItem } from "../items/av_item.ts";
 import { FootageItem } from "../items/footage.ts";
 import { resolveEssentialPropertyController, resolveEssentialPropertySource } from "../../resolvers/essential_properties.ts";
@@ -1596,7 +1596,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     //    ExtendScript-style value (raw 2-dim lists pass through).
     if (this._isVfAxis && (typeof value === "number" || typeof value === "boolean")) {
       const tag = this._vfAxisTagRaw();
-      if (tag != null) return [float(value), tag];
+      if (tag != null) return [Number(value), tag];
       return value;
     }
     // 3. Reverse effect point (pixel coordinates -> 0-1 fraction)
@@ -3452,9 +3452,9 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    */
   _keyframeUnitsAt(time: number): number {
     let timebase: number = this._layerTimebase;
-    if (timebase !== 0) return round(this._evaluatedLayerTime(time) * timebase);
+    if (timebase !== 0) return Math.round(this._evaluatedLayerTime(time) * timebase);
     timebase = _timebaseUnits(this._keyframeFrameRate());
-    return round(((time - this._startTimeOffset) / this._timeStretch) * timebase);
+    return Math.round(((time - this._startTimeOffset) / this._timeStretch) * timebase);
   }
 
   /**

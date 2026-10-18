@@ -39,7 +39,6 @@ import {
   getOrThrow,
   truthyOr,
   literal,
-  round,
   warn,
   type PathLike,
   PurePosixPath,
@@ -1000,7 +999,7 @@ export class FileSource extends FootageSource {
       sspc._reservedBa = Uint8Array.of(0x01, 0x01);
     }
     if (isSequence) {
-      _storeFramesOverRate(sspc, round(duration * frameRate), frameRate);
+      _storeFramesOverRate(sspc, Math.round(duration * frameRate), frameRate);
     }
 
     // Route through variant dispatch so a recognized asset type (e.g.

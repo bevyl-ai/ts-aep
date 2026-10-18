@@ -23,12 +23,10 @@ import {
   bytesEqual,
   concat,
   decode,
-  float,
   getOrThrow,
   truthy,
   valueEquals,
   literal,
-  round,
   struct,
   compositeKey,
   type FileReader,
@@ -1013,7 +1011,7 @@ export function _probeGif(fp: ProbeStream): MediaInfo {
     width,
     height,
     duration,
-    frameRate: round(frames / duration, 3),
+    frameRate: Number((frames / duration).toFixed(3)),
     hasAlpha: true,
     depth,
   });
@@ -1553,7 +1551,7 @@ export function _probeMov(fp: ProbeStream, undecodable: ReadonlySet<string> = ne
           [samples, ticks] = _fragmentTotals(fp, trackId);
         }
         if (mts && ticks) {
-          frameRate = round((mts * samples) / ticks, 3);
+          frameRate = Number(((mts * samples) / ticks).toFixed(3));
           duration = ticks / mts; // AE uses the video track's duration
         } else if (mts && mdur) {
           duration = mdur / mts;
@@ -2360,13 +2358,13 @@ export const _VECTOR_DEPTH = _colorDepth(true, 8);
 export function _probePdf(fp: ProbeStream): MediaInfo {
   const m = _MEDIABOX_RE.exec(_latin1(fp.read()));
   if (m == null) return new MediaInfo({ hasAlpha: true, depth: _VECTOR_DEPTH });
-  const x0 = float(m[1]);
-  const y0 = float(m[2]);
-  const x1 = float(m[3]);
-  const y1 = float(m[4]);
+  const x0 = Number(m[1]);
+  const y0 = Number(m[2]);
+  const x1 = Number(m[3]);
+  const y1 = Number(m[4]);
   return new MediaInfo({
-    width: round(x1 - x0),
-    height: round(y1 - y0),
+    width: Math.round(x1 - x0),
+    height: Math.round(y1 - y0),
     hasAlpha: true,
     depth: _VECTOR_DEPTH,
   });
@@ -2381,9 +2379,9 @@ export function _probeEps(fp: ProbeStream): MediaInfo {
     if (Bytes.startsWith(line, ascii("%%HiResBoundingBox:"))) {
       const nums = Bytes.split(Bytes.split(line, ascii(":"), 1)[1]);
       if (nums.length >= 4) {
-        const [llx, lly, urx, ury] = nums.slice(0, 4).map((n) => float(decode(n, "ascii")));
-        width = round(urx - llx);
-        height = round(ury - lly);
+        const [llx, lly, urx, ury] = nums.slice(0, 4).map((n) => Number(decode(n, "ascii")));
+        width = Math.round(urx - llx);
+        height = Math.round(ury - lly);
         hires = true;
       }
     } else if (!hires && Bytes.startsWith(line, ascii("%%BoundingBox:"))) {
@@ -2391,9 +2389,9 @@ export function _probeEps(fp: ProbeStream): MediaInfo {
       if (!bytesEqual(rest, ascii("(atend)"))) {
         const nums = Bytes.split(rest);
         if (nums.length >= 4) {
-          const [llx, lly, urx, ury] = nums.slice(0, 4).map((n) => float(decode(n, "ascii")));
-          width = round(urx - llx);
-          height = round(ury - lly);
+          const [llx, lly, urx, ury] = nums.slice(0, 4).map((n) => Number(decode(n, "ascii")));
+          width = Math.round(urx - llx);
+          height = Math.round(ury - lly);
         }
       }
     } else if (Bytes.startsWith(line, ascii("%%EndComments"))) {
@@ -2535,20 +2533,20 @@ export function _probeWmv(fp: ProbeStream): MediaInfo {
   const avg = avgFrameTime.get(videoStream) ?? 0;
   const frames = metadata.get(compositeKey(videoStream, "NumberOfFrames")) ?? 0;
   if (avg) {
-    frameRate = round(1e7 / avg, 3);
+    frameRate = Number((1e7 / avg).toFixed(3));
   } else if (frames > 1 && sendDuration) {
-    frameRate = round((frames - 1) / sendDuration, 3);
+    frameRate = Number(((frames - 1) / sendDuration).toFixed(3));
   }
 
   const aspectX = metadata.get(compositeKey(videoStream, "AspectRatioX")) ?? 0;
   const aspectY = metadata.get(compositeKey(videoStream, "AspectRatioY")) ?? 0;
-  const pixelAspect = aspectX && aspectY ? round(aspectX / aspectY, 5) : 1.0;
+  const pixelAspect = aspectX && aspectY ? Number((aspectX / aspectY).toFixed(5)) : 1.0;
 
   // AE reports the Send Duration rounded out to a whole frame, plus one:
   // a 1.96 s / 25 fps stream imports as 50 frames = 2.0 s, and the same
   // stream relabelled 29.97 fps imports as 60 frames = 2.002002 s.
   let duration: number;
-  if (frameRate && sendDuration) duration = (round(sendDuration * frameRate) + 1) / frameRate;
+  if (frameRate && sendDuration) duration = (Math.round(sendDuration * frameRate) + 1) / frameRate;
   else if (sendDuration) duration = sendDuration;
   else duration = Math.max(0.0, playDuration - preroll);
   return new MediaInfo({

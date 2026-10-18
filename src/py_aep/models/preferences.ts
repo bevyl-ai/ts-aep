@@ -10,13 +10,10 @@ import {
   Path,
   type PathLike,
   KeyError,
-  ValueError,
   Bytes,
   decode,
-  float,
   getOrThrow,
   literal,
-  round,
   compositeKey,
   zip,
   typeName,
@@ -289,17 +286,11 @@ export function _defaultOutPoint(preferences: Preferences, key: string): number 
   });
   const parts = raw.split("/");
   if (parts.length !== 2) return null;
-  // try/except ValueError around float(): None when either half is malformed.
-  const valueScale = (() => {
-    try {
-      return [float(parts[0]), float(parts[1])] as const;
-    } catch (e) {
-      if (e instanceof ValueError) return null;
-      throw e;
-    }
-  })();
-  if (valueScale == null) return null;
-  const [value, scale] = valueScale;
+  // null when either half is not a number.
+  if (!parts[0].trim() || !parts[1].trim()) return null;
+  const value = Number(parts[0]);
+  const scale = Number(parts[1]);
+  if (Number.isNaN(value) || Number.isNaN(scale)) return null;
   if (scale === 0 || value <= 0) return null;
   return value / scale;
 }
@@ -355,7 +346,7 @@ export function applyTextStylePrefs(document: TextDocument, preferences: Prefere
   const tracking = number("Tracking");
   if (tracking != null && differs(document.tracking, tracking)) {
     // tracking is an integer field, unlike the float Size/Baseline Shift.
-    document.tracking = round(tracking);
+    document.tracking = Math.round(tracking);
   }
 
   const baselineShift = number("Baseline Shift");

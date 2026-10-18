@@ -38,7 +38,6 @@ import {
   valueEquals,
   truthyOr,
   literal,
-  round,
   warn,
   type ClassAttributes,
 } from "../../../pyrt/index.ts";
@@ -721,7 +720,7 @@ export class Layer extends PropertyGroup {
    * (frames). Read / Write.
    */
   get frameInPoint(): number {
-    return round(this.inPoint * this.containingComp.frameRate);
+    return Math.round(this.inPoint * this.containingComp.frameRate);
   }
 
   set frameInPoint(value: number) {
@@ -734,7 +733,7 @@ export class Layer extends PropertyGroup {
    * (frames). Read / Write.
    */
   get frameOutPoint(): number {
-    return round(this.outPoint * this.containingComp.frameRate);
+    return Math.round(this.outPoint * this.containingComp.frameRate);
   }
 
   set frameOutPoint(value: number) {
@@ -747,7 +746,7 @@ export class Layer extends PropertyGroup {
    * (frames). Read / Write.
    */
   get frameStartTime(): number {
-    return round(this.startTime * this.containingComp.frameRate);
+    return Math.round(this.startTime * this.containingComp.frameRate);
   }
 
   set frameStartTime(value: number) {

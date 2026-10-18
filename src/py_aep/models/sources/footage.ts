@@ -8,7 +8,6 @@ import {
   floatRepr,
   compare,
   literal,
-  round,
   type ClassAttributes,
 } from "../../../pyrt/index.ts";
 import { toDividendDivisor } from "../../binary/bin_utils.ts";
@@ -72,9 +71,9 @@ export const _MIN_CONFORM_FRAME_RATE = 0.0005;
  * 24 fps, 1200/2997 at 29.97 (measured on AE 2026).
  */
 export function _retimeSequence(sspc: SspcChunk, rate: number): void {
-  const frames = round(sspc.duration * sspc.nativeFrameRate);
+  const frames = Math.round(sspc.duration * sspc.nativeFrameRate);
   sspc.nativeFrameRate = rate;
-  _storeFramesOverRate(sspc, frames, round(rate, 3));
+  _storeFramesOverRate(sspc, frames, Number(rate.toFixed(3)));
 }
 
 /**
@@ -305,14 +304,14 @@ export class FootageSource {
     // is the frame count over that rate: exactly 48 / 24 = 2.0 s for a
     // 48-frame 23.976 movie. Rescaling the stored duration instead drifts
     // by the 16.16 error of the stored native rate (1.999998 s).
-    const frames = round(sspc.duration * sspc.nativeFrameRate);
+    const frames = Math.round(sspc.duration * sspc.nativeFrameRate);
     return (frames / conform) * sspc.loop;
   }
 
   get _frameDuration(): number {
     // Rounded, not truncated: a 48-frame 23.976 movie lasts 48 frames,
     // though its 16.16 stored rate puts the product at 47.99995.
-    return round(this._duration * this.displayFrameRate);
+    return Math.round(this._duration * this.displayFrameRate);
   }
 
   declare _sspc: SspcChunk;

@@ -25,7 +25,6 @@ import {
   assert,
   truthy,
   literal,
-  round,
   ValueError,
   type ClassAttributes,
   AttributeError,
@@ -698,7 +697,7 @@ export class CompItem extends AVItem {
   _keepTimesInside(): void {
     const cdta = this._cdta;
     const [timebase, unitsPerFrame] = _grid(cdta);
-    const endOfComp = round(cdta.duration * timebase);
+    const endOfComp = Math.round(cdta.duration * timebase);
     const lastFrame = endOfComp - unitsPerFrame;
     if (cdta.timeDividend > lastFrame) {
       cdta.timeDividend = lastFrame;
@@ -896,7 +895,7 @@ export class CompItem extends AVItem {
     cdta.workAreaStartDivisor = timebase;
     let endUnits: number | null =
       end == null ? null : _frameUnits(end, timebase, unitsPerFrame);
-    if (endUnits == null || endUnits >= round(cdta.duration * timebase)) {
+    if (endUnits == null || endUnits >= Math.round(cdta.duration * timebase)) {
       endUnits = WORK_AREA_TO_END;
     }
     cdta.workAreaEndDividend = endUnits;
@@ -1695,8 +1694,8 @@ export class CompItem extends AVItem {
         uuidStr,
         source.width,
         source.height,
-        round(layer.inPoint * timebase),
-        round(layer.outPoint * timebase),
+        Math.round(layer.inPoint * timebase),
+        Math.round(layer.outPoint * timebase),
         timebase,
         thumbnail,
         this.id,
@@ -2160,7 +2159,7 @@ export class CompItem extends AVItem {
     this._insertLayer(layer);
 
     // AE rounds the zoom to 8 decimals before storing it.
-    const zoom = round((this.width * this.pixelAspect) / CameraLayer._zoomDividend, 8);
+    const zoom = Number(((this.width * this.pixelAspect) / CameraLayer._zoomDividend).toFixed(8));
 
     const transform = layer.transform;
     const anchorPoint = transform.property("ADBE Anchor Point");
@@ -2210,7 +2209,7 @@ export class CompItem extends AVItem {
     this._insertLayer(layer);
 
     // AE rounds the zoom to 8 decimals before storing it.
-    const zoom = round((this.width * this.pixelAspect) / LightLayer._zoomDividend, 8);
+    const zoom = Number(((this.width * this.pixelAspect) / LightLayer._zoomDividend).toFixed(8));
 
     const transform = layer.transform;
     const anchorPoint = transform.property("ADBE Anchor Point");

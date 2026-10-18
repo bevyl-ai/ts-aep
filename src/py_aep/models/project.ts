@@ -74,7 +74,6 @@ import {
   valueEquals,
   truthyOr,
   literal,
-  round,
   setdefault,
   compositeKey,
   warn,
@@ -1433,7 +1432,7 @@ export class Project {
     height: number,
     pixelAspect: number,
   ): CompItem {
-    const frames = round(_LAYERED_COMP_DURATION_SECONDS * _LAYERED_COMP_FRAME_RATE);
+    const frames = Math.round(_LAYERED_COMP_DURATION_SECONDS * _LAYERED_COMP_FRAME_RATE);
     const comp = parentFolder.addComp(
       name,
       width,
@@ -2443,7 +2442,7 @@ export function _aiCroppedTransform(
   box: [number, number, number, number],
   pageHeight: number,
 ): [[number, number], [number, number]] {
-  const [x0, y0, x1, y1] = box.map((v) => round(v * 65536));
+  const [x0, y0, x1, y1] = box.map((v) => Math.round(v * 65536));
   const anchor: [number, number] = [toF4((x1 - x0) / 131072), toF4((y1 - y0) / 131072)];
   const position: [number, number] = [
     Math.floor((x0 + x1) / 2) / 65536,

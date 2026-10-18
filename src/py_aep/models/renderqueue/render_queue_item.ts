@@ -20,7 +20,6 @@ import {
   floatRepr,
   getOrThrow,
   literal,
-  round,
   StopIteration,
   ValueError,
   type ClassAttributes,
@@ -561,16 +560,16 @@ export class RenderQueueItem {
     const source = TimeSpanSource.fromBinary(this._ldat.timeSpanSource);
     const fr = this.comp.frameRate;
     if (source === TimeSpanSource.LENGTH_OF_COMP) {
-      return [0, round(this.comp.duration * fr)];
+      return [0, Math.round(this.comp.duration * fr)];
     }
     if (source === TimeSpanSource.WORK_AREA_ONLY) {
       return [
-        round(this.comp.workAreaStart * fr),
-        round(this.comp.workAreaDuration * fr),
+        Math.round(this.comp.workAreaStart * fr),
+        Math.round(this.comp.workAreaDuration * fr),
       ];
     }
     const [startSec, durSec] = this._resolvedTimeSpan();
-    return [round(startSec * fr), round(durSec * fr)];
+    return [Math.round(startSec * fr), Math.round(durSec * fr)];
   }
 
   /**

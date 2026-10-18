@@ -1,4 +1,4 @@
-import { ValueError, descriptor, round, truthyOr } from "../../../pyrt/index.ts";
+import { ValueError, descriptor, truthyOr } from "../../../pyrt/index.ts";
 import { Label } from "../../enums/index.ts";
 
 import { NmhdChunk } from "../../binary/misc_chunks.ts";
@@ -236,7 +236,7 @@ export class MarkerValue {
    *   composition frame rate.
    */
   get frameDuration(): number {
-    return round(this.duration * this._frameRate());
+    return Math.round(this.duration * this._frameRate());
   }
 
   set frameDuration(value: number) {

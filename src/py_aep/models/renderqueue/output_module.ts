@@ -37,7 +37,6 @@ import {
   valueEquals,
   truthyOr,
   literal,
-  round,
   Path,
   RuntimeError,
   ValueError,
@@ -1261,7 +1260,7 @@ export class OutputModule {
     const rqi = this._parentRqi;
     const startSeconds = rqi.timeSpanStart;
     const frameRate = rqi.comp.frameRate;
-    return Math.trunc(round(startSeconds * frameRate));
+    return Math.trunc(Math.round(startSeconds * frameRate));
   }
 
   set _startingNumber(value: number) {

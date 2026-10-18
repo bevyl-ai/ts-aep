@@ -6,7 +6,7 @@
  */
 
 import { OutputChannels, OutputColorDepth, TimeSpanSource } from "../enums/index.ts";
-import { IndexError, AepError, numStr, truthyOr, round } from "../../pyrt/index.ts";
+import { IndexError, AepError, numStr, truthyOr } from "../../pyrt/index.ts";
 import type { CompItem } from "../models/items/composition.ts";
 import type { RenderSettingValues } from "../models/renderqueue/render_queue_item.ts";
 import type { SettingsView } from "../models/renderqueue/settings.ts";
@@ -423,13 +423,13 @@ export function resolveTimeSpan(
     timeSpanStart = 0.0;
     durationTime = comp.duration;
     timeSpanEnd = comp.duration;
-    durationFrames = round(comp.duration * effectiveFrameRate);
+    durationFrames = Math.round(comp.duration * effectiveFrameRate);
     firstRenderedFrame = Math.trunc(comp.displayStartTime * effectiveFrameRate);
   } else {
     timeSpanStart = rqSettings.get("Time Span Start");
     durationTime = rqSettings.get("Time Span Duration");
     timeSpanEnd = rqSettings.get("Time Span End");
-    durationFrames = round(durationTime * effectiveFrameRate);
+    durationFrames = Math.round(durationTime * effectiveFrameRate);
     firstRenderedFrame =
       Math.trunc(comp.displayStartTime * effectiveFrameRate) +
       Math.trunc(timeSpanStart * effectiveFrameRate);

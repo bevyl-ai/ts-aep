@@ -1,4 +1,4 @@
-import { float, getattr, setattr } from "../../../pyrt/index.ts";
+import { getattr, setattr } from "../../../pyrt/index.ts";
 import { _validateNumber, validateF8 } from "../validators.ts";
 
 /**
@@ -109,9 +109,9 @@ export class KeyframeEase {
     }
     const raw = getattr(this._kfData, `${this._direction}Speed`);
     if (Array.isArray(raw)) {
-      return float(raw[this._dimensionIndex]) * this._speedFactor;
+      return Number(raw[this._dimensionIndex]) * this._speedFactor;
     }
-    return float(raw) * this._speedFactor;
+    return Number(raw) * this._speedFactor;
   }
 
   set speed(value: number) {
@@ -140,9 +140,9 @@ export class KeyframeEase {
     }
     const raw = getattr(this._kfData, `${this._direction}Influence`);
     if (Array.isArray(raw)) {
-      return float(raw[this._dimensionIndex]) * 100;
+      return Number(raw[this._dimensionIndex]) * 100;
     }
-    return float(raw) * 100;
+    return Number(raw) * 100;
   }
 
   set influence(value: number) {

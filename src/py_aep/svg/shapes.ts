@@ -16,7 +16,6 @@ import type { CubicSeg } from "./path_data.ts";
 import type { Affine } from "./transform.ts";
 import { Subpath } from "./types.ts";
 import {
-  float,
   getattr,
   valueEquals,
   pySlice,
@@ -206,7 +205,7 @@ export function _ellipse(
 }
 
 export function _poly(attrs: Map<string, string>, closed: boolean): RawSubpath[] {
-  const nums = Array.from((attrs.get("points") ?? "").matchAll(NUMBER_RE), (n) => float(n[0]));
+  const nums = Array.from((attrs.get("points") ?? "").matchAll(NUMBER_RE), (n) => Number(n[0]));
   const pts = zip(pySlice(nums, 0, null, 2), pySlice(nums, 1, null, 2));
   if (pts.length < 2) {
     return [];

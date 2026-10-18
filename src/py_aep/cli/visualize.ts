@@ -28,7 +28,6 @@ import {
   Path,
   RuntimeError,
   literal,
-  round,
   str,
   jsonDumps,
   boxFloat,
@@ -238,7 +237,7 @@ export function buildPropertyNode(prop: Property): Node {
       if (prop.value.length <= 4) attrs.set("value", prop.value);
     } else if (typeof prop.value === "number") {
       // NOTE(port): int/float — integral values are plain numbers by design (RULEBOOK §4); an integral Python float (100.0) displays as `100` here instead of `100.0`.
-      attrs.set("value", round(prop.value, 2));
+      attrs.set("value", Number(prop.value.toFixed(2)));
     } else {
       attrs.set("value", prop.value);
     }

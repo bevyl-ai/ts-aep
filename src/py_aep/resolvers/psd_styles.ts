@@ -41,7 +41,6 @@ import {
   truthy,
   radians,
   literal,
-  round,
   setdefault,
   struct,
   warn,
@@ -709,7 +708,7 @@ export function _blendOptionsValues(
     ["ADBE Global Altitude2", altitude],
   ]);
   if (blocks.fillOpacity != null) {
-    values.set("ADBE Layer Fill Opacity2", round((blocks.fillOpacity * 100) / 255));
+    values.set("ADBE Layer Fill Opacity2", Math.round((blocks.fillOpacity * 100) / 255));
   }
   if (blocks.blendInterior != null) {
     values.set("ADBE Blend Interior", _bool01(blocks.blendInterior));

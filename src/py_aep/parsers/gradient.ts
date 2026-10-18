@@ -2,8 +2,6 @@
 
 import { Element, ParseError, fromstring } from "../../pyrt/etree.ts";
 import {
-  ValueError,
-  float,
   warn,
 } from "../../pyrt/index.ts";
 import { Gradient, GradientAlphaStop, GradientColorStop } from "../models/properties/gradient.ts";
@@ -146,12 +144,8 @@ export function _parseFloatArray(arrayElem: Element): number[] {
   const floats: number[] = [];
   for (const child of arrayElem) {
     if (child.tag === "float" && child.text != null) {
-      try {
-        floats.push(float(child.text));
-      } catch (e) {
-        if (!(e instanceof ValueError)) throw e;
-        continue;
-      }
+      const value = Number(child.text);
+      if (child.text.trim() && !Number.isNaN(value)) floats.push(value);
     }
   }
   return floats;

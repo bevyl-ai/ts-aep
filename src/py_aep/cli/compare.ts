@@ -26,10 +26,8 @@ import { chunkLabel, extractLeafChunks, extractLeafChunksTyped } from "./_chunk_
 import {
   BytesIO,
   Path,
-  ValueError,
   bytesEqual,
   deepcopy,
-  float,
   getOrThrow,
   valueEquals,
   literal,
@@ -273,15 +271,10 @@ export function _gradientXmlOnlyFloatDiff(s1: string | String, s2: string | Stri
     // `<float>` content is normally numeric in AE's prop.map output; an
     // empty/non-numeric tag is not a pure float-precision diff (and must
     // not crash the comparison), so treat it as a real difference.
-    let fa: number;
-    let fb: number;
-    try {
-      fa = float(a);
-      fb = float(b_);
-    } catch (e) {
-      if (!(e instanceof ValueError)) throw e;
-      return false;
-    }
+    if (!a.trim() || !b_.trim()) return false;
+    const fa = Number(a);
+    const fb = Number(b_);
+    if (Number.isNaN(fa) || Number.isNaN(fb)) return false;
     if (!_floatsClose(fa, fb)) return false;
   }
   return true;

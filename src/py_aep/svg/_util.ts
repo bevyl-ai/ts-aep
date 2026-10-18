@@ -2,7 +2,7 @@
  * Shared low-level helpers for the SVG reader package.
  */
 
-import { float, patternMatch, pyRe } from "../../pyrt/index.ts";
+import { patternMatch, pyRe } from "../../pyrt/index.ts";
 
 /** An SVG/CSS number token: optional sign, decimal or integer, optional exponent. */
 export const NUMBER_RE = pyRe(String.raw`[-+]?(?:\d*\.\d+|\d+\.?)(?:[eE][-+]?\d+)?`, 0, "g");
@@ -77,7 +77,7 @@ export function clamp01(value: number): number {
 export function parseNumber(text: string | null, default_: number = 0.0): number {
   if (!text) return default_;
   const m = patternMatch(NUMBER_RE, text.trim());
-  return m ? float(m[0]) : default_;
+  return m ? Number(m[0]) : default_;
 }
 
 /**
@@ -95,7 +95,7 @@ export function parseLength(
   if (!text) return default_;
   const m = patternMatch(_LENGTH_RE, text.trim());
   if (m == null) return default_;
-  const value = float(m[1]);
+  const value = Number(m[1]);
   const unit = (m[2] ?? "").toLowerCase();
   if (unit === "%") {
     return percentOf != null ? (value * percentOf) / 100.0 : value;
@@ -118,6 +118,6 @@ export function parseRatio(text: string | null, default_: number): number {
   text = text.trim();
   const m = patternMatch(NUMBER_RE, text);
   if (m == null) return default_;
-  const val = float(m[0]);
+  const val = Number(m[0]);
   return clamp01(text.endsWith("%") ? val / 100.0 : val);
 }

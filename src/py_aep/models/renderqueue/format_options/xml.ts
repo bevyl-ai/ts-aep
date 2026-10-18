@@ -13,7 +13,6 @@ import {
   getOrThrow,
   isdigit,
   literal,
-  round,
   typeName, ascii } from "../../../../pyrt/index.ts";
 import { CLAMP_DEPENDENTS } from "../../../data/output_module_rules.ts";
 import { AudioCodec, AudioInterleave, DnxResolution, MPEGAudioFormat, MPEGAudioLayer, MPEGMultiplexer, MPEGMuxStreamCompatibility, MPEGProfile, VideoCodec } from "../../../enums/index.ts";
@@ -602,7 +601,7 @@ export class XmlFormatOptions extends FormatOptionsBase {
   set frameRate(value: number | null) {
     if (value == null) return;
     _validateNumber({ min: 1 / _ADOBE_TICKS_PER_SECOND })(value);
-    const ticks = round(_ADOBE_TICKS_PER_SECOND / value);
+    const ticks = Math.round(_ADOBE_TICKS_PER_SECOND / value);
     // BigInt keeps Python's exact int spelling for ticks >= 1e21.
     this._setParam("ADBEVideoFPS", BigInt(ticks).toString());
   }

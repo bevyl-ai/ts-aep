@@ -7,7 +7,7 @@
  */
 
 import { uuid4Bytes } from "../../pyrt/uuid.ts";
-import { define, field, Bytes, decode, encode, assert, round, descriptor, ValueError } from "../../pyrt/index.ts";
+import { define, field, Bytes, decode, encode, assert, descriptor, ValueError } from "../../pyrt/index.ts";
 import type { IO } from "../../pyrt/index.ts";
 import { readBytes } from "./bin_utils.ts";
 import { BitField } from "./bitfield.ts";
@@ -275,9 +275,9 @@ export class MkifChunk extends Chunk {
   }
 
   set color(value: number[]) {
-    this.colorR = round(value[0] * 255);
-    this.colorG = round(value[1] * 255);
-    this.colorB = round(value[2] * 255);
+    this.colorR = Math.round(value[0] * 255);
+    this.colorG = Math.round(value[1] * 255);
+    this.colorB = Math.round(value[2] * 255);
   }
 }
 define(MkifChunk, {
@@ -383,7 +383,7 @@ export class NmhdChunk extends Chunk {
   }
 
   set durationSeconds(value: number) {
-    this.durationValue = round(value * 600);
+    this.durationValue = Math.round(value * 600);
     this.durationScale = 600;
   }
 

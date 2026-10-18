@@ -6,7 +6,7 @@
  * `transparent` and `currentColor`.
  */
 
-import { float, ValueError, patternMatch, pyRe, reFlags } from "../../pyrt/index.ts";
+import { patternMatch, pyRe, reFlags } from "../../pyrt/index.ts";
 import { NUMBER_PCT_RE, clamp01 } from "./_util.ts";
 
 // Python: `if TYPE_CHECKING: Rgba = tuple[float, float, float, float]`.
@@ -172,8 +172,8 @@ export const _HSL_RE = pyRe(String.raw`hsla?\(([^)]*)\)`, reFlags.IGNORECASE);
 
 export function _component(token: string, scale: number = 255.0): number {
   token = token.trim();
-  if (token.endsWith("%")) return float(token.slice(0, -1)) / 100.0;
-  return float(token) / scale;
+  if (token.endsWith("%")) return Number(token.slice(0, -1)) / 100.0;
+  return Number(token) / scale;
 }
 
 /**
@@ -197,7 +197,7 @@ export function parseColor(value: string | null, current: Rgba = [0.0, 0.0, 0.0,
         const r = _component(parts[0]);
         const g = _component(parts[1]);
         const b = _component(parts[2]);
-        const a = parts.length > 3 ? float(parts[3].replace(/%+$/, "")) / (parts[3].includes("%") ? 100.0 : 1.0) : 1.0;
+        const a = parts.length > 3 ? Number(parts[3].replace(/%+$/, "")) / (parts[3].includes("%") ? 100.0 : 1.0) : 1.0;
         return [clamp01(r), clamp01(g), clamp01(b), clamp01(a)];
       }
     }
@@ -215,19 +215,11 @@ export function _parseHex(h: string): Rgba | null {
   if (cps.length === 3 || cps.length === 4) cps = cps.flatMap((c) => [c, c]);
   if (cps.length === 6) cps = [...cps, "f", "f"];
   if (cps.length !== 8) return null;
-  let r: number;
-  let g: number;
-  let b: number;
-  let a: number;
-  try {
-    r = Number.parseInt(cps.slice(0, 2).join(""), 16) / 255.0;
-    g = Number.parseInt(cps.slice(2, 4).join(""), 16) / 255.0;
-    b = Number.parseInt(cps.slice(4, 6).join(""), 16) / 255.0;
-    a = Number.parseInt(cps.slice(6, 8).join(""), 16) / 255.0;
-  } catch (e) {
-    if (!(e instanceof ValueError)) throw e;
-    return null;
-  }
+  if (!/^[0-9a-fA-F]{8}$/.test(cps.join(""))) return null;
+  const r = Number.parseInt(cps.slice(0, 2).join(""), 16) / 255.0;
+  const g = Number.parseInt(cps.slice(2, 4).join(""), 16) / 255.0;
+  const b = Number.parseInt(cps.slice(4, 6).join(""), 16) / 255.0;
+  const a = Number.parseInt(cps.slice(6, 8).join(""), 16) / 255.0;
   return [r, g, b, a];
 }
 
@@ -236,12 +228,12 @@ export function _parseHsl(v: string): Rgba | null {
   if (!m) return null;
   const parts = Array.from(m[1].matchAll(NUMBER_PCT_RE), (n) => n[0]);
   if (parts.length < 3) return null;
-  const h = (((float(parts[0].replace(/%+$/, "")) % 360.0) + 360.0) % 360.0) / 360.0;
+  const h = (((Number(parts[0].replace(/%+$/, "")) % 360.0) + 360.0) % 360.0) / 360.0;
   // CSS clamps saturation and lightness to [0, 100 %] before converting
   // (hsl(400, 150%, -5%) is black), not the converted channels.
-  const s = clamp01(float(parts[1].replace(/%+$/, "")) / 100.0);
-  const light = clamp01(float(parts[2].replace(/%+$/, "")) / 100.0);
-  const a = parts.length > 3 ? float(parts[3].replace(/%+$/, "")) / (parts[3].includes("%") ? 100.0 : 1.0) : 1.0;
+  const s = clamp01(Number(parts[1].replace(/%+$/, "")) / 100.0);
+  const light = clamp01(Number(parts[2].replace(/%+$/, "")) / 100.0);
+  const a = parts.length > 3 ? Number(parts[3].replace(/%+$/, "")) / (parts[3].includes("%") ? 100.0 : 1.0) : 1.0;
 
   function hue(p: number, q: number, t: number): number {
     if (t < 0) t += 1;
