@@ -2,7 +2,7 @@
  * Shared low-level helpers for the SVG reader package.
  */
 
-import { float, hypot, patternMatch, pyRe } from "../../pyrt/index.ts";
+import { float, patternMatch, pyRe } from "../../pyrt/index.ts";
 
 /** An SVG/CSS number token: optional sign, decimal or integer, optional exponent. */
 export const NUMBER_RE = pyRe(String.raw`[-+]?(?:\d*\.\d+|\d+\.?)(?:[eE][-+]?\d+)?`, 0, "g");
@@ -51,7 +51,7 @@ export class LengthContext {
    * radius, a stroke width) refers to: `sqrt((w^2 + h^2) / 2)`.
    */
   get diagonal(): number {
-    return hypot(this.width, this.height) / Math.sqrt(2.0);
+    return Math.hypot(this.width, this.height) / Math.sqrt(2.0);
   }
 }
 

@@ -9,7 +9,6 @@ import {
   getOr,
   getattr,
   getOrThrow,
-  max,
   objectGetattr,
   objectSetattr,
   assert,
@@ -1068,11 +1067,7 @@ export class PropertyGroup extends PropertyBase {
     const existing = this.properties.filter(
       (m): m is MaskPropertyGroup => m._isMaskGroup(),
     );
-    const nextId = max(
-      existing.map((m) => m._mkif.maskId),
-      null,
-      0,
-    ) + 1;
+    const nextId = Math.max(0, ...existing.map((m) => m._mkif.maskId)) + 1;
     // The name is numbered past the highest "Mask N" name, independently
     // of the id (AE 2026: beside "Mask 1" and a mask renamed "stored" the
     // new mask is id 3 "Mask 2"; beside "Mask 1" and "Mask 3", "Mask 4").

@@ -23,7 +23,6 @@ import {
   literal,
   struct,
   StructError,
-  sum,
   UnicodeDecodeError,
   ValueError,
   warn,
@@ -604,7 +603,7 @@ export function readPsdLayers(file: PathLike, kw: { maskBoxes?: boolean } = {}):
       const region: [number, number, number, number] = rec.isFill ? [0, 0, canvasW, canvasH] : rec.bounds;
       if (region[2] <= region[0] || region[3] <= region[1]) continue;
       const area = (region[2] - region[0]) * (region[3] - region[1]);
-      const source = rec.isFill ? data.length : sum(channels.map(([, n]) => n));
+      const source = rec.isFill ? data.length : channels.map(([, n]) => n).reduce((total, x) => total + x, 0);
       if (area > _MAX_INFLATION * source) {
         throw new UnsupportedPsdLayersError(`${name}: layer ${literal(rec.name)} is larger than its pixel data.`);
       }

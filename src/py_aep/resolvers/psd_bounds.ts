@@ -24,7 +24,7 @@
  *   (`psd_styles.merged_styles_bounds`).
  */
 
-import { max, min, OverflowError, struct, ValueError } from "../../pyrt/index.ts";
+import { OverflowError, struct, ValueError } from "../../pyrt/index.ts";
 import { parseVectorMask } from "./psd_paths.ts";
 import { mergedStylesBounds } from "./psd_styles.ts";
 import { cubicRange } from "./shape_bounds.ts";
@@ -117,10 +117,10 @@ export function _pathBox(layer: PsdLayer, canvasW: number, canvasH: number): _Bo
     return null;
   }
   return [
-    _floorEdge(min(xs)),
-    _floorEdge(min(ys)),
-    _ceilEdge(max(xs)),
-    _ceilEdge(max(ys)),
+    _floorEdge(Math.min(...xs)),
+    _floorEdge(Math.min(...ys)),
+    _ceilEdge(Math.max(...xs)),
+    _ceilEdge(Math.max(...ys)),
   ];
 }
 

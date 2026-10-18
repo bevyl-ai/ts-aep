@@ -26,7 +26,7 @@ import type { LightLayer } from "../models/layers/light_layer.ts";
 import type { MatchNameTypes } from "../models/properties/match_name_types.ts";
 import type { Property } from "../models/properties/property.ts";
 import type { PropertyGroup } from "../models/properties/property_group.ts";
-import { AttributeError, NotImplementedError, ValueError, degrees, typeName, max, min, mod, literal, sum, hypot } from "../../pyrt/index.ts";
+import { AttributeError, NotImplementedError, ValueError, degrees, typeName, literal } from "../../pyrt/index.ts";
 
 type _PropertyName = {
   [K in keyof MatchNameTypes]: MatchNameTypes[K] extends Property<infer _V> ? K : never;
@@ -136,7 +136,7 @@ export class Mat4 {
       for (let c = 0; c < 3; c++) absVals.push(Math.abs(s[r * 4 + c]));
     }
     // NOTE(port): platform libm — CPython's own math.* results vary by platform libm; V8 (fdlibm) may differ in the last ulp.
-    const scale = max(absVals);
+    const scale = Math.max(...absVals);
     if (det === 0.0 || Math.abs(det) <= _EPSILON * 1e-2 * scale ** 3) {
       throw new ValueError("Singular matrix, cannot invert.");
     }
@@ -646,7 +646,7 @@ export function _vec3Norm(v: number[]): number {
   // hypot, not sqrt(x*x + y*y + z*z): squaring overflows to inf above ~1.34e154
   // and the norm then poisons every value derived from it. Nested 2-argument
   // calls because hypot only takes 3 arguments from Python 3.8.
-  return hypot(hypot(v[0], v[1]), v[2]);
+  return Math.hypot(Math.hypot(v[0], v[1]), v[2]);
 }
 
 /** Determinant of the upper-left 3x3 of a 4x4 matrix. */
@@ -718,7 +718,7 @@ export function composeOrientation(orientation: number[], delta: Mat4): number[]
     combined.row(1)[2],
     combined.row(2)[2],
   );
-  return angles.map((angle) => mod(angle, 360.0));
+  return angles.map((angle) => ((angle % 360.0) + 360.0) % 360.0);
 }
 
 /**
@@ -832,14 +832,14 @@ export function _eulerXyz(
   r22: number,
 ): [number, number, number] {
   // Clamp to [-1, 1] for asin safety.
-  const sinBeta = max([-1.0, min([1.0, r02])]);
+  const sinBeta = Math.max(-1.0, Math.min(1.0, r02));
   // NOTE(port): platform libm — CPython's own math.* results vary by platform libm; V8 (fdlibm) may differ in the last ulp.
   const beta = Math.asin(sinBeta);
   // cos(beta) straight off the matrix. Going through `cos(asin(r02))`
   // loses most of its digits as r02 approaches 1, which matters because
   // an orientation slerping towards a 90-degree Y passes near the pole
   // on almost every frame without ever reaching it.
-  const cosBeta = hypot(r00, r01);
+  const cosBeta = Math.hypot(r00, r01);
 
   let rxDeg: number;
   let ryDeg: number;
@@ -922,7 +922,7 @@ export function transformFromPoints(
   // Shear is absorbed into the z scale: 100 * sin(angle between x and y).
   const sinTheta = _vec3Norm(_vec3Cross(xHat, yRawHat));
 
-  const xDotY = sum([0, 1, 2].map((i) => xHat[i] * yAxis[i]));
+  const xDotY = [0, 1, 2].map((i) => xHat[i] * yAxis[i]).reduce((total, x) => total + x, 0);
   const yOrtho = [0, 1, 2].map((i) => yAxis[i] - xDotY * xHat[i]);
   const yOrthoLen = _vec3Norm(yOrtho);
   if (yOrthoLen < _EPSILON) throw new ValueError("transform points must not be collinear");

@@ -68,7 +68,6 @@ import {
   getattr,
   setattr,
   getOrThrow,
-  max,
   assert,
   truthy,
   compare,
@@ -2274,9 +2273,9 @@ export class Project {
           layerIds.push(ldta.layerId);
         }
       }
-      const maxLayerId = max(layerIds, null, 0);
-      const maxItemId = max([...this.items.keys()], null, 0);
-      const floor = max([maxLayerId, maxItemId]) + 1;
+      const maxLayerId = Math.max(0, ...layerIds);
+      const maxItemId = Math.max(0, ...this.items.keys());
+      const floor = Math.max(maxLayerId, maxItemId) + 1;
       if (this._head.nextItemId < floor) {
         this._head.nextItemId = floor;
       }

@@ -35,8 +35,6 @@ import {
   NotImplementedError,
   ZeroDivisionError,
   floatRepr,
-  max,
-  min,
   radians,
   literal,
 } from "../../pyrt/index.ts";
@@ -126,10 +124,10 @@ export class BoxAccumulator {
   }
 
   add(left: number, top: number, right: number, bottom: number): void {
-    this.left = min([this.left, left]);
-    this.top = min([this.top, top]);
-    this.right = max([this.right, right]);
-    this.bottom = max([this.bottom, bottom]);
+    this.left = Math.min(this.left, left);
+    this.top = Math.min(this.top, top);
+    this.right = Math.max(this.right, right);
+    this.bottom = Math.max(this.bottom, bottom);
   }
 
   addBox(other: BoxAccumulator): void {
@@ -225,11 +223,7 @@ export function _closedPath(
 export function _rectPath(item: PropertyGroup, time: number): _Path {
   const [w, h] = _value(item, "ADBE Vector Rect Size", time);
   const [x, y] = _value(item, "ADBE Vector Rect Position", time);
-  const r = min([
-    max([_value(item, "ADBE Vector Rect Roundness", time), 0.0]),
-    Math.abs(w) / 2,
-    Math.abs(h) / 2,
-  ]);
+  const r = Math.min(Math.max(_value(item, "ADBE Vector Rect Roundness", time), 0.0), Math.abs(w) / 2, Math.abs(h) / 2);
   const left = x - w / 2,
     top = y - h / 2,
     right = x + w / 2,
@@ -355,8 +349,8 @@ export const _PATH_BUILDERS = new Map<string, (item: PropertyGroup, time: number
 
 /** The exact range of one cubic coordinate over `t` in `[0, 1]`. */
 export function cubicRange(a: number, b: number, c: number, d: number): [number, number] {
-  let low = min([a, d]),
-    high = max([a, d]);
+  let low = Math.min(a, d),
+    high = Math.max(a, d);
   const qa = -a + 3 * b - 3 * c + d;
   const qb = 2 * (a - 2 * b + c);
   const qc = b - a;
@@ -376,8 +370,8 @@ export function cubicRange(a: number, b: number, c: number, d: number): [number,
     if (0 < t && t < 1) {
       const mt = 1 - t;
       const v = mt ** 3 * a + 3 * mt * mt * t * b + 3 * mt * t * t * c + t ** 3 * d;
-      low = min([low, v]);
-      high = max([high, v]);
+      low = Math.min(low, v);
+      high = Math.max(high, v);
     }
   }
   return [low, high];
@@ -469,10 +463,10 @@ export function _walk(
           ];
           const mapped = corners.map((corner) => toLayer.apply(...corner));
           extents.add(
-            min(mapped.map((p) => p[0])),
-            min(mapped.map((p) => p[1])),
-            max(mapped.map((p) => p[0])),
-            max(mapped.map((p) => p[1])),
+            Math.min(...mapped.map((p) => p[0])),
+            Math.min(...mapped.map((p) => p[1])),
+            Math.max(...mapped.map((p) => p[0])),
+            Math.max(...mapped.map((p) => p[1])),
           );
         }
       }

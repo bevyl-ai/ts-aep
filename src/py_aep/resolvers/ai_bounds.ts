@@ -53,7 +53,7 @@ import {
   warn,
   round,
   isReal,
-  hypot, ascii } from "../../pyrt/index.ts";
+  ascii } from "../../pyrt/index.ts";
 
 export type Box = [number, number, number, number];
 export type Matrix = number[];
@@ -765,8 +765,8 @@ export class _GState {
   strokeHalfWidth(): [number, number] {
     const half = this.lineWidth / 2.0;
     return [
-      half * hypot(this.ctm[0], this.ctm[1]),
-      half * hypot(this.ctm[2], this.ctm[3]),
+      half * Math.hypot(this.ctm[0], this.ctm[1]),
+      half * Math.hypot(this.ctm[2], this.ctm[3]),
     ];
   }
 }

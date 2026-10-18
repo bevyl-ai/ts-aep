@@ -32,7 +32,6 @@ import {
   descriptor,
   getattr,
   setattr,
-  mod,
   objectSetattr,
   assert,
   truthy,
@@ -1259,7 +1258,7 @@ export class Layer extends PropertyGroup {
         // As a signed turn, not the 0-360 form `composeOrientation`
         // returns: AE stores -15 and 45, not 345 and 405.
         const offset =
-          mod(composeOrientation([0.0, 0.0, 0.0], rotationDelta)[2] + 180.0, 360.0) - 180.0;
+          ((((composeOrientation([0.0, 0.0, 0.0], rotationDelta)[2] + 180.0) % 360.0) + 360.0) % 360.0) - 180.0;
         for (const keyframe of rotation.keyframes) {
           keyframe.value = keyframe.value + offset;
         }

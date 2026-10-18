@@ -41,13 +41,11 @@ import type { Path } from "../../pyrt/index.ts";
 import {
   KeyError,
   islower,
-  max,
   OSError,
   truthy,
   valueEquals,
   truthyOr,
   literal,
-  sum,
   compositeKey,
   ValueError,
   zip,
@@ -532,7 +530,7 @@ export function _advances(text: string, styles: _CharStyle[], offset: number): n
 }
 
 export function _width(text: string, styles: _CharStyle[], offset: number): number {
-  return sum(_advances(text, styles, offset));
+  return _advances(text, styles, offset).reduce((total, x) => total + x, 0);
 }
 
 /**
@@ -659,18 +657,16 @@ export function composeLines(doc: TextDocument): ComposedLines {
   for (const [lineNo, [start, end]] of spans.entries()) {
     const lineStyles = truthyOr(styles.slice(start, Math.min(end, styles.length)), [styles.at(-1)!]);
     if (lineNo === 0) {
-      y += max(
-        lineStyles.map(
+      y += Math.max(...lineStyles.map(
           (s) => (_ascenderRatio(s.font) + (s.fauxbold ? _FAUX_BOLD_ADVANCE / 2 : 0.0)) * s.size,
-        ),
-      );
+        ));
     } else {
-      y += max(lineStyles.map((s) => s.leading));
+      y += Math.max(...lineStyles.map((s) => s.leading));
     }
     baselines.push(y);
   }
 
-  const kept = sum(baselines.map((b) => (b <= height ? 1 : 0)));
+  const kept = baselines.filter((b) => b <= height).length;
   return new ComposedLines(spans.slice(0, kept), baselines.slice(0, kept), kept < spans.length);
 }
 

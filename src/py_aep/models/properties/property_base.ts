@@ -3,7 +3,6 @@ import {
   ValueError,
   IndexError,
   descriptor,
-  max,
   assert,
   valueEquals,
   literal,
@@ -125,7 +124,7 @@ export function _assignDuplicateMaskIdentity(
   const siblings = parent._properties
     .filter((m) => m._isMask && m !== newMask)
     .filter((m) => m._isMaskGroup());
-  const newId = max(siblings.map((m) => m._mkif.maskId), null, 0) + 1;
+  const newId = Math.max(0, ...siblings.map((m) => m._mkif.maskId)) + 1;
   newMask._mkif.maskId = newId;
   // Python `$` also matches before a trailing newline; the lookahead mirrors that.
   const base = source.name.replace(/ \p{Nd}+(?=\n?$)/u, "");

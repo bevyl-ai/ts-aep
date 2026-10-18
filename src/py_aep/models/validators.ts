@@ -17,7 +17,6 @@ import {
   ValueError,
   encode,
   floatRepr,
-  max,
   literal,
   FileExistsError,
   typeName,
@@ -432,7 +431,7 @@ export function validateAeVersion(value: unknown, instance: unknown = null): voi
 export function validateAeRelease(value: unknown, instance: unknown = null): void {
   validateAeVersion(value);
   const major = Number.parseInt(String(value).split(".")[0], 10);
-  if (!FORMAT_VERSIONS.has(major) && major < max([...FORMAT_VERSIONS.keys()])) {
+  if (!FORMAT_VERSIONS.has(major) && major < Math.max(...[...FORMAT_VERSIONS.keys()])) {
     throw new ValueError(
       `After Effects ${major} is not a release py_aep writes; ` +
         `supported majors: ${String([...FORMAT_VERSIONS.keys()].sort((a, b) => a - b))} and later`,

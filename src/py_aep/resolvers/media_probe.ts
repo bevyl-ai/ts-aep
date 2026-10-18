@@ -25,9 +25,6 @@ import {
   decode,
   float,
   getOrThrow,
-  max,
-  min,
-  mod,
   truthy,
   valueEquals,
   literal,
@@ -1840,7 +1837,7 @@ export function _probeMgjson(fp: ProbeStream): MediaInfo {
     throw new TypeError("can't compare offset-naive and offset-aware datetimes");
   }
   const us = times.map((x) => x.us);
-  const span = (max(us) - min(us)) / 1e6;
+  const span = (Math.max(...us) - Math.min(...us)) / 1e6;
   // AE imports mgjson at a fixed 30 fps and reports the span plus one frame.
   return new MediaInfo({ duration: span + 1.0 / 30.0, frameRate: 30.0 });
 }
@@ -2319,7 +2316,7 @@ export function _probeCrw(fp: ProbeStream): MediaInfo {
   // Camera Raw develops the image at the ImageInfo size, turned by its
   // rotation (AE 2026 reports a CRW marked 90 or 270 degrees upright).
   let [width, height, , rotation] = struct.unpack(`${order}IIfi`, info.slice(0, 16));
-  if (mod(rotation, 180) === 90) [width, height] = [height, width];
+  if ((((rotation % 180) + 180) % 180) === 90) [width, height] = [height, width];
   // AE 2026 caches a developed raw as 16-bit RGB (crw.crw: depth 48).
   return new MediaInfo({ width, height, depth: _colorDepth(false, 16) });
 }
@@ -2553,7 +2550,7 @@ export function _probeWmv(fp: ProbeStream): MediaInfo {
   let duration: number;
   if (frameRate && sendDuration) duration = (round(sendDuration * frameRate) + 1) / frameRate;
   else if (sendDuration) duration = sendDuration;
-  else duration = max([0.0, playDuration - preroll]);
+  else duration = Math.max(0.0, playDuration - preroll);
   return new MediaInfo({
     width,
     height,

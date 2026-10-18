@@ -35,7 +35,6 @@ import {
   deepcopy,
   float,
   getOrThrow,
-  max,
   assert,
   truthy,
   valueEquals,
@@ -457,7 +456,7 @@ export function _replaceLayerFont(docs: TextDocument[], fromName: string, toName
     // Inserting past the LAST matching entry leaves every from-index
     // unshifted (`_registerFontAt` only bumps references at or after
     // the insertion point).
-    toIndex = _registerFontAt(first, toName, max(fromIndices) + 1, { usedRecord: false });
+    toIndex = _registerFontAt(first, toName, Math.max(...fromIndices) + 1, { usedRecord: false });
   }
 
   for (const doc of docs) {

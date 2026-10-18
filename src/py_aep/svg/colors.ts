@@ -6,7 +6,7 @@
  * `transparent` and `currentColor`.
  */
 
-import { float, mod, ValueError, patternMatch, pyRe, reFlags } from "../../pyrt/index.ts";
+import { float, ValueError, patternMatch, pyRe, reFlags } from "../../pyrt/index.ts";
 import { NUMBER_PCT_RE, clamp01 } from "./_util.ts";
 
 // Python: `if TYPE_CHECKING: Rgba = tuple[float, float, float, float]`.
@@ -236,7 +236,7 @@ export function _parseHsl(v: string): Rgba | null {
   if (!m) return null;
   const parts = Array.from(m[1].matchAll(NUMBER_PCT_RE), (n) => n[0]);
   if (parts.length < 3) return null;
-  const h = mod(float(parts[0].replace(/%+$/, "")), 360.0) / 360.0;
+  const h = (((float(parts[0].replace(/%+$/, "")) % 360.0) + 360.0) % 360.0) / 360.0;
   // CSS clamps saturation and lightness to [0, 100 %] before converting
   // (hsl(400, 150%, -5%) is black), not the converted channels.
   const s = clamp01(float(parts[1].replace(/%+$/, "")) / 100.0);

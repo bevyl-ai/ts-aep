@@ -13,7 +13,6 @@ import {
   descriptor,
   encode,
   field,
-  mod,
   objectSetattr,
   literal,
   ValueError,
@@ -321,7 +320,7 @@ export class NhedChunk extends Chunk {
   }
 
   get displayStartFrame(): number {
-    return mod(this.framesCountType, 2);
+    return ((this.framesCountType % 2) + 2) % 2;
   }
 
   set displayStartFrame(value: number) {
@@ -404,7 +403,7 @@ export class NnhdChunk extends Chunk {
   }
 
   get displayStartFrame(): number {
-    return mod(this.framesCountType, 2);
+    return ((this.framesCountType % 2) + 2) % 2;
   }
 
   set displayStartFrame(value: number) {

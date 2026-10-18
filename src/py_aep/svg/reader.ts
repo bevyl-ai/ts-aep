@@ -38,8 +38,6 @@ import {
   encode,
   fspath,
   isdigit,
-  max,
-  min,
   warn,
   zip,
   type PathLike,
@@ -666,7 +664,7 @@ export class _Reader {
     const join = _JOIN.get((style.get("stroke-linejoin") || "").trim()) ?? 1;
     // SVG requires a miter limit >= 1 (AE's Miter Limit too); AE 2026
     // imports a smaller one clamped to 1.
-    const miter = max([1.0, parseNumber(style.get("stroke-miterlimit") ?? "4")]);
+    const miter = Math.max(1.0, parseNumber(style.get("stroke-miterlimit") ?? "4"));
     const dashes = (style.get("stroke-dasharray") || "").trim()
       .split(new RegExp(`[,${_PY_WS}]+`))
       .filter((t) => !!t && t !== "none")
@@ -685,7 +683,7 @@ export function _bbox(subpaths: Subpath[]): Bbox {
     }
   }
   if (xs.length === 0) return [0.0, 0.0, 0.0, 0.0];
-  return [min(xs), min(ys), max(xs), max(ys)];
+  return [Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)];
 }
 
 export const _WS_RE = new RegExp(`[${_PY_WS}]+`, "g");

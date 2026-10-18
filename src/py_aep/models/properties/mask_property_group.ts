@@ -11,7 +11,7 @@ import { validateBool, validateRgbColor } from "../validators.ts";
 // property_group.ts reaches this module only through `late` (models/late.ts), so
 // `extends PropertyGroup` evaluates after it.
 import { PropertyGroup, _insertBeforeGroupEnd } from "./property_group.ts";
-import { AttributeError, descriptor, mod, assert, instanceDict } from "../../../pyrt/index.ts";
+import { AttributeError, descriptor, assert, instanceDict } from "../../../pyrt/index.ts";
 import type { Utf8Chunk } from "../../binary/scalar_chunks.ts";
 import type { Property } from "./property.ts";
 import type { Shape } from "./shape.ts";
@@ -194,7 +194,7 @@ export class MaskPropertyGroup extends PropertyGroup {
     kw: { name: string; maskId: number },
   ): MaskPropertyGroup {
     const { name, maskId } = kw;
-    const color = _MASK_COLOR_CYCLE[mod(maskId - 1, _MASK_COLOR_CYCLE.length)];
+    const color = _MASK_COLOR_CYCLE[(((maskId - 1) % _MASK_COLOR_CYCLE.length) + _MASK_COLOR_CYCLE.length) % _MASK_COLOR_CYCLE.length];
     const _tdmn = new TdmnChunk({ value: "ADBE Mask Atom" });
     const _mkif = new MkifChunk({
       mode: 1, // binary PF_MaskMode for MaskMode.ADD

@@ -19,7 +19,6 @@ import {
   descriptor,
   floatRepr,
   getOrThrow,
-  max,
   literal,
   round,
   StopIteration,
@@ -44,11 +43,7 @@ export function _startTimeFromBinary(value: number): Date | null {
  * duplicate after it 11).
  */
 export function _nextItemId(rq: RenderQueue): number {
-  return max(
-    rq.items.map((item) => item._ldat.itemId),
-    null,
-    1,
-  ) + 1;
+  return Math.max(1, ...rq.items.map((item) => item._ldat.itemId)) + 1;
 }
 
 /**

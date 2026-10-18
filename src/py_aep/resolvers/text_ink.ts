@@ -36,7 +36,6 @@ import { dep } from "../../pyrt/deps.ts";
 import * as host from "../../pyrt/host.ts";
 import {
   NotImplementedError,
-  max,
   truthy,
   truthyOr,
   literal,
@@ -268,7 +267,7 @@ export function _pointTextInk(
     let lineStyles = styles.slice(offset, offset + paragraph.length + 1);
     if (lineStyles.length === 0) lineStyles = [styles.at(-1)!];
     if (index > 0) {
-      baseline += max(lineStyles.map((s) => s.leading));
+      baseline += Math.max(...lineStyles.map((s) => s.leading));
     }
     if (paragraph) {
       const style = paragraphStyles[index];

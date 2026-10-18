@@ -35,7 +35,7 @@ import { _EMPTY_CDAT_PAD, GRADIENT_KIND, MARKER_KIND, ORIENTATION_KIND, SHAPE_KI
 import { PropertyBase } from "./property_base.ts";
 import { Shape } from "./shape.ts";
 import type { PropertyGroup } from "./property_group.ts";
-import { deepcopy, getOrThrow, isclose, valueEquals, warn, round, ValueError, IndexError, AttributeError, NotImplementedError, StopIteration, assert, literal, min, zip, float, ord, descriptor, typeName, type ClassAttributes, truthyOr } from "../../../pyrt/index.ts";
+import { deepcopy, getOrThrow, isclose, valueEquals, warn, round, ValueError, IndexError, AttributeError, NotImplementedError, StopIteration, assert, literal, zip, float, ord, descriptor, typeName, type ClassAttributes, truthyOr } from "../../../pyrt/index.ts";
 import { AVItem } from "../items/av_item.ts";
 import { FootageItem } from "../items/footage.ts";
 import { resolveEssentialPropertyController, resolveEssentialPropertySource } from "../../resolvers/essential_properties.ts";
@@ -2857,7 +2857,8 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * of the composition is 0.
    */
   nearestKeyIndex(time: number): number {
-    return min(Array.from({ length: this.keyframes.length }, (_, i) => i), (i: number) => Math.abs(this.keyframes[i].time - time));
+    const distances = this.keyframes.map((kf) => Math.abs(kf.time - time));
+    return distances.indexOf(Math.min(...distances));
   }
 
   /**

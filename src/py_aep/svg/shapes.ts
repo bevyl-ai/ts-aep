@@ -18,8 +18,6 @@ import { Subpath } from "./types.ts";
 import {
   float,
   getattr,
-  max,
-  min,
   valueEquals,
   pySlice,
   zip,
@@ -116,8 +114,8 @@ export function _rect(attrs: Map<string, string>, ctx: LengthContext | null): Ra
   if (_isAuto(attrs.get("ry") ?? null)) {
     ry = rx;
   }
-  rx = min([max([rx, 0.0]), w / 2.0]);
-  ry = min([max([ry, 0.0]), h / 2.0]);
+  rx = Math.min(Math.max(rx, 0.0), w / 2.0);
+  ry = Math.min(Math.max(ry, 0.0), h / 2.0);
   if (rx === 0 || ry === 0) {
     // Sharp corners: 4 straight segments.
     const pts: [number, number][] = [

@@ -11,7 +11,7 @@
  * module only produces the geometric/stop representation.
  */
 
-import { setdefault, max, degrees, hypot } from "../../pyrt/index.ts";
+import { setdefault, degrees } from "../../pyrt/index.ts";
 import { LengthContext, localName, parseLength, parseRatio } from "./_util.ts";
 import { parseColor } from "./colors.ts";
 import { _splitDeclarations } from "./style.ts";
@@ -100,7 +100,7 @@ export function _parseStops(elem: Element): GradientStop[] {
     // document order; AE 2026 imports `0.6 red, 0.3 blue` as red then a
     // hard switch to blue at 0.6).
     const parsedOffset = parseRatio(child.get("offset"), 0.0);
-    const offset = stops.length > 0 ? max([parsedOffset, stops[stops.length - 1].offset]) : parsedOffset;
+    const offset = stops.length > 0 ? Math.max(parsedOffset, stops[stops.length - 1].offset) : parsedOffset;
     const style = _stopStyle(child);
     const color = parseColor(style.get("stop-color") ?? "#000000") ?? [0.0, 0.0, 0.0, 1.0];
     const opacity = parseRatio(style.get("stop-opacity") ?? null, 1.0);
@@ -201,8 +201,8 @@ export function resolveGradient(
   // angle in Grad Rotation, as 360 minus the clockwise screen angle (AE
   // 2026 imports an axis at 0 / 30 / -60 degrees as 360 / 330 / 420).
   const edgeY = base.apply(cx, cy + r);
-  const xRadius = hypot(end[0] - start[0], end[1] - start[1]);
-  const yRadius = hypot(edgeY[0] - start[0], edgeY[1] - start[1]);
+  const xRadius = Math.hypot(end[0] - start[0], end[1] - start[1]);
+  const yRadius = Math.hypot(edgeY[0] - start[0], edgeY[1] - start[1]);
   // Python truthiness of a float: NaN is truthy, so use py_bool, not `?:`.
   const scaleY = xRadius !== 0 ? (100.0 * yRadius) / xRadius : 100.0;
   const angle = degrees(Math.atan2(end[1] - start[1], end[0] - start[0]));
