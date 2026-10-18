@@ -809,7 +809,7 @@ export class _ArcSpline {
   }
 }
 
-// NOTE(port): matches `functools.lru_cache(maxsize=1024)` (value-keyed via `tkey`, LRU eviction at 1024); pyrt `lruCache` keys by identity and would never hit.
+// NOTE(port): matches `functools.lru_cache(maxsize=1024)` (value-keyed via `compositeKey`, LRU eviction at 1024); pyrt `lruCache` keys by identity and would never hit.
 export const _arcSplineCache = new Map<string, _ArcSpline>();
 
 /** A cached `_ArcSpline`: every evaluated frame rebuilds the same one. */

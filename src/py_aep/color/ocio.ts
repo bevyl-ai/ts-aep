@@ -485,7 +485,7 @@ export function* _iterOutputColorSpaces(index: _ConfigIndex): Generator<OcioValu
 /**
  * `Guid` -\> name for every assignable output color space in the config.
  *
- * Keys are `tkey(guid)` strings: a `Uint8Array` key would compare by identity
+ * Keys are `compositeKey(guid)` strings: a `Uint8Array` key would compare by identity
  * in a `Map`, the same way a Python `bytes` key compares by value.
  */
 export const _guidTableCached = lruCache(

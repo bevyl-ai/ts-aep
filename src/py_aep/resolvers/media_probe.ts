@@ -2146,7 +2146,7 @@ export const _MPEG_FR: Map<number, number> = new Map([
 
 /**
  * AE's pixel aspect for the D1/DV frame sizes, keyed by
- * `(width, height, aspect_ratio_information)` (`tkey`). AE applies its own named
+ * `(width, height, aspect_ratio_information)` (`compositeKey`). AE applies its own named
  * presets here instead of the arithmetic the sequence header implies:
  * 720x480 flagged 16:9 imports as D1/DV NTSC Widescreen (40/33 = 1.2121),
  * not the (16/9)/(720/480) = 1.1852 the frame size alone would give. Every
@@ -2470,7 +2470,7 @@ export const _ASF_INT_TYPES: Map<number, "<H" | "<I" | "<Q"> = new Map([
 
 /**
  * Decode the Metadata Object's integer records, keyed by `(stream, name)`
- * (`tkey`).
+ * (`compositeKey`).
  *
  * This is where AE finds a WMV's pixel aspect (`AspectRatioX`/`AspectRatioY`)
  * and its frame count (`NumberOfFrames`).
