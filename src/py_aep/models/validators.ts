@@ -162,7 +162,7 @@ export function validate_sequence<O>(kw: SequenceKw<O | null> = {}): InstanceVal
  * `DocumentWideCosField.enum` for the same field - would otherwise hold
  * distinct instances; memoizing keeps them identity-equal.
  */
-export const _ENUM_VALIDATORS = new Map<EnumHelpers<unknown>, Validator>();
+export const _ENUM_VALIDATORS = new Map<EnumHelpers<number>, Validator>();
 
 /**
  * Return a validator that checks value is a member of `enum_cls`.
@@ -173,7 +173,7 @@ export const _ENUM_VALIDATORS = new Map<EnumHelpers<unknown>, Validator>();
  *
  * @param enum_cls - The enum class the value must be a member of.
  */
-export function validate_enum(enum_cls: EnumHelpers<unknown>): Validator {
+export function validate_enum(enum_cls: EnumHelpers<number>): Validator {
   const cached = _ENUM_VALIDATORS.get(enum_cls) ?? null;
   if (cached != null) return cached;
 
