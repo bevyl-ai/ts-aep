@@ -129,7 +129,6 @@ export function ET_tostring(el: Element): string {
   return tostring(el, "unicode");
 }
 
-
 /** `isinstance(x, (list, tuple))` as used by the port. */
 export function isListOrTuple(x: unknown): x is unknown[] {
   return Array.isArray(x);
@@ -2373,138 +2372,70 @@ export class Project {
       this._cmsUtf8 = chunk;
     }
   }
+
+  static {
+    // Descriptors for the `declare`d fields above.
+    descriptor(this, "bitsPerChannel", ChunkField.enum(BitsPerChannel, "_nnhd", "bitsPerChannel", {
+      postSet: (obj: Project) => obj._syncNhedField("bitsPerChannel"),
+    }));
+    descriptor(this, "feetFramesFilmType", ChunkField.enum(FeetFramesFilmType, "_nnhd", "feetFramesFilmType", {
+      postSet: (obj: Project) => obj._syncNhedField("_displayByte"),
+    }));
+    descriptor(this, "footageTimecodeDisplayStartType", ChunkField.enum(FootageTimecodeDisplayStartType, "_nnhd", "footageTimecodeDisplayStartType", {
+      postSet: (obj: Project) => obj._syncNhedField("footageTimecodeDisplayStartType"),
+    }));
+    descriptor(this, "_timecodeDefaultBase", new ChunkField("_nnhd", "timecodeDefaultBase", {
+      // nhed holds it as a u1, so a CC 12.0 project (whose nnhd is a
+      // synthetic stand-in) persists at most 255.
+      validate: _validateNumber({
+        min: 1,
+        max: (obj: Project) => (obj._nnhd.synthetic ? 255 : 999),
+        integer: true,
+      }),
+      postSet: (obj: Project) => obj._syncNhedTimecodeDefaultBase(),
+    }));
+    descriptor(this, "framesCountType", ChunkField.enum(FramesCountType, "_nnhd", "framesCountType", {
+      postSet: (obj: Project) => obj._syncNhedField("framesCountType"),
+    }));
+    descriptor(this, "displayStartFrame", new ChunkField("_nnhd", "displayStartFrame", {
+      validate: validateOneOf([0, 1]),
+      postSet: (obj: Project) => obj._syncNhedField("framesCountType"),
+    }));
+    descriptor(this, "framesUseFeetFrames", ChunkField.bool("_nnhd", "framesUseFeetFrames", {
+      postSet: (obj: Project) => obj._syncNhedField("_feetByte"),
+    }));
+    descriptor(this, "timeDisplayType", ChunkField.enum(TimeDisplayType, "_nnhd", "timeDisplayType", {
+      postSet: (obj: Project) => obj._syncNhedField("_displayByte"),
+    }));
+    descriptor(this, "transparencyGridThumbnails", ChunkField.bool("_nnhd", "transparencyGridThumbnails", {
+      postSet: (obj: Project) => obj._syncNhedField("transparencyGridThumbnails"),
+    }));
+    descriptor(this, "revision", new ChunkField("_head", "fileRevision", { validate: validateU4 }));
+    descriptor(this, "compensateForSceneReferredProfiles", ChunkField.bool("_acer", "value", {
+      transform: (v: number) => v !== 0,
+      reverse: (v: boolean) => int(v),
+      minVersion: 16,
+    }));
+    descriptor(this, "audioSampleRate", new ChunkField("_adfr", "value", {
+      validate: validateOneOf([22050, 32000, 44100, 48000, 96000]),
+    }));
+    descriptor(this, "workingGamma", new ChunkField("_dwga", "workingGamma", {
+      validate: validateOneOf([2.2, 2.4]),
+      // A CC 12.0 project has no dwga to keep it in.
+      minVersion: 13,
+    }));
+    descriptor(this, "gpuAccelType", ChunkField.enum(GpuAccelType, "_gpugUtf8", "value", {
+      allowOutOfEnumValues: true,
+      validate: _validateGpuAccelType,
+      minVersion: 13,
+    }));
+    // The XMP packet: `ET.fromstring` / `ET.tostring` (see the TODO above).
+    descriptor(this, "xmpPacket", new ChunkField("_aep", "_xmp", {
+      transform: (s) => (!!s && strip(s) ? ET_fromstring(s) : null),
+      reverse: (el: Element | null) => (el != null ? ET_tostring(el) : ""),
+    }));
+  }
 }
-
-// Descriptors assigned in the class body: `declare` above, installed here.
-descriptor(
-  Project,
-  "bitsPerChannel",
-  ChunkField.enum(BitsPerChannel, "_nnhd", "bitsPerChannel", {
-    postSet: (obj: Project) => obj._syncNhedField("bitsPerChannel"),
-  }),
-);
-
-descriptor(
-  Project,
-  "feetFramesFilmType",
-  ChunkField.enum(FeetFramesFilmType, "_nnhd", "feetFramesFilmType", {
-    postSet: (obj: Project) => obj._syncNhedField("_displayByte"),
-  }),
-);
-
-descriptor(
-  Project,
-  "footageTimecodeDisplayStartType",
-  ChunkField.enum(FootageTimecodeDisplayStartType, "_nnhd", "footageTimecodeDisplayStartType", {
-    postSet: (obj: Project) => obj._syncNhedField("footageTimecodeDisplayStartType"),
-  }),
-);
-
-descriptor(
-  Project,
-  "_timecodeDefaultBase",
-  new ChunkField("_nnhd", "timecodeDefaultBase", {
-    // nhed holds it as a u1, so a CC 12.0 project (whose nnhd is a
-    // synthetic stand-in) persists at most 255.
-    validate: _validateNumber({
-      min: 1,
-      max: (obj: Project) => (obj._nnhd.synthetic ? 255 : 999),
-      integer: true,
-    }),
-    postSet: (obj: Project) => obj._syncNhedTimecodeDefaultBase(),
-  }),
-);
-
-descriptor(
-  Project,
-  "framesCountType",
-  ChunkField.enum(FramesCountType, "_nnhd", "framesCountType", {
-    postSet: (obj: Project) => obj._syncNhedField("framesCountType"),
-  }),
-);
-
-descriptor(
-  Project,
-  "displayStartFrame",
-  new ChunkField("_nnhd", "displayStartFrame", {
-    validate: validateOneOf([0, 1]),
-    postSet: (obj: Project) => obj._syncNhedField("framesCountType"),
-  }),
-);
-
-descriptor(
-  Project,
-  "framesUseFeetFrames",
-  ChunkField.bool("_nnhd", "framesUseFeetFrames", {
-    postSet: (obj: Project) => obj._syncNhedField("_feetByte"),
-  }),
-);
-
-descriptor(
-  Project,
-  "timeDisplayType",
-  ChunkField.enum(TimeDisplayType, "_nnhd", "timeDisplayType", {
-    postSet: (obj: Project) => obj._syncNhedField("_displayByte"),
-  }),
-);
-
-descriptor(
-  Project,
-  "transparencyGridThumbnails",
-  ChunkField.bool("_nnhd", "transparencyGridThumbnails", {
-    postSet: (obj: Project) => obj._syncNhedField("transparencyGridThumbnails"),
-  }),
-);
-
-descriptor(Project, "revision", new ChunkField("_head", "fileRevision", { validate: validateU4 }));
-
-descriptor(
-  Project,
-  "compensateForSceneReferredProfiles",
-  ChunkField.bool("_acer", "value", {
-    transform: (v: number) => v !== 0,
-    reverse: (v: boolean) => int(v),
-    minVersion: 16,
-  }),
-);
-
-descriptor(
-  Project,
-  "audioSampleRate",
-  new ChunkField("_adfr", "value", {
-    validate: validateOneOf([22050, 32000, 44100, 48000, 96000]),
-  }),
-);
-
-descriptor(
-  Project,
-  "workingGamma",
-  new ChunkField("_dwga", "workingGamma", {
-    validate: validateOneOf([2.2, 2.4]),
-    // A CC 12.0 project has no dwga to keep it in.
-    minVersion: 13,
-  }),
-);
-
-descriptor(
-  Project,
-  "gpuAccelType",
-  ChunkField.enum(GpuAccelType, "_gpugUtf8", "value", {
-    allowOutOfEnumValues: true,
-    validate: _validateGpuAccelType,
-    minVersion: 13,
-  }),
-);
-
-// The XMP packet: `ET.fromstring` / `ET.tostring` (see the TODO above).
-descriptor(
-  Project,
-  "xmpPacket",
-  new ChunkField("_aep", "_xmp", {
-    transform: (s) => (!!s && strip(s) ? ET_fromstring(s) : null),
-    reverse: (el: Element | null) => (el != null ? ET_tostring(el) : ""),
-  }),
-);
 
 /**
  * `((anchor), (position))` of a cropped Illustrator/PDF layer.
@@ -2633,7 +2564,6 @@ export function _styleLeafMap(group: PropertyGroup): Map<string, Property> {
   }
   return leaves;
 }
-
 
 /**
  * Serialize a comp layer's `ADBE Layer Styles` subtree like AE's imports.

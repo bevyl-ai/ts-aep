@@ -76,13 +76,11 @@ export class Viewer {
   get active(): boolean {
     return this._foac != null && this._foac.value !== 0 && this._fiac != null && this._fiac.value !== 0;
   }
-}
 
-descriptor(
-  Viewer,
-  "type",
-  ChunkField.enum(ViewerType, "_fitt", "value", {
-    transform: (v: string) => ViewerType.fromString(v),
-    readOnly: true,
-  }),
-);
+  static {
+    descriptor(this, "type", ChunkField.enum(ViewerType, "_fitt", "value", {
+      transform: (v: string) => ViewerType.fromString(v),
+      readOnly: true,
+    }));
+  }
+}

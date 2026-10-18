@@ -106,11 +106,13 @@ export class GradientColorStop {
       pyEq(this.color, other.color)
     );
   }
-}
 
-descriptor(GradientColorStop, "offset", new _GradientField<number>());
-descriptor(GradientColorStop, "midpoint", new _GradientField<number>());
-descriptor(GradientColorStop, "color", new _GradientField<readonly [number, number, number]>());
+  static {
+    descriptor(this, "offset", new _GradientField<number>());
+    descriptor(this, "midpoint", new _GradientField<number>());
+    descriptor(this, "color", new _GradientField<readonly [number, number, number]>());
+  }
+}
 
 /**
  * A single alpha (opacity) stop in a gradient.
@@ -157,11 +159,13 @@ export class GradientAlphaStop {
       this.alpha === other.alpha
     );
   }
-}
 
-descriptor(GradientAlphaStop, "offset", new _GradientField<number>());
-descriptor(GradientAlphaStop, "midpoint", new _GradientField<number>());
-descriptor(GradientAlphaStop, "alpha", new _GradientField<number>());
+  static {
+    descriptor(this, "offset", new _GradientField<number>());
+    descriptor(this, "midpoint", new _GradientField<number>());
+    descriptor(this, "alpha", new _GradientField<number>());
+  }
+}
 
 /**
  * Gradient color data for a gradient fill/stroke property.
@@ -380,9 +384,11 @@ export class Gradient {
       this.version === other.version
     );
   }
-}
 
-descriptor(Gradient, "version", new _GradientField<string>());
+  static {
+    descriptor(this, "version", new _GradientField<string>());
+  }
+}
 
 /**
  * Format a float the way AE writes gradient XML.

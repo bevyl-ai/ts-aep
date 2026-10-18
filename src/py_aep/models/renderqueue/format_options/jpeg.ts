@@ -50,30 +50,18 @@ export class JpegFormatOptions extends FormatOptionsBase {
    * `formatType` is `JpegFormatType.PROGRESSIVE`. Read / Write.
    */
   declare scans: number;
+
+  static {
+    descriptor(this, "quality", new ChunkField("_body", "quality", {
+      validate: _validateNumber({ min: 0, max: 10, integer: true }),
+    }));
+    descriptor(this, "formatType", ChunkField.enum(JpegFormatType, "_body", "formatType", {
+      allowOutOfEnumValues: true,
+    }));
+    descriptor(this, "scans", new ChunkField("_body", "scans", {
+      transform: (x: number) => x + 2,
+      reverse: (x: number) => x - 2,
+      validate: validateOneOf([3, 4, 5]),
+    }));
+  }
 }
-
-descriptor(
-  JpegFormatOptions,
-  "quality",
-  new ChunkField("_body", "quality", {
-    validate: _validateNumber({ min: 0, max: 10, integer: true }),
-  }),
-);
-
-descriptor(
-  JpegFormatOptions,
-  "formatType",
-  ChunkField.enum(JpegFormatType, "_body", "formatType", {
-    allowOutOfEnumValues: true,
-  }),
-);
-
-descriptor(
-  JpegFormatOptions,
-  "scans",
-  new ChunkField("_body", "scans", {
-    transform: (x: number) => x + 2,
-    reverse: (x: number) => x - 2,
-    validate: validateOneOf([3, 4, 5]),
-  }),
-);

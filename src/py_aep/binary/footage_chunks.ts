@@ -366,6 +366,16 @@ export class SspcChunk extends Chunk {
     const base = conform !== 0 ? conform : this.nativeFrameRate;
     this.displayFrameRate = base * (this._removePulldownValue !== 0 ? 0.8 : 1.0);
   }
+
+  static {
+    // -- BitField descriptors (not attrs fields) -------------------------------
+    descriptor(this, "invertAlpha", new BitField("_alphaFlags", 1));
+    descriptor(this, "premultiplied", new BitField("_alphaFlags", 0));
+    descriptor(this, "footageMissingAtSave", new BitField("_flags73", 0));
+    descriptor(this, "highQualityFieldSeparation", new BitField("_flags9f", 0));
+    descriptor(this, "mediaFormat", new BitField("_flags70", 3));
+    descriptor(this, "mediaFile", new BitField("_flags9f", 3));
+  }
 }
 
 define(SspcChunk, {
@@ -480,14 +490,6 @@ define(SspcChunk, {
   dataSize: u8Field(),
   _reservedD4: bytesField(10, { default: concat(b("\x01"), bytes_.repeat(b("\x00"), 9)), repr: false }),
 });
-
-// -- BitField descriptors (not attrs fields) -------------------------------
-descriptor(SspcChunk, "invertAlpha", new BitField("_alphaFlags", 1));
-descriptor(SspcChunk, "premultiplied", new BitField("_alphaFlags", 0));
-descriptor(SspcChunk, "footageMissingAtSave", new BitField("_flags73", 0));
-descriptor(SspcChunk, "highQualityFieldSeparation", new BitField("_flags9f", 0));
-descriptor(SspcChunk, "mediaFormat", new BitField("_flags70", 3));
-descriptor(SspcChunk, "mediaFile", new BitField("_flags9f", 3));
 
 register("sspc")(SspcChunk);
 

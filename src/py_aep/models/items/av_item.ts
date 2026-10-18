@@ -547,13 +547,11 @@ export class AVItem extends Item {
     source._joinProject(this._project);
     this.useProxy = true;
   }
-}
 
-descriptor(
-  AVItem,
-  "useProxy",
-  ChunkField.bool("_idta", "useProxy", {
-    validate: _validateUseProxy,
-    postSet: _syncProxyActive,
-  }),
-);
+  static {
+    descriptor(this, "useProxy", ChunkField.bool("_idta", "useProxy", {
+      validate: _validateUseProxy,
+      postSet: _syncProxyActive,
+    }));
+  }
+}

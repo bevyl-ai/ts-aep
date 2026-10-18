@@ -82,24 +82,11 @@ export class AdvancedRendererOptions extends RendererOptionsBase {
     this._body.castingBoxCenterY = (y - height / 2) / height;
     this._body.castingBoxCenterZ = z / width;
   }
+
+  static {
+    // Descriptors for the `declare`d fields above.
+    descriptor(this, "quality", new ChunkField("_body", "quality", { validate: validateAdvancedQuality }));
+    descriptor(this, "resolution", ChunkField.enum(EnvironmentLightShadowResolution, "_body", "resolution"));
+    descriptor(this, "smoothness", new ChunkField("_body", "smoothness", { validate: validateShadowSmoothness }));
+  }
 }
-
-// Descriptors assigned in the class body: `declare` above, installed here.
-
-descriptor(
-  AdvancedRendererOptions,
-  "quality",
-  new ChunkField("_body", "quality", { validate: validateAdvancedQuality }),
-);
-
-descriptor(
-  AdvancedRendererOptions,
-  "resolution",
-  ChunkField.enum(EnvironmentLightShadowResolution, "_body", "resolution"),
-);
-
-descriptor(
-  AdvancedRendererOptions,
-  "smoothness",
-  new ChunkField("_body", "smoothness", { validate: validateShadowSmoothness }),
-);

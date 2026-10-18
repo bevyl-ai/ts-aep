@@ -88,35 +88,25 @@ export class FontObject {
       instanceDict(this).set("version", version);
     }
   }
-}
 
-descriptor(
-  FontObject,
-  "postScriptName",
-  new CosField<string, "_fontData", FontObject>("_fontData", "0", {
-    transform: str,
-    accepts: isString,
-    reverse: (x: string) => x,
-    default: "",
-  }),
-);
-descriptor(
-  FontObject,
-  "version",
-  new CosField<string | null, "_fontData", FontObject>("_fontData", "5", {
-    transform: str,
-    accepts: isStringOrNull,
-    reverse: (x: string) => x,
-    default: null,
-  }),
-);
-descriptor(
-  FontObject,
-  "designVector",
-  new CosField<number[] | null, "_fontData", FontObject>("_fontData", "4", {
-    transform: _designVectorFromCos,
-    accepts: isNumberList,
-    readOnly: true,
-    default: null,
-  }),
-);
+  static {
+    descriptor(this, "postScriptName", new CosField<string, "_fontData", FontObject>("_fontData", "0", {
+      transform: str,
+      accepts: isString,
+      reverse: (x: string) => x,
+      default: "",
+    }));
+    descriptor(this, "version", new CosField<string | null, "_fontData", FontObject>("_fontData", "5", {
+      transform: str,
+      accepts: isStringOrNull,
+      reverse: (x: string) => x,
+      default: null,
+    }));
+    descriptor(this, "designVector", new CosField<number[] | null, "_fontData", FontObject>("_fontData", "4", {
+      transform: _designVectorFromCos,
+      accepts: isNumberList,
+      readOnly: true,
+      default: null,
+    }));
+  }
+}

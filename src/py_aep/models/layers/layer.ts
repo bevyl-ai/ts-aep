@@ -1721,21 +1721,22 @@ export class Layer extends PropertyGroup {
 
     comp._invalidateLayerCache();
   }
+
+  static {
+    // Descriptors for the `declare`d fields above.
+    descriptor(this, "enabled", ChunkField.bool("_ldta", "enabled"));
+    descriptor(this, "id", new ChunkField("_ldta", "layerId", { readOnly: true }));
+    descriptor(this, "label", ChunkField.enum(Label, "_ldta", "label"));
+    descriptor(this, "locked", ChunkField.bool("_ldta", "locked"));
+    descriptor(this, "nullLayer", new ChunkField("_ldta", "nullLayer", { readOnly: true }));
+    descriptor(this, "_parentId", new ChunkField("_ldta", "parentId"));
+    descriptor(this, "shy", ChunkField.bool("_ldta", "shy"));
+    descriptor(this, "solo", ChunkField.bool("_ldta", "solo"));
+    descriptor(this, "_stretch", new ChunkField("_ldta", "stretch"));
+    descriptor(this, "autoOrient", ChunkField.enum(AutoOrientType, "_ldta", "autoOrient"));
+  }
 }
 
 // `_tree_param_defs: ... = None` in the class body: on the prototype, so
 // `_missingAttribute` finds it before the instance sets its own.
 Layer.prototype._treeParamDefs = null;
-
-// Descriptors assigned in the class body (`enabled = ChunkField.bool(...)`)
-// are installed on the prototype after the class is defined.
-descriptor(Layer, "enabled", ChunkField.bool("_ldta", "enabled"));
-descriptor(Layer, "id", new ChunkField("_ldta", "layerId", { readOnly: true }));
-descriptor(Layer, "label", ChunkField.enum(Label, "_ldta", "label"));
-descriptor(Layer, "locked", ChunkField.bool("_ldta", "locked"));
-descriptor(Layer, "nullLayer", new ChunkField("_ldta", "nullLayer", { readOnly: true }));
-descriptor(Layer, "_parentId", new ChunkField("_ldta", "parentId"));
-descriptor(Layer, "shy", ChunkField.bool("_ldta", "shy"));
-descriptor(Layer, "solo", ChunkField.bool("_ldta", "solo"));
-descriptor(Layer, "_stretch", new ChunkField("_ldta", "stretch"));
-descriptor(Layer, "autoOrient", ChunkField.enum(AutoOrientType, "_ldta", "autoOrient"));

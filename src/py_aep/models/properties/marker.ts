@@ -261,22 +261,16 @@ export class MarkerValue {
   get eventCuePoint(): boolean {
     return !this.navigation;
   }
+
+  static {
+    descriptor(this, "duration", new ChunkField("_nmhd", "durationSeconds", { validate: validateMarkerDuration }));
+    descriptor(this, "label", ChunkField.enum(Label, "_nmhd", "label"));
+    descriptor(this, "navigation", ChunkField.bool("_nmhd", "navigation"));
+    descriptor(this, "protectedRegion", ChunkField.bool("_nmhd", "protectedRegion"));
+    descriptor(this, "comment", new ChunkField("_commentUtf8", "value"));
+    descriptor(this, "chapter", new ChunkField("_chapterUtf8", "value"));
+    descriptor(this, "url", new ChunkField("_urlUtf8", "value"));
+    descriptor(this, "frameTarget", new ChunkField("_frameTargetUtf8", "value"));
+    descriptor(this, "cuePointName", new ChunkField("_cuePointNameUtf8", "value"));
+  }
 }
-
-descriptor(MarkerValue, "duration", new ChunkField("_nmhd", "durationSeconds", { validate: validateMarkerDuration }));
-
-descriptor(MarkerValue, "label", ChunkField.enum(Label, "_nmhd", "label"));
-
-descriptor(MarkerValue, "navigation", ChunkField.bool("_nmhd", "navigation"));
-
-descriptor(MarkerValue, "protectedRegion", ChunkField.bool("_nmhd", "protectedRegion"));
-
-descriptor(MarkerValue, "comment", new ChunkField("_commentUtf8", "value"));
-
-descriptor(MarkerValue, "chapter", new ChunkField("_chapterUtf8", "value"));
-
-descriptor(MarkerValue, "url", new ChunkField("_urlUtf8", "value"));
-
-descriptor(MarkerValue, "frameTarget", new ChunkField("_frameTargetUtf8", "value"));
-
-descriptor(MarkerValue, "cuePointName", new ChunkField("_cuePointNameUtf8", "value"));

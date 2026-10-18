@@ -2799,133 +2799,61 @@ export class CompItem extends AVItem {
       LineOrientation.VERTICAL_RIGHT_TO_LEFT,
     );
   }
-}
 
-// The ChunkField descriptors of the fields declared above.
-
-descriptor(
-  CompItem,
-  "bgColor",
-  new ChunkField("_cdta", "bgColor", { validate: validateRgbColor }),
-);
-
-descriptor(CompItem, "draft3d", ChunkField.bool("_cdta", "draft3d"));
-
-descriptor(CompItem, "frameBlending", ChunkField.bool("_cdta", "frameBlending"));
-
-descriptor(CompItem, "hideShyLayers", ChunkField.bool("_cdta", "hideShyLayers"));
-
-descriptor(CompItem, "motionBlur", ChunkField.bool("_cdta", "motionBlur"));
-
-descriptor(
-  CompItem,
-  "preserveNestedFrameRate",
-  ChunkField.bool("_cdta", "preserveNestedFrameRate"),
-);
-
-descriptor(
-  CompItem,
-  "preserveNestedResolution",
-  ChunkField.bool("_cdta", "preserveNestedResolution"),
-);
-
-descriptor(
-  CompItem,
-  "width",
-  new ChunkField("_cdta", "width", {
+  static {
+    // Descriptors for the `declare`d fields above.
+    descriptor(this, "bgColor", new ChunkField("_cdta", "bgColor", { validate: validateRgbColor }));
+    descriptor(this, "draft3d", ChunkField.bool("_cdta", "draft3d"));
+    descriptor(this, "frameBlending", ChunkField.bool("_cdta", "frameBlending"));
+    descriptor(this, "hideShyLayers", ChunkField.bool("_cdta", "hideShyLayers"));
+    descriptor(this, "motionBlur", ChunkField.bool("_cdta", "motionBlur"));
+    descriptor(this, "preserveNestedFrameRate", ChunkField.bool("_cdta", "preserveNestedFrameRate"));
+    descriptor(this, "preserveNestedResolution", ChunkField.bool("_cdta", "preserveNestedResolution"));
+    descriptor(this, "width", new ChunkField("_cdta", "width", {
     validate: validateFootageDimension,
     preSet: "_buildLiveDefaults",
-  }),
-);
-
-descriptor(
-  CompItem,
-  "height",
-  new ChunkField("_cdta", "height", {
+  }));
+    descriptor(this, "height", new ChunkField("_cdta", "height", {
     validate: validateFootageDimension,
     preSet: "_buildLiveDefaults",
-  }),
-);
-
-descriptor(
-  CompItem,
-  "shutterAngle",
-  new ChunkField("_cdta", "shutterAngle", {
+  }));
+    descriptor(this, "shutterAngle", new ChunkField("_cdta", "shutterAngle", {
     validate: _validateNumber({ min: 0, max: 720, integer: true }),
-  }),
-);
-
-descriptor(
-  CompItem,
-  "shutterPhase",
-  new ChunkField("_cdta", "shutterPhase", {
+  }));
+    descriptor(this, "shutterPhase", new ChunkField("_cdta", "shutterPhase", {
     validate: _validateNumber({ min: -360, max: 360, integer: true }),
-  }),
-);
-
-descriptor(
-  CompItem,
-  "resolutionFactor",
-  new ChunkField("_cdta", "resolutionFactor", {
+  }));
+    descriptor(this, "resolutionFactor", new ChunkField("_cdta", "resolutionFactor", {
     validate: validateSequence({ length: 2, min: 1, max: 99, integer: true }),
-  }),
-);
-
-descriptor(
-  CompItem,
-  "motionBlurAdaptiveSampleLimit",
-  new ChunkField("_cdta", "motionBlurAdaptiveSampleLimit", {
+  }));
+    descriptor(this, "motionBlurAdaptiveSampleLimit", new ChunkField("_cdta", "motionBlurAdaptiveSampleLimit", {
     validate: _validateNumber({
       min: (self: CompItem) => self.motionBlurSamplesPerFrame,
       max: 256,
       integer: true,
     }),
-  }),
-);
-
-descriptor(
-  CompItem,
-  "motionBlurSamplesPerFrame",
-  new ChunkField("_cdta", "motionBlurSamplesPerFrame", {
+  }));
+    descriptor(this, "motionBlurSamplesPerFrame", new ChunkField("_cdta", "motionBlurSamplesPerFrame", {
     validate: _validateNumber({ min: 2, max: 64, integer: true }),
-  }),
-);
-
-descriptor(
-  CompItem,
-  "pixelAspect",
-  new ChunkField("_cdta", "pixelAspect", {
+  }));
+    descriptor(this, "pixelAspect", new ChunkField("_cdta", "pixelAspect", {
     validate: validatePixelAspect,
     // See `width`.
     preSet: "_buildLiveDefaults",
-  }),
-);
-
-descriptor(
-  CompItem,
-  "timeScale",
-  new ChunkField("_cdta", "timeScale", { readOnly: true }),
-);
-
-descriptor(
-  CompItem,
-  "displayStartTime",
-  new ChunkField("_cdta", "displayStartTime", {
+  }));
+    descriptor(this, "timeScale", new ChunkField("_cdta", "timeScale", { readOnly: true }));
+    descriptor(this, "displayStartTime", new ChunkField("_cdta", "displayStartTime", {
     // AE 2026's own bounds ("out of range -10800 to 86400").
     validate: _validateNumber({ min: -10800.0, max: 86400.0 }),
     postSet: "_restoreTimesInTimebase",
-  }),
-);
-
-descriptor(
-  CompItem,
-  "dropFrame",
-  ChunkField.bool("_cdrp", "value", {
+  }));
+    descriptor(this, "dropFrame", ChunkField.bool("_cdrp", "value", {
     transform: (v: number) => v !== 0,
     reverse: (v: boolean) => int(v),
     default: false,
-  }),
-);
+  }));
+  }
+}
 
 // `@requires_version(15)` on the `motionGraphicsTemplateName` setter, and
 // `@requires_version(24)` on the vertical text methods. Python applies these

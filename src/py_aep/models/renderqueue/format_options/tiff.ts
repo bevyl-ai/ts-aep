@@ -37,8 +37,9 @@ export class TiffFormatOptions extends FormatOptionsBase {
 
   /** Whether IBM PC byte order (little-endian) is used. Read / Write. */
   declare ibmPcByteOrder: boolean;
+
+  static {
+    descriptor(this, "lzwCompression", ChunkField.bool("_body", "lzwCompression"));
+    descriptor(this, "ibmPcByteOrder", ChunkField.bool("_body", "ibmPcByteOrder"));
+  }
 }
-
-descriptor(TiffFormatOptions, "lzwCompression", ChunkField.bool("_body", "lzwCompression"));
-
-descriptor(TiffFormatOptions, "ibmPcByteOrder", ChunkField.bool("_body", "ibmPcByteOrder"));

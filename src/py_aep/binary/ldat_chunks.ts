@@ -361,6 +361,11 @@ export class KfPosition extends AttrsBase {
       struct.pack(">" + "d".repeat(allVals.length), ...allVals),
     );
   }
+
+  static {
+    descriptor(this, "spatialAutoBezier", new BitField("_spatialFlags", 1));
+    descriptor(this, "spatialContinuous", new BitField("_spatialFlags", 0));
+  }
 }
 define(KfPosition, {
   _pad1: { default: b("\x00\x00\x00") },
@@ -375,8 +380,6 @@ define(KfPosition, {
   inSpatialTangents: { default: Factory(() => []) },
   outSpatialTangents: { default: Factory(() => []) },
 });
-descriptor(KfPosition, "spatialAutoBezier", new BitField("_spatialFlags", 1));
-descriptor(KfPosition, "spatialContinuous", new BitField("_spatialFlags", 0));
 
 /**
  * An `LdatItem` payload: the `Kf*` body its item type selects, or the raw
@@ -487,6 +490,12 @@ export class LdatItem extends AttrsBase {
     }
     return concat(header, payload, this._trailing);
   }
+
+  static {
+    descriptor(this, "roving", new BitField("_keyFlags", 5));
+    descriptor(this, "temporalAutoBezier", new BitField("_keyFlags", 4));
+    descriptor(this, "temporalContinuous", new BitField("_keyFlags", 3));
+  }
 }
 define(LdatItem, {
   timeUnits: { default: 0 },
@@ -496,9 +505,6 @@ define(LdatItem, {
   kfData: { default: b("") },
   _trailing: { default: b("") },
 });
-descriptor(LdatItem, "roving", new BitField("_keyFlags", 5));
-descriptor(LdatItem, "temporalAutoBezier", new BitField("_keyFlags", 4));
-descriptor(LdatItem, "temporalContinuous", new BitField("_keyFlags", 3));
 
 // ---------------------------------------------------------------------------
 // LdatChunk - registered chunk

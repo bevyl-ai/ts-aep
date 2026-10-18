@@ -15,9 +15,8 @@ export class Cinema4DRendererOptions extends RendererOptionsBase {
 
   /** Renderer quality, `1` to `99`. Read / Write. */
   declare quality: number;
+
+  static {
+    descriptor(this, "quality", new ChunkField("_body", "quality", { validate: validateCinema4dQuality }));
+  }
 }
-descriptor(
-  Cinema4DRendererOptions,
-  "quality",
-  new ChunkField("_body", "quality", { validate: validateCinema4dQuality }),
-);

@@ -1195,44 +1195,30 @@ export class AVLayer extends Layer {
       this._refreshFormerNullDefaults();
     }
   }
-}
 
-// Class-body `ChunkField` assignments in Python, installed as descriptors.
-descriptor(AVLayer, "adjustmentLayer", ChunkField.bool("_ldta", "adjustmentLayer"));
-descriptor(AVLayer, "audioEnabled", ChunkField.bool("_ldta", "audioEnabled"));
-descriptor(
-  AVLayer,
-  "collapseTransformation",
-  ChunkField.bool("_ldta", "collapseTransformation", { validate: _validateCollapseTransformation }),
-);
-descriptor(AVLayer, "effectsActive", ChunkField.bool("_ldta", "effectsActive"));
-descriptor(
-  AVLayer,
-  "environmentLayer",
-  ChunkField.bool("_ldta", "environmentLayer", { postSet: "_onEnvironmentLayerSet" }),
-);
-descriptor(AVLayer, "frameBlendingType", ChunkField.enum(FrameBlendingType, "_ldta", "frameBlendingType"));
-descriptor(AVLayer, "guideLayer", ChunkField.bool("_ldta", "guideLayer"));
-descriptor(AVLayer, "motionBlur", ChunkField.bool("_ldta", "motionBlurFlag"));
-descriptor(AVLayer, "preserveTransparency", ChunkField.bool("_ldta", "preserveTransparency"));
-descriptor(AVLayer, "quality", ChunkField.enum(LayerQuality, "_ldta", "quality"));
-descriptor(
-  AVLayer,
-  "samplingQuality",
-  ChunkField.enum(LayerSamplingQuality, "_ldta", "samplingQuality", { minVersion: 12 }),
-);
-descriptor(
-  AVLayer,
-  "threeDLayer",
-  ChunkField.bool("_ldta", "threeDLayer", {
-    // Built at the dimensionality the file has, so the toggle sees the
-    // dead 2-D Scale Z it normalizes.
-    preSet: "_loadPropertyTree",
-    postSet: "_onThreeDLayerSet",
-  }),
-);
-descriptor(AVLayer, "threeDPerChar", ChunkField.bool("_ldta", "threeDPerChar"));
-descriptor(AVLayer, "_sourceId", new ChunkField("_ldta", "sourceId"));
+  static {
+    // Class-body `ChunkField` assignments in Python, installed as descriptors.
+    descriptor(this, "adjustmentLayer", ChunkField.bool("_ldta", "adjustmentLayer"));
+    descriptor(this, "audioEnabled", ChunkField.bool("_ldta", "audioEnabled"));
+    descriptor(this, "collapseTransformation", ChunkField.bool("_ldta", "collapseTransformation", { validate: _validateCollapseTransformation }));
+    descriptor(this, "effectsActive", ChunkField.bool("_ldta", "effectsActive"));
+    descriptor(this, "environmentLayer", ChunkField.bool("_ldta", "environmentLayer", { postSet: "_onEnvironmentLayerSet" }));
+    descriptor(this, "frameBlendingType", ChunkField.enum(FrameBlendingType, "_ldta", "frameBlendingType"));
+    descriptor(this, "guideLayer", ChunkField.bool("_ldta", "guideLayer"));
+    descriptor(this, "motionBlur", ChunkField.bool("_ldta", "motionBlurFlag"));
+    descriptor(this, "preserveTransparency", ChunkField.bool("_ldta", "preserveTransparency"));
+    descriptor(this, "quality", ChunkField.enum(LayerQuality, "_ldta", "quality"));
+    descriptor(this, "samplingQuality", ChunkField.enum(LayerSamplingQuality, "_ldta", "samplingQuality", { minVersion: 12 }));
+    descriptor(this, "threeDLayer", ChunkField.bool("_ldta", "threeDLayer", {
+      // Built at the dimensionality the file has, so the toggle sees the
+      // dead 2-D Scale Z it normalizes.
+      preSet: "_loadPropertyTree",
+      postSet: "_onThreeDLayerSet",
+    }));
+    descriptor(this, "threeDPerChar", ChunkField.bool("_ldta", "threeDPerChar"));
+    descriptor(this, "_sourceId", new ChunkField("_ldta", "sourceId"));
+  }
+}
 
 // `@requires_version(23)` on the two track-matte methods, applied bottom-up after the class.
 AVLayer.prototype.setTrackMatte = requiresVersion(23)(AVLayer.prototype.setTrackMatte);

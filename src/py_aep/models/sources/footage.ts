@@ -682,101 +682,35 @@ export class FootageSource {
   get isStill(): boolean {
     return this._sspc.duration === 0;
   }
-}
 
-// Descriptor fields. Each reads from / writes to a chunk attribute, so
-// assigning to them mutates the underlying binary data.
-descriptor(
-  FootageSource,
-  "alphaMode",
-  ChunkField.enum(AlphaMode, "_sspc", "alphaModeRaw", {
-    validate: _validateHasAlpha,
-    postSet: "_onAlphaModeSet",
-  }),
-);
-descriptor(
-  FootageSource,
-  "fieldSeparationType",
-  ChunkField.enum(FieldSeparationType, "_sspc", "fieldSeparationType"),
-);
-descriptor(
-  FootageSource,
-  "hasAlpha",
-  new ChunkField("_sspc", "hasAlpha", { readOnly: true }),
-);
-descriptor(
-  FootageSource,
-  "highQualityFieldSeparation",
-  ChunkField.bool("_sspc", "highQualityFieldSeparation"),
-);
-descriptor(
-  FootageSource,
-  "invertAlpha",
-  ChunkField.bool("_sspc", "invertAlpha"),
-);
-descriptor(
-  FootageSource,
-  "loop",
-  new ChunkField("_sspc", "loop", {
-    validate: _validateNumber({ min: 1, max: 9999, integer: true }),
-  }),
-);
-descriptor(
-  FootageSource,
-  "premulColor",
-  new ChunkField("_sspc", "premulColor", { validate: validateRgbColor }),
-);
-descriptor(
-  FootageSource,
-  "interpretAsLinearLight",
-  ChunkField.enum(LinearLightMode, "_linl", "value", {
-    default: LinearLightMode.OFF,
-  }),
-);
-descriptor(
-  FootageSource,
-  "displayFrameRate",
-  new ChunkField("_sspc", "displayFrameRate", { readOnly: true }),
-);
-descriptor(
-  FootageSource,
-  "removePulldown",
-  ChunkField.enum(PulldownPhase, "_sspc", "removePulldown", {
-    postSet: "_onRemovePulldownSet",
-  }),
-);
-descriptor(
-  FootageSource,
-  "nativeFrameRate",
-  new ChunkField("_sspc", "nativeFrameRate", { readOnly: true }),
-);
-descriptor(
-  FootageSource,
-  "_width",
-  new ChunkField("_sspc", "width", { readOnly: true }),
-);
-descriptor(
-  FootageSource,
-  "_height",
-  new ChunkField("_sspc", "height", { readOnly: true }),
-);
-descriptor(
-  FootageSource,
-  "_pixelAspect",
-  new ChunkField("_sspc", "pixelAspect", { readOnly: true }),
-);
-descriptor(
-  FootageSource,
-  "_footageMissing",
-  new ChunkField("_sspc", "footageMissingAtSave", { readOnly: true }),
-);
-descriptor(
-  FootageSource,
-  "_startFrame",
-  new ChunkField("_sspc", "startFrame", { readOnly: true }),
-);
-descriptor(
-  FootageSource,
-  "_endFrame",
-  new ChunkField("_sspc", "endFrame", { readOnly: true }),
-);
+  static {
+    // Descriptor fields. Each reads from / writes to a chunk attribute, so
+    // assigning to them mutates the underlying binary data.
+    descriptor(this, "alphaMode", ChunkField.enum(AlphaMode, "_sspc", "alphaModeRaw", {
+      validate: _validateHasAlpha,
+      postSet: "_onAlphaModeSet",
+    }));
+    descriptor(this, "fieldSeparationType", ChunkField.enum(FieldSeparationType, "_sspc", "fieldSeparationType"));
+    descriptor(this, "hasAlpha", new ChunkField("_sspc", "hasAlpha", { readOnly: true }));
+    descriptor(this, "highQualityFieldSeparation", ChunkField.bool("_sspc", "highQualityFieldSeparation"));
+    descriptor(this, "invertAlpha", ChunkField.bool("_sspc", "invertAlpha"));
+    descriptor(this, "loop", new ChunkField("_sspc", "loop", {
+      validate: _validateNumber({ min: 1, max: 9999, integer: true }),
+    }));
+    descriptor(this, "premulColor", new ChunkField("_sspc", "premulColor", { validate: validateRgbColor }));
+    descriptor(this, "interpretAsLinearLight", ChunkField.enum(LinearLightMode, "_linl", "value", {
+      default: LinearLightMode.OFF,
+    }));
+    descriptor(this, "displayFrameRate", new ChunkField("_sspc", "displayFrameRate", { readOnly: true }));
+    descriptor(this, "removePulldown", ChunkField.enum(PulldownPhase, "_sspc", "removePulldown", {
+      postSet: "_onRemovePulldownSet",
+    }));
+    descriptor(this, "nativeFrameRate", new ChunkField("_sspc", "nativeFrameRate", { readOnly: true }));
+    descriptor(this, "_width", new ChunkField("_sspc", "width", { readOnly: true }));
+    descriptor(this, "_height", new ChunkField("_sspc", "height", { readOnly: true }));
+    descriptor(this, "_pixelAspect", new ChunkField("_sspc", "pixelAspect", { readOnly: true }));
+    descriptor(this, "_footageMissing", new ChunkField("_sspc", "footageMissingAtSave", { readOnly: true }));
+    descriptor(this, "_startFrame", new ChunkField("_sspc", "startFrame", { readOnly: true }));
+    descriptor(this, "_endFrame", new ChunkField("_sspc", "endFrame", { readOnly: true }));
+  }
+}

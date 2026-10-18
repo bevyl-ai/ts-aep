@@ -115,12 +115,8 @@ export class SolidSource extends FootageSource {
     validateOptiName(value);
     this._opti.solidName = value;
   }
-}
 
-descriptor(
-  SolidSource,
-  "color",
-  new ChunkField("_opti", "color", {
-    validate: validateRgbColor,
-  }),
-);
+  static {
+    descriptor(this, "color", new ChunkField("_opti", "color", { validate: validateRgbColor }));
+  }
+}

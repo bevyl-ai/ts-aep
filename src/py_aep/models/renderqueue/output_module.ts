@@ -58,7 +58,6 @@ export function isInt(v: RuleValue | null): v is number | boolean {
   return (typeof v === "number" && Number.isInteger(v)) || typeof v === "boolean";
 }
 
-
 /**
  * `isinstance(value, IntEnum)` per key: TS enum members are plain numbers, so a value counts
  * as a decoded enum member only when it belongs to the enum class that owns its key. A raw
@@ -1678,134 +1677,65 @@ export class OutputModule {
 
     rqi._outputModules.splice(omIdx, 1);
   }
+
+  static {
+    // Descriptors for the `declare`d fields above.
+    descriptor(this, "includeSourceXmp", ChunkField.bool("_omLdat", "includeSourceXmp"));
+    descriptor(this, "postRenderAction", ChunkField.enum(PostRenderAction, "_omLdat", "postRenderAction"));
+    descriptor(this, "_audioBitDepth", ChunkField.enum(AudioBitDepth, "_roou", "audioBitDepth", {
+      validate: _validateForFormat("Audio Bit Depth", _reject24BitAudio),
+      postSet: "_syncAudioFormat",
+    }));
+    descriptor(this, "_audioChannels", ChunkField.enum(AudioChannels, "_roou", "audioChannels", {
+      validate: _validateForFormat("Audio Channels"),
+      postSet: "_clampAudioDependents",
+    }));
+    descriptor(this, "_audioSampleRate", ChunkField.enum(AudioSampleRate, "_roou", "audioSampleRate", {
+      validate: _validateForFormat("Audio Sample Rate"),
+    }));
+    descriptor(this, "_channels", ChunkField.enum(OutputChannels, "_omLdat", "channels", {
+      validate: _validateForFormat("Channels"),
+      postSet: "_syncAfterChannels",
+    }));
+    descriptor(this, "_colorMode", ChunkField.enum(OutputColorMode, "_roou", "colorPremultiplied", {
+      validate: _validateForFormat("Color"),
+    }));
+    descriptor(this, "_convertToLinearLight", ChunkField.enum(ConvertToLinearLight, "_omLdat", "convertToLinearLight"));
+    descriptor(this, "_crop", ChunkField.bool("_omLdat", "crop", { postSet: "_updateOutputDimensions" }));
+    descriptor(this, "_cropBottom", new ChunkField("_omLdat", "cropBottom", {
+      validate: _validateCrop("_cropTop", "height"),
+      postSet: "_updateOutputDimensions",
+    }));
+    descriptor(this, "_cropLeft", new ChunkField("_omLdat", "cropLeft", {
+      validate: _validateCrop("_cropRight", "width"),
+      postSet: "_updateOutputDimensions",
+    }));
+    descriptor(this, "_cropRight", new ChunkField("_omLdat", "cropRight", {
+      validate: _validateCrop("_cropLeft", "width"),
+      postSet: "_updateOutputDimensions",
+    }));
+    descriptor(this, "_cropTop", new ChunkField("_omLdat", "cropTop", {
+      validate: _validateCrop("_cropBottom", "height"),
+      postSet: "_updateOutputDimensions",
+    }));
+    descriptor(this, "_depth", ChunkField.enum(OutputColorDepth, "_roou", "depth", {
+      allowOutOfEnumValues: true,
+      validate: _validateForFormat("Depth", validateEnum(OutputColorDepth)),
+      postSet: "_syncPngOptions",
+    }));
+    descriptor(this, "_format", ChunkField.enum(OutputFormat, "_roou", "formatId", {
+      allowOutOfEnumValues: true,
+      reverse: (v: number) => OutputFormat.toFormatId(v),
+      transform: (v: string | Uint8Array) => OutputFormat.fromFormatId(v),
+      readOnly: true,
+    }));
+    descriptor(this, "_includeProjectLink", ChunkField.bool("_omLdat", "includeProjectLink"));
+    descriptor(this, "_lockAspectRatio", ChunkField.bool("_omLdat", "lockAspectRatio"));
+    descriptor(this, "_postRenderActionSetting", ChunkField.enum(PostRenderActionSetting, "_omLdat", "postRenderAction"));
+    descriptor(this, "_preserveRgb", ChunkField.bool("_omLdat", "preserveRgb"));
+    descriptor(this, "_resize", ChunkField.bool("_omLdat", "resize", { postSet: "_updateOutputDimensions" }));
+    descriptor(this, "_resizeQuality", ChunkField.enum(ResizeQuality, "_omLdat", "resizeQuality"));
+    descriptor(this, "_useCompFrameNumber", ChunkField.bool("_omLdat", "useCompFrameNumber"));
+    descriptor(this, "_useRegionOfInterest", ChunkField.bool("_omLdat", "useRegionOfInterest", { postSet: "_updateOutputDimensions" }));
+  }
 }
-
-// Field descriptors: each ChunkField assigned in the Python class body is installed on the
-// prototype after the class, so the `declare`d fields above read and write through it.
-descriptor(OutputModule, "includeSourceXmp", ChunkField.bool("_omLdat", "includeSourceXmp"));
-
-descriptor(OutputModule, "postRenderAction", ChunkField.enum(PostRenderAction, "_omLdat", "postRenderAction"));
-
-descriptor(
-  OutputModule,
-  "_audioBitDepth",
-  ChunkField.enum(AudioBitDepth, "_roou", "audioBitDepth", {
-    validate: _validateForFormat("Audio Bit Depth", _reject24BitAudio),
-    postSet: "_syncAudioFormat",
-  }),
-);
-
-descriptor(
-  OutputModule,
-  "_audioChannels",
-  ChunkField.enum(AudioChannels, "_roou", "audioChannels", {
-    validate: _validateForFormat("Audio Channels"),
-    postSet: "_clampAudioDependents",
-  }),
-);
-
-descriptor(
-  OutputModule,
-  "_audioSampleRate",
-  ChunkField.enum(AudioSampleRate, "_roou", "audioSampleRate", {
-    validate: _validateForFormat("Audio Sample Rate"),
-  }),
-);
-
-descriptor(
-  OutputModule,
-  "_channels",
-  ChunkField.enum(OutputChannels, "_omLdat", "channels", {
-    validate: _validateForFormat("Channels"),
-    postSet: "_syncAfterChannels",
-  }),
-);
-
-descriptor(
-  OutputModule,
-  "_colorMode",
-  ChunkField.enum(OutputColorMode, "_roou", "colorPremultiplied", {
-    validate: _validateForFormat("Color"),
-  }),
-);
-
-descriptor(OutputModule, "_convertToLinearLight", ChunkField.enum(ConvertToLinearLight, "_omLdat", "convertToLinearLight"));
-
-descriptor(OutputModule, "_crop", ChunkField.bool("_omLdat", "crop", { postSet: "_updateOutputDimensions" }));
-
-descriptor(
-  OutputModule,
-  "_cropBottom",
-  new ChunkField("_omLdat", "cropBottom", {
-    validate: _validateCrop("_cropTop", "height"),
-    postSet: "_updateOutputDimensions",
-  }),
-);
-
-descriptor(
-  OutputModule,
-  "_cropLeft",
-  new ChunkField("_omLdat", "cropLeft", {
-    validate: _validateCrop("_cropRight", "width"),
-    postSet: "_updateOutputDimensions",
-  }),
-);
-
-descriptor(
-  OutputModule,
-  "_cropRight",
-  new ChunkField("_omLdat", "cropRight", {
-    validate: _validateCrop("_cropLeft", "width"),
-    postSet: "_updateOutputDimensions",
-  }),
-);
-
-descriptor(
-  OutputModule,
-  "_cropTop",
-  new ChunkField("_omLdat", "cropTop", {
-    validate: _validateCrop("_cropBottom", "height"),
-    postSet: "_updateOutputDimensions",
-  }),
-);
-
-descriptor(
-  OutputModule,
-  "_depth",
-  ChunkField.enum(OutputColorDepth, "_roou", "depth", {
-    allowOutOfEnumValues: true,
-    validate: _validateForFormat("Depth", validateEnum(OutputColorDepth)),
-    postSet: "_syncPngOptions",
-  }),
-);
-
-descriptor(
-  OutputModule,
-  "_format",
-  ChunkField.enum(OutputFormat, "_roou", "formatId", {
-    allowOutOfEnumValues: true,
-    reverse: (v: number) => OutputFormat.toFormatId(v),
-    transform: (v: string | Uint8Array) => OutputFormat.fromFormatId(v),
-    readOnly: true,
-  }),
-);
-
-descriptor(OutputModule, "_includeProjectLink", ChunkField.bool("_omLdat", "includeProjectLink"));
-
-descriptor(OutputModule, "_lockAspectRatio", ChunkField.bool("_omLdat", "lockAspectRatio"));
-
-descriptor(OutputModule, "_postRenderActionSetting", ChunkField.enum(PostRenderActionSetting, "_omLdat", "postRenderAction"));
-
-descriptor(OutputModule, "_preserveRgb", ChunkField.bool("_omLdat", "preserveRgb"));
-
-descriptor(OutputModule, "_resize", ChunkField.bool("_omLdat", "resize", { postSet: "_updateOutputDimensions" }));
-
-descriptor(OutputModule, "_resizeQuality", ChunkField.enum(ResizeQuality, "_omLdat", "resizeQuality"));
-
-descriptor(OutputModule, "_useCompFrameNumber", ChunkField.bool("_omLdat", "useCompFrameNumber"));
-
-descriptor(
-  OutputModule,
-  "_useRegionOfInterest",
-  ChunkField.bool("_omLdat", "useRegionOfInterest", { postSet: "_updateOutputDimensions" }),
-);

@@ -373,6 +373,11 @@ export class PngRoptChunk extends RoptChunk {
 
   /** The output has an alpha channel. */
   declare hasAlpha: boolean;
+
+  static {
+    // BitFields read and write bits of an attrs field; they are descriptors, not attrs fields.
+    descriptor(this, "hasAlpha", new BitField("_flags", 2));
+  }
 }
 
 define(PngRoptChunk, {
@@ -389,8 +394,6 @@ define(PngRoptChunk, {
   channelCount: u4Field({ default: 4 }),
   _padEnd: bytesField(272, { repr: false }),
 });
-// BitFields read and write bits of an attrs field; they are descriptors, not attrs fields.
-descriptor(PngRoptChunk, "hasAlpha", new BitField("_flags", 2));
 
 export const _ROPT_VARIANTS: Map<string, typeof RoptChunk> = new Map<string, typeof RoptChunk>([
   ["sDPX", CineonRoptChunk],
@@ -418,6 +421,10 @@ export class RoutItem extends FmtItem {
   declare _state: number;
 
   declare render: boolean;
+
+  static {
+    descriptor(this, "render", new BitField("_flags", 6));
+  }
 }
 
 define(RoutItem, {
@@ -425,7 +432,6 @@ define(RoutItem, {
   _pad: bytesField(2, { default: b("\x00\x00"), repr: false }),
   _state: u1Field({ repr: false }),
 });
-descriptor(RoutItem, "render", new BitField("_flags", 6));
 
 // ---------------------------------------------------------------------------
 // Render settings ldat item (2246 bytes per item)
@@ -588,6 +594,12 @@ export class RenderSettingsItem extends FmtItem {
   set timeSpanDuration(value: number) {
     [this.timeSpanDurationDividend, this.timeSpanDurationDivisor] = toDividendDivisor(value);
   }
+
+  static {
+    // BitFields read and write bits of an attrs field; they are descriptors, not attrs fields.
+    descriptor(this, "queueItemNotify", new BitField("_flagByte", 2));
+    descriptor(this, "renderChecked", new BitField("_flagByte", 0));
+  }
 }
 
 define(RenderSettingsItem, {
@@ -653,9 +665,6 @@ define(RenderSettingsItem, {
     repr: false,
   }),
 });
-// BitFields read and write bits of an attrs field; they are descriptors, not attrs fields.
-descriptor(RenderSettingsItem, "queueItemNotify", new BitField("_flagByte", 2));
-descriptor(RenderSettingsItem, "renderChecked", new BitField("_flagByte", 0));
 
 // ---------------------------------------------------------------------------
 // Output module settings ldat item (128 bytes per item)
@@ -783,6 +792,16 @@ export class OutputModuleSettingsItem extends FmtItem {
       setattr(this, field.name, getattr(source, field.name));
     }
   }
+
+  static {
+    // BitFields read and write bits of an attrs field; they are descriptors, not attrs fields.
+    descriptor(this, "includeSourceXmp", new BitField("_flagByte07", 6));
+    descriptor(this, "hasOutputFile", new BitField("_flagByte07", 5));
+    descriptor(this, "useRegionOfInterest", new BitField("_flagByte07", 4));
+    descriptor(this, "useCompFrameNumber", new BitField("_flagByte07", 3));
+    descriptor(this, "crop", new BitField("_flagByte22", 0));
+    descriptor(this, "includeProjectLink", new BitField("_includeProjectLink", 0));
+  }
 }
 
 define(OutputModuleSettingsItem, {
@@ -827,13 +846,6 @@ define(OutputModuleSettingsItem, {
   preserveRgb: boolField(),
   _reserved5f: bytesField(33, { repr: false }),
 });
-// BitFields read and write bits of an attrs field; they are descriptors, not attrs fields.
-descriptor(OutputModuleSettingsItem, "includeSourceXmp", new BitField("_flagByte07", 6));
-descriptor(OutputModuleSettingsItem, "hasOutputFile", new BitField("_flagByte07", 5));
-descriptor(OutputModuleSettingsItem, "useRegionOfInterest", new BitField("_flagByte07", 4));
-descriptor(OutputModuleSettingsItem, "useCompFrameNumber", new BitField("_flagByte07", 3));
-descriptor(OutputModuleSettingsItem, "crop", new BitField("_flagByte22", 0));
-descriptor(OutputModuleSettingsItem, "includeProjectLink", new BitField("_includeProjectLink", 0));
 
 /** `_ROUT_ITEM_SIZE` */
 export const _ROUT_ITEM_SIZE = 4;

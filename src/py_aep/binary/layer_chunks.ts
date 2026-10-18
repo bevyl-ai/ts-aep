@@ -241,6 +241,50 @@ export class LdtaChunk extends Chunk {
       this.frameBlendingMode = value === 2;
     }
   }
+
+  static {
+    // -- BitField descriptors (not attrs fields) -----------------------------
+    // byte 37: _layer_flags_0
+    descriptor(this, "samplingQuality", new BitField("_layerFlags0", 6));
+    descriptor(this, "environmentLayer", new BitField("_layerFlags0", 5));
+    descriptor(this, "charactersTowardCamera", new BitField("_layerFlags0", 4));
+    descriptor(this, "threeDPerChar", new BitField("_layerFlags0", 3));
+    descriptor(this, "frameBlendingMode", new BitField("_layerFlags0", 2));
+    descriptor(this, "guideLayer", new BitField("_layerFlags0", 1));
+    // bit 0: a source-backed layer's name was explicitly set (away from the
+    // source item's name). Always 0 for sourceless layers (camera/light/text/
+    // shape) even when named; NOT equivalent to ExtendScript isNameSet (use the
+    // model-level Layer.isNameSet for that).
+    descriptor(this, "nameSet", new BitField("_layerFlags0", 0));
+    // byte 38: _layer_flags_1
+    descriptor(this, "nullLayer", new BitField("_layerFlags1", 7));
+    // bit 6: camera/light "orient towards point of interest" (the two-node
+    // rig). AE stores the camera variant of CAMERA_OR_POINT_OF_INTEREST here,
+    // NOT in bit 5 (probed AE 2026: a default two-node camera has 0x44, a
+    // NO_AUTO_ORIENT camera 0x04).
+    descriptor(this, "poiAutoOrient", new BitField("_layerFlags1", 6));
+    descriptor(this, "cameraOrPoiAutoOrient", new BitField("_layerFlags1", 5));
+    descriptor(this, "markersLocked", new BitField("_layerFlags1", 4));
+    descriptor(this, "solo", new BitField("_layerFlags1", 3));
+    descriptor(this, "threeDLayer", new BitField("_layerFlags1", 2));
+    descriptor(this, "adjustmentLayer", new BitField("_layerFlags1", 1));
+    descriptor(this, "autoOrientAlongPath", new BitField("_layerFlags1", 0));
+    // byte 39: _layer_flags_2
+    descriptor(this, "collapseTransformation", new BitField("_layerFlags2", 7));
+    descriptor(this, "shy", new BitField("_layerFlags2", 6));
+    descriptor(this, "locked", new BitField("_layerFlags2", 5));
+    descriptor(this, "frameBlending", new BitField("_layerFlags2", 4));
+    descriptor(this, "motionBlurFlag", new BitField("_layerFlags2", 3));
+    descriptor(this, "effectsActive", new BitField("_layerFlags2", 2));
+    descriptor(this, "audioEnabled", new BitField("_layerFlags2", 1));
+    descriptor(this, "enabled", new BitField("_layerFlags2", 0));
+    // byte 60: set while the layer has a comment (`cmta`); AE 2026 ignores
+    // a `cmta` without it and clears both when the comment is emptied.
+    descriptor(this, "hasComment", new BitField("_reserved3c", 0));
+    // byte 103: _transfer_flags
+    descriptor(this, "preserveTransparency", new BitField("_transferFlags", 0));
+    descriptor(this, "dancingDissolve", new BitField("_transferFlags", 1));
+  }
 }
 
 define(LdtaChunk, {
@@ -298,51 +342,5 @@ define(LdtaChunk, {
   // -- Optional field (bytes 160-163, AE >= 23) --------------------------
   matteLayerId: u4Field({ default: null, optional: true }),
 });
-
-// -- BitField descriptors (not attrs fields) -----------------------------
-// byte 37: _layer_flags_0
-descriptor(LdtaChunk, "samplingQuality", new BitField("_layerFlags0", 6));
-descriptor(LdtaChunk, "environmentLayer", new BitField("_layerFlags0", 5));
-descriptor(LdtaChunk, "charactersTowardCamera", new BitField("_layerFlags0", 4));
-descriptor(LdtaChunk, "threeDPerChar", new BitField("_layerFlags0", 3));
-descriptor(LdtaChunk, "frameBlendingMode", new BitField("_layerFlags0", 2));
-descriptor(LdtaChunk, "guideLayer", new BitField("_layerFlags0", 1));
-// bit 0: a source-backed layer's name was explicitly set (away from the
-// source item's name). Always 0 for sourceless layers (camera/light/text/
-// shape) even when named; NOT equivalent to ExtendScript isNameSet (use the
-// model-level Layer.isNameSet for that).
-descriptor(LdtaChunk, "nameSet", new BitField("_layerFlags0", 0));
-
-// byte 38: _layer_flags_1
-descriptor(LdtaChunk, "nullLayer", new BitField("_layerFlags1", 7));
-// bit 6: camera/light "orient towards point of interest" (the two-node
-// rig). AE stores the camera variant of CAMERA_OR_POINT_OF_INTEREST here,
-// NOT in bit 5 (probed AE 2026: a default two-node camera has 0x44, a
-// NO_AUTO_ORIENT camera 0x04).
-descriptor(LdtaChunk, "poiAutoOrient", new BitField("_layerFlags1", 6));
-descriptor(LdtaChunk, "cameraOrPoiAutoOrient", new BitField("_layerFlags1", 5));
-descriptor(LdtaChunk, "markersLocked", new BitField("_layerFlags1", 4));
-descriptor(LdtaChunk, "solo", new BitField("_layerFlags1", 3));
-descriptor(LdtaChunk, "threeDLayer", new BitField("_layerFlags1", 2));
-descriptor(LdtaChunk, "adjustmentLayer", new BitField("_layerFlags1", 1));
-descriptor(LdtaChunk, "autoOrientAlongPath", new BitField("_layerFlags1", 0));
-
-// byte 39: _layer_flags_2
-descriptor(LdtaChunk, "collapseTransformation", new BitField("_layerFlags2", 7));
-descriptor(LdtaChunk, "shy", new BitField("_layerFlags2", 6));
-descriptor(LdtaChunk, "locked", new BitField("_layerFlags2", 5));
-descriptor(LdtaChunk, "frameBlending", new BitField("_layerFlags2", 4));
-descriptor(LdtaChunk, "motionBlurFlag", new BitField("_layerFlags2", 3));
-descriptor(LdtaChunk, "effectsActive", new BitField("_layerFlags2", 2));
-descriptor(LdtaChunk, "audioEnabled", new BitField("_layerFlags2", 1));
-descriptor(LdtaChunk, "enabled", new BitField("_layerFlags2", 0));
-
-// byte 60: set while the layer has a comment (`cmta`); AE 2026 ignores
-// a `cmta` without it and clears both when the comment is emptied.
-descriptor(LdtaChunk, "hasComment", new BitField("_reserved3c", 0));
-
-// byte 103: _transfer_flags
-descriptor(LdtaChunk, "preserveTransparency", new BitField("_transferFlags", 0));
-descriptor(LdtaChunk, "dancingDissolve", new BitField("_transferFlags", 1));
 
 register("ldta")(LdtaChunk);

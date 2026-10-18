@@ -71,14 +71,10 @@ export class OpenExrFormatOptions extends FormatOptionsBase {
     validatePositiveNumber(value);
     this._body.dwaCompressionLevel = value;
   }
+
+  static {
+    descriptor(this, "compression", ChunkField.enum(OpenExrCompression, "_body", "compression", { allowOutOfEnumValues: true }));
+    descriptor(this, "luminanceChroma", ChunkField.bool("_body", "luminanceChroma"));
+    descriptor(this, "thirtyTwoBitFloat", ChunkField.bool("_body", "thirtyTwoBitFloat"));
+  }
 }
-
-descriptor(
-  OpenExrFormatOptions,
-  "compression",
-  ChunkField.enum(OpenExrCompression, "_body", "compression", { allowOutOfEnumValues: true }),
-);
-
-descriptor(OpenExrFormatOptions, "luminanceChroma", ChunkField.bool("_body", "luminanceChroma"));
-
-descriptor(OpenExrFormatOptions, "thirtyTwoBitFloat", ChunkField.bool("_body", "thirtyTwoBitFloat"));

@@ -338,6 +338,15 @@ export class CdtaChunk extends Chunk {
   get workAreaDurationFrame(): number {
     return round(this.workAreaDuration * this.frameRate);
   }
+
+  static {
+    descriptor(this, "draft3d", new BitField("_compFlags0", 7));
+    descriptor(this, "preserveNestedResolution", new BitField("_compFlags1", 7));
+    descriptor(this, "preserveNestedFrameRate", new BitField("_compFlags1", 5));
+    descriptor(this, "frameBlending", new BitField("_compFlags1", 4));
+    descriptor(this, "motionBlur", new BitField("_compFlags1", 3));
+    descriptor(this, "hideShyLayers", new BitField("_compFlags1", 0));
+  }
 }
 define(CdtaChunk, {
   chunkType: field({ default: "cdta" }),
@@ -382,12 +391,6 @@ define(CdtaChunk, {
   motionBlurAdaptiveSampleLimit: s4Field({ default: 128 }),
   motionBlurSamplesPerFrame: s4Field({ default: 16 }),
 });
-descriptor(CdtaChunk, "draft3d", new BitField("_compFlags0", 7));
-descriptor(CdtaChunk, "preserveNestedResolution", new BitField("_compFlags1", 7));
-descriptor(CdtaChunk, "preserveNestedFrameRate", new BitField("_compFlags1", 5));
-descriptor(CdtaChunk, "frameBlending", new BitField("_compFlags1", 4));
-descriptor(CdtaChunk, "motionBlur", new BitField("_compFlags1", 3));
-descriptor(CdtaChunk, "hideShyLayers", new BitField("_compFlags1", 0));
 register("cdta")(CdtaChunk);
 
 // ---------------------------------------------------------------------------
