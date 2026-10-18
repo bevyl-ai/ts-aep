@@ -17,14 +17,20 @@ function decode(spec: Record<string, any>): any {
   return v;
 }
 
+/** The TS member for a py-aep name on `obj`: camelCase on models, the raw name on binary chunks. */
+function member(obj: any, py: string): string {
+  const name = ts_name(py);
+  return obj != null && name !== py && !(name in Object(obj)) ? py : name;
+}
+
 function resolve(app: any, path: string): [any, string] {
   const steps = [...path.slice(3).matchAll(/\.(\w+)|\[(\d+)\]/g)];
   let obj = app;
   for (const m of steps.slice(0, -1)) {
-    if (m[1] !== undefined) obj = obj[ts_name(m[1])];
+    if (m[1] !== undefined) obj = obj[member(obj, m[1])];
     else obj = Array.isArray(obj) ? obj[Number(m[2])] : [...obj][Number(m[2])];
   }
-  return [obj, ts_name(steps.at(-1)![1])];
+  return [obj, member(obj, steps.at(-1)![1])];
 }
 
 const [out, ...samples] = process.argv.slice(2);

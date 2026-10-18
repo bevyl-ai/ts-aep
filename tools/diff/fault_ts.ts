@@ -30,7 +30,8 @@ const WRITES: [string, string, any][] = [
 /** `obj.name` with Python's AttributeError on `None` (the TS twin would raise a JS TypeError). */
 function attr_of(obj: any, name: string): any {
   if (obj == null) throw new AttributeError(`'NoneType' object has no attribute '${name}'`);
-  return obj[ts_name(name)].bind(obj);
+  const ts = ts_name(name);
+  return obj[ts in Object(obj) ? ts : name].bind(obj);
 }
 
 function text_documents(app: any): [string, any][] {
