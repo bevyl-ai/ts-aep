@@ -11,14 +11,13 @@ import { validateBool, validateRgbColor } from "../validators.ts";
 // NOTE(port): property_group.ts reaches this module only through `deferred(...)` (the
 // port of Python's in-method import), so `extends PropertyGroup` evaluates after it.
 import { PropertyGroup, _insertBeforeGroupEnd } from "./property_group.ts";
-import { AttributeError, deferred, descriptor, mod, assert, instanceDict } from "../../../pyrt/index.ts";
+import { AttributeError, descriptor, mod, assert, instanceDict } from "../../../pyrt/index.ts";
 import type { Utf8Chunk } from "../../binary/scalar_chunks.ts";
 import type { Property } from "./property.ts";
 import type { Shape } from "./shape.ts";
-
-const _property = deferred<typeof import("../../parsers/property.ts")>("py_aep/parsers/property");
-const _propertyModel = deferred<typeof import("./property.ts")>("py_aep/models/properties/property");
-const _avLayer = deferred<typeof import("../layers/av_layer.ts")>("py_aep/models/layers/av_layer");
+import * as _property from "../../parsers/property.ts";
+import * as _propertyModel from "./property.ts";
+import * as _avLayer from "../layers/av_layer.ts";
 
 // Mask outline colors cycled by creation index for new masks. AE picks
 // from the label colors via an app-global counter that persists across
@@ -290,7 +289,7 @@ export class MaskPropertyGroup extends PropertyGroup {
     assert(this._tdgp != null);
     const layer = this._containingLayer;
     const comp = layer.containingComp;
-    if (!(layer instanceof _avLayer().AVLayer)) throw new AttributeError("_maskScale");
+    if (!(layer instanceof _avLayer.AVLayer)) throw new AttributeError("_maskScale");
     const [width, height] = layer._maskScale;
     const source = layer.source;
     // AE stamps the mask space's display aspect, so a non-square source
@@ -327,7 +326,7 @@ export class MaskPropertyGroup extends PropertyGroup {
 
     // Rebind the Mask Path child to the inserted om-s via the canonical
     // parser, so its value and tdsb reflect the materialized path.
-    const parsed = _property().parseProperties(
+    const parsed = _property.parseProperties(
       [["ADBE Mask Shape", [tdmn, oms]]],
       this.propertyDepth + 1,
       new Map(),
@@ -355,7 +354,7 @@ export class MaskPropertyGroup extends PropertyGroup {
       const existingDict = instanceDict(existing);
       existingDict.clear();
       for (const [k, v] of instanceDict(maskPath)) existingDict.set(k, v);
-      if (!(existing instanceof _propertyModel().Property)) throw new AttributeError("_linkKeyframes");
+      if (!(existing instanceof _propertyModel.Property)) throw new AttributeError("_linkKeyframes");
       existing._linkKeyframes();
     } else {
       this._properties.splice(0, 0, maskPath);

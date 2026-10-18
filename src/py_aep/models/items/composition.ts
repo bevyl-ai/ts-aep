@@ -21,7 +21,6 @@ import {
   b,
   Bytes,
   bytesEq,
-  deferred,
   descriptor,
   getOrThrow,
   int,
@@ -60,12 +59,11 @@ import type { FolderItem } from "./folder.ts";
 import type { RendererOptions } from "./renderer_options/index.ts";
 import type { Project } from "../project.ts";
 import type { MarkerValue } from "../properties/marker.ts";
-
-const _item = deferred<typeof import("../../parsers/item.ts")>("py_aep/parsers/item");
 import { parseLayer } from "../../parsers/layer.ts";
 import { rendererOptionsFor } from "./renderer_options/index.ts";
 import { SettingsView, type SettingValue } from "../renderqueue/settings.ts";
-const _composition = deferred<typeof import("../../parsers/composition.ts")>("py_aep/parsers/composition");
+import * as _item from "../../parsers/item.ts";
+import * as _composition from "../../parsers/composition.ts";
 
 // The binary prin chunk stores internal plugin match_names (e.g. ADBE Escher)
 // but ExtendScript exposes different module names (e.g. ADBE Advanced 3d).
@@ -1223,7 +1221,7 @@ export class CompItem extends AVItem {
     // Insert right after the original's block, then build the model
     // through the normal parse path (registers it in project.items).
     container.splice(end, 0, ...clonedBlock);
-    const newComp = _item().parseItem(clonedItem, project, parent);
+    const newComp = _item.parseItem(clonedItem, project, parent);
     // The clone keeps this comp's idta item type.
     assert(newComp instanceof CompItem);
     parent.items.splice(parent.items.indexOf(this) + 1, 0, newComp);
@@ -1338,7 +1336,7 @@ export class CompItem extends AVItem {
     const childChunks = this._deferredChildChunks;
     this._deferredChildChunks = null;
 
-    this._markerProperty = _composition()._getMarkers(childChunks, this);
+    this._markerProperty = _composition._getMarkers(childChunks, this);
     const egResult = parseEssentialGraphics(childChunks);
     if (egResult != null) {
       this._egTemplateNameUtf8 = egResult[0];

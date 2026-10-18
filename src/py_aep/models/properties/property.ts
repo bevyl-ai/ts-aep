@@ -36,13 +36,12 @@ import { PropertyBase } from "./property_base.ts";
 import { Shape } from "./shape.ts";
 import type { PropertyGroup } from "./property_group.ts";
 import { deferred, deepcopy, getOrThrow, isclose, valueEquals, sorted, warn, int, round, floordiv, ValueError, IndexError, AttributeError, NotImplementedError, StopIteration, assert, literal, min, zip, float, lshift, rshift, and, or, ord, b, descriptor, typeName, type ClassAttributes, truthyOr } from "../../../pyrt/index.ts";
-
-const _propertyGroup = deferred<typeof import("./property_group.ts")>("py_aep/models/properties/property_group");
 import { AVItem } from "../items/av_item.ts";
 import { FootageItem } from "../items/footage.ts";
 import { resolveEssentialPropertyController, resolveEssentialPropertySource } from "../../resolvers/essential_properties.ts";
-const _folder = deferred<typeof import("../items/folder.ts")>("py_aep/models/items/folder");
-const _avLayer = deferred<typeof import("../layers/av_layer.ts")>("py_aep/models/layers/av_layer");
+import * as _propertyGroup from "./property_group.ts";
+import * as _folder from "../items/folder.ts";
+import * as _avLayer from "../layers/av_layer.ts";
 const _maskPropertyGroup = deferred<typeof import("./mask_property_group.ts")>("py_aep/models/properties/mask_property_group");
 
 export const logger = {
@@ -160,7 +159,7 @@ export function _validateValue(prop: Property, value: PropertyValue): void {
   }
   if (prop.matchName === "ADBE Mask Shape") {
     const layer = prop._containingLayer;
-    if (!(layer instanceof _avLayer().AVLayer)) throw new AttributeError("_maskScale");
+    if (!(layer instanceof _avLayer.AVLayer)) throw new AttributeError("_maskScale");
     if (layer._maskScale.includes(0)) {
       // Mask paths are stored normalized to the layer's source, so on an
       // audio-only layer (0 x 0) every path reads back as four points at
@@ -593,8 +592,8 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     });
     const tdgp = parentProperty._tdgp;
     if (tdgp != null) {
-      _propertyGroup()._insertBeforeGroupEnd(tdgp, _tdmn);
-      _propertyGroup()._insertBeforeGroupEnd(tdgp, _tdbs);
+      _propertyGroup._insertBeforeGroupEnd(tdgp, _tdmn);
+      _propertyGroup._insertBeforeGroupEnd(tdgp, _tdbs);
     }
 
     const prop = new this({
@@ -1858,7 +1857,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
       // follows the layer's source and a read, edited and re-assigned
       // value is still written.
       const layer = this._containingLayer;
-      if (!(layer instanceof _avLayer().AVLayer)) throw new AttributeError("_maskScale");
+      if (!(layer instanceof _avLayer.AVLayer)) throw new AttributeError("_maskScale");
       const [w, h] = layer._maskScale;
       return new Shape([
         [0.0, 0.0],
@@ -3981,7 +3980,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     let dstH: number;
     if (isMaskPath) {
       const layer = this._containingLayer;
-      if (!(layer instanceof _avLayer().AVLayer)) throw new AttributeError("_maskScale");
+      if (!(layer instanceof _avLayer.AVLayer)) throw new AttributeError("_maskScale");
       [dstW, dstH] = layer._maskScale;
     } else {
       [dstW, dstH] = [1.0, 1.0];
@@ -4881,7 +4880,7 @@ Object.defineProperty(_EssentialOverrideProperty.prototype, "enabled", {
 export function _findOrCreateWrapperFolder(project: Project): FolderItem {
   const root = project.rootFolder;
   for (const item of project.items.values()) {
-    if (item instanceof _folder().FolderItem && item.name === "Media Replacement Comps" && item.parentFolder === root) {
+    if (item instanceof _folder.FolderItem && item.name === "Media Replacement Comps" && item.parentFolder === root) {
       return item;
     }
   }

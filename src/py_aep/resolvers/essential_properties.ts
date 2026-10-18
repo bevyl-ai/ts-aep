@@ -7,17 +7,15 @@
  * each equal to an `EssentialGraphicsController.uuid` on the source composition.
  */
 
-import { deferred } from "../../pyrt/index.ts";
 import { PropertyType } from "../enums/general.ts";
 import type { AVLayer } from "../models/layers/av_layer.ts";
 import type { EssentialGraphicsController, SourcePropertyRef } from "../models/essential_graphics.ts";
 import type { Project } from "../models/project.ts";
 import type { Property } from "../models/properties/property.ts";
 import type { PropertyGroup } from "../models/properties/property_group.ts";
-
-const _composition = deferred<typeof import("../models/items/composition.ts")>("py_aep/models/items/composition");
-const _avLayer = deferred<typeof import("../models/layers/av_layer.ts")>("py_aep/models/layers/av_layer");
-const _propertyGroup = deferred<typeof import("../models/properties/property_group.ts")>("py_aep/models/properties/property_group");
+import * as _composition from "../models/items/composition.ts";
+import * as _avLayer from "../models/layers/av_layer.ts";
+import * as _propertyGroup from "../models/properties/property_group.ts";
 
 /** Essential Graphics controller type for a Media Replacement slot. */
 export const _MEDIA_REPLACEMENT_CONTROLLER_TYPE = 14;
@@ -36,7 +34,7 @@ export function resolveEssentialPropertyControllers(layer: AVLayer): EssentialGr
   const uuids = layer.essentialPropertyUuids;
   if (!uuids?.length) return [];
   const source = layer.source;
-  if (!(source instanceof _composition().CompItem)) return [];
+  if (!(source instanceof _composition.CompItem)) return [];
   const byUuid = new Map(source.motionGraphicsControllers.map((c) => [c.uuid, c] as const));
   return uuids.map((uuid) => byUuid.get(uuid)).filter((c) => c !== undefined);
 }
@@ -51,9 +49,9 @@ export function resolveEssentialPropertyControllers(layer: AVLayer): EssentialGr
 export function _resolveControllerSourceLayer(project: Project, controller: EssentialGraphicsController): AVLayer | null {
   if (controller.sourceCompId == null || controller.sourceLayerId == null) return null;
   const comp = project.items.get(controller.sourceCompId) ?? null;
-  if (!(comp instanceof _composition().CompItem)) return null;
+  if (!(comp instanceof _composition.CompItem)) return null;
   const layer = comp.layersById.get(controller.sourceLayerId) ?? null;
-  return layer instanceof _avLayer().AVLayer ? layer : null;
+  return layer instanceof _avLayer.AVLayer ? layer : null;
 }
 
 /**
@@ -108,7 +106,7 @@ export function _walkSourceProperty(sourceLayer: AVLayer, path: SourcePropertyRe
   const project = sourceLayer.containingComp._project;
   let cur: Property | PropertyGroup = sourceLayer;
   for (const ref of path) {
-    if (!(cur instanceof _propertyGroup().PropertyGroup)) return null;
+    if (!(cur instanceof _propertyGroup.PropertyGroup)) return null;
     let child: Property | PropertyGroup | null = null;
     if (ref.propIndex != null) child = _resolveIndexedChild(cur, ref, project);
     if (child == null) {
@@ -132,7 +130,7 @@ export function _preorderIndex(root: PropertyGroup, target: Property): number | 
       const pos = counter[0];
       counter[0] += 1;
       if (child === target) return pos;
-      if (child instanceof _propertyGroup().PropertyGroup) {
+      if (child instanceof _propertyGroup.PropertyGroup) {
         const found = rec(child);
         if (found != null) return found;
       }
@@ -160,13 +158,13 @@ export function resolveEssentialPropertyController(prop: Property): EssentialGra
   }
   if (root == null) return null;
   const layer = root._parentProperty;
-  if (!(layer instanceof _avLayer().AVLayer)) return null;
+  if (!(layer instanceof _avLayer.AVLayer)) return null;
   const idx = _preorderIndex(root, prop);
   if (idx == null) return null;
   const uuids = layer.essentialPropertyUuids;
   if (idx >= uuids.length) return null;
   const source = layer.source;
-  if (!(source instanceof _composition().CompItem)) return null;
+  if (!(source instanceof _composition.CompItem)) return null;
   return source.motionGraphicsControllers.find((c) => c.uuid === uuids[idx]) ?? null;
 }
 

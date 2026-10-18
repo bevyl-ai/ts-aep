@@ -20,7 +20,6 @@ import type { Project } from "../models/project.ts";
 import {
   and,
   at,
-  deferred,
   int,
   split,
   strip,
@@ -30,8 +29,7 @@ import {
   LookupError,
   UnicodeDecodeError,
 } from "../../pyrt/index.ts";
-
-const _property = deferred<typeof import("./property.ts")>("py_aep/parsers/property");
+import * as _property from "./property.ts";
 
 // `logging.getLogger(__name__)`: this module logs nothing today, so only the
 // warning path is wired to pyrt `warn`.
@@ -421,7 +419,7 @@ export function _parseEffectProperties(
     ([name]) => !name.endsWith("-0000"),
   );
 
-  const parsed = _property().parseProperties(
+  const parsed = _property.parseProperties(
     propertyRuns,
     childDepth,
     new Map(),

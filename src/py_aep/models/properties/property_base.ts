@@ -24,12 +24,12 @@ import type { Layer } from "../layers/layer.ts";
 import type { MaskPropertyGroup } from "./mask_property_group.ts";
 import type { Property } from "./property.ts";
 import type { PropertyGroup } from "./property_group.ts";
+import * as _propertyGroup from "./property_group.ts";
+import * as _propertyValue from "../../parsers/property_value.ts";
 
 const _layer = deferred<typeof import("../layers/layer.ts")>("py_aep/models/layers/layer");
 const _maskPropertyGroup = deferred<typeof import("./mask_property_group.ts")>("py_aep/models/properties/mask_property_group");
-const _propertyGroup = deferred<typeof import("./property_group.ts")>("py_aep/models/properties/property_group");
 const _property = deferred<typeof import("../../parsers/property.ts")>("py_aep/parsers/property");
-const _propertyValue = deferred<typeof import("../../parsers/property_value.ts")>("py_aep/parsers/property_value");
 const _effect = deferred<typeof import("../../parsers/effect.ts")>("py_aep/parsers/effect");
 
 // NOTE(port): local twin of CPython `list.index` / `list.remove` (py_eq compare, ValueError "x is not in list"); no pyrt shim exists.
@@ -700,7 +700,7 @@ export class PropertyBase {
         layer,
       );
     } else if (listChunk.listType === "tdbs") {
-      result = _propertyValue().parseProperty(listChunk, this._matchName, comp, this._propertyDepth, tdmn);
+      result = _propertyValue.parseProperty(listChunk, this._matchName, comp, this._propertyDepth, tdmn);
     } else if (listChunk.listType === "sspc") {
       result = _effect().parseEffect(
         listChunk,
@@ -727,7 +727,7 @@ export class PropertyBase {
     // clone_chunk_tree strips synthetic chunks, so synthesized children
     // (e.g. Mask Feather/Opacity) are missing from the clone; re-arm
     // deferred synthesis to fill them on first access, like a fresh parse.
-    if (result instanceof _propertyGroup().PropertyGroup) {
+    if (result instanceof _propertyGroup.PropertyGroup) {
       result._deferredAeMajor = getAeVersionMajor(comp);
     }
     result._parentProperty = parent;
