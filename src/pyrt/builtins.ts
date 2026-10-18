@@ -3,9 +3,10 @@
 import { AttributeError, IndexError, KeyError, ValueError } from "./errors.ts";
 import { floatRepr, PyFloat } from "./num.ts";
 import { ord } from "./codecs.ts";
-import { INSPECT } from "./inspect.ts";
+import { INSPECT, describe } from "./inspect.ts";
 
 export { INSPECT };
+export { describe, literal } from "./inspect.ts";
 
 /** The dunder methods the builtins below probe for. */
 type DunderProbe = {

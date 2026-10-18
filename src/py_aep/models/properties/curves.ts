@@ -13,7 +13,7 @@
  * float32 evaluation lands on the other side of the tie).
  */
 
-import { INSPECT } from "../../../pyrt/index.ts";
+import { INSPECT, describe } from "../../../pyrt/index.ts";
 import {
   ValueError,
   at,
@@ -193,9 +193,7 @@ export class CurvesChannel {
   }
 
   [INSPECT](): string {
-    // NOTE(port): points are tuples in Python, so each `(x, y)` pair is rendered by hand with float repr.
-    const points = `[${this._points.map(([x, y]) => `(${repr(x)}, ${repr(y)})`).join(", ")}]`;
-    return `CurvesChannel(${repr(this._name)}, points=${points})`;
+    return describe("CurvesChannel", { name: this._name, points: this._points });
   }
 }
 
@@ -318,6 +316,6 @@ export class Curves {
     const edited = Array.from(this._channels)
       .filter(([, c]) => !c.isIdentity)
       .map(([n]) => n);
-    return `Curves(mode=${this._mode}, edited=${repr(edited)})`;
+    return describe("Curves", { mode: this._mode, edited });
   }
 }

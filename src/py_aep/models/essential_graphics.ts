@@ -6,7 +6,7 @@
  * can have an EGP definition stored in a `LIST:CIF3` chunk.
  */
 
-import { INSPECT } from "../../pyrt/index.ts";
+import { INSPECT, describe } from "../../pyrt/index.ts";
 import { descriptor, repr } from "../../pyrt/index.ts";
 import { ChunkField } from "./descriptors.ts";
 import { validateName } from "./validators.ts";
@@ -143,11 +143,7 @@ export class EssentialGraphicsController {
   }
 
   [INSPECT](): string {
-    return (
-      `EssentialGraphicsController(name=${repr(this.name)},` +
-      ` type=${this.controllerType},` +
-      ` uuid=${repr(this.uuid)})`
-    );
+    return describe("EssentialGraphicsController", { name: this.name, type: this.controllerType, uuid: this.uuid });
   }
 
   static {

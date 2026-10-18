@@ -3,7 +3,7 @@
 // source: https://gitlab.com/mattbas/python-lottie/-/blob/master/lib/lottie/parsers/aep/cos.py
 // documentation: https://github.com/hunger-zh/lottie-docs/blob/main/docs/aep.md#list-btdk
 
-import { INSPECT } from "../../pyrt/index.ts";
+import { INSPECT, describe } from "../../pyrt/index.ts";
 import {
   at,
   auto,
@@ -79,15 +79,6 @@ const STRING_ESCAPES: ReadonlyMap<number, number> = new Map([
 
 // Python's dataclass repr uses repr() on each field; dicts and lists need to
 // recurse so nested Maps print like Python dicts.
-export function reprField(x: CosNode): string {
-  if (x instanceof Map) {
-    return `{${[...x].map(([k, v]) => `${reprField(k)}: ${reprField(v)}`).join(", ")}}`;
-  }
-  if (Array.isArray(x)) return `[${x.map((y) => reprField(y)).join(", ")}]`;
-  if (x instanceof Uint8Array) return reprBytes(x);
-  return repr(x);
-}
-
 // CPython `repr(bytes)`: double quotes when the content has `'` but no `"`.
 export function reprBytes(x: Uint8Array): string {
   let hasSingle = false;
@@ -119,10 +110,6 @@ interface NamedEnum {
 // `str(member)` / `repr(member)` for an Enum member.
 export function enumStr(E: NamedEnum, v: number): string {
   return `${E.__name__}.${E.nameOf(v)}`;
-}
-
-export function enumRepr(E: NamedEnum, v: number): string {
-  return `<${enumStr(E, v)}: ${v}>`;
 }
 
 /**
@@ -239,7 +226,7 @@ export class Token {
   }
 
   [INSPECT](): string {
-    return `Token(type=${enumRepr(TokenType, this.type)}, value=${reprField(this.value)})`;
+    return describe("Token", { type: TokenType.nameOf(this.type), value: this.value });
   }
 
   equals(other: Token): boolean {
@@ -260,7 +247,7 @@ export class IndirectObject {
   }
 
   [INSPECT](): string {
-    return `IndirectObject(object_number=${repr(this.objectNumber)}, generation_number=${repr(this.generationNumber)}, data=${reprField(this.data)})`;
+    return describe("IndirectObject", { objectNumber: this.objectNumber, generationNumber: this.generationNumber, data: this.data });
   }
 
   equals(other: IndirectObject): boolean {
@@ -284,7 +271,7 @@ export class IndirectReference {
   }
 
   [INSPECT](): string {
-    return `IndirectReference(object_number=${repr(this.objectNumber)}, generation_number=${repr(this.generationNumber)})`;
+    return describe("IndirectReference", { objectNumber: this.objectNumber, generationNumber: this.generationNumber });
   }
 
   equals(other: IndirectReference): boolean {
@@ -343,7 +330,7 @@ export class CosName {
   }
 
   [INSPECT](): string {
-    return `CosName(value=${repr(this.value)})`;
+    return describe("CosName", { value: this.value });
   }
 
   equals(other: CosName): boolean {
@@ -362,7 +349,7 @@ export class Stream {
   }
 
   [INSPECT](): string {
-    return `Stream(dictionary=${reprField(this.dictionary)}, data=${reprBytes(this.data)})`;
+    return describe("Stream", { dictionary: this.dictionary, data: this.data });
   }
 
   equals(other: Stream): boolean {

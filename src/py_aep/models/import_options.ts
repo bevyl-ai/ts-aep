@@ -1,6 +1,6 @@
 /** Import options for importing files into an After Effects project. */
 
-import { INSPECT } from "../../pyrt/index.ts";
+import { INSPECT, describe } from "../../pyrt/index.ts";
 import { AI_COMP_EXTENSIONS, COMP_CONVERSION_EXTENSIONS, PSD_COMP_EXTENSIONS, getFileFormat, getImportAsTypes, type FileFormat } from "../data/file_formats.ts";
 import { ImportAsType } from "../enums/index.ts";
 import { validateBool, validateEnum, validateOneOf, validatePath, validatePositiveInt, validateU4 } from "./validators.ts";
@@ -354,11 +354,10 @@ export class ImportOptions {
   }
 
   [INSPECT](): string {
-    // NOTE(port): CPython prints `PosixPath('...')` for `{self._file!r}` on POSIX; spelled out here.
-    return (
-      `ImportOptions(file=PosixPath(${repr(this._file.toString())}), ` +
-      `import_as=${ImportAsType.nameOf(this._importAs)}, ` +
-      `sequence=${repr(this._sequence)})`
-    );
+    return describe("ImportOptions", {
+      file: this._file.toString(),
+      importAs: ImportAsType.nameOf(this._importAs),
+      sequence: this._sequence,
+    });
   }
 }

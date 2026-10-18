@@ -1,6 +1,6 @@
 // Port of py_aep/models/project.py.
 
-import { INSPECT } from "../../pyrt/index.ts";
+import { INSPECT, describe } from "../../pyrt/index.ts";
 import * as host from "../../pyrt/host.ts";
 import { uuid4 } from "../../pyrt/uuid.ts";
 
@@ -691,7 +691,7 @@ export class Project {
   }
 
   [INSPECT](): string {
-    return `Project(file=${repr(this._file)})`;
+    return describe("Project", { file: this._file });
   }
 
   /**
