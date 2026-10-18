@@ -11,7 +11,6 @@ import {
   BytesIO,
   Factory,
   ValueError,
-  b,
   Bytes,
   decode,
   define,
@@ -428,14 +427,14 @@ export class CdatChunk extends Chunk {
     const { chunkType = "", isLe = false } = kw;
     const count = Math.floor(size / 8);
     if (count === 0) {
-      const pad = size > 0 ? readBytes(fp, size) : b("");
+      const pad = size > 0 ? readBytes(fp, size) : new Uint8Array();
       return new this({ chunkType, isLe, pad });
     }
     const fmt = `${isLe ? "<" : ">"}${count}d`;
     const raw = readBytes(fp, count * 8);
     const vals = struct.unpack(fmt, raw);
     const rest = size - count * 8;
-    const pad = rest > 0 ? readBytes(fp, rest) : b("");
+    const pad = rest > 0 ? readBytes(fp, rest) : new Uint8Array();
     return new this({ chunkType, values: vals, isLe, pad });
   }
 
@@ -457,7 +456,7 @@ define(CdatChunk, {
   chunkType: field({ default: "cdat" }),
   values: field({ default: Factory(() => []) }),
   isLe: field({ default: false }),
-  pad: field({ default: b("") }),
+  pad: field({ default: new Uint8Array() }),
 });
 register("cdat")(CdatChunk);
 
@@ -589,7 +588,7 @@ export class TdmnChunk extends _StringChunkBase {
   static read(fp: IO, size: number, kw: ChunkReadKwargs = {}): TdmnChunk {
     const { chunkType = "" } = kw;
     const raw = readBytes(fp, size);
-    return new this({ chunkType, value: decode(Bytes.trimEnd(raw, b("\x00")), "UTF-8") });
+    return new this({ chunkType, value: decode(Bytes.trimEnd(raw, new Uint8Array(1)), "UTF-8") });
   }
 
   write(fp: IO): number {

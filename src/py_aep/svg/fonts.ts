@@ -13,10 +13,8 @@ import { dep } from "../../pyrt/deps.ts";
 import * as host from "../../pyrt/host.ts";
 import {
   Path,
-  setdefault,
-  split,
+  getOrInsert,
   StopIteration,
-  strip,
 } from "../../pyrt/index.ts";
 
 export const _FONT_SUFFIXES: readonly string[] = [".ttf", ".otf", ".ttc"];
@@ -301,7 +299,7 @@ export function _postscriptIndex(): Map<string, [Path, number, string | null]> {
 export function resolvePostscript(
   postScriptName: string,
 ): [Path, number] | null {
-  const entry = _postscriptIndex().get(strip(postScriptName).toLowerCase());
+  const entry = _postscriptIndex().get(postScriptName.trim().toLowerCase());
   if (entry == null) {
     return null;
   }
@@ -318,7 +316,7 @@ export function resolvePostscript(
  * byte-identical to AE's output on the same machine.
  */
 export function fontVersionString(postScriptName: string): string | null {
-  const entry = _postscriptIndex().get(strip(postScriptName).toLowerCase());
+  const entry = _postscriptIndex().get(postScriptName.trim().toLowerCase());
   if (entry == null) {
     return null;
   }
@@ -338,8 +336,8 @@ export function _indexFile(
     const family = _name(font, 16, 1);
     const subfamily = _name(font, 17, 2) || "Regular";
     if (family) {
-      setdefault(
-        setdefault(idx, family.toLowerCase(), new Map<string, [Path, number]>()),
+      getOrInsert(
+        getOrInsert(idx, family.toLowerCase(), new Map<string, [Path, number]>()),
         subfamily.toLowerCase(),
         [path, face],
       );
@@ -397,7 +395,7 @@ export function resolveFontExact(family: string): [Path, number] | null {
   if (_index == null) {
     _index = _buildIndex();
   }
-  const styles = _index.get(strip(strip(family), "'\"").toLowerCase()) ?? null;
+  const styles = _index.get(family.trim().replace(/^['"]+|['"]+$/g, "").toLowerCase()) ?? null;
   if (!styles?.size) {
     return null;
   }
@@ -421,8 +419,8 @@ export function resolveFont(
     _index = _buildIndex();
   }
   let generic: string | null = null;
-  for (const raw of split(family, ",")) {
-    const name = strip(strip(raw), "'\"").toLowerCase();
+  for (const raw of family.split(",")) {
+    const name = raw.trim().replace(/^['"]+|['"]+$/g, "").toLowerCase();
     if (!name) {
       continue;
     }

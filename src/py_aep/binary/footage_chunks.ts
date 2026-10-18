@@ -10,7 +10,6 @@
  */
 
 import {
-  b,
   Bytes,
   concat,
   decode,
@@ -19,9 +18,7 @@ import {
   encode,
   field,
   OverflowError,
-  round,
-  struct,
-} from "../../pyrt/index.ts";
+  struct, ascii } from "../../pyrt/index.ts";
 import type { IO } from "../../pyrt/index.ts";
 import { MAC_EPOCH_OFFSET, readBytes, toDividendDivisor, toFixed1616, truncateUtf8 } from "./bin_utils.ts";
 import { BitField } from "./bitfield.ts";
@@ -277,7 +274,7 @@ export class SspcChunk extends Chunk {
     // int.to_bytes raises OverflowError (not ValueError) when the value does not fit
     if (stamp < 0) throw new OverflowError("can't convert negative int to unsigned");
     if (stamp >= 2 ** 32) throw new OverflowError("int too big to convert");
-    this._sourceStamp = concat(b("\x00\x00"), Bytes.intToBytes(stamp, 4, "big"), Bytes.repeat(b("\x00"), 3));
+    this._sourceStamp = concat(new Uint8Array(2), Bytes.intToBytes(stamp, 4, "big"), Bytes.repeat(new Uint8Array(1), 3));
   }
 
   /** Duration in seconds (dividend / divisor). */
@@ -310,9 +307,9 @@ export class SspcChunk extends Chunk {
   }
 
   set premulColor(value: number[]) {
-    this.premulColorR = round(value[0] * 255);
-    this.premulColorG = round(value[1] * 255);
-    this.premulColorB = round(value[2] * 255);
+    this.premulColorR = (Math.round(value[0] * 255) + 0);
+    this.premulColorG = (Math.round(value[1] * 255) + 0);
+    this.premulColorB = (Math.round(value[2] * 255) + 0);
   }
 
   /** Field separation type (0=off, 1=upper_first, 2=lower_first). */
@@ -487,7 +484,7 @@ define(SspcChunk, {
   _reservedC8: bytesField(2, { repr: false }),
   _reservedCa: bytesField(2, { repr: false }),
   dataSize: u8Field(),
-  _reservedD4: bytesField(10, { default: concat(b("\x01"), Bytes.repeat(b("\x00"), 9)), repr: false }),
+  _reservedD4: bytesField(10, { default: concat(Uint8Array.of(0x01), Bytes.repeat(new Uint8Array(1), 9)), repr: false }),
 });
 
 register("sspc")(SspcChunk);
@@ -520,18 +517,18 @@ export function buildGenericOptiData(sourceFormat: string, kw: { sequence?: bool
   const code = Bytes.padEnd(encode(sourceFormat, "ascii").slice(0, 4), 4, 0x20);
   let block: Uint8Array;
   if (sequence && ["IMIO", "STIL"].includes(sourceFormat)) {
-    block = Bytes.repeat(b("\x00"), 16);
+    block = Bytes.repeat(new Uint8Array(1), 16);
   } else {
-    block = concat(Uint8Array.from(code).reverse(), b("\xff\xff\xff\xff"), Bytes.repeat(b("\x00"), 4), b("\x01\x00\x00\x00"));
+    block = concat(Uint8Array.from(code).reverse(), Uint8Array.of(0xff, 0xff, 0xff, 0xff), Bytes.repeat(new Uint8Array(1), 4), Uint8Array.of(0x01, 0x00, 0x00, 0x00));
   }
   return concat(
     code,
-    b("\x00\x05"),
-    b("\x00\x00\x00\x3a"), // 58 = total length
-    Bytes.repeat(b("\x00"), 20),
+    Uint8Array.of(0x00, 0x05),
+    ascii("\x00\x00\x00\x3a"), // 58 = total length
+    Bytes.repeat(new Uint8Array(1), 20),
     block,
-    b("\x01"),
-    Bytes.repeat(b("\x00"), 11),
+    Uint8Array.of(0x01),
+    Bytes.repeat(new Uint8Array(1), 11),
   );
 }
 
@@ -562,7 +559,7 @@ export function buildTiffOptiData(
 ): Uint8Array {
   const chunk = new PsdOptiChunk({
     assetType: "TIF ",
-    pad12: concat(b(" FIT\x01"), Bytes.repeat(b("\x00"), 7)),
+    pad12: concat(ascii(" FIT\x01"), Bytes.repeat(new Uint8Array(1), 7)),
     psdChannels: channels,
     psdCanvasWidth: width,
     psdCanvasHeight: height,
@@ -768,7 +765,7 @@ export function buildExrOptiData(compression: number, channelNames: readonly str
     channelNames.filter((name) => name.includes(".")).map((name) => name.slice(0, name.lastIndexOf("."))),
   );
   const body = new Uint8Array(_OEXR_OPTI_SIZE);
-  body.set(b("oEXR"), 0);
+  body.set(ascii("oEXR"), 0);
   struct.packInto(">HI", body, 4, 1, _OEXR_OPTI_SIZE);
   struct.packInto("<HHHHH", body, 0x0a, 1, 0, compression, 1, channelNames.length);
   struct.packInto("<H", body, 0x2e, channelNames.length + layers.size);
@@ -787,11 +784,11 @@ export function buildExrOptiData(compression: number, channelNames: readonly str
  */
 export function buildRhdrOptiData(): Uint8Array {
   return concat(
-    b("RHDR"),
-    b("\x00\x2e"),
+    ascii("RHDR"),
+    Uint8Array.of(0x00, 0x2e),
     struct.pack(">I", 30), // total length (big-endian)
-    b("\x02\x00"),
-    Bytes.repeat(b("\x00"), 18),
+    Uint8Array.of(0x02, 0x00),
+    Bytes.repeat(new Uint8Array(1), 18),
   );
 }
 
@@ -805,7 +802,7 @@ export function buildRhdrOptiData(): Uint8Array {
  * (compared frame by frame). The dimensions live in `sspc`.
  */
 export function buildCrawOptiData(): Uint8Array {
-  return concat(b("Craw"), b("\x00\x2e"), struct.pack(">I", 30), Bytes.repeat(b("\x00"), 20));
+  return concat(ascii("Craw"), Uint8Array.of(0x00, 0x2e), struct.pack(">I", 30), Bytes.repeat(new Uint8Array(1), 20));
 }
 
 /**
@@ -902,7 +899,7 @@ export function buildAiLayerOptiData(
     // BE 16.16 values, replacing the full-page x0/y0/x1/y1 that the typed
     // fields wrote (the fractional/offset bytes live in TextOptiChunk
     // padding, so a parse round-trip stays byte-faithful).
-    struct.packInto(">4i", buf, 0x10, ...artworkBounds.map((v) => round(v * 65536)));
+    struct.packInto(">4i", buf, 0x10, ...artworkBounds.map((v) => Math.round(v * 65536) + 0));
   }
   return buf;
 }
@@ -931,7 +928,7 @@ export class OptiChunk extends Chunk {
     }
     // Peek at discriminator (first 4 bytes = asset_type)
     const discRaw = readBytes(fp, 6);
-    const nul = Bytes.indexOf(discRaw, b("\x00"), 0, 4);
+    const nul = Bytes.indexOf(discRaw, new Uint8Array(1), 0, 4);
     const assetType = decode(discRaw.slice(0, nul >= 0 ? nul : 4), "ascii");
     const assetTypeInt = struct.unpack(">H", discRaw.slice(4, 6))[0];
     fp.seek(-6, 1);
@@ -986,7 +983,7 @@ export class SoliOptiChunk extends OptiChunk {
 define(SoliOptiChunk, {
   assetType: asciiField(4, { default: "Soli" }),
   assetTypeInt: u2Field({ default: 9 }),
-  _pad: bytesField(8, { default: b("\x00\x00\x01\x1a\x3f\x80\x00\x00"), repr: false }),
+  _pad: bytesField(8, { default: ascii("\x00\x00\x01\x1a\x3f\x80\x00\x00"), repr: false }),
   colorR: f4Field(),
   colorG: f4Field(),
   colorB: f4Field(),
@@ -1086,7 +1083,7 @@ export class PsdOptiChunk extends OptiChunk {
    * Empty for a merged import, where the trailing region is all-NUL.
    */
   get psdGroupName(): string {
-    return decode(Bytes.split(this._trailing, b("\x00"), 1)[0], "utf-8");
+    return decode(Bytes.split(this._trailing, new Uint8Array(1), 1)[0], "utf-8");
   }
 
   set psdGroupName(value: string) {
@@ -1103,10 +1100,10 @@ define(PsdOptiChunk, {
 
   psdVectorOrMerged: boolField(),
 
-  _pad0b: bytesField(3, { default: b("\x00\x01\x01"), repr: false }),
+  _pad0b: bytesField(3, { default: Uint8Array.of(0x00, 0x01, 0x01), repr: false }),
   psdLayerIndex: u4Field({ default: 0xffffffff }),
 
-  _pad12: bytesField(12, { default: concat(b("SPB8\x01"), Bytes.repeat(b("\x00"), 7)), repr: false }),
+  _pad12: bytesField(12, { default: concat(ascii("SPB8\x01"), Bytes.repeat(new Uint8Array(1), 7)), repr: false }),
   psdChannels: u1Field({ default: 4 }),
 
   _pad1f: bytesField(1, { repr: false }),
@@ -1229,7 +1226,7 @@ define(TextOptiChunk, {
   textHeight: u2Field(),
 
   _pad1e: bytesField(10, { repr: false }),
-  _pad28: bytesField(4, { default: b("\xff\xff\xff\xff"), repr: false }),
+  _pad28: bytesField(4, { default: Uint8Array.of(0xff, 0xff, 0xff, 0xff), repr: false }),
   _pad2c: bytesField(4, { repr: false }),
   textDocumentLayers: u4Field(),
 
@@ -1262,7 +1259,7 @@ export class PlaceholderOptiChunk extends OptiChunk {
 define(PlaceholderOptiChunk, {
   assetType: asciiField(4, { default: "" }),
   assetTypeInt: u2Field({ default: 2 }),
-  _pad: bytesField(4, { default: b("\x00\x00\x01\x0a"), repr: false }),
+  _pad: bytesField(4, { default: Uint8Array.of(0x00, 0x00, 0x01, 0x0a), repr: false }),
   placeholderName: strField(256, { default: "", encoding: "utf-8" }),
 });
 

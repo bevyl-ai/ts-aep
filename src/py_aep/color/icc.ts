@@ -22,13 +22,11 @@ import {
   LookupError,
   OSError,
   Path,
-  b,
   Bytes,
-  bytesEq,
+  bytesEqual,
   decode,
   literal,
-  rstrip,
-  compare } from "../../pyrt/index.ts";
+  compare, ascii } from "../../pyrt/index.ts";
 import { profileIdForName } from "../enums/mappings.ts";
 
 /**
@@ -75,17 +73,17 @@ export function iccProfileDescription(data: Uint8Array): string | null {
     if (offset + 12 > data.length) return null;
     const sig = data.slice(offset, offset + 4);
     const tagOffset = Bytes.intFromBytes(data.slice(offset + 4, offset + 8), "big");
-    if (bytesEq(sig, b("desc"))) {
+    if (bytesEqual(sig, ascii("desc"))) {
       if (tagOffset + 12 > data.length) return null;
       const typeSig = data.slice(tagOffset, tagOffset + 4);
-      if (bytesEq(typeSig, b("desc"))) {
+      if (bytesEqual(typeSig, ascii("desc"))) {
         // ICCv2 textDescriptionType
         const strLen = Bytes.intFromBytes(data.slice(tagOffset + 8, tagOffset + 12), "big");
         const end = Math.min(tagOffset + 12 + strLen, data.length);
         const raw = data.slice(tagOffset + 12, end);
-        return decode(Bytes.trimEnd(raw, b("\x00")), "ascii", "replace");
+        return decode(Bytes.trimEnd(raw, new Uint8Array(1)), "ascii", "replace");
       }
-      if (bytesEq(typeSig, b("mluc"))) {
+      if (bytesEqual(typeSig, ascii("mluc"))) {
         // ICCv4 multiLocalizedUnicodeType
         if (tagOffset + 16 > data.length) return null;
         const recCount = Bytes.intFromBytes(data.slice(tagOffset + 8, tagOffset + 12), "big");
@@ -102,7 +100,7 @@ export function iccProfileDescription(data: Uint8Array): string | null {
         const text16 =
           dec16.replace(/[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/g, "\uFFFD") +
           (raw16.length % 2 === 1 && !oddAfterHigh ? "\uFFFD" : "");
-        return rstrip(text16, "\x00");
+        return text16.replace(/\0+$/, "");
       }
     }
     offset += 12;
@@ -207,7 +205,7 @@ export class IccProfileLibrary {
             if (!(e instanceof OSError || (hasCode && typeof e.code === "string"))) throw e;
             continue;
           }
-          if (data.length < 132 || !bytesEq(data.slice(36, 40), b("acsp"))) continue;
+          if (data.length < 132 || !bytesEqual(data.slice(36, 40), ascii("acsp"))) continue;
           const desc = iccProfileDescription(data);
           // First directory wins (MPProfiles is the canonical set).
           if (desc && !byName.has(desc)) byName.set(desc, f);

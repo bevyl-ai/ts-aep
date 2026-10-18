@@ -11,10 +11,10 @@ import {
   AttributeError,
   KeyError,
   ValueError,
-  getattr,
+  getMember,
   valueEquals,
   literal,
-  setattr,
+  setMember,
   compositeKey,
   mappingItems,
   typeName,
@@ -62,9 +62,9 @@ export type SettingValues = Record<string, SettingValue>;
 /**
  * Map-like view mapping ExtendScript setting keys to model attributes.
  *
- * Every read delegates to `getattr(owner, attr_name)` and every write
- * delegates to `setattr(owner, attr_name, value)`. Validation is handled by
- * the underlying ChunkField descriptors or `@property` setters.
+ * Every read is `getMember(owner, attrName)` and every write
+ * `setMember(owner, attrName, value)`. Validation is handled by
+ * the underlying ChunkField descriptors or setters.
  *
  * When `enumClass` is provided for a key, `__setitem__` coerces
  * the value (int, string label, or enum member) before passing it
@@ -85,7 +85,7 @@ export class SettingsView<V extends SettingValues = SettingValues> {
     const spec = this._specs.get(key) ?? null;
     if (spec == null) throw new KeyError(literal(key));
     const [attrName] = spec;
-    return getattr(this._owner, attrName);
+    return getMember(this._owner, attrName);
   }
 
   // -- writes ------------------------------------------------------------
@@ -99,7 +99,7 @@ export class SettingsView<V extends SettingValues = SettingValues> {
     const [attrName, enumClass] = spec;
     if (enumClass != null) value = _coerceEnum(enumClass, value);
     try {
-      setattr(this._owner, attrName, value);
+      setMember(this._owner, attrName, value);
     } catch (e) {
       // A getter-only JS accessor throws a native TypeError in strict mode;
       // Python's property without a setter raises AttributeError.

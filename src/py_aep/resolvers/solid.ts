@@ -6,7 +6,6 @@
  * naming logic using calibrated HSV thresholds.
  */
 
-import { mod } from "../../pyrt/index.ts";
 
 // -- Hue bands (degrees 0-360) ----------------------------------------
 
@@ -56,7 +55,7 @@ export function _rgbToHsv(r: number, g: number, b: number): [number, number, num
   } else {
     h = 4.0 + gc - rc;
   }
-  h = mod(h / 6.0, 1.0);
+  h = ((((h / 6.0) % 1.0) + 1.0) % 1.0);
   return [h, s, v];
 }
 

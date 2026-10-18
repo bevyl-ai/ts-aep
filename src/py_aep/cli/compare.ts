@@ -26,16 +26,11 @@ import { chunkLabel, extractLeafChunks, extractLeafChunksTyped } from "./_chunk_
 import {
   BytesIO,
   Path,
-  ValueError,
-  b,
-  bytesEq,
+  bytesEqual,
   deepcopy,
-  float,
   getOrThrow,
-  max,
   valueEquals,
   literal,
-  sum,
   SystemExit,
   jsonDumps, compare } from "../../pyrt/index.ts";
 
@@ -204,7 +199,7 @@ export const FLOAT_REL_TOL = 1e-4;
 export const FLOAT_ABS_TOL = 1e-3;
 
 export function _floatsClose(a: number, b_: number): boolean {
-  return Math.abs(a - b_) <= max([FLOAT_ABS_TOL, FLOAT_REL_TOL * max([Math.abs(a), Math.abs(b_)])]);
+  return Math.abs(a - b_) <= Math.max(FLOAT_ABS_TOL, FLOAT_REL_TOL * Math.max(Math.abs(a), Math.abs(b_)));
 }
 
 /**
@@ -276,15 +271,10 @@ export function _gradientXmlOnlyFloatDiff(s1: string | String, s2: string | Stri
     // `<float>` content is normally numeric in AE's prop.map output; an
     // empty/non-numeric tag is not a pure float-precision diff (and must
     // not crash the comparison), so treat it as a real difference.
-    let fa: number;
-    let fb: number;
-    try {
-      fa = float(a);
-      fb = float(b_);
-    } catch (e) {
-      if (!(e instanceof ValueError)) throw e;
-      return false;
-    }
+    if (!a.trim() || !b_.trim()) return false;
+    const fa = Number(a);
+    const fb = Number(b_);
+    if (Number.isNaN(fa) || Number.isNaN(fb)) return false;
     if (!_floatsClose(fa, fb)) return false;
   }
   return true;
@@ -310,7 +300,7 @@ export function _onlyFloatDiff(c1: Chunk, c2: Chunk): boolean {
   // tolerance) floats differed, everything else is byte-identical.
   const rebuilt: Uint8Array = _withFloats(c1, f2).tobytes();
   const original: Uint8Array = c2.tobytes();
-  return bytesEq(rebuilt, original);
+  return bytesEqual(rebuilt, original);
 }
 
 /**
@@ -325,7 +315,7 @@ export function _multiOnlyFloatDiff(allTyped: Map<string, Chunk>[], present: num
   for (const i of present.slice(1)) {
     const other = allTyped[i].get(path) ?? null;
     if (other == null) return false;
-    if (bytesEq(other.tobytes(), refBytes)) continue;
+    if (bytesEqual(other.tobytes(), refBytes)) continue;
     if (!_onlyFloatDiff(ref, other)) return false;
   }
   return true;
@@ -369,7 +359,7 @@ export function _compareChunkDicts(
   for (const path of commonPaths) {
     const bytes1 = getOrThrow(data1, path);
     const bytes2 = getOrThrow(data2, path);
-    if (bytesEq(bytes1, bytes2)) continue;
+    if (bytesEqual(bytes1, bytes2)) continue;
     // Suppress float-precision-only differences (same coordinate, just
     // AE-vs-py_aep float rounding) unless an exact comparison was asked.
     if (
@@ -494,9 +484,9 @@ export function compareMultiAepFiles(
       if (present.length < 2) continue;
     }
 
-    const dataList = Array.from({ length: files.length }, (_, i) => allData[i].get(path) ?? b(""));
+    const dataList = Array.from({ length: files.length }, (_, i) => allData[i].get(path) ?? new Uint8Array());
     const sizes = dataList.map((d) => d.length);
-    const maxLen = max(sizes);
+    const maxLen = Math.max(...sizes);
 
     const chunkDiffs: MultiFileDifference[] = [];
     for (let offset = 0; offset < maxLen; offset++) {
@@ -588,7 +578,7 @@ export function printResults(
         print(`\n[${sd.path}] type mismatch: ${sd.children1[0]} vs ${sd.children2[0]}`);
       } else {
         print(`\n[${sd.path}] child count: ${sd.count1} vs ${sd.count2}`);
-        const maxLen = max([sd.children1.length, sd.children2.length]);
+        const maxLen = Math.max(sd.children1.length, sd.children2.length);
         for (let i = 0; i < maxLen; i++) {
           const c1 = i < sd.children1.length ? sd.children1[i] : "<missing>";
           const c2 = i < sd.children2.length ? sd.children2[i] : "<missing>";
@@ -650,8 +640,8 @@ export function printResults(
 
         // Context display
         if (context > 0 && data1 != null && data2 != null) {
-          const d1 = data1.get(diff.path) ?? b("");
-          const d2 = data2.get(diff.path) ?? b("");
+          const d1 = data1.get(diff.path) ?? new Uint8Array();
+          const d2 = data2.get(diff.path) ?? new Uint8Array();
           if (d1?.length > 0) {
             print(_formatContextLine("File 1", d1, byteDiff.offset, context));
           }
@@ -664,7 +654,7 @@ export function printResults(
   }
 
   // Summary
-  const totalByteDiffs = sum(differences.map((d) => d.byteDiffs.length));
+  const totalByteDiffs = differences.map((d) => d.byteDiffs.length).reduce((total, x) => total + x, 0);
   print(`\n${"=".repeat(80)}`);
   print("Summary:");
   if (structuralDiffs != null && structuralDiffs.length > 0) {
@@ -745,7 +735,7 @@ export function printMultiResults(
         if (context > 0 && allData != null && allData.length > 0) {
           for (let i = 0, n = files.length; i < n; i++) {
             const label = i === 0 ? "ref" : `[${i}]`;
-            const data = allData[i].get(chunkDiff.path) ?? b("");
+            const data = allData[i].get(chunkDiff.path) ?? new Uint8Array();
             if (!data?.length) continue;
             print(_formatContextLine(label, data, diff.offset, context));
           }
@@ -755,7 +745,7 @@ export function printMultiResults(
   }
 
   // Summary
-  const totalDiffs = sum(differences.map((cd) => cd.diffs.length));
+  const totalDiffs = differences.map((cd) => cd.diffs.length).reduce((total, x) => total + x, 0);
   print(`\n${"=".repeat(80)}`);
   print("Summary:");
   print(`  Files compared: ${files.length}`);
@@ -798,7 +788,7 @@ export function toJsonOutput(
     suppressed_float_diffs: suppressed,
     summary: {
       chunks_with_differences: differences.length,
-      total_byte_differences: sum(differences.map((d) => d.byteDiffs.length)),
+      total_byte_differences: differences.map((d) => d.byteDiffs.length).reduce((total, x) => total + x, 0),
       only_in_file1: onlyInFile1.length,
       only_in_file2: onlyInFile2.length,
       suppressed_float_diffs: suppressed,

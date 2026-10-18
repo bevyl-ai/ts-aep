@@ -17,7 +17,7 @@ import {
   Path,
   StopIteration,
   ValueError,
-  bytesEq,
+  bytesEqual,
   getOrThrow,
   len,
   max,
@@ -100,7 +100,7 @@ test("test_untouched_curves_equal_the_parT_default", () => {
   // `(arbp,) = ...` raises ValueError on a length mismatch.
   if (len(prop._arbs.chunks) !== 1) throw new ValueError("not exactly one value to unpack");
   const [arbp] = prop._arbs.chunks;
-  expect(bytesEq(arbp.data, prop._defaultArbp.data)).toBe(true);
+  expect(bytesEqual(arbp.data, prop._defaultArbp.data)).toBe(true);
 });
 
 test("test_curves_are_read_only", () => {

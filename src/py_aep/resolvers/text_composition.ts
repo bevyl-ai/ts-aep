@@ -39,18 +39,13 @@ import type * as fontkit from "fontkit";
 import { dep } from "../../pyrt/deps.ts";
 import type { Path } from "../../pyrt/index.ts";
 import {
-  at,
   KeyError,
   islower,
-  max,
   OSError,
   truthy,
   valueEquals,
   truthyOr,
   literal,
-  rstrip,
-  split,
-  sum,
   compositeKey,
   ValueError,
   zip,
@@ -285,7 +280,7 @@ export function _ascenderRatio(psName: string): number {
       // fontkit. fontkit's create returns a FontCollection for .ttc files, so the
       // face is picked with `.fonts[face_index]`.
       const opened = dep("fontkit").create(host.fs.readFileSync(path.toString()));
-      font = opened.fonts ? at(opened.fonts, faceIndex) : opened;
+      font = opened.fonts ? opened.fonts.at(faceIndex)! : opened;
     } catch (exc) {
       if (!(exc instanceof Object) || !_isFontOpenError(exc)) throw exc;
       throw Object.assign(
@@ -535,7 +530,7 @@ export function _advances(text: string, styles: _CharStyle[], offset: number): n
 }
 
 export function _width(text: string, styles: _CharStyle[], offset: number): number {
-  return sum(_advances(text, styles, offset));
+  return _advances(text, styles, offset).reduce((total, x) => total + x, 0);
 }
 
 /**
@@ -570,7 +565,7 @@ export function _breakParagraph(
     while (take < rest.length) {
       const nextSpace = rest.indexOf(" ", take);
       let candidateEnd = nextSpace === -1 ? rest.length : nextSpace;
-      const candidate = rstrip(rest.slice(0, candidateEnd), " ");
+      const candidate = rest.slice(0, candidateEnd).replace(/ +$/, "");
       if (_width(candidate, styles, restOffset) > currentLimit) {
         break;
       }
@@ -631,7 +626,7 @@ export function composeLines(doc: TextDocument): ComposedLines {
   }
 
   const body = raw.endsWith("\r") ? raw.slice(0, -1) : raw;
-  const paragraphs = split(body, "\r");
+  const paragraphs = body.split("\r");
   if (paraGeo.length !== paragraphs.length) {
     // AE stores exactly one paragraph run per paragraph (and
     // _splice_text preserves that); a mismatch means a malformed
@@ -660,20 +655,18 @@ export function composeLines(doc: TextDocument): ComposedLines {
   const baselines: number[] = [];
   let y = 0.0;
   for (const [lineNo, [start, end]] of spans.entries()) {
-    const lineStyles = truthyOr(styles.slice(start, Math.min(end, styles.length)), [at(styles, -1)]);
+    const lineStyles = styles.slice(start, Math.min(end, styles.length))?.length ? styles.slice(start, Math.min(end, styles.length)) : [styles.at(-1)!];
     if (lineNo === 0) {
-      y += max(
-        lineStyles.map(
+      y += Math.max(...lineStyles.map(
           (s) => (_ascenderRatio(s.font) + (s.fauxbold ? _FAUX_BOLD_ADVANCE / 2 : 0.0)) * s.size,
-        ),
-      );
+        ));
     } else {
-      y += max(lineStyles.map((s) => s.leading));
+      y += Math.max(...lineStyles.map((s) => s.leading));
     }
     baselines.push(y);
   }
 
-  const kept = sum(baselines.map((b) => (b <= height ? 1 : 0)));
+  const kept = baselines.filter((b) => b <= height).length;
   return new ComposedLines(spans.slice(0, kept), baselines.slice(0, kept), kept < spans.length);
 }
 

@@ -10,7 +10,7 @@
  *         my_flag = BitField("_flags", 3)  # bit 3 (no annotation)
  */
 
-import { and, andNot, getattr, lshift, or } from "../../pyrt/index.ts";
+import { getMember } from "../../pyrt/index.ts";
 
 /**
  * Descriptor mapping a single bit in a raw-byte attrs field to a bool.
@@ -26,19 +26,19 @@ export class BitField<F extends string = string> {
 
   constructor(byteField: F, bit: number) {
     this.byteField = byteField;
-    this.mask = lshift(1, bit);
+    this.mask = 1 << bit;
   }
 
   get(obj: Record<F, number>, objtype: Function | null = null): boolean {
-    return and(getattr(obj, this.byteField), this.mask) !== 0;
+    return (getMember(obj, this.byteField) & this.mask) !== 0;
   }
 
   set(obj: Record<F, number>, value: boolean): void {
-    const raw = getattr(obj, this.byteField);
+    const raw = getMember(obj, this.byteField);
     if (value) {
-      obj[this.byteField] = or(raw, this.mask);
+      obj[this.byteField] = raw | this.mask;
     } else {
-      obj[this.byteField] = andNot(raw, this.mask);
+      obj[this.byteField] = raw & ~this.mask;
     }
   }
 }

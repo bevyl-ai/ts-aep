@@ -32,8 +32,7 @@ import {
   NotImplementedError,
   OSError,
   ValueError,
-  b,
-  bytesEq,
+  bytesEqual,
   copysign,
   decode,
   fspath,
@@ -42,13 +41,10 @@ import {
   truthy,
   radians,
   literal,
-  round,
-  rstrip,
-  setdefault,
+  getOrInsert,
   struct,
   warn,
-  type PathLike,
-} from "../../pyrt/index.ts";
+  type PathLike, ascii } from "../../pyrt/index.ts";
 
 export type StyleValue = number | number[] | Gradient;
 export type _Box = [number, number, number, number];
@@ -150,7 +146,7 @@ export class _Reader {
 
   ustr(): string {
     const n = this.u4();
-    return rstrip(decode(this.raw(2 * n), "utf-16-be"), "\x00");
+    return decode(this.raw(2 * n), "utf-16-be").replace(/\0+$/, "");
   }
 }
 
@@ -194,7 +190,7 @@ export function _parseItem(reader: _Reader, osType: string): _Value {
     return Number(struct.unpack(">q", reader.raw(8))[0]);
   }
   if (osType === "bool") {
-    return !bytesEq(reader.raw(1), b("\x00"));
+    return !bytesEqual(reader.raw(1), new Uint8Array(1));
   }
   if (osType === "type" || osType === "GlbC") {
     reader.ustr();
@@ -587,9 +583,9 @@ export function _styleInstances(descriptor: Map<string, _Value>): Map<string, _V
   const instances = new Map<string, _Value[]>();
   for (const [key, value] of descriptor) {
     if (_STYLES.has(key)) {
-      setdefault(instances, key, []).push(value);
+      getOrInsert(instances, key, []).push(value);
     } else if (_MULTI_KEYS.has(key) && Array.isArray(value)) {
-      setdefault(instances, _MULTI_KEYS.get(key), []).push(...value);
+      getOrInsert(instances, _MULTI_KEYS.get(key), []).push(...value);
     }
   }
   return instances;
@@ -690,7 +686,7 @@ export function readGlobalLight(file: PathLike): [number, number] {
       }
     })(),
   );
-  if (!bytesEq(fp.read(4), b("8BPS"))) return [angle, altitude];
+  if (!bytesEqual(fp.read(4), ascii("8BPS"))) return [angle, altitude];
   fp.seek(26);
   for (const [resourceId, body] of iterImageResources(fp)) {
     if (resourceId === 1037 && body.length >= 4) {
@@ -712,7 +708,7 @@ export function _blendOptionsValues(
     ["ADBE Global Altitude2", altitude],
   ]);
   if (blocks.fillOpacity != null) {
-    values.set("ADBE Layer Fill Opacity2", round((blocks.fillOpacity * 100) / 255));
+    values.set("ADBE Layer Fill Opacity2", Math.round((blocks.fillOpacity * 100) / 255) + 0);
   }
   if (blocks.blendInterior != null) {
     values.set("ADBE Blend Interior", _bool01(blocks.blendInterior));

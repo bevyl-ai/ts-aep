@@ -36,13 +36,9 @@ import { dep } from "../../pyrt/deps.ts";
 import * as host from "../../pyrt/host.ts";
 import {
   NotImplementedError,
-  at,
-  max,
   truthy,
   truthyOr,
   literal,
-  rstrip,
-  split,
   compositeKey,
   zip,
 } from "../../pyrt/index.ts";
@@ -75,7 +71,7 @@ export function _openFace(path: string, faceIndex: number): fontkit.Font {
   // NOTE(port): fontTools `TTFont(fontNumber=...)` picks a face of a .ttc;
   // fontkit exposes collection faces through `.fonts`; a plain font is its own face.
   const opened = dep("fontkit").create(host.fs.readFileSync(path));
-  return opened.fonts ? at(opened.fonts, faceIndex) : opened;
+  return opened.fonts ? opened.fonts.at(faceIndex)! : opened;
 }
 
 /** `(font, is_cff, outline bounds by glyph id)` for a PostScript name, cached; the bounds fill in as glyphs are measured. */
@@ -200,7 +196,7 @@ export function _justifiedOrigin(
   width: number,
   text: string,
 ): number {
-  if (text !== rstrip(text, " ")) {
+  if (text !== text.replace(/ +$/, "")) {
     throw _refuse("trailing spaces on a centered or right-justified line");
   }
   if (justification === ParagraphJustification.CENTER_JUSTIFY) {
@@ -261,7 +257,7 @@ export function _pointTextInk(
   box: BoxAccumulator,
 ): void {
   const body = raw.endsWith("\r") ? raw.slice(0, -1) : raw;
-  const paragraphs = split(body, "\r");
+  const paragraphs = body.split("\r");
   if (paragraphStyles.length !== paragraphs.length) {
     throw _refuse("paragraph runs that do not cover the paragraphs");
   }
@@ -269,9 +265,9 @@ export function _pointTextInk(
   let baseline = 0.0;
   for (const [index, paragraph] of paragraphs.entries()) {
     let lineStyles = styles.slice(offset, offset + paragraph.length + 1);
-    if (lineStyles.length === 0) lineStyles = [at(styles, -1)];
+    if (lineStyles.length === 0) lineStyles = [styles.at(-1)!];
     if (index > 0) {
-      baseline += max(lineStyles.map((s) => s.leading));
+      baseline += Math.max(...lineStyles.map((s) => s.leading));
     }
     if (paragraph) {
       const style = paragraphStyles[index];
@@ -326,7 +322,7 @@ export function _boxTextInk(
     for (let k = 0; k < end - start; k++) paragraphOf.push(index);
   }
   for (const [[start, end], baseline] of zip(composed.spans, composed.baselines)) {
-    const text = rstrip(raw.slice(start, end), "\r");
+    const text = raw.slice(start, end).replace(/\r+$/, "");
     if (!text) continue;
     const style = paragraphStyles[paragraphOf[start]];
     if (_justification(style) !== ParagraphJustification.LEFT_JUSTIFY) {

@@ -4,7 +4,7 @@
  * These enums match the values used in After Effects ExtendScript.
  */
 
-import { and, defineEnum, type EnumValue } from "../../pyrt/index.ts";
+import { defineEnum, type EnumValue } from "../../pyrt/index.ts";
 
 /**
  * Frame rate source setting for rendering.
@@ -64,7 +64,7 @@ export const RenderQuality = defineEnum(
 
     /** Convert to binary value (CURRENT_SETTINGS -\> 0xFFFF). */
     toBinary(self: number): number {
-      return and(Math.trunc(self), 0xffff);
+      return Math.trunc(self) & 0xffff;
     },
   },
 );
@@ -403,7 +403,7 @@ export const ColorDepthSetting = defineEnum(
 
     /** Convert to binary value (CURRENT_SETTINGS -\> 0xFFFF). */
     toBinary(self: number): number {
-      return and(Math.trunc(self), 0xffff);
+      return Math.trunc(self) & 0xffff;
     },
   },
 );

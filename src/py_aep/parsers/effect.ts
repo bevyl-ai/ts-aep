@@ -18,10 +18,6 @@ import type { CompItem } from "../models/items/composition.ts";
 import type { Layer } from "../models/layers/layer.ts";
 import type { Project } from "../models/project.ts";
 import {
-  and,
-  at,
-  split,
-  strip,
   warn,
   decode,
   encode,
@@ -492,7 +488,7 @@ export function* _effectInstances(chunks: Chunk[]): Generator<[string, ListChunk
       yield* _effectInstances(chunk.chunks);
     } else if (listType === "Layr") {
       const root = filterByListType(chunk.chunks, "tdgp");
-      const parade = getChunksByMatchName(at(root, 0)).get("ADBE Effect Parade");
+      const parade = getChunksByMatchName(root[0]).get("ADBE Effect Parade");
       const effects = filterByListType(parade ?? [], "tdgp");
       if (effects.length === 0) continue;
       for (const [name, run] of getChunksByMatchName(effects[0])) {
@@ -822,7 +818,7 @@ export function _parseEffectParameterDef(
     propertyControlType: controlType,
     // PF param flags bit 1 = CANNOT_TIME_VARY (the tdb4 byte is
     // unreliable for effect parameters).
-    canVaryOverTime: !and(pardChunk.paramFlags, 0x02),
+    canVaryOverTime: !(pardChunk.paramFlags & 0x02),
     expressionsDisabled: pardChunk.expressionsDisabled,
   };
 
@@ -842,11 +838,11 @@ export function _parseEffectParameterDef(
     const utf8Chunk = findByType(pdnmChunk.chunks, "Utf8");
     const pdnmData = utf8Chunk.value;
     if (controlType === PropertyControlType.ENUM) {
-      result.propertyParameters = split(pdnmData, "|");
+      result.propertyParameters = pdnmData.split("|");
     } else if (
       pdnmData &&
       controlType === PropertyControlType.BOOLEAN &&
-      !strip(result.name)
+      !result.name.trim()
     ) {
       // A checkbox's pdnm is the label beside its box (a button's, the
       // button text): AE 2026 names the parameter by it only when the

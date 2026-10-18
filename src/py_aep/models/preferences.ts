@@ -10,20 +10,14 @@ import {
   Path,
   type PathLike,
   KeyError,
-  ValueError,
-  b,
   Bytes,
   decode,
-  float,
   getOrThrow,
   literal,
-  round,
-  split,
-  strip,
   compositeKey,
   zip,
   typeName,
-  truthyOr, compare } from "../../pyrt/index.ts";
+  compare } from "../../pyrt/index.ts";
 
 export const _validatePrefType = validateEnum(PREFType);
 
@@ -246,11 +240,9 @@ export function defaultCharacterStyle(preferences: Preferences) {
     vertical_scale: number("Vertical Scale", factory.vertical_scale * _SCALE_PERCENT) / _SCALE_PERCENT,
     baseline_shift: number("Baseline Shift", factory.baseline_shift),
     auto_leading: flag("Auto Leading", factory.auto_leading),
-    auto_kern_type: _AUTO_KERN_BY_PREF.get(strip(
-        preferences.getPrefAsString(_TEXT_STYLE_SECTION, "Auto Kerning Type", PREFType.PREF_Type_MACHINE_SPECIFIC_TEXT, {
+    auto_kern_type: _AUTO_KERN_BY_PREF.get(preferences.getPrefAsString(_TEXT_STYLE_SECTION, "Auto Kerning Type", PREFType.PREF_Type_MACHINE_SPECIFIC_TEXT, {
           default: "Metric Auto Kerning",
-        }),
-      )) ?? factory.auto_kern_type,
+        }).trim()) ?? factory.auto_kern_type,
   };
 }
 
@@ -268,7 +260,7 @@ export function defaultParagraphStyle(preferences: Preferences) {
   const rawJustification = preferences.getPrefAsString(_PARA_SHEET_SECTION, "Justification", PREFType.PREF_Type_MACHINE_SPECIFIC_TEXT, {
     default: "Left",
   });
-  const justification = _JUSTIFICATION_BY_PREF.get(strip(split(rawJustification, "|")[0])) ?? factory.justification;
+  const justification = _JUSTIFICATION_BY_PREF.get(rawJustification.split("|")[0].trim()) ?? factory.justification;
   return {
     justification,
     first_line_indent: number("First Line Indent", factory.first_line_indent),
@@ -292,19 +284,13 @@ export function _defaultOutPoint(preferences: Preferences, key: string): number 
   const raw = preferences.getPrefAsString("Main Pref Section v2", key, PREFType.PREF_Type_MACHINE_INDEPENDENT, {
     default: "0/0",
   });
-  const parts = split(raw, "/");
+  const parts = raw.split("/");
   if (parts.length !== 2) return null;
-  // try/except ValueError around float(): None when either half is malformed.
-  const valueScale = (() => {
-    try {
-      return [float(parts[0]), float(parts[1])] as const;
-    } catch (e) {
-      if (e instanceof ValueError) return null;
-      throw e;
-    }
-  })();
-  if (valueScale == null) return null;
-  const [value, scale] = valueScale;
+  // null when either half is not a number.
+  if (!parts[0].trim() || !parts[1].trim()) return null;
+  const value = Number(parts[0]);
+  const scale = Number(parts[1]);
+  if (Number.isNaN(value) || Number.isNaN(scale)) return null;
   if (scale === 0 || value <= 0) return null;
   return value / scale;
 }
@@ -351,7 +337,7 @@ export function applyTextStylePrefs(document: TextDocument, preferences: Prefere
 
   const fill = [number("Fill Red"), number("Fill Green"), number("Fill Blue")];
   if (fill.every((n) => n !== null)) {
-    const currentFill = truthyOr(document.fillColor, [0.0, 0.0, 0.0]);
+    const currentFill = document.fillColor?.length ? document.fillColor : [0.0, 0.0, 0.0];
     if (zip(currentFill, fill).some(([c, n]) => differs(c, n))) {
       document.fillColor = [...fill];
     }
@@ -360,7 +346,7 @@ export function applyTextStylePrefs(document: TextDocument, preferences: Prefere
   const tracking = number("Tracking");
   if (tracking != null && differs(document.tracking, tracking)) {
     // tracking is an integer field, unlike the float Size/Baseline Shift.
-    document.tracking = round(tracking);
+    document.tracking = (Math.round(tracking) + 0);
   }
 
   const baselineShift = number("Baseline Shift");
@@ -390,7 +376,7 @@ export function applyTextStylePrefs(document: TextDocument, preferences: Prefere
       }
       const stroke = [number("Stroke Red"), number("Stroke Green"), number("Stroke Blue")];
       if (stroke.every((n) => n !== null)) {
-        const current = truthyOr(document.strokeColor, [0.0, 0.0, 0.0]);
+        const current = document.strokeColor?.length ? document.strokeColor : [0.0, 0.0, 0.0];
         if (zip(current, stroke).some(([c, n]) => differs(c, n))) {
           document.strokeColor = [...stroke];
         }
@@ -756,7 +742,7 @@ export class Preferences {
     for (const key of [...section.keys()].sort(compare)) {
       // Each entry is `<name> NUL <template> NUL` in AE's mixed
       // hex/ASCII encoding.
-      const parts = Bytes.split(parseHexValue(getOrThrow(section, key)), b("\x00")).filter((p) => p?.length > 0);
+      const parts = Bytes.split(parseHexValue(getOrThrow(section, key)), new Uint8Array(1)).filter((p) => p?.length > 0);
       if (parts.length >= 2) {
         const name = decode(parts[0], "utf-8", "replace");
         presets.set(name, decode(parts[1], "utf-8", "replace"));

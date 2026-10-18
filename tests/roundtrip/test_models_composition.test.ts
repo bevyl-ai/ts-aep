@@ -5,9 +5,9 @@ import {
   at,
   AttributeError,
   contains,
-  getattr,
+  getMember,
   getOrThrow,
-  hasattr,
+  hasMember,
   IndexError,
   isclose,
   len,
@@ -166,7 +166,7 @@ describe("TestCompItemLazyLayerParsing", () => {
 
     // Trigger lazy linking via used_in - source IDs are extracted
     // on-demand from DeferredListChunk raw bytes.
-    const footageItems = [...project.items.values()].filter((it) => hasattr(it, "_usedIn"));
+    const footageItems = [...project.items.values()].filter((it) => hasMember(it, "_usedIn"));
     const linked = footageItems.filter((it) => contains(asInstance(it, AVItem).usedIn, comp));
     expect(truthy(linked)).toBe(true);
     expect(comp._layersLoaded).toBe(false);
@@ -1583,7 +1583,7 @@ describe("TestRoundtripFrameRateRetiming", () => {
   function _layerMarker(comp: CompItem): Property {
     for (const layer of comp.layers) {
       for (const child of layer) {
-        if (getattr(child, "matchName", "") === "ADBE Marker") return asInstance(child, Property);
+        if (getMember(child, "matchName", "") === "ADBE Marker") return asInstance(child, Property);
       }
     }
     // Python next(...) with no default raises StopIteration here.

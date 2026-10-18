@@ -7,7 +7,7 @@
  * inline `style` attribute.
  */
 
-import { contains, split, strip, compare } from "../../pyrt/index.ts";
+import { contains, compare } from "../../pyrt/index.ts";
 
 // Presentation properties py_aep tracks (the paintable subset plus the text
 // properties needed to outline `<text>`/`<tspan>`).
@@ -91,7 +91,7 @@ export function parseCss(text: string): CssRule[] {
     const [decls, important] = _splitDeclarations(body);
     if (!decls?.size) continue;
     for (const raw of selGroup.split(",")) {
-      const sel = strip(raw);
+      const sel = raw.trim();
       if (!sel) continue;
       rules.push(new CssRule(_specificity(sel), order, sel, decls, important));
       order += 1;
@@ -115,12 +115,12 @@ export function _splitDeclarations(
     const colon = decl.indexOf(":");
     const key0 = decl.slice(0, colon);
     const val = decl.slice(colon + 1);
-    const key = strip(key0).toLowerCase();
+    const key = key0.trim().toLowerCase();
     if (contains(tracked, key)) {
       // Drop the CSS `!important` priority flag so it does not leak into
       // the value and break downstream color/number parsing.
       const flag = _IMPORTANT_RE.exec(val);
-      const value = strip(flag != null ? val.slice(0, flag.index) : val);
+      const value = (flag != null ? val.slice(0, flag.index) : val).trim();
       out.set(key, value);
       if (flag != null) important.set(key, value);
     }
@@ -158,7 +158,7 @@ export function selectorMatches(
   classes: ReadonlySet<string>,
 ): boolean {
   if (
-    strip(selector).includes(" ") ||
+    selector.trim().includes(" ") ||
     selector.includes(">") ||
     selector.includes("+") ||
     selector.includes("~")
@@ -201,13 +201,13 @@ export function resolveProperties(
   // Presentation attributes (weakest author level).
   for (const key of _TRACKED) {
     const value = attrs.get(key);
-    if (value !== undefined) style.set(key, strip(value));
+    if (value !== undefined) style.set(key, value.trim());
   }
 
   // Matching CSS rules, applied in (specificity, order) ascending so the
   // strongest wins.
   const elemId = attrs.get("id") ?? "";
-  const classes = new Set(split(attrs.get("class") ?? ""));
+  const classes = new Set((attrs.get("class") ?? "").split(/\s+/).filter(Boolean));
   const matched = cssRules.filter((r) =>
     selectorMatches(r.selector, tag, elemId, classes),
   );

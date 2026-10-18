@@ -12,9 +12,9 @@ import {
   BytesIO,
   at,
   contains,
-  getattr,
+  getMember,
   getOrThrow,
-  hasattr,
+  hasMember,
   len,
   Path,
   truthy,
@@ -87,9 +87,9 @@ function _findStatic(app: Application, matchName: string): [Property | null, num
 }
 
 function _walk(group: PropertyGroup, matchName: string, out: Property[]): void {
-  for (const p of getattr(group, "properties", [])) {
+  for (const p of getMember(group, "properties", [])) {
     if (p.matchName === matchName) out.push(asInstance(p, Property));
-    if (hasattr(p, "properties")) _walk(asInstance(p, PropertyGroup), matchName, out);
+    if (hasMember(p, "properties")) _walk(asInstance(p, PropertyGroup), matchName, out);
   }
 }
 
@@ -248,7 +248,7 @@ describe("TestAddKey", () => {
     scale.setValueAtTime(1.0, [120.0, 120.0, 100.0]);
     expect(scale._animated).toBe(true);
     // tdum/tduM bound chunks were added on materialization.
-    const kinds = scale._tdbs.chunks.map((c) => getattr(c, "chunkType", null));
+    const kinds = scale._tdbs.chunks.map((c) => getMember(c, "chunkType", null));
     expect(kinds.includes("tdum") && kinds.includes("tduM")).toBe(true);
     const app2 = _roundtrip(app, tmpPath);
     const scale2 = asInstance([...app2.project.compositions[0].layers[li].transform].find((p) => p.matchName === "ADBE Scale"), Property);
@@ -387,8 +387,8 @@ describe("TestMoveKeyframe", () => {
 /** Collect every descendant property that has keyframes. */
 function _keyframedProps(group: PropertyBase): PropertyBase[] {
   const out: PropertyBase[] = [];
-  for (const p of getattr(group, "properties", [])) {
-    if (truthy(getattr(p, "keyframes", null))) out.push(p);
+  for (const p of getMember(group, "properties", [])) {
+    if (truthy(getMember(p, "keyframes", null))) out.push(p);
     out.push(..._keyframedProps(p));
   }
   return out;

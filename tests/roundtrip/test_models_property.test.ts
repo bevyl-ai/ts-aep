@@ -14,7 +14,7 @@ import {
   contains,
   copy,
   deepcopy,
-  getattr,
+  getMember,
   getOrThrow,
   len,
   assert,
@@ -22,8 +22,8 @@ import {
   valueEquals,
   truthyOr,
   repr,
-  setattr,
-  setdefault,
+  setMember,
+  getOrInsert,
   compositeKey,
   zip,
 } from "../../src/pyrt/index.ts";
@@ -1238,7 +1238,7 @@ describe("TestMaskMutations", () => {
   /** Static method `_parade_chunk_types` in the Python class. */
   function _paradeChunkTypes(parade: PropertyGroup): string[] {
     assert(parade._tdgp != null);
-    return parade._tdgp.chunks.map((c) => truthyOr(getattr(c, "listType", null), c.chunkType));
+    return parade._tdgp.chunks.map((c) => truthyOr(getMember(c, "listType", null), c.chunkType));
   }
 
   test("test_remove_mask_deletes_full_span", () => {
@@ -1437,9 +1437,9 @@ describe("TestAddProperty", () => {
     assert(layer2.masks != null);
     const mask2 = asInstance(asInstance(layer2.masks, PropertyGroup).properties.at(-1), MaskPropertyGroup);
     assert(mask2._tdgp != null);
-    const oms = mask2._tdgp.chunks.find((c: Chunk) => getattr(c, "listType", null) === "om-s");
+    const oms = mask2._tdgp.chunks.find((c: Chunk) => getMember(c, "listType", null) === "om-s");
     if (!(oms instanceof ListChunk)) throw new StopIteration();
-    expect(valueEquals(oms.chunks.map((c: Chunk) => getattr(c, "listType", null)), ["tdbs", "omks"])).toBe(true);
+    expect(valueEquals(oms.chunks.map((c: Chunk) => getMember(c, "listType", null)), ["tdbs", "omks"])).toBe(true);
     const path = mask2.property("ADBE Mask Shape");
     expect(path.expression).toBe("value");
     const [w, h] = asInstance(layer2, AVLayer)._maskScale;
@@ -1481,7 +1481,7 @@ describe("TestAddProperty", () => {
     const newMask = asInstance(layer.masks, PropertyGroup).addProperty("ADBE Mask Atom");
     assert(newMask instanceof MaskPropertyGroup);
     assert(newMask._tdgp != null);
-    expect(valueEquals(newMask._tdgp.chunks.map((c: Chunk) => truthyOr(getattr(c, "listType", null), c.chunkType)), [
+    expect(valueEquals(newMask._tdgp.chunks.map((c: Chunk) => truthyOr(getMember(c, "listType", null), c.chunkType)), [
       "tdsb",
       "tdsn",
       "tdmn",
@@ -1545,11 +1545,11 @@ describe("TestAddProperty", () => {
     const paradeIdx = chunks.findIndex(
       (c: Chunk, i: number) =>
         c.chunkType === "tdmn" &&
-        getattr(c, "value", null) === "ADBE Mask Parade" &&
+        getMember(c, "value", null) === "ADBE Mask Parade" &&
         !c.synthetic,
     );
     const transformIdx = chunks.findIndex(
-      (c: Chunk, i: number) => c.chunkType === "tdmn" && getattr(c, "value", null) === "ADBE Transform Group",
+      (c: Chunk, i: number) => c.chunkType === "tdmn" && getMember(c, "value", null) === "ADBE Transform Group",
     );
     expect(paradeIdx >= 0).toBe(true); // `next(...)` raises StopIteration when nothing matches
     expect(transformIdx >= 0).toBe(true);
@@ -1639,7 +1639,7 @@ describe("TestAddProperty", () => {
     expect(maskPath.value.vertices.length).toBe(4);
     assert(mask._tdgp != null);
     expect(
-      mask._tdgp.chunks.filter((c: Chunk) => getattr(c, "value", null) === "ADBE Mask Shape").length,
+      mask._tdgp.chunks.filter((c: Chunk) => getMember(c, "value", null) === "ADBE Mask Shape").length,
     ).toBe(1);
     const out = tmpPath.div("out.aep");
     app.project.save(out);
@@ -1716,7 +1716,7 @@ describe("TestAddProperty", () => {
     expect(mask.rotoBezier).toBe(false);
     assert(mask._tdgp != null);
     expect(
-      mask._tdgp.chunks.some((c: Chunk) => getattr(c, "value", null) === "ADBE Mask Shape"),
+      mask._tdgp.chunks.some((c: Chunk) => getMember(c, "value", null) === "ADBE Mask Shape"),
     ).toBe(false);
   });
 
@@ -1975,11 +1975,11 @@ describe("TestAddEffect", () => {
     const paradeIdx = chunks.findIndex(
       (c: Chunk, i: number) =>
         c.chunkType === "tdmn" &&
-        getattr(c, "value", null) === "ADBE Effect Parade" &&
+        getMember(c, "value", null) === "ADBE Effect Parade" &&
         !c.synthetic,
     );
     const transformIdx = chunks.findIndex(
-      (c: Chunk, i: number) => c.chunkType === "tdmn" && getattr(c, "value", null) === "ADBE Transform Group",
+      (c: Chunk, i: number) => c.chunkType === "tdmn" && getMember(c, "value", null) === "ADBE Transform Group",
     );
     expect(paradeIdx >= 0).toBe(true); // `next(...)` raises StopIteration when nothing matches
     expect(transformIdx >= 0).toBe(true);
@@ -2195,12 +2195,12 @@ describe("TestSynthesizedEffectParamWrites", () => {
         }
         for (const effect of asInstance(layer.effects, PropertyGroup).properties) {
           for (const prop of asInstance(effect, PropertyGroup).properties) {
-            const tdb4 = getattr(prop, "_tdb4", null);
-            const control = getattr(prop, "_propertyControlType", null);
+            const tdb4 = getMember(prop, "_tdb4", null);
+            const control = getMember(prop, "_propertyControlType", null);
             if (tdb4 == null || control == null) {
               continue;
             }
-            setdefault(seen, control, new Set<number>()).add(tdb4._spatialStaticFlags);
+            getOrInsert(seen, control, new Set<number>()).add(tdb4._spatialStaticFlags);
           }
         }
       }
@@ -2386,7 +2386,7 @@ describe("TestAddInstalledEffect", () => {
     const effect = layer.property("ADBE Effect Parade").addProperty("ADBE Gaussian Blur 2");
     assert(effect instanceof PropertyGroup);
     const stamped = [...effect.properties].filter(
-      (child): child is Property => child instanceof Property && getattr(child, "_tdb4", null) != null && truthy(child._tdb4._timeBase),
+      (child): child is Property => child instanceof Property && getMember(child, "_tdb4", null) != null && truthy(child._tdb4._timeBase),
     );
     assert(truthy(stamped), "expected at least one stamped tdb4 in the clone");
     for (const child of stamped) {
@@ -2399,7 +2399,7 @@ describe("TestAddInstalledEffect", () => {
     const comp2 = _next(reparsed.project.compositions, (c) => c.name === "60fps");
     const effect2 = asInstance(asInstance(comp2.layers[0].effects, PropertyGroup).properties[0], PropertyGroup);
     for (const child of effect2.properties) {
-      const tdb4 = getattr(child, "_tdb4", null);
+      const tdb4 = getMember(child, "_tdb4", null);
       if (tdb4 != null && truthy(tdb4._timeBase)) {
         expect(valueEquals(tdb4._timeBase, targetBase)).toBe(true);
       }
@@ -2459,7 +2459,7 @@ describe("TestAddInstalledEffect", () => {
       .map((c) =>
         c.chunkType === "engv"
           ? `engv ${Bytes.intFromBytes(c.data, "big")}`
-          : truthyOr(getattr(c, "value", null), c.chunkType),
+          : truthyOr(getMember(c, "value", null), c.chunkType),
       );
   }
 
@@ -2951,7 +2951,7 @@ describe("TestAddShapeElement", () => {
     const rect = contents.addProperty("ADBE Vector Shape - Rect");
     assert(rect instanceof PropertyGroup);
     assert(rect._tdgp != null);
-    expect(valueEquals(rect._tdgp.chunks.map((c: Chunk) => truthyOr(getattr(c, "listType", null), c.chunkType)), [
+    expect(valueEquals(rect._tdgp.chunks.map((c: Chunk) => truthyOr(getMember(c, "listType", null), c.chunkType)), [
       "tdsb",
       "tdsn",
       "tdmn",
@@ -3398,7 +3398,7 @@ describe("TestValueValidation", () => {
     expect(opacity.dimensions).toBe(1);
     raises(TypeError, () => {
       opacity.value = [50.0, 60.0];
-    }, "expected a number, got list");
+    }, "expected a number, got Array");
   });
 
   test("test_scalar_on_multidim_raises", () => {
@@ -3566,7 +3566,7 @@ describe("TestPlaceholderBoundsValueSetter", () => {
     const collect = (node: Layer | PropertyGroup): void => {
       for (const p of node) {
         if (p instanceof Property) {
-          setdefault(found, p.matchName, p);
+          getOrInsert(found, p.matchName, p);
         } else if (p instanceof PropertyGroup) {
           collect(p);
         }
@@ -3715,16 +3715,16 @@ describe("TestKeyframeInterpolationTypeGuard", () => {
   test.each(holdOnlyRows)("test_hold_only_property_rejects_non_hold[%#]", (side, interp) => {
     const kf = _markerKeyframe();
     raises(ValueError, () => {
-      setattr(kf, side, interp);
+      setMember(kf, side, interp);
     }, "not a valid interpolation type");
-    expect(getattr(kf, side)).toBe(KeyframeInterpolationType.HOLD);
+    expect(getMember(kf, side)).toBe(KeyframeInterpolationType.HOLD);
   });
 
   test.each(SIDES)("test_hold_only_property_accepts_hold[%#]", (side) => {
     // A no-op rewrite of an AE-written marker keyframe must not raise.
     const kf = _markerKeyframe();
-    setattr(kf, side, KeyframeInterpolationType.HOLD);
-    expect(getattr(kf, side)).toBe(KeyframeInterpolationType.HOLD);
+    setMember(kf, side, KeyframeInterpolationType.HOLD);
+    expect(getMember(kf, side)).toBe(KeyframeInterpolationType.HOLD);
   });
 
   const normalRows: [string, KeyframeInterpolationType][] = [];
@@ -3742,17 +3742,17 @@ describe("TestKeyframeInterpolationTypeGuard", () => {
     const project = parseAep(SAMPLES_DIR.div("keyframe_interpolation.aep")).project;
     const layer = getComp(project, "keyframe_LINEAR").layers[0];
     const prop = asInstance(_findProperty(layer, "ADBE Position"), Property);
-    setattr(prop.keyframes[0], side, interp);
-    expect(getattr(prop.keyframes[0], side)).toBe(interp);
+    setMember(prop.keyframes[0], side, interp);
+    expect(getMember(prop.keyframes[0], side)).toBe(interp);
   });
 
   test.each(SIDES)("test_out_of_enum_value_rejected[%#]", (side) => {
     const kf = _markerKeyframe();
     raises(ValueError, () => {
-      setattr(kf, side, 9999);
+      setMember(kf, side, 9999);
     });
     raises(TypeError, () => {
-      setattr(kf, side, "hold");
+      setMember(kf, side, "hold");
     });
   });
 });
@@ -4238,7 +4238,7 @@ function _maskShapeBytes(mask: MaskPropertyGroup): Uint8Array {
   assert(mask._tdgp != null);
   const chunks = mask._tdgp.chunks;
   const index = chunks.findIndex(
-    (c) => c.chunkType === "tdmn" && getattr(c, "value", null) === "ADBE Mask Shape",
+    (c) => c.chunkType === "tdmn" && getMember(c, "value", null) === "ADBE Mask Shape",
   );
   assert(index >= 0, "StopIteration"); // `next(...)` raises when nothing matches
   return chunks[index + 1].tobytes();

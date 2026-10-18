@@ -4,7 +4,7 @@ import { describe, expect, test } from "bun:test";
 import {
   AssertionError,
   Bytes,
-  bytesEq,
+  bytesEqual,
   getOrThrow,
   isdigit,
   len,
@@ -12,7 +12,7 @@ import {
   truthy,
   valueEquals,
   truthyOr,
-  getattr,
+  getMember,
   sorted,
   split,
   StopIteration,
@@ -154,7 +154,7 @@ describe("TestNewVersion", () => {
     (version: string, present: Set<string>, absent: Set<string>) => {
       const chunks = py_aep.newProject(version).project._rifx.chunks;
       const types = new Set(
-        chunks.map((c) => truthyOr(getattr(c, "listType", ""), c.chunkType)),
+        chunks.map((c) => truthyOr(getMember(c, "listType", ""), c.chunkType)),
       );
       expect([...present].every((t) => types.has(t))).toBe(true);
       expect([...absent].some((t) => types.has(t))).toBe(false);
@@ -262,7 +262,7 @@ describe("TestNewRoundTrip", () => {
     const path = tmpPath.div("empty.aep");
     app.project.save(path);
     const reparsed = py_aep.parse(path);
-    expect(bytesEq(projectBytes(reparsed.project), original)).toBe(true);
+    expect(bytesEqual(projectBytes(reparsed.project), original)).toBe(true);
   });
 
   test("test_reparse_empty", () => {

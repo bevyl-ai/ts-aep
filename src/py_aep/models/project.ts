@@ -61,28 +61,23 @@ import {
   KeyError,
   NotImplementedError,
   Bytes,
-  b,
   BytesIO,
   Path,
   decode,
   fspath,
-  getattr,
-  setattr,
+  getMember,
+  setMember,
   getOrThrow,
-  max,
   assert,
   truthy,
   compare,
   valueEquals,
   truthyOr,
   literal,
-  rshift,
-  round,
-  setdefault,
-  strip,
+  getOrInsert,
   compositeKey,
   warn,
-  bytesEq,
+  bytesEqual,
   descriptor,
   instanceDict,
   jsonDumps,
@@ -771,7 +766,7 @@ export class Project {
   }
 
   _syncNhedField(fieldName: string): void {
-    setattr(this._nhed, fieldName, getattr(this._nnhd, fieldName));
+    setMember(this._nhed, fieldName, getMember(this._nnhd, fieldName));
   }
 
   _syncNhedTimecodeDefaultBase(): void {
@@ -868,7 +863,7 @@ export class Project {
       const profileId = this._cpid.data;
       const cppl = findByListType(this._rootChunks, "CPPl");
       for (const pprf of filterByType(cppl.chunks, "pprf")) {
-        if (bytesEq(iccProfileId(pprf.data), profileId)) {
+        if (bytesEqual(iccProfileId(pprf.data), profileId)) {
           return iccProfileDescription(pprf.data) || "None";
         }
       }
@@ -886,13 +881,13 @@ export class Project {
     let profileId: Uint8Array;
     if (this.colorManagementSystem === ColorManagementSystem.OCIO) {
       envelope = this._ocioEnvelope(value);
-      profileId = Bytes.repeat(b("\xff"), 16);
+      profileId = Bytes.repeat(Uint8Array.of(0xff), 16);
     } else if (value === "None") {
       // No working space, which the getter reports as "None": AE 2026
       // saves `workingSpace = "None"` as an empty `{}` profile after
       // `PwCs` and an all-0xFF `cpid`, like a new project.
       envelope = "{}";
-      profileId = Bytes.repeat(b("\xff"), 16);
+      profileId = Bytes.repeat(Uint8Array.of(0xff), 16);
     } else {
       // bytes_for already raises ColorProfileNotFoundError for an
       // unknown Adobe profile name, so no separate name check is needed.
@@ -917,7 +912,7 @@ export class Project {
    */
   _setCpplWorkingSpace(value: string): void {
     if (value === "None") {
-      this._cpid.data = Bytes.repeat(b("\xff"), 16);
+      this._cpid.data = Bytes.repeat(Uint8Array.of(0xff), 16);
       return;
     }
     const icc = this._iccLib().bytesFor(value);
@@ -1437,7 +1432,7 @@ export class Project {
     height: number,
     pixelAspect: number,
   ): CompItem {
-    const frames = round(_LAYERED_COMP_DURATION_SECONDS * _LAYERED_COMP_FRAME_RATE);
+    const frames = Math.round(_LAYERED_COMP_DURATION_SECONDS * _LAYERED_COMP_FRAME_RATE) + 0;
     const comp = parentFolder.addComp(
       name,
       width,
@@ -2095,7 +2090,7 @@ export class Project {
     for (const footage of this.footages) {
       const key = footage._consolidationKey();
       if (key == null) continue;
-      setdefault(groups, key, []).push(footage);
+      getOrInsert(groups, key, []).push(footage);
     }
     let removed = 0;
     for (const duplicates of groups.values()) {
@@ -2277,9 +2272,9 @@ export class Project {
           layerIds.push(ldta.layerId);
         }
       }
-      const maxLayerId = max(layerIds, null, 0);
-      const maxItemId = max([...this.items.keys()], null, 0);
-      const floor = max([maxLayerId, maxItemId]) + 1;
+      const maxLayerId = Math.max(0, ...layerIds);
+      const maxItemId = Math.max(0, ...this.items.keys());
+      const floor = Math.max(maxLayerId, maxItemId) + 1;
       if (this._head.nextItemId < floor) {
         this._head.nextItemId = floor;
       }
@@ -2426,7 +2421,7 @@ export class Project {
     }));
     // The XMP packet: `ET.fromstring` / `ET.tostring` (see the TODO above).
     descriptor(this, "xmpPacket", new ChunkField("_aep", "_xmp", {
-      transform: (s) => (!!s && strip(s) ? ET_fromstring(s) : null),
+      transform: (s) => (!!s && s.trim() ? ET_fromstring(s) : null),
       reverse: (el: Element | null) => (el != null ? ET_tostring(el) : ""),
     }));
   }
@@ -2447,11 +2442,11 @@ export function _aiCroppedTransform(
   box: [number, number, number, number],
   pageHeight: number,
 ): [[number, number], [number, number]] {
-  const [x0, y0, x1, y1] = box.map((v) => round(v * 65536));
+  const [x0, y0, x1, y1] = box.map((v) => Math.round(v * 65536) + 0);
   const anchor: [number, number] = [toF4((x1 - x0) / 131072), toF4((y1 - y0) / 131072)];
   const position: [number, number] = [
-    rshift(x0 + x1, 1) / 65536,
-    pageHeight - rshift(y0 + y1, 1) / 65536,
+    Math.floor((x0 + x1) / 2) / 65536,
+    pageHeight - Math.floor((y0 + y1) / 2) / 65536,
   ];
   return [anchor, position];
 }
@@ -2551,7 +2546,7 @@ export function _styleLeafMap(group: PropertyGroup): Map<string, Property> {
   for (const child of group.properties) {
     if (child instanceof PropertyGroup) {
       for (const [name, leaf] of _styleLeafMap(child)) {
-        setdefault(leaves, name, leaf);
+        getOrInsert(leaves, name, leaf);
       }
     } else if (!leaves.has(child.matchName)) {
       leaves.set(child.matchName, child);
@@ -2633,7 +2628,7 @@ export function _serializeImportLayerStyles(layer: AVLayer, styles: PsdLayerStyl
   const timebase = layer.containingComp._cdta.internalTimebase;
   const source = layer.source;
   // Python `cast("AVItem", layer.source)`: an imported layer always has one.
-  if (source == null) throw new AttributeError("'NoneType' object has no attribute 'width'");
+  if (source == null) throw new AttributeError("cannot read 'width' of null");
   const pointAspect = (source.width * source.pixelAspect) / source.height;
   const leaves = _styleLeafMap(container);
   for (const [matchName, value] of styles.values) {

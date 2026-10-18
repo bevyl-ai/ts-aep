@@ -7,22 +7,14 @@
  */
 
 import {
-  and,
-  andNot,
-  b,
   Bytes,
   decode,
   define,
   descriptor,
   encode,
   field,
-  lshift,
-  mod,
   objectSetattr,
-  or,
   literal,
-  rshift,
-  split,
   ValueError,
   pyRe,
 } from "../../pyrt/index.ts";
@@ -117,7 +109,7 @@ export class IdpcChunk extends Chunk {
 }
 define(IdpcChunk, {
   chunkType: field({ default: "idpc" }),
-  data: field({ default: Bytes.repeat(b("\x00"), 8) }),
+  data: field({ default: Bytes.repeat(new Uint8Array(1), 8) }),
 });
 register("idpc")(IdpcChunk);
 
@@ -182,57 +174,57 @@ export class HeadChunk extends Chunk {
   declare fileRevision: number;
 
   get aeVersionMajorA(): number {
-    return and(rshift(this._versionWord, 26), 0x1f);
+    return (this._versionWord >>> 26) & 0x1f;
   }
 
   set aeVersionMajorA(value: number) {
-    this._versionWord = or(andNot(this._versionWord, lshift(0x1f, 26)), lshift(and(value, 0x1f), 26));
+    this._versionWord = ((this._versionWord & ~(0x1f << 26)) | ((value & 0x1f) << 26)) >>> 0;
   }
 
   get aeVersionMajorB(): number {
-    return and(rshift(this._versionWord, 19), 0x07);
+    return (this._versionWord >>> 19) & 0x07;
   }
 
   set aeVersionMajorB(value: number) {
-    this._versionWord = or(andNot(this._versionWord, lshift(0x07, 19)), lshift(and(value, 0x07), 19));
+    this._versionWord = ((this._versionWord & ~(0x07 << 19)) | ((value & 0x07) << 19)) >>> 0;
   }
 
   get aeVersionMinor(): number {
-    return and(rshift(this._versionWord, 15), 0x0f);
+    return (this._versionWord >>> 15) & 0x0f;
   }
 
   set aeVersionMinor(value: number) {
-    this._versionWord = or(andNot(this._versionWord, lshift(0x0f, 15)), lshift(and(value, 0x0f), 15));
+    this._versionWord = ((this._versionWord & ~(0x0f << 15)) | ((value & 0x0f) << 15)) >>> 0;
   }
 
   /** Raw flag: False=beta, True=release. */
   get aeVersionBetaFlag(): boolean {
-    return and(rshift(this._versionWord, 9), 1) !== 0;
+    return ((this._versionWord >>> 9) & 1) !== 0;
   }
 
   set aeVersionBetaFlag(value: boolean | number) {
     if (value) {
-      this._versionWord = or(this._versionWord, 1 << 9);
+      this._versionWord = (this._versionWord | (1 << 9)) >>> 0;
     } else {
-      this._versionWord = andNot(this._versionWord, 1 << 9);
+      this._versionWord = (this._versionWord & ~(1 << 9)) >>> 0;
     }
   }
 
   get aeBuildNumber(): number {
-    return and(this._versionWord, 0xff);
+    return this._versionWord & 0xff;
   }
 
   set aeBuildNumber(value: number) {
-    this._versionWord = or(andNot(this._versionWord, 0xff), and(value, 0xff));
+    this._versionWord = ((this._versionWord & ~0xff) | (value & 0xff)) >>> 0;
   }
 
   /** OS code (bits 25-22); 12 for Windows in saved files. */
   get aeVersionOs(): number {
-    return and(rshift(this._versionWord, 22), 0x0f);
+    return (this._versionWord >>> 22) & 0x0f;
   }
 
   set aeVersionOs(value: number) {
-    this._versionWord = or(andNot(this._versionWord, lshift(0x0f, 22)), lshift(and(value, 0x0f), 22));
+    this._versionWord = ((this._versionWord & ~(0x0f << 22)) | ((value & 0x0f) << 22)) >>> 0;
   }
 
   /** Full major version (e.g. 25). */
@@ -284,7 +276,7 @@ define(HeadChunk, {
   _reserved00c: bytesField(1, { repr: false }),
   _formatSubversion: u1Field({ default: 0x02, repr: false }),
   _versionWord: u4Field({ default: (12 << 22) | (1 << 10) | (1 << 9), repr: false }),
-  _reserved08: bytesField(4, { default: b("\x80\x00\x00\x00"), repr: false }),
+  _reserved08: bytesField(4, { default: Uint8Array.of(0x80, 0x00, 0x00, 0x00), repr: false }),
   nextItemId: u4Field({ default: 1, repr: false }),
   fileRevision: u4Field({ default: 1 }),
 });
@@ -328,7 +320,7 @@ export class NhedChunk extends Chunk {
   }
 
   get displayStartFrame(): number {
-    return mod(this.framesCountType, 2);
+    return ((this.framesCountType % 2) + 2) % 2;
   }
 
   set displayStartFrame(value: number) {
@@ -343,13 +335,13 @@ export class NhedChunk extends Chunk {
 define(NhedChunk, {
   chunkType: field({ default: "nhed" }),
   // Defaults capture a fresh AE 2026 project (see project_chunks.py).
-  _reserved00: bytesField(8, { default: Bytes.concat(Bytes.repeat(b("\x00"), 7), b("\x05")), repr: false }),
+  _reserved00: bytesField(8, { default: Bytes.concat(Bytes.repeat(new Uint8Array(1), 7), Uint8Array.of(0x05)), repr: false }),
   _displayByte: u1Field({ repr: false }),
   footageTimecodeDisplayStartType: u1Field({ default: 1 }),
-  _reserved0a: bytesField(1, { default: b("\x01"), repr: false }),
+  _reserved0a: bytesField(1, { default: Uint8Array.of(0x01), repr: false }),
   _feetByte: u1Field({ repr: false }),
   timecodeDefaultBase: u1Field({ default: 30 }),
-  _reserved0d: bytesField(1, { default: b("\x10"), repr: false }),
+  _reserved0d: bytesField(1, { default: Uint8Array.of(0x10), repr: false }),
   framesCountType: u1Field({ default: 2 }),
   bitsPerChannel: u1Field(),
   transparencyGridThumbnails: boolField(),
@@ -411,7 +403,7 @@ export class NnhdChunk extends Chunk {
   }
 
   get displayStartFrame(): number {
-    return mod(this.framesCountType, 2);
+    return ((this.framesCountType % 2) + 2) % 2;
   }
 
   set displayStartFrame(value: number) {
@@ -429,14 +421,14 @@ define(NnhdChunk, {
   // Defaults capture a fresh AE 2026 project (see project_chunks.py).
   _reserved00: bytesField(2, { repr: false }),
   _savingPlatform: u1Field({ repr: false }),
-  _reserved03: bytesField(5, { default: Bytes.concat(Bytes.repeat(b("\x00"), 4), b("\x05")), repr: false }),
+  _reserved03: bytesField(5, { default: Bytes.concat(Bytes.repeat(new Uint8Array(1), 4), Uint8Array.of(0x05)), repr: false }),
   _displayByte: u1Field({ repr: false }),
   footageTimecodeDisplayStartType: u1Field({ default: 1 }),
   _reserved0a: u1Field({ default: 1, repr: false }),
   _feetByte: u1Field({ repr: false }),
   _reserved0c: bytesField(2, { repr: false }),
   timecodeDefaultBase: u2Field({ default: 30 }),
-  _unknown10: bytesField(4, { default: b("\x00\x00\x00\x10"), repr: false }),
+  _unknown10: bytesField(4, { default: Uint8Array.of(0x00, 0x00, 0x00, 0x10), repr: false }),
   framesCountType: u1Field({ default: 2 }),
   _reserved15: bytesField(3, { repr: false }),
   bitsPerChannel: u1Field(),
@@ -495,7 +487,7 @@ export class CmtaChunk extends Chunk {
 
   /** Decoded comment text, LF line endings, no trailing null. */
   get value(): string {
-    return split(decode(this.data, "UTF-8"), "\x00")[0].replaceAll("\r\n", "\n");
+    return decode(this.data, "UTF-8").split("\x00")[0].replaceAll("\r\n", "\n");
   }
 
   set value(text: string) {

@@ -16,8 +16,7 @@
 import { INSPECT, describe, compare } from "../../../pyrt/index.ts";
 import {
   ValueError,
-  at,
-  bytesEq,
+  bytesEqual,
   getOrThrow,
   valueEquals,
   literal,
@@ -97,8 +96,8 @@ export class _NaturalSpline {
     const xs = this.xs;
     const ys = this.ys;
     const m = this.m;
-    if (xs.length === 1 || x <= at(xs, 0)) return at(ys, 0);
-    if (x >= at(xs, -1)) return at(ys, -1);
+    if (xs.length === 1 || x <= xs[0]) return ys[0];
+    if (x >= xs.at(-1)!) return ys.at(-1)!;
     const i = this._segment(x);
     const h = xs[i + 1] - xs[i];
     const u = (xs[i + 1] - x) / h;
@@ -185,7 +184,7 @@ export class CurvesChannel {
    */
   _sameCurve(other: CurvesChannel): boolean {
     if (this._usesPoints && other._usesPoints) return valueEquals(this._points, other._points);
-    return bytesEq(this._map, other._map);
+    return bytesEqual(this._map, other._map);
   }
 
   [INSPECT](): string {

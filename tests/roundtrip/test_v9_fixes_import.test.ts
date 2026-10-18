@@ -7,7 +7,7 @@ import { expect, test } from "bun:test";
 import { copyFileSync, utimesSync } from "node:fs";
 import * as nodepath from "node:path";
 import { deflateSync } from "node:zlib";
-import { AssertionError, at, b, Bytes, concat, getOr, encode, floordiv, format, getattr, getOrThrow, len, mod, Path, fspath, assert, truthy, valueEquals, truthyOr, range, sorted, struct, sum, ValueError } from "../../src/pyrt/index.ts";
+import { AssertionError, at, b, Bytes, concat, getOr, encode, floordiv, format, getMember, getOrThrow, len, mod, Path, fspath, assert, truthy, valueEquals, truthyOr, range, sorted, struct, sum, ValueError } from "../../src/pyrt/index.ts";
 import { approx, makeTmpPath, raises, skip } from "../../src/pyrt/pytest.ts";
 import { ImportAsType, parse as parseAep } from "../../src/py_aep/index.ts";
 import { defaultIccDirectories, defaultIccLibrary, iccProfileId } from "../../src/py_aep/color/icc.ts";
@@ -73,7 +73,7 @@ function _pinBytes(source: FileSource): Map<string, Uint8Array> {
   const out = new Map<string, Uint8Array>();
   for (const [index, c] of source._pin.chunks.entries()) {
     if (c.chunkType !== "pgui") {
-      out.set(`${index}:${truthyOr(getattr(c, "listType", null), c.chunkType)}`, c.tobytes());
+      out.set(`${index}:${truthyOr(getMember(c, "listType", null), c.chunkType)}`, c.tobytes());
     }
   }
   return out;

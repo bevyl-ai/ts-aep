@@ -6,7 +6,7 @@
  */
 
 import { OutputChannels, OutputColorDepth, TimeSpanSource } from "../enums/index.ts";
-import { IndexError, AepError, mod, numStr, truthyOr, round } from "../../pyrt/index.ts";
+import { IndexError, AepError, numStr, truthyOr } from "../../pyrt/index.ts";
 import type { CompItem } from "../models/items/composition.ts";
 import type { RenderSettingValues } from "../models/renderqueue/render_queue_item.ts";
 import type { SettingsView } from "../models/renderqueue/settings.ts";
@@ -211,7 +211,7 @@ export function calculateAspectRatio(width: number, height: number): string {
 export function formatFrameNumber(frame: number, fps: number): string {
   const framesPerFoot = 16; // Standard 35mm film: 16 frames per foot
   const feet = Math.floor(frame / framesPerFoot);
-  const remainingFrames = mod(frame, framesPerFoot);
+  const remainingFrames = ((frame % framesPerFoot) + framesPerFoot) % framesPerFoot;
   return `${String(feet).padStart(4, "0")}+${String(remainingFrames).padStart(2, "0")}`;
 }
 
@@ -234,11 +234,11 @@ export function formatTimecode(seconds: number, fps: number, isDuration = false)
     totalFrames = Math.trunc(seconds * fpsInt);
   }
 
-  const frames = mod(totalFrames, fpsInt);
+  const frames = ((totalFrames % fpsInt) + fpsInt) % fpsInt;
   const totalSeconds = Math.floor(totalFrames / fpsInt);
-  const secs = mod(totalSeconds, 60);
+  const secs = ((totalSeconds % 60) + 60) % 60;
   const totalMinutes = Math.floor(totalSeconds / 60);
-  const mins = mod(totalMinutes, 60);
+  const mins = ((totalMinutes % 60) + 60) % 60;
   const hours = Math.floor(totalMinutes / 60);
 
   return `${hours}-${String(mins).padStart(2, "0")}-${String(secs).padStart(2, "0")}-${String(frames).padStart(2, "0")}`;
@@ -423,13 +423,13 @@ export function resolveTimeSpan(
     timeSpanStart = 0.0;
     durationTime = comp.duration;
     timeSpanEnd = comp.duration;
-    durationFrames = round(comp.duration * effectiveFrameRate);
+    durationFrames = (Math.round(comp.duration * effectiveFrameRate) + 0);
     firstRenderedFrame = Math.trunc(comp.displayStartTime * effectiveFrameRate);
   } else {
     timeSpanStart = rqSettings.get("Time Span Start");
     durationTime = rqSettings.get("Time Span Duration");
     timeSpanEnd = rqSettings.get("Time Span End");
-    durationFrames = round(durationTime * effectiveFrameRate);
+    durationFrames = (Math.round(durationTime * effectiveFrameRate) + 0);
     firstRenderedFrame =
       Math.trunc(comp.displayStartTime * effectiveFrameRate) +
       Math.trunc(timeSpanStart * effectiveFrameRate);

@@ -3,14 +3,12 @@
 // source: https://gitlab.com/mattbas/python-lottie/-/blob/master/lib/lottie/parsers/aep/cos.py
 // documentation: https://github.com/hunger-zh/lottie-docs/blob/main/docs/aep.md#list-btdk
 
-import { INSPECT, describe } from "../../pyrt/index.ts";
+import { INSPECT, describe, ascii } from "../../pyrt/index.ts";
 import {
   at,
   auto,
-  b,
   Bytes,
   decode,
-  float,
   isReal,
   unbox,
   IndexError,
@@ -498,7 +496,7 @@ export class CosParser {
   }
 
   // The lexer works on byte values (`b"x"[0]`) rather than one-byte `bytes`
-  // objects: a `read(1)` copy and a `bytesEq` per character were most of
+  // objects: a `read(1)` copy and a `bytesEqual` per character were most of
   // the text-document parse time.
   lexToken(): Token {
     let char: number | null = null;
@@ -519,7 +517,7 @@ export class CosParser {
       if (nextChar === LT) {
         return new Token(TokenType.ObjectStart);
       } else if (nextChar == null) {
-        return this.raiseLex(b("<"));
+        return this.raiseLex(ascii("<"));
       } else if (this.isHex(nextChar)) {
         return this.lexHexString(nextChar);
       } else {
@@ -632,10 +630,8 @@ export class CosParser {
         break;
       }
     }
-    // TODO(port): Python's int() is exact; COS integers are JS numbers throughout CosNode,
-    // the kinds and the serializer, so a literal beyond 2**53 (e.g. 9007199254740993) rounds
+    // COS integers are JS numbers, so a literal beyond 2**53 (e.g. 9007199254740993) rounds
     // to the nearest double and re-serializes rounded.
-    // Python's int() gets bytes, so its error message shows b'+' rather than '+'.
     if (!/^[+-]?\d+$/.test(head)) throw new ValueError(`invalid COS integer: '${head}'`);
     // `+ 0` turns "-0" from -0 into 0.
     return new Token(TokenType.Number, Number(head) + 0);
@@ -654,7 +650,7 @@ export class CosParser {
       }
     }
     // Boxed so an integral float ("2.0") stays a float through copies and re-serialization.
-    return new Token(TokenType.Number, boxFloat(float(head)));
+    return new Token(TokenType.Number, boxFloat(Number(head)));
   }
 
   lexKeyword(char: number): Token {
@@ -689,7 +685,7 @@ export class CosParser {
     } else if (kw === "xref") {
       return new Token(TokenType.Eof);
     } else {
-      throw new SyntaxError(`Unknown keyword ${reprBytes(b(kw))}`);
+      throw new SyntaxError(`Unknown keyword ${reprBytes(ascii(kw))}`);
     }
   }
 
@@ -704,7 +700,7 @@ export class CosParser {
     // Read in blocks up to the first `endstream`: a byte at a time (with a
     // growing bytes object) took seconds for a 0.5 MB embedded ICC profile.
     // `stream` is a bytearray: a buffer we own, grown by doubling.
-    const marker = b("endstream");
+    const marker = ascii("endstream");
     let stream = new Uint8Array(65536);
     let streamLen = 0;
     while (true) {
@@ -746,14 +742,14 @@ export class CosParser {
     let noBom = false;
 
     // Check for BOM at the start of the string and remove it
-    if (Bytes.startsWith(string, b("\xef\xbb\xbf"))) {
+    if (Bytes.startsWith(string, Uint8Array.of(0xef, 0xbb, 0xbf))) {
       // UTF-8 BOM - remove it (3 bytes)
       string = string.slice(3);
-    } else if (Bytes.startsWith(string, b("\xfe\xff"))) {
+    } else if (Bytes.startsWith(string, Uint8Array.of(0xfe, 0xff))) {
       // UTF-16 BE BOM - remove it (2 bytes)
       string = string.slice(2);
       encoding = "utf-16-be";
-    } else if (Bytes.startsWith(string, b("\xff\xfe"))) {
+    } else if (Bytes.startsWith(string, Uint8Array.of(0xff, 0xfe))) {
       // UTF-16 LE BOM - remove it (2 bytes)
       string = string.slice(2);
       encoding = "utf-16-le";

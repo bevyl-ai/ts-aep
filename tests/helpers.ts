@@ -42,10 +42,10 @@ import {
   b,
   BytesIO,
   Bytes,
-  bytesEq,
+  bytesEqual,
   decode,
   fspath,
-  getattr,
+  getMember,
   KeyError,
   len,
   lruCache,
@@ -336,11 +336,11 @@ function _jsonTruthy(d: object): boolean {
 export function aiLayerOptiBoxes(project: Project): Map<string, [number[], number, number]> {
   const out = new Map<string, [number[], number, number]>();
   for (const item of project.items.values()) {
-    const source = getattr(item, "mainSource", null);
-    const opti = getattr(source, "_opti", null);
+    const source = getMember(item, "mainSource", null);
+    const opti = getMember(source, "_opti", null);
     if (opti == null) continue;
     const body = opti.tobytes();
-    if (len(body) < 0x250 || !bytesEq(Bytes.slice(body, 0, 4), b("TEXT"))) continue;
+    if (len(body) < 0x250 || !bytesEqual(Bytes.slice(body, 0, 4), b("TEXT"))) continue;
     const box: number[] = struct.unpackFrom(">4i", body, 0x10).map((v: number) => v / 65536);
     const end = Bytes.indexOrThrow(body, new Uint8Array([0]), 0x44);
     const name = decode(Bytes.slice(body, 0x44, end), "utf-8");

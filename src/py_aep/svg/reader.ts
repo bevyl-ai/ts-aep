@@ -38,11 +38,6 @@ import {
   encode,
   fspath,
   isdigit,
-  lstrip,
-  max,
-  min,
-  rstrip,
-  strip,
   warn,
   zip,
   type PathLike,
@@ -130,7 +125,7 @@ export function readSvg(source: string | PathLike | Uint8Array): SvgDocument {
   let data: Uint8Array;
   if (source instanceof Uint8Array) {
     data = source.slice();
-  } else if (typeof source === "string" && lstrip(source).startsWith("<")) {
+  } else if (typeof source === "string" && source.trimStart().startsWith("<")) {
     data = encode(source, "utf-8");
   } else {
     data = new Path(fspath(source)).readBytes();
@@ -423,7 +418,7 @@ export class _Reader {
     // a run with an absolute x starts a new anchor chunk (outline_runs).
     if ((style.get("visibility") ?? null) === "hidden") return;
     const runs: [TextRun, Map<string, string>][] = [];
-    if (elem.text && strip(elem.text)) {
+    if (elem.text && elem.text.trim()) {
       const run = this._makeRun(elem.text, style, null);
       if (run != null) runs.push([run, style]);
     }
@@ -431,7 +426,7 @@ export class _Reader {
       const ctag = localName(child.tag);
       if (ctag === "tspan") {
         const cstyle = resolveProperties(style, "tspan", child.attrib, this._css);
-        if (child.text && strip(child.text)) {
+        if (child.text && child.text.trim()) {
           const run = this._makeRun(child.text, cstyle, child);
           if (run != null) runs.push([run, cstyle]);
         }
@@ -440,10 +435,10 @@ export class _Reader {
       }
       // Text after a child element (its `tail`) belongs to the parent.
       const tail = child.tail;
-      if (tail && strip(tail)) {
+      if (tail && tail.trim()) {
         const run = this._makeRun(tail, style, null);
         if (run != null) runs.push([run, style]);
-      } else if (tail && !strip(tail) && runs.length > 0) {
+      } else if (tail && !tail.trim() && runs.length > 0) {
         // A whitespace-only tail between two runs (e.g.
         // `<tspan>foo</tspan> <tspan>bar</tspan>`) is a significant SVG
         // space that collapses to one space. Fold it into the preceding
@@ -458,12 +453,12 @@ export class _Reader {
     // Trim the whole sequence's leading/trailing whitespace (each run's
     // internal whitespace was already collapsed in _make_run); a single
     // space between runs stays significant.
-    runs[0][0].text = lstrip(runs[0][0].text, " ");
+    runs[0][0].text = runs[0][0].text.replace(/^ +/, "");
     const last = runs[runs.length - 1][0];
-    last.text = rstrip(last.text, " ");
+    last.text = last.text.replace(/ +$/, "");
     const originX = parseNumber(elem.get("x", "0"));
     const originY = parseNumber(elem.get("y", "0"));
-    const anchor = strip(style.get("text-anchor") || "start");
+    const anchor = (style.get("text-anchor") || "start").trim();
     const perRun = outlineRuns(
       runs.map(([r]) => r),
       originX,
@@ -482,8 +477,8 @@ export class _Reader {
     // attributes (x/y/dx/dy) come from the run's own element.
     text = _collapseWs(text);
     const family = style.get("font-family") ?? "sans-serif";
-    const weight = strip(style.get("font-weight") || "");
-    const fontStyle = strip(style.get("font-style") || "");
+    const weight = (style.get("font-weight") || "").trim();
+    const fontStyle = (style.get("font-style") || "").trim();
     const bold = ["bold", "bolder"].includes(weight) || (isdigit(weight) && Number.parseInt(weight, 10) >= 600);
     const italic = ["italic", "oblique"].includes(fontStyle);
     const resolved = resolveFont(family, { bold, italic });
@@ -506,7 +501,7 @@ export class _Reader {
       absY,
       dx,
       dy,
-      strip(style.get("text-anchor") || "") || null,
+      (style.get("text-anchor") || "").trim() || null,
       fontNumber,
     );
   }
@@ -523,7 +518,7 @@ export class _Reader {
     const href = tpElem.get("href") || tpElem.get("{http://www.w3.org/1999/xlink}href");
     if (!href || !href.startsWith("#")) return;
     const target = this._byId.get(href.slice(1)) ?? null;
-    if (target == null || !(tpElem.text && strip(tpElem.text))) {
+    if (target == null || !(tpElem.text && tpElem.text.trim())) {
       return;
     }
     const ctm = this._elementCtm(target);
@@ -537,7 +532,7 @@ export class _Reader {
       if (!(e instanceof UnsupportedSVGError)) throw e;
       return; // referenced element is not a path/basic shape
     }
-    const rawOff = strip(tpElem.get("startOffset") || "0");
+    const rawOff = (tpElem.get("startOffset") || "0").trim();
     let offAbs: number;
     let offFrac: number | null;
     if (rawOff.endsWith("%")) {
@@ -548,7 +543,7 @@ export class _Reader {
       offFrac = null;
     }
     const subpaths = outlineTextPath(
-      strip(_collapseWs(tpElem.text)),
+      _collapseWs(tpElem.text).trim(),
       path,
       run.fontPath,
       run.fontSize,
@@ -627,7 +622,7 @@ export class _Reader {
    */
   _paint(value: string | null, opacity: string | null, bbox: Bbox, ctm: Affine): Paint {
     if (value == null) return null;
-    value = strip(value);
+    value = value.trim();
     if (value === "none") return null;
     const alpha = parseRatio(opacity, 1.0);
     const url = _URL_RE.exec(value);
@@ -665,12 +660,12 @@ export class _Reader {
       ctm.meanScale;
     if (width <= 0) return null;
     if (!Number.isFinite(width)) throw new UnsupportedSVGError("SVG stroke-width is out of range");
-    const cap = _CAP.get(strip(style.get("stroke-linecap") || "")) ?? 1;
-    const join = _JOIN.get(strip(style.get("stroke-linejoin") || "")) ?? 1;
+    const cap = _CAP.get((style.get("stroke-linecap") || "").trim()) ?? 1;
+    const join = _JOIN.get((style.get("stroke-linejoin") || "").trim()) ?? 1;
     // SVG requires a miter limit >= 1 (AE's Miter Limit too); AE 2026
     // imports a smaller one clamped to 1.
-    const miter = max([1.0, parseNumber(style.get("stroke-miterlimit") ?? "4")]);
-    const dashes = strip(style.get("stroke-dasharray") || "")
+    const miter = Math.max(1.0, parseNumber(style.get("stroke-miterlimit") ?? "4"));
+    const dashes = (style.get("stroke-dasharray") || "").trim()
       .split(new RegExp(`[,${_PY_WS}]+`))
       .filter((t) => !!t && t !== "none")
       .map((t) => parseNumber(t) * ctm.meanScale);
@@ -688,7 +683,7 @@ export function _bbox(subpaths: Subpath[]): Bbox {
     }
   }
   if (xs.length === 0) return [0.0, 0.0, 0.0, 0.0];
-  return [min(xs), min(ys), max(xs), max(ys)];
+  return [Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)];
 }
 
 export const _WS_RE = new RegExp(`[${_PY_WS}]+`, "g");

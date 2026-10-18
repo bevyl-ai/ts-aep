@@ -35,7 +35,7 @@ import { _EMPTY_CDAT_PAD, GRADIENT_KIND, MARKER_KIND, ORIENTATION_KIND, SHAPE_KI
 import { PropertyBase } from "./property_base.ts";
 import { Shape } from "./shape.ts";
 import type { PropertyGroup } from "./property_group.ts";
-import { deepcopy, getOrThrow, isclose, valueEquals, warn, round, ValueError, IndexError, AttributeError, NotImplementedError, StopIteration, assert, literal, min, zip, float, lshift, rshift, and, or, ord, b, descriptor, typeName, type ClassAttributes, truthyOr } from "../../../pyrt/index.ts";
+import { deepcopy, getOrThrow, isclose, valueEquals, warn, ValueError, IndexError, AttributeError, NotImplementedError, StopIteration, assert, literal, zip, ord, descriptor, typeName, type ClassAttributes } from "../../../pyrt/index.ts";
 import { AVItem } from "../items/av_item.ts";
 import { FootageItem } from "../items/footage.ts";
 import { resolveEssentialPropertyController, resolveEssentialPropertySource } from "../../resolvers/essential_properties.ts";
@@ -239,7 +239,7 @@ export function _vfTagToStr(raw: number): string | null {
   // that do not decode to four printable ASCII characters.
   const n = Math.trunc(raw);
   if (n <= 0 || n > 0xffffffff) return null;
-  const chars = [24, 16, 8, 0].map((shift) => and(rshift(n, shift), 0xff));
+  const chars = [24, 16, 8, 0].map((shift) => (n >>> shift) & 0xff);
   if (chars.some((c) => c < 0x20 || c > 0x7e)) return null;
   return chars.map((c) => String.fromCodePoint(c)).join("");
 }
@@ -247,7 +247,7 @@ export function _vfTagToStr(raw: number): string | null {
 export function _vfTagFromStr(tag: string): number {
   // Encode a 4-character axis tag to its packed 4CC number.
   let n = 0;
-  for (const c of tag) n = or(lshift(n, 8), ord(c));
+  for (const c of tag) n = ((n << 8) | ord(c)) >>> 0;
   return n;
 }
 
@@ -1363,7 +1363,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
       // 4-zero-byte empty cdat; a padded double block makes AE fail
       // with "chunk in file too big".
       if (this._cdat == null) {
-        const cdat = new CdatChunk({ pad: b("\x00\x00\x00\x00") });
+        const cdat = new CdatChunk({ pad: new Uint8Array(4) });
         this._tdbs.chunks.splice(indexByIdentity(this._tdbs.chunks, this._tdb4) + 1, 0, cdat);
         this._cdat = cdat;
       }
@@ -1596,7 +1596,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     //    ExtendScript-style value (raw 2-dim lists pass through).
     if (this._isVfAxis && (typeof value === "number" || typeof value === "boolean")) {
       const tag = this._vfAxisTagRaw();
-      if (tag != null) return [float(value), tag];
+      if (tag != null) return [Number(value), tag];
       return value;
     }
     // 3. Reverse effect point (pixel coordinates -> 0-1 fraction)
@@ -1965,7 +1965,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
       const ids = _maskIds(this);
       const index = typeof value === "number" || typeof value === "boolean" ? Math.trunc(value) : 0;
       const tdli = this._tdliChunk();
-      if (tdli == null) throw new AttributeError("'NoneType' object has no attribute 'value'");
+      if (tdli == null) throw new AttributeError("cannot read 'value' of null");
       tdli.value = index !== 0 && ids != null ? ids[index - 1] : index;
       return;
     }
@@ -2438,8 +2438,8 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     const keyframes = [...this.keyframes];
     const times = keyframes.map((keyframe) => keyframe.time);
     const values = keyframes.map((keyframe) => keyframe.value as number[]);
-    const inTangents = keyframes.map((keyframe) => truthyOr(keyframe.inSpatialTangent, []));
-    const outTangents = keyframes.map((keyframe) => truthyOr(keyframe.outSpatialTangent, []));
+    const inTangents = keyframes.map((keyframe) => keyframe.inSpatialTangent ?? []);
+    const outTangents = keyframes.map((keyframe) => keyframe.outSpatialTangent ?? []);
     const interpolation = keyframes.map(
       (keyframe) => [keyframe.inInterpolationType, keyframe.outInterpolationType] as const,
     );
@@ -2857,7 +2857,8 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * of the composition is 0.
    */
   nearestKeyIndex(time: number): number {
-    return min(Array.from({ length: this.keyframes.length }, (_, i) => i), (i: number) => Math.abs(this.keyframes[i].time - time));
+    const distances = this.keyframes.map((kf) => Math.abs(kf.time - time));
+    return distances.indexOf(Math.min(...distances));
   }
 
   /**
@@ -3369,7 +3370,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
       t._spatialMarker = false;
       // AE clears the opaque interpolation residue it leaves in these
       // fields when a complex property went static (bytes 0x49-0x4E).
-      t._reserved48 = and(t._reserved48, 0xff000000);
+      t._reserved48 = (t._reserved48 & 0xff000000) >>> 0;
       t._reserved4c = t._reserved4d = t._pad4e = 0;
       return;
     }
@@ -3451,9 +3452,9 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    */
   _keyframeUnitsAt(time: number): number {
     let timebase: number = this._layerTimebase;
-    if (timebase !== 0) return round(this._evaluatedLayerTime(time) * timebase);
+    if (timebase !== 0) return Math.round(this._evaluatedLayerTime(time) * timebase) + 0;
     timebase = _timebaseUnits(this._keyframeFrameRate());
-    return round(((time - this._startTimeOffset) / this._timeStretch) * timebase);
+    return Math.round(((time - this._startTimeOffset) / this._timeStretch) * timebase) + 0;
   }
 
   /**
@@ -3757,8 +3758,8 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     const v1 = nextKf._storedValue;
     if (!Array.isArray(v0) || !Array.isArray(v1)) return 0.0;
     const ndim = v0.length;
-    const outTangent = truthyOr(prevKf.outSpatialTangent, Array.from({ length: ndim }, () => 0.0));
-    const inTangent = truthyOr(nextKf.inSpatialTangent, Array.from({ length: ndim }, () => 0.0));
+    const outTangent = prevKf.outSpatialTangent?.length ? prevKf.outSpatialTangent : Array.from({ length: ndim }, () => 0.0);
+    const inTangent = nextKf.inSpatialTangent?.length ? nextKf.inSpatialTangent : Array.from({ length: ndim }, () => 0.0);
     return motionPathLength(v0, v1, outTangent, inTangent, this._arcMetric);
   }
 
@@ -3793,8 +3794,8 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     const v1 = nextKf._storedValue;
     if (!Array.isArray(v0) || !Array.isArray(v1)) return;
     const ndim = v0.length;
-    const outTangent = truthyOr(prevKf.outSpatialTangent, Array.from({ length: ndim }, () => 0.0));
-    const inTangent = truthyOr(nextKf.inSpatialTangent, Array.from({ length: ndim }, () => 0.0));
+    const outTangent = prevKf.outSpatialTangent?.length ? prevKf.outSpatialTangent : Array.from({ length: ndim }, () => 0.0);
+    const inTangent = nextKf.inSpatialTangent?.length ? nextKf.inSpatialTangent : Array.from({ length: ndim }, () => 0.0);
     if (_tangentsAreZero(outTangent) && _tangentsAreZero(inTangent)) return;
     const [leftOut, newIn, _split, newOut, rightIn] = splitSpatialPath(v0, v1, outTangent, inTangent, u);
     prevKf.outSpatialTangent = leftOut;
@@ -3964,7 +3965,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * not). A mask path keeps the value's feather points.
    */
   _buildShapChunk(shape: Shape): Chunk {
-    const points = truthyOr(shape._points, []).map((p: ShapePoint) => new ShapePoint({ x: p.x, y: p.y }));
+    const points = (shape._points ?? []).map((p: ShapePoint) => new ShapePoint({ x: p.x, y: p.y }));
     const src = shape._shph;
     let bbox: number[];
     if (src != null) {

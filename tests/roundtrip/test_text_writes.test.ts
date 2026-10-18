@@ -17,7 +17,7 @@ import {
   AttributeError,
   getOr,
   deepcopy,
-  getattr,
+  getMember,
   len,
   Path,
   assert,
@@ -151,7 +151,7 @@ function _assertPerChar(pyDoc: TextDocument, probe: TextWritesProbe, opName: str
     const rng = pyDoc.characterRange(i, i + 1);
     for (const esAttr of attrs) {
       const expected = expectedChars[i][esAttr];
-      const actual = getattr(rng, PER_CHAR_MAP[esAttr]);
+      const actual = getMember(rng, PER_CHAR_MAP[esAttr]);
       if (expected === "<<undefined>>") {
         assert(actual == null, `${opName}[${i}].${esAttr}: ${repr(actual)}`);
       } else if (Array.isArray(expected)) {

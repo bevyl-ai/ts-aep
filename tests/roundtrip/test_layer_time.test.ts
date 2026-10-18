@@ -20,7 +20,7 @@ import { describe, expect, test } from "bun:test";
 import "../../src/py_aep/binary/_register.ts";
 import * as py_aep from "../../src/py_aep/index.ts";
 import { SAMPLES_DIR, asInstance, parseAppFresh } from "../helpers.ts";
-import { AssertionError, ValueError, float, getattr, getOrThrow, max, valueEquals } from "../../src/pyrt/index.ts";
+import { AssertionError, ValueError, float, getMember, getOrThrow, max, valueEquals } from "../../src/pyrt/index.ts";
 import { approx, makeTmpPath, raises } from "../../src/pyrt/pytest.ts";
 
 const LAYER_DIR = SAMPLES_DIR.div("models", "layer");
@@ -97,7 +97,7 @@ describe("TestStretchedLayerTimebase", () => {
     for (const prop of layer) {
       if (
         prop instanceof py_aep.Property &&
-        getattr(prop, "_tdb4", null) != null &&
+        getMember(prop, "_tdb4", null) != null &&
         !prop._tdbs.synthetic &&
         prop._tdb4._timeBase
       ) {

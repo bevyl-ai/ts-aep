@@ -16,13 +16,9 @@ import type { CubicSeg } from "./path_data.ts";
 import type { Affine } from "./transform.ts";
 import { Subpath } from "./types.ts";
 import {
-  float,
-  getattr,
-  max,
-  min,
+  getMember,
   valueEquals,
   pySlice,
-  strip,
   zip,
 } from "../../pyrt/index.ts";
 
@@ -59,13 +55,13 @@ export function _f(
   default_: number = 0.0,
 ): number {
   if (ctx == null) return parseLength(attrs.get(key) ?? null, default_);
-  const ref = getattr(ctx, _PERCENT_AXIS[key]);
+  const ref = getMember(ctx, _PERCENT_AXIS[key]);
   return parseLength(attrs.get(key) ?? null, default_, ref, ctx.fontSize);
 }
 
 /** An absent or `auto` corner radius, which takes the other radius. */
 export function _isAuto(raw: string | null): boolean {
-  return raw == null || ["", "auto"].includes(strip(raw));
+  return raw == null || ["", "auto"].includes(raw.trim());
 }
 
 /**
@@ -117,8 +113,8 @@ export function _rect(attrs: Map<string, string>, ctx: LengthContext | null): Ra
   if (_isAuto(attrs.get("ry") ?? null)) {
     ry = rx;
   }
-  rx = min([max([rx, 0.0]), w / 2.0]);
-  ry = min([max([ry, 0.0]), h / 2.0]);
+  rx = Math.min(Math.max(rx, 0.0), w / 2.0);
+  ry = Math.min(Math.max(ry, 0.0), h / 2.0);
   if (rx === 0 || ry === 0) {
     // Sharp corners: 4 straight segments.
     const pts: [number, number][] = [
@@ -182,9 +178,9 @@ export function _ellipse(
     ry = _f(attrs, "ry", ctx);
     // `auto` takes the other radius (SVG 2). AE 2026 reads it as 0 and
     // imports `rx="auto" ry="20"` as a zero-width ellipse.
-    if (strip(attrs.get("rx") || "") === "auto") {
+    if ((attrs.get("rx") || "").trim() === "auto") {
       rx = ry;
-    } else if (strip(attrs.get("ry") || "") === "auto") {
+    } else if ((attrs.get("ry") || "").trim() === "auto") {
       ry = rx;
     }
   }
@@ -209,7 +205,7 @@ export function _ellipse(
 }
 
 export function _poly(attrs: Map<string, string>, closed: boolean): RawSubpath[] {
-  const nums = Array.from((attrs.get("points") ?? "").matchAll(NUMBER_RE), (n) => float(n[0]));
+  const nums = Array.from((attrs.get("points") ?? "").matchAll(NUMBER_RE), (n) => Number(n[0]));
   const pts = zip(pySlice(nums, 0, null, 2), pySlice(nums, 1, null, 2));
   if (pts.length < 2) {
     return [];

@@ -30,16 +30,14 @@ import {
   KeyError,
   ValueError,
   descriptor,
-  getattr,
-  setattr,
-  mod,
+  getMember,
+  setMember,
   objectSetattr,
   assert,
   truthy,
   valueEquals,
   truthyOr,
   literal,
-  round,
   warn,
   type ClassAttributes,
 } from "../../../pyrt/index.ts";
@@ -460,7 +458,7 @@ export class Layer extends PropertyGroup {
     if (this._treeParamDefs != null && (name === "_properties" || !name.startsWith("_"))) {
       this._loadPropertyTree();
       // NOTE(port): Python returns `getattr(self, name)`, here the `_properties` list too; the base signature only names the child case.
-      return getattr(this, name);
+      return getMember(this, name);
     }
     return super._missingAttribute(name);
   }
@@ -722,7 +720,7 @@ export class Layer extends PropertyGroup {
    * (frames). Read / Write.
    */
   get frameInPoint(): number {
-    return round(this.inPoint * this.containingComp.frameRate);
+    return Math.round(this.inPoint * this.containingComp.frameRate) + 0;
   }
 
   set frameInPoint(value: number) {
@@ -735,7 +733,7 @@ export class Layer extends PropertyGroup {
    * (frames). Read / Write.
    */
   get frameOutPoint(): number {
-    return round(this.outPoint * this.containingComp.frameRate);
+    return Math.round(this.outPoint * this.containingComp.frameRate) + 0;
   }
 
   set frameOutPoint(value: number) {
@@ -748,7 +746,7 @@ export class Layer extends PropertyGroup {
    * (frames). Read / Write.
    */
   get frameStartTime(): number {
-    return round(this.startTime * this.containingComp.frameRate);
+    return Math.round(this.startTime * this.containingComp.frameRate) + 0;
   }
 
   set frameStartTime(value: number) {
@@ -1204,9 +1202,9 @@ export class Layer extends PropertyGroup {
         const dims = kfValue.length;
         kf.value = remap.transformPoint(kfValue).slice(0, dims);
         for (const tangentAttr of ["inSpatialTangent", "outSpatialTangent"]) {
-          const tangent = getattr(kf, tangentAttr);
+          const tangent = getMember(kf, tangentAttr);
           if (truthy(tangent)) {
-            setattr(kf, tangentAttr, remap.transformVector(tangent).slice(0, tangent.length));
+            setMember(kf, tangentAttr, remap.transformVector(tangent).slice(0, tangent.length));
           }
         }
       }
@@ -1259,7 +1257,7 @@ export class Layer extends PropertyGroup {
         // As a signed turn, not the 0-360 form `composeOrientation`
         // returns: AE stores -15 and 45, not 345 and 405.
         const offset =
-          mod(composeOrientation([0.0, 0.0, 0.0], rotationDelta)[2] + 180.0, 360.0) - 180.0;
+          ((((composeOrientation([0.0, 0.0, 0.0], rotationDelta)[2] + 180.0) % 360.0) + 360.0) % 360.0) - 180.0;
         for (const keyframe of rotation.keyframes) {
           keyframe.value = keyframe.value + offset;
         }

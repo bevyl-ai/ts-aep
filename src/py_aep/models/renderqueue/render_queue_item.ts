@@ -19,9 +19,7 @@ import {
   descriptor,
   floatRepr,
   getOrThrow,
-  max,
   literal,
-  round,
   StopIteration,
   ValueError,
   type ClassAttributes,
@@ -44,11 +42,7 @@ export function _startTimeFromBinary(value: number): Date | null {
  * duplicate after it 11).
  */
 export function _nextItemId(rq: RenderQueue): number {
-  return max(
-    rq.items.map((item) => item._ldat.itemId),
-    null,
-    1,
-  ) + 1;
+  return Math.max(1, ...rq.items.map((item) => item._ldat.itemId)) + 1;
 }
 
 /**
@@ -566,16 +560,16 @@ export class RenderQueueItem {
     const source = TimeSpanSource.fromBinary(this._ldat.timeSpanSource);
     const fr = this.comp.frameRate;
     if (source === TimeSpanSource.LENGTH_OF_COMP) {
-      return [0, round(this.comp.duration * fr)];
+      return [0, Math.round(this.comp.duration * fr) + 0];
     }
     if (source === TimeSpanSource.WORK_AREA_ONLY) {
       return [
-        round(this.comp.workAreaStart * fr),
-        round(this.comp.workAreaDuration * fr),
+        Math.round(this.comp.workAreaStart * fr) + 0,
+        Math.round(this.comp.workAreaDuration * fr) + 0,
       ];
     }
     const [startSec, durSec] = this._resolvedTimeSpan();
-    return [round(startSec * fr), round(durSec * fr)];
+    return [Math.round(startSec * fr) + 0, Math.round(durSec * fr) + 0];
   }
 
   /**

@@ -17,7 +17,7 @@
  *   parameter (see `_ArcSpline`).
  */
 
-import { IndexError, ZeroDivisionError, at, getOrThrow, max, min, mod, radians, sum, compositeKey, zip } from "../../pyrt/index.ts";
+import { IndexError, ZeroDivisionError, getOrThrow, radians, compositeKey, zip } from "../../pyrt/index.ts";
 import { KeyframeInterpolationType } from "../enums/index.ts";
 import { ORIENTATION_KIND, SHAPE_KIND, type ParallelKind } from "../models/properties/parallel.ts";
 import { Shape } from "../models/properties/shape.ts";
@@ -349,7 +349,7 @@ export function splitSegmentInfluences(
  * blank (0) influence leaves that side at 0 in AE's own files (AE 2026).
  */
 export function _clampInfluence(value: number): number {
-  return min([max([value, 0.0]), 100.0]);
+  return Math.min(Math.max(value, 0.0), 100.0);
 }
 
 // ---------------------------------------------------------------------------
@@ -474,7 +474,7 @@ export function _measured(values: number[], metric: ArcMetric): number[] {
     if (divisors != null && d < divisors.length && divisors[d] !== 0) {
       value = value / divisors[d];
     }
-    result.push(at(metric.multipliers, d) * value);
+    result.push(metric.multipliers.at(d)! * value);
   }
   return result;
 }
@@ -762,7 +762,7 @@ export class _ArcSpline {
     // Squared chords overflow past ~1e154, which any f64 value can reach:
     // fit a scaled copy instead (arc length scales linearly, the squared
     // tolerance quadratically) and scale the distances back.
-    const reach = max(curve.flatMap((point) => point.map((c) => Math.abs(c))));
+    const reach = Math.max(...curve.flatMap((point) => point.map((c) => Math.abs(c))));
     const scale = reach > _HUGE_COORDINATE ? _HUGE_COORDINATE / reach : 1.0;
     if (scale !== 1.0) {
       curve = curve.map((point) => point.map((c) => c * scale));
@@ -1515,7 +1515,7 @@ export function quaternionToEuler(q: readonly number[]): number[] {
     1.0 - 2.0 * (x * x + z * z), // m11
     2.0 * (y * z - x * w), // m12
     1.0 - 2.0 * (x * x + y * y), // m22
-  ).map((angle) => mod(angle, 360.0));
+  ).map((angle) => ((angle % 360.0) + 360.0) % 360.0);
 }
 
 /**
@@ -1530,13 +1530,13 @@ export function quaternionToEuler(q: readonly number[]): number[] {
 export function slerpOrientation(start: number[], end: number[], progress: number): number[] {
   const q0 = eulerToQuaternion(start);
   let q1 = eulerToQuaternion(end);
-  let dot = sum(q0.map((a, i) => a * q1[i]));
+  let dot = q0.map((a, i) => a * q1[i]).reduce((total, x) => total + x, 0);
   if (dot < 0.0) {
     // Opposite hemisphere: negate so the arc taken is the short one.
     q1 = [-q1[0], -q1[1], -q1[2], -q1[3]];
     dot = -dot;
   }
-  dot = min([1.0, max([-1.0, dot])]);
+  dot = Math.min(1.0, Math.max(-1.0, dot));
   if (dot > 0.9995) {
     // Nearly parallel: sin(theta) underflows, and a normalized linear
     // blend is within float noise of the arc.

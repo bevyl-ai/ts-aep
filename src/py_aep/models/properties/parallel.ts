@@ -13,7 +13,7 @@
  * output pairs (`aep-compare` ground-truth workflow).
  */
 
-import { b, NotImplementedError, instanceDict } from "../../../pyrt/index.ts";
+import { NotImplementedError, instanceDict } from "../../../pyrt/index.ts";
 import { type Chunk, ListChunk } from "../../binary/chunk.ts";
 import { LdatItemType, type LdatItem } from "../../binary/ldat_chunks.ts";
 import { buildParallelLdatItem, cloneChunkTree, setOrientationItemValues } from "../../binary/mutations.ts";
@@ -29,7 +29,7 @@ import type { Property } from "./property.ts";
 import { parseGradientXml } from "../../parsers/gradient.ts";
 import { late } from "../late.ts";
 
-export const _EMPTY_CDAT_PAD = b("\x00\x00\x00\x00");
+export const _EMPTY_CDAT_PAD = new Uint8Array(4);
 
 /**
  * Descriptor for one complex property kind. Stateless singleton.

@@ -5,11 +5,9 @@
 import {
   deepcopy,
   descriptor,
-  float,
   assert,
   truthy,
   valueEquals,
-  rstrip,
   ValueError,
   zip,
   boxFloat,
@@ -778,7 +776,7 @@ export class TextDocument {
           const fs = this.fontSize;
           if (fs != null) return fs * cosFloat(factor);
         }
-        return float(raw);
+        return Number(raw);
       }
     }
     return null;
@@ -989,7 +987,7 @@ export class TextDocument {
   /** The box's inset (padding) spacing in pixels. Read / Write. */
   get boxInsetSpacing(): number {
     const val = cosGet(this._boxFrame(), "2", "9");
-    return is(pyNumber, val) ? float(val) : 0.0;
+    return is(pyNumber, val) ? Number(val) : 0.0;
   }
 
   set boxInsetSpacing(value: number) {
@@ -1034,7 +1032,7 @@ export class TextDocument {
   get boxFirstBaselineAlignmentMinimum(): number {
     const sub = cosGet(this._boxFrame(), "2", "10");
     const minimum = sub instanceof Map ? read(firstBaseline, sub, "1") : undefined;
-    return minimum != null ? float(minimum) : 0.0;
+    return minimum != null ? Number(minimum) : 0.0;
   }
 
   set boxFirstBaselineAlignmentMinimum(value: number) {
@@ -1144,7 +1142,7 @@ export class TextDocument {
       }
       // A wrapped line keeps the space group it broke on, but that
       // group sits outside the reported extent (probed AE 2026).
-      tail += u16Len(lineText) - u16Len(rstrip(lineText, " "));
+      tail += u16Len(lineText) - u16Len(lineText.replace(/ +$/, ""));
       const index = advances.length - tail - 1;
       const advance = 0 <= index && index < advances.length ? advances[index] : 0.0;
       const [originX, originY] = _lineOrigin(node);

@@ -8,8 +8,6 @@ import {
   NotImplementedError,
   ValueError,
   floatRepr,
-  max,
-  min,
   assert,
   truthyOr,
   literal,
@@ -412,7 +410,7 @@ export class AVLayer extends Layer {
     if (!this._shouldClampTimes()) {
       return raw;
     }
-    return max([raw, this.startTime]);
+    return Math.max(raw, this.startTime);
   }
 
   set inPoint(value: number) {
@@ -436,7 +434,7 @@ export class AVLayer extends Layer {
     assert(this.source != null); // _should_clamp_times guards
     const sourceDuration = this.source.duration;
     const maxOut = this.startTime + sourceDuration * this._stretchFactor;
-    return min([raw, maxOut]);
+    return Math.min(raw, maxOut);
   }
 
   set outPoint(value: number) {

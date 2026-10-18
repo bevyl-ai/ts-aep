@@ -15,8 +15,7 @@ import {
   encode,
   field,
   fields,
-  getattr,
-  lstrip,
+  getMember,
   truthy,
   struct,
   ValueError,
@@ -407,7 +406,7 @@ export function _structInfo(cls: Function): _StructInfo | null {
  * the `__init__` signature: `_trailing` -\> `trailing=`.
  */
 export function _initName(name: string): string {
-  return name.startsWith("_") ? lstrip(name, "_") : name;
+  return name.startsWith("_") ? name.replace(/^_+/, "") : name;
 }
 
 type DecodeKw = (values: readonly FieldValue[]) => FieldKwargs;
@@ -468,7 +467,7 @@ export function _fieldEncoder(info: _StructInfo): EncodeFields | null {
     let compiled: EncodeFields | null;
     try {
       compiled = new Function("G", "X", "E", "C", "F", `return (self) => [${exprs.join(", ")}];`)(
-        getattr,
+        getMember,
         _encodeValue,
         encodings,
         coerces,
@@ -622,7 +621,7 @@ export class FmtItem extends AttrsBase {
       const parts: Uint8Array[] = [];
       for (const [i, f] of dataFields.entries()) {
         const fe = endians.get(i) ?? ">";
-        let value = getattr(this, f.name);
+        let value = getMember(this, f.name);
         value = _encodeValue(value, i, encodings, coerces, fe, f.metadata["fmt"]);
         parts.push(_structFor(f.metadata["fmt"], fe).pack(value));
       }
@@ -632,7 +631,7 @@ export class FmtItem extends AttrsBase {
     if (encodeFields !== null) return _structFor(fmt).pack(...encodeFields(this));
     const values: struct.PackValue[] = [];
     for (const [i, f] of dataFields.entries()) {
-      let value = getattr(this, f.name);
+      let value = getMember(this, f.name);
       value = _encodeValue(value, i, encodings, coerces, ">", f.metadata["fmt"]);
       values.push(value);
     }

@@ -1,6 +1,6 @@
 // `from __future__ import annotations` and `from typing import TYPE_CHECKING, cast`
 // are dropped: annotations are types only and `cast(...)` is `as` in TS.
-import { getattr } from "../../pyrt/index.ts";
+import { getMember } from "../../pyrt/index.ts";
 import type { Path } from "../../pyrt/index.ts";
 import { NhedChunk, NnhdChunk } from "../binary/item_chunks.ts";
 import { DwgaChunk } from "../binary/misc_chunks.ts";
@@ -56,7 +56,7 @@ export function _nnhdFromNhed(nhed: NhedChunk): NnhdChunk {
   const nnhd = new NnhdChunk({ synthetic: true });
   // setattr(nnhd, name, getattr(nhed, name)) with a computed name
   const copySetting = <K extends keyof _NhedSettings>(dst: _NhedSettings, name: K): void => {
-    dst[name] = getattr(nhed, name);
+    dst[name] = getMember(nhed, name);
   };
   for (const name of _NHED_SETTINGS) copySetting(nnhd, name);
   return nnhd;

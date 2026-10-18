@@ -6,7 +6,7 @@
  * RoutChunk uses `itemsField()` for repeating render-flag entries.
  */
 
-import { b, Bytes, decode, define, descriptor, fields, getattr, assert, truthy, setattr, strip } from "../../pyrt/index.ts";
+import { Bytes, decode, define, descriptor, fields, getMember, assert, truthy, setMember, ascii } from "../../pyrt/index.ts";
 import type { ClassAttributes, IO } from "../../pyrt/index.ts";
 import { readBytes, toDividendDivisor, toFixed1616 } from "./bin_utils.ts";
 import { BitField } from "./bitfield.ts";
@@ -114,11 +114,11 @@ export class RouuChunk extends Chunk {
 
 define(RouuChunk, {
   chunkType: { default: "Roou" },
-  _magic: bytesField(4, { default: b("FXTC"), repr: false }),
+  _magic: bytesField(4, { default: ascii("FXTC"), repr: false }),
   videoCodec: asciiField(4, { default: "FXTC" }),
-  _reserved08: bytesField(8, { default: b("\x0f\x10\x06\x43\x80\x00\x00\x00"), repr: false }),
+  _reserved08: bytesField(8, { default: ascii("\x0f\x10\x06\x43\x80\x00\x00\x00"), repr: false }),
   startingNumber: u4Field(),
-  _reserved14: bytesField(6, { default: b("\xff\xff\xff\xff\x01\x00"), repr: false }),
+  _reserved14: bytesField(6, { default: Uint8Array.of(0xff, 0xff, 0xff, 0xff, 0x01, 0x00), repr: false }),
   formatId: asciiField(4, { default: "TIF " }),
   _reserved1e: bytesField(4, { repr: false }),
   width: u4Field({ default: 100 }),
@@ -129,12 +129,12 @@ define(RouuChunk, {
   frameRateInteger: u2Field({ default: 30 }),
   frameRateFractional: u2Field(),
   depth: s2Field({ default: 32 }),
-  _reserved48: bytesField(5, { default: b("\x01\x01\x00\x00\x00"), repr: false }),
+  _reserved48: bytesField(5, { default: Uint8Array.of(0x01, 0x01, 0x00, 0x00, 0x00), repr: false }),
   colorPremultiplied: u1Field({ default: 1 }),
   _reserved4e: bytesField(3, { repr: false }),
   colorMatted: u1Field({ default: 1 }),
   _reserved52: bytesField(18, {
-    default: Bytes.concat(b("FIEL\x00\x01"), Bytes.repeat(b("\x00"), 12)),
+    default: Bytes.concat(ascii("FIEL\x00\x01"), Bytes.repeat(new Uint8Array(1), 12)),
     repr: false,
   }),
   audioSampleRate: f8Field({ default: -1.0 }),
@@ -143,11 +143,11 @@ define(RouuChunk, {
   audioChannels: u2Field(),
   _reserved72: bytesField(40, {
     default: Bytes.concat(
-      Bytes.repeat(b("\x00"), 13),
-      b("\x01"),
-      Bytes.repeat(b("\x00"), 3),
-      b("\x01"),
-      Bytes.repeat(b("\x00"), 22),
+      Bytes.repeat(new Uint8Array(1), 13),
+      Uint8Array.of(0x01),
+      Bytes.repeat(new Uint8Array(1), 3),
+      Uint8Array.of(0x01),
+      Bytes.repeat(new Uint8Array(1), 22),
     ),
     optional: true,
     repr: false,
@@ -171,7 +171,7 @@ export class RoptChunk extends Chunk {
 
   /** Format code from the first 4 bytes of raw data (for fallback chunks). */
   get formatCode(): string {
-    const data = "data" in this ? this.data : b("");
+    const data = "data" in this ? this.data : new Uint8Array();
     if (data.length >= 4) return decode(data.slice(0, 4), "ascii");
     return "";
   }
@@ -209,10 +209,10 @@ export const _JPEG_PAD = Bytes.fromHex(
 );
 export const _TARGA_PAD = Bytes.concat(
   Bytes.fromHex("002e000000540400"),
-  Bytes.repeat(b("\x00"), 9),
-  b("\x36"),
-  Bytes.repeat(b("\x00"), 54),
-  b("\x01"),
+  Bytes.repeat(new Uint8Array(1), 9),
+  ascii("\x36"),
+  Bytes.repeat(new Uint8Array(1), 54),
+  Uint8Array.of(0x01),
 );
 
 /**
@@ -317,7 +317,7 @@ define(TargaRoptChunk, {
   formatCode: asciiField(4, { default: "TPIC" }),
   _pad: bytesField(73, { default: _TARGA_PAD, repr: false }),
   bitsPerPixel: u1Field({ default: 24 }),
-  _pad2: bytesField(4, { default: b("TimS"), repr: false }),
+  _pad2: bytesField(4, { default: ascii("TimS"), repr: false }),
   rleCompression: boolField(),
   _padEnd: bytesField(1, { repr: false }),
 });
@@ -344,7 +344,7 @@ define(TiffRoptChunk, {
   _pad04: bytesField(4, { default: Uint8Array.from([1, 9, 0, 0]), repr: false }),
   chunkSize: u2Field({ default: 602 }),
   _pad0a: bytesField(590, {
-    default: Bytes.concat(Uint8Array.from([0, 0, 1, 1]), Bytes.repeat(b("\x00"), 586)),
+    default: Bytes.concat(Uint8Array.from([0, 0, 1, 1]), Bytes.repeat(new Uint8Array(1), 586)),
     repr: false,
   }),
   ibmPcByteOrder: boolField(),
@@ -429,7 +429,7 @@ export class RoutItem extends FmtItem {
 
 define(RoutItem, {
   _flags: u1Field({ repr: false }),
-  _pad: bytesField(2, { default: b("\x00\x00"), repr: false }),
+  _pad: bytesField(2, { default: new Uint8Array(2), repr: false }),
   _state: u1Field({ repr: false }),
 });
 
@@ -555,13 +555,13 @@ export class RenderSettingsItem extends FmtItem {
    */
   copySettingsFrom(source: RenderSettingsItem): void {
     for (const field of this.constructor._TEMPLATE_FIELDS) {
-      setattr(this, field, getattr(source, field));
+      setMember(this, field, getMember(source, field));
     }
   }
 
   /** Template name with trailing null bytes stripped. */
   get cleanTemplateName(): string {
-    return strip(this.templateName, "\x00");
+    return this.templateName.replace(/^\0+|\0+$/g, "");
   }
 
   // -- Computed properties -----------------------------------------------
@@ -603,11 +603,11 @@ export class RenderSettingsItem extends FmtItem {
 }
 
 define(RenderSettingsItem, {
-  _reserved00: bytesField(7, { default: b("\x00\x01\x00\x00\x00\x00\x00"), repr: false }),
+  _reserved00: bytesField(7, { default: Uint8Array.of(0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00), repr: false }),
   _flagByte: u1Field({ repr: false }),
   compId: u4Field(),
   status: s4Field({ default: 2 }), // RQItemStatus.QUEUED (-1 = WILL_CONTINUE)
-  _reserved06: bytesField(4, { default: b("\x00\x03\x00\x00"), repr: false }),
+  _reserved06: bytesField(4, { default: Uint8Array.of(0x00, 0x03, 0x00, 0x00), repr: false }),
   timeSpanStartDividend: s4Field(),
   timeSpanStartDivisor: u4Field({ default: 1 }),
   timeSpanDurationDividend: s4Field(),
@@ -645,7 +645,7 @@ define(RenderSettingsItem, {
   _reserved37: bytesField(2, { repr: false }),
   timeSpanSource: u2Field(),
   _reserved39: bytesField(14, {
-    default: Bytes.concat(b("\xff\xff\xff\xff\x00\xb4"), Bytes.repeat(b("\x00"), 8)),
+    default: Bytes.concat(Uint8Array.of(0xff, 0xff, 0xff, 0xff, 0x00, 0xb4), Bytes.repeat(new Uint8Array(1), 8)),
     repr: false,
   }),
   soloSwitches: u2Field({ default: 2 }), // SoloSwitchesSetting.CURRENT_SETTINGS
@@ -653,7 +653,7 @@ define(RenderSettingsItem, {
   diskCache: u2Field(),
   _reserved43: bytesField(2, { repr: false }),
   guideLayers: u2Field(),
-  _reserved45: bytesField(6, { default: b("\x00\x00\x00\x02\xff\xff"), repr: false }),
+  _reserved45: bytesField(6, { default: Uint8Array.of(0x00, 0x00, 0x00, 0x02, 0xff, 0xff), repr: false }),
   colorDepth: u2Field({ default: 0xffff }), // current/project depth
   _reserved47: bytesField(16, { repr: false }),
   startTime: u4Field(),
@@ -661,7 +661,7 @@ define(RenderSettingsItem, {
   _reservedEnd: bytesField(16, { repr: false }),
   itemId: u4Field({ default: 2 }),
   _remaining: bytesField(20, {
-    default: Bytes.concat(b("\x00\x00\x00\x0f"), Bytes.repeat(b("\x00"), 16)),
+    default: Bytes.concat(Uint8Array.of(0x00, 0x00, 0x00, 0x0f), Bytes.repeat(new Uint8Array(1), 16)),
     repr: false,
   }),
 });
@@ -776,7 +776,7 @@ export class OutputModuleSettingsItem extends FmtItem {
    */
   copySettingsFrom(source: OutputModuleSettingsItem): void {
     for (const field of this.constructor._TEMPLATE_FIELDS) {
-      setattr(this, field, getattr(source, field));
+      setMember(this, field, getMember(source, field));
     }
   }
 
@@ -789,7 +789,7 @@ export class OutputModuleSettingsItem extends FmtItem {
    */
   restoreFrom(source: OutputModuleSettingsItem): void {
     for (const field of fields(OutputModuleSettingsItem)) {
-      setattr(this, field.name, getattr(source, field.name));
+      setMember(this, field.name, getMember(source, field.name));
     }
   }
 
@@ -805,19 +805,19 @@ export class OutputModuleSettingsItem extends FmtItem {
 }
 
 define(OutputModuleSettingsItem, {
-  _reserved00: bytesField(7, { default: b("\x00\x05\x00\x00\x00\x00\x00"), repr: false }),
+  _reserved00: bytesField(7, { default: Uint8Array.of(0x00, 0x05, 0x00, 0x00, 0x00, 0x00, 0x00), repr: false }),
   /**
    * Byte 7: bit 6=include_source_xmp, bit 5=has_output_file,
    * bit 4=use_region_of_interest, bit 3=use_comp_frame_number.
    */
   _flagByte07: u1Field({ default: 8, repr: false }),
   postRenderTargetCompId: u4Field(),
-  _reserved08: bytesField(4, { default: b("\x00\x00\x00\x01"), repr: false }),
+  _reserved08: bytesField(4, { default: Uint8Array.of(0x00, 0x00, 0x00, 0x01), repr: false }),
   _reserved09: bytesField(3, { repr: false }),
   channels: u1Field({ default: 1 }),
   _reserved11: bytesField(3, { repr: false }),
   resizeQuality: u1Field({ default: 1 }),
-  _reserved13: bytesField(3, { default: b("\x00\x01\x00"), repr: false }),
+  _reserved13: bytesField(3, { default: Uint8Array.of(0x00, 0x01, 0x00), repr: false }),
   resize: boolField(),
   _reserved15: bytesField(1, { repr: false }),
   lockAspectRatio: boolField({ default: true }),
@@ -837,11 +837,11 @@ define(OutputModuleSettingsItem, {
   _includeProjectLink: u1Field({ repr: false }),
   postRenderAction: u4Field(),
   postRenderUseComp: u4Field(),
-  _reserved30: bytesField(16, { default: Bytes.repeat(b("\xff"), 16), repr: false }),
-  outputProfileId: bytesField(16, { default: Bytes.repeat(b("\xff"), 16) }),
+  _reserved30: bytesField(16, { default: Bytes.repeat(Uint8Array.of(0xff), 16), repr: false }),
+  outputProfileId: bytesField(16, { default: Bytes.repeat(Uint8Array.of(0xff), 16) }),
   _reserved32: bytesField(3, { repr: false }),
   convertToLinearLight: u1Field({ default: 2 }),
-  _prevByte34: bytesField(1, { default: b("\x01"), repr: false }),
+  _prevByte34: bytesField(1, { default: Uint8Array.of(0x01), repr: false }),
   outputColorSpaceWorking: u1Field({ default: 1 }),
   preserveRgb: boolField(),
   _reserved5f: bytesField(33, { repr: false }),

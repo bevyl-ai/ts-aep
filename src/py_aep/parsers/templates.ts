@@ -12,14 +12,10 @@
  */
 
 import {
-  b,
   Bytes,
   concat,
   decode,
   assert,
-  rstrip,
-  split,
-  strip,
   patternMatch,
   pyRe,
   reEscape,
@@ -81,9 +77,9 @@ export function _extractSectionValue(lines: string[], key: string): Uint8Array |
     if (!line.includes(key)) continue;
     const m = reMatch(String.raw`\s*"` + reEscape(key) + String.raw`"\s*=\s*(.+)`, line);
     if (!m) continue;
-    const valueParts: string[] = [strip(m[1])];
+    const valueParts: string[] = [m[1].trim()];
     for (let j = i + 1; j < lines.length; j++) {
-      const nextLine = strip(lines[j]);
+      const nextLine = lines[j].trim();
       if (!nextLine || nextLine.startsWith("#") || nextLine.startsWith("[")) break;
       if (nextLine.startsWith('"')) break;
       valueParts.push(nextLine);
@@ -130,7 +126,7 @@ export function parseRenderTemplates(prefsDir: Path): [RenderSettingsItem[], num
     const offset = _HEADER_SIZE + idx * _RS_PREFS_ITEM_SIZE;
     const itemData = raw.slice(offset, offset + _RS_PREFS_ITEM_SIZE);
     const item = RenderSettingsItem.frombytes(
-      concat(itemData, Bytes.repeat(b("\x00"), _RS_ITEM_SIZE_DIFF)),
+      concat(itemData, Bytes.repeat(new Uint8Array(1), _RS_ITEM_SIZE_DIFF)),
     );
     assert(item instanceof RenderSettingsItem);
     if (!item.cleanTemplateName) {
@@ -261,8 +257,8 @@ export function _parseIdHexSection(text: string, section: string, idPrefix: stri
     }
   }
 
-  for (const line of split(text, "\n")) {
-    const stripped = rstrip(line);
+  for (const line of text.split("\n")) {
+    const stripped = line.trimEnd();
     if (!stripped) {
       continue;
     }
@@ -279,12 +275,12 @@ export function _parseIdHexSection(text: string, section: string, idPrefix: stri
     if (m) {
       _flush();
       currentIdx = Number.parseInt(m[1], 10);
-      const value = strip(m[2]);
+      const value = m[2].trim();
       currentValue = value.endsWith("\\") ? value.slice(0, -1) : value;
       continue;
     }
     if (currentIdx != null && stripped.startsWith("\t\t")) {
-      const value = strip(stripped);
+      const value = stripped.trim();
       currentValue += value.endsWith("\\") ? value.slice(0, -1) : value;
     }
   }

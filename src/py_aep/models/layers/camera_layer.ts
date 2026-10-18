@@ -1,4 +1,3 @@
-import { round } from "../../../pyrt/index.ts";
 import { LdtaChunk } from "../../binary/layer_chunks.ts";
 import { LayerType } from "../../enums/index.ts";
 import { defaultCameraZoom } from "../../resolvers/transform.ts";
@@ -69,7 +68,7 @@ export class CameraLayer extends Layer {
   _defaultZoom(): number {
     const comp = this.containingComp;
     // AE rounds the zoom to 8 decimals before storing it.
-    return round(defaultCameraZoom(comp.width, comp.pixelAspect), 8);
+    return Number(defaultCameraZoom(comp.width, comp.pixelAspect).toFixed(8));
   }
 
   // Python `# type: ignore[override]`: keyword shape differs from Layer._new's.

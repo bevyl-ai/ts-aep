@@ -9,7 +9,7 @@
  * points, type, and color stops AE writes for an SVG import.
  */
 
-import { max, min, valueEquals, zip } from "../../pyrt/index.ts";
+import { valueEquals, zip } from "../../pyrt/index.ts";
 import { toF4 } from "../binary/bin_utils.ts";
 import { Gradient, GradientAlphaStop, GradientColorStop } from "../models/properties/gradient.ts";
 import { Shape } from "../models/properties/shape.ts";
@@ -111,7 +111,7 @@ export function _bboxCenter(drawable: SvgDrawable): [number, number] {
   if (xs.length === 0) {
     return [0.0, 0.0];
   }
-  return [(min(xs) + max(xs)) / 2.0, (min(ys) + max(ys)) / 2.0];
+  return [(Math.min(...xs) + Math.max(...xs)) / 2.0, (Math.min(...ys) + Math.max(...ys)) / 2.0];
 }
 
 /**

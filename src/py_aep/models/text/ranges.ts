@@ -33,15 +33,11 @@ import {
   NotImplementedError,
   ValueError,
   deepcopy,
-  float,
   getOrThrow,
-  max,
   assert,
   truthy,
   valueEquals,
   literal,
-  round,
-  split,
   descriptor,
   boxFloat,
 } from "../../../pyrt/index.ts";
@@ -190,7 +186,7 @@ export function _lineDataFromNodes(nodes: CosDict[]): [[number, number][], (numb
     }
     lengths.push(total);
     const baseline = read(cacheLine, node, "10");
-    baselines.push(baseline != null ? float(baseline) : null);
+    baselines.push(baseline != null ? Number(baseline) : null);
   }
   if (!lengths.length) return null;
   const spans: [number, number][] = [];
@@ -212,7 +208,7 @@ export function _lineOrigin(node: CosDict): [number, number] {
   const origin = cosGet(node, "0", "0");
   if (Array.isArray(origin) && origin.length >= 2) return [cosFloat(origin[0]), cosFloat(origin[1])];
   const baseline = read(cacheLine, node, "10");
-  const y = baseline != null ? float(baseline) : 0.0;
+  const y = baseline != null ? Number(baseline) : 0.0;
   return [0.0, y];
 }
 
@@ -234,7 +230,7 @@ export function _lineAdvances(node: CosDict): number[] {
     const advances = cosGet(seg, "15", "7", "7");
     if (!Array.isArray(advances)) continue;
     for (const advance of advances) {
-      if (is(pyNumber, advance)) out.push(base + float(advance));
+      if (is(pyNumber, advance)) out.push(base + Number(advance));
     }
     if (out.length) base = out[out.length - 1];
   }
@@ -458,7 +454,7 @@ export function _replaceLayerFont(docs: TextDocument[], fromName: string, toName
     // Inserting past the LAST matching entry leaves every from-index
     // unshifted (`_registerFontAt` only bumps references at or after
     // the insertion point).
-    toIndex = _registerFontAt(first, toName, max(fromIndices) + 1, { usedRecord: false });
+    toIndex = _registerFontAt(first, toName, Math.max(...fromIndices) + 1, { usedRecord: false });
   }
 
   for (const doc of docs) {
@@ -590,7 +586,7 @@ export function _splitRunArray(runs: CosNode[], offsets: Set<number>): void {
     const runEnd = pyAdd(pos, _runCount(runs[i]));
     let cut: number | null = null;
     for (const offset of cuts) {
-      if (float(pos) < offset && offset < float(runEnd)) {
+      if (Number(pos) < offset && offset < Number(runEnd)) {
         cut = offset;
         break;
       }
@@ -648,7 +644,7 @@ export function _applyCharKey(doc: TextDocument, start: number, end: number, key
   let pos: PyNum = 0;
   for (const run of runs) {
     const runEnd = pyAdd(pos, _runCount(run));
-    if (float(pos) >= start && float(runEnd) <= end) {
+    if (Number(pos) >= start && Number(runEnd) <= end) {
       const style = cosGet(run, "0", "0", "6");
       if (style instanceof Map) {
         if (value == null) style.delete(key);
@@ -742,7 +738,7 @@ export function _spliceText(
   _markLayoutDirty(doc);
   const kernValues = _kernValues(doc);
   const newRaw = u16Slice(raw, 0, start) + newText + u16Slice(raw, end, total);
-  let parts = split(newRaw, "\r");
+  let parts = newRaw.split("\r");
   if (parts[parts.length - 1] === "") parts = parts.slice(0, -1);
   const inner = cosSetdefault(doc._doc, "0", new Map());
 
@@ -754,7 +750,7 @@ export function _spliceText(
       let pos: PyNum = 0;
       for (const run of runs) {
         const runEnd = pyAdd(pos, _runCount(run));
-        if (float(pos) <= start && start < float(runEnd)) {
+        if (Number(pos) <= start && start < Number(runEnd)) {
           donor = deepcopy(run);
           break;
         }
@@ -772,9 +768,9 @@ export function _spliceText(
     let inserted = false;
     for (const run of runs) {
       const runEnd = pyAdd(pos, _runCount(run));
-      if (float(runEnd) <= start) {
+      if (Number(runEnd) <= start) {
         rebuilt.push(run);
-      } else if (float(pos) >= end) {
+      } else if (Number(pos) >= end) {
         if (!inserted) {
           rebuilt.push(...insertEntries);
           inserted = true;
@@ -794,7 +790,7 @@ export function _spliceText(
     let pos: PyNum = 0;
     for (const entry of paraRuns) {
       const length = _runCount(entry);
-      oldSpans.push([float(pos), float(pyAdd(pos, length)), entry]);
+      oldSpans.push([Number(pos), Number(pyAdd(pos, length)), entry]);
       pos = pyAdd(pos, length);
     }
 
@@ -852,7 +848,7 @@ export function _applyParaKey(doc: TextDocument, start: number, end: number, key
   let pos: PyNum = 0;
   for (const run of runs) {
     const runEnd = pyAdd(pos, _runCount(run));
-    if (float(pos) < end && float(runEnd) > start) {
+    if (Number(pos) < end && Number(runEnd) > start) {
       const style = cosGet(run, "0", "0", "5");
       if (style instanceof Map) {
         if (value == null) style.delete(key);
@@ -978,7 +974,7 @@ export class RangeField<T extends InstanceValue> {
    * probed AE 2026).
    */
   static int(kind: RangeKind, key: string, kwargs: RangeFieldExtras<number> = {}): RangeField<number> {
-    return new RangeField<number>(kind, key, { transform: cosInt, reverse: (x: number) => round(x), ...kwargs });
+    return new RangeField<number>(kind, key, { transform: cosInt, reverse: (x: number) => Math.round(x) + 0, ...kwargs });
   }
 
   /**
@@ -1371,9 +1367,9 @@ export class CharacterRange extends _TextRange {
       const runEnd = pyAdd(pos, _runCount(run));
       // `max(pos, src_start)` / `min(run_end, src_end)` keep the winning
       // operand itself, so a float position stays a float.
-      const overlapStart: PyNum = srcStart > float(pos) ? srcStart : pos;
-      const overlapEnd: PyNum = srcEnd < float(runEnd) ? srcEnd : runEnd;
-      if (float(overlapEnd) > float(overlapStart)) {
+      const overlapStart: PyNum = srcStart > Number(pos) ? srcStart : pos;
+      const overlapEnd: PyNum = srcEnd < Number(runEnd) ? srcEnd : runEnd;
+      if (Number(overlapEnd) > Number(overlapStart)) {
         const clone = deepcopy(run);
         cosSetitem(clone, "1", pySub(overlapEnd, overlapStart));
         entries.push(clone);
@@ -1590,7 +1586,7 @@ export class CharacterRange extends _TextRange {
     // write, matching the sibling `tracking` field, whose `RangeField.int`
     // sets `reverse=round`. `round` also normalizes bools (a subclass of
     // int) so the serializer emits an integer, not a `true`/`false` token.
-    const rounded = round(cosNum(value));
+    const rounded = Math.round(cosNum(value)) + 0;
     const doc = this._docRef;
     const raw = _rawText(doc);
     let [start, end] = this._bounds();

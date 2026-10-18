@@ -1,6 +1,6 @@
 /** SVG root parsing: canvas size and the viewBox origin transform. */
 
-import { float, min, max, valueEquals, split } from "../../pyrt/index.ts";
+import { valueEquals } from "../../pyrt/index.ts";
 import { NUMBER_RE, parseLength } from "./_util.ts";
 import { Affine } from "./transform.ts";
 
@@ -17,7 +17,7 @@ export type ViewBox = readonly [number, number, number, number];
  */
 export function _viewBox(value: string | null): ViewBox | null {
   if (!value) return null;
-  const nums = Array.from(value.matchAll(NUMBER_RE), (n) => float(n[0]));
+  const nums = Array.from(value.matchAll(NUMBER_RE), (n) => Number(n[0]));
   if (nums.length !== 4 || !nums.every((n) => Number.isFinite(n))) return null;
   if (nums[2] <= 0 || nums[3] <= 0) return null;
   return [nums[0], nums[1], nums[2], nums[3]];
@@ -73,10 +73,10 @@ export function viewportTransform(
   const [minX, minY, vbW, vbH] = vb;
   let sx = width / vbW;
   let sy = height / vbH;
-  const tokens = split(preserveAspectRatio || "").filter((t) => t !== "defer");
+  const tokens = (preserveAspectRatio || "").split(/\s+/).filter(Boolean).filter((t) => t !== "defer");
   const align = tokens.length > 0 ? tokens[0] : "xMidYMid";
   if (align !== "none") {
-    const s = valueEquals(tokens.slice(1, 2), ["slice"]) ? max([sx, sy]) : min([sx, sy]);
+    const s = valueEquals(tokens.slice(1, 2), ["slice"]) ? Math.max(sx, sy) : Math.min(sx, sy);
     sx = sy = s;
     const ax = (new Map<string, number>([["xMin", 0.0], ["xMid", 0.5], ["xMax", 1.0]])).get(align.slice(0, 4)) ?? 0.5;
     const ay = (new Map<string, number>([["YMin", 0.0], ["YMid", 0.5], ["YMax", 1.0]])).get(align.slice(4)) ?? 0.5;

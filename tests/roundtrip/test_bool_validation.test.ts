@@ -11,11 +11,11 @@
 import { describe, expect, test } from "bun:test";
 import {
   AssertionError,
-  getattr,
+  getMember,
   len,
   Path,
   truthy,
-  setattr,
+  setMember,
   StopIteration,
   str,
 } from "../../src/pyrt/index.ts";
@@ -35,7 +35,7 @@ const VIEW = SAMPLES.div("models", "view", "grid_on.aep");
 function _fileSource(): FootageSource {
   const project = parseProjectFresh(FOOTAGE);
   const footage = project.footages.find(
-    (f) => getattr(f, "mainSource", null)?.constructor?.name === "FileSource",
+    (f) => getMember(f, "mainSource", null)?.constructor?.name === "FileSource",
   );
   if (footage === undefined) throw new StopIteration();
   return footage.mainSource;
@@ -45,7 +45,7 @@ function _firstMask(): MaskPropertyGroup {
   const project = parseProjectFresh(MASK);
   for (const comp of project.compositions) {
     for (const layer of comp.layers) {
-      const masks = getattr(layer, "masks", null);
+      const masks = getMember(layer, "masks", null);
       if (masks != null && truthy(masks) && len(masks) > 0) {
         return asInstance(masks.property(0), MaskPropertyGroup);
       }
@@ -102,23 +102,23 @@ describe("TestStrictBool", () => {
   test.each(_ROWS)("test_rejects_non_bool_string[%s]", (_id: string, factory: () => object, attr: string) => {
     const obj = factory();
     raises(TypeError, () => {
-      setattr(obj, attr, "no");
+      setMember(obj, attr, "no");
     });
   });
 
   test.each(_ROWS)("test_rejects_bare_int[%s]", (_id: string, factory: () => object, attr: string) => {
     const obj = factory();
     raises(TypeError, () => {
-      setattr(obj, attr, 1);
+      setMember(obj, attr, 1);
     });
   });
 
   test.each(_ROWS)("test_accepts_true_and_false[%s]", (_id: string, factory: () => object, attr: string) => {
     const obj = factory();
-    setattr(obj, attr, true);
-    expect(getattr(obj, attr)).toBe(true);
-    setattr(obj, attr, false);
-    expect(getattr(obj, attr)).toBe(false);
+    setMember(obj, attr, true);
+    expect(getMember(obj, attr)).toBe(true);
+    setMember(obj, attr, false);
+    expect(getMember(obj, attr)).toBe(false);
   });
 });
 

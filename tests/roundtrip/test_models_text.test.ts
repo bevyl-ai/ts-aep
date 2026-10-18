@@ -10,7 +10,7 @@ import type { CompItem } from "../../src/py_aep/models/items/composition.ts";
 import { cosAt, cosItem } from "../../src/py_aep/cos/kinds.ts";
 import { CosName } from "../../src/py_aep/cos/index.ts";
 import { AutoKernType, BaselineDirection, BoxAutoFitPolicy, BoxFirstBaselineAlignment, BoxVerticalAlignment, DigitSet, LineJoinType, LineOrientation, ParagraphDirection, ParagraphJustification } from "../../src/py_aep/enums/index.ts";
-import { contains, getattr, Path, assert, valueEquals, setattr, ValueError } from "../../src/pyrt/index.ts";
+import { contains, getMember, Path, assert, valueEquals, setMember, ValueError } from "../../src/pyrt/index.ts";
 import { approx, makeTmpPath, raises } from "../../src/pyrt/pytest.ts";
 
 const SAMPLES_DIR = new Path(import.meta.dir, "..", "..", "samples", "models", "layer");
@@ -150,12 +150,12 @@ describe("TestRoundtripWiredAttributes", () => {
   ])("test_roundtrip[%#]", (attr: string, value: unknown) => {
     const tmpPath = makeTmpPath();
     const [project, doc] = _getTextDocument(SAMPLES_DIR.div("type.aep"), "type_text");
-    setattr(doc, attr, value);
+    setMember(doc, attr, value);
     const out = tmpPath.div("modified.aep");
     project.save(out);
 
     const [_project2, doc2] = _getTextDocument(out, "type_text");
-    expect(valueEquals(getattr(doc2, attr), value)).toBe(true);
+    expect(valueEquals(getMember(doc2, attr), value)).toBe(true);
   });
 });
 
@@ -203,12 +203,12 @@ describe("TestBoxText", () => {
     const tmpPath = makeTmpPath();
     const [project, doc] = _getTextDocument(SAMPLES_DIR.div("type.aep"), "type_text");
     doc.boxTextSize = [300.0, 150.0]; // convert to box first
-    setattr(doc, attr, value);
+    setMember(doc, attr, value);
     const out = tmpPath.div("box.aep");
     project.save(out);
 
     const [_p2, doc2] = _getTextDocument(out, "type_text");
-    expect(valueEquals(getattr(doc2, attr), value)).toBe(true);
+    expect(valueEquals(getMember(doc2, attr), value)).toBe(true);
   });
 });
 

@@ -232,7 +232,7 @@ export function getOr<K, V, D>(d: Map<K, V>, k: K, dflt: D | null = null): V | D
 }
 
 /** `d.setdefault(k, v)` */
-export function setdefault<K, V>(d: Map<K, V>, k: K, v: V): V {
+export function getOrInsert<K, V>(d: Map<K, V>, k: K, v: V): V {
   const cur = d.get(k);
   if (cur !== undefined) return cur;
   d.set(k, v);
@@ -263,24 +263,24 @@ export function compositeKey(...parts: unknown[]): string {
  * that property's type (or the default's, when one is given); any other name
  * reads as `any`.
  */
-export function getattr<O, N extends string & keyof NonNullable<O>>(obj: O, name: N): Required<NonNullable<O>>[N];
-export function getattr<O, N extends string & keyof NonNullable<O>, D>(obj: O, name: N, dflt: D): Required<NonNullable<O>>[N] | D;
-export function getattr(obj: unknown, name: string, ...dflt: [unknown?]): any;
-export function getattr(obj: unknown, name: string, ...dflt: [unknown?]): unknown {
+export function getMember<O, N extends string & keyof NonNullable<O>>(obj: O, name: N): Required<NonNullable<O>>[N];
+export function getMember<O, N extends string & keyof NonNullable<O>, D>(obj: O, name: N, dflt: D): Required<NonNullable<O>>[N] | D;
+export function getMember(obj: unknown, name: string, ...dflt: [unknown?]): any;
+export function getMember(obj: unknown, name: string, ...dflt: [unknown?]): unknown {
   if (obj != null && name in Object(obj)) return Reflect.get(Object(obj), name, obj);
   if (dflt.length) return dflt[0];
   throw new AttributeError(`'${obj?.constructor?.name}' object has no attribute '${name}'`);
 }
 
 /** `setattr(obj, name, value)`; a getter-only accessor raises AttributeError like a Python property without a setter. */
-export function setattr(obj: object, name: string, value: unknown): void {
+export function setMember(obj: object, name: string, value: unknown): void {
   if (!Reflect.set(obj, name, value)) {
     throw new AttributeError(`property '${name}' of '${obj.constructor?.name}' object has no setter`);
   }
 }
 
 /** `hasattr(obj, name)` */
-export function hasattr(obj: unknown, name: string): boolean {
+export function hasMember(obj: unknown, name: string): boolean {
   if (obj == null || !(name in Object(obj))) return false;
   try {
     void Reflect.get(Object(obj), name, obj);
@@ -377,24 +377,13 @@ export function repr(x: unknown): string {
   return String(x);
 }
 
-/**
- * `type(x).__name__`. JS cannot tell a tuple from a list (both "list") or an
- * int-valued float from an int unless it is a boxed `BoxedFloat`; class
- * instances report their constructor name, which equals the Python class name.
- */
+/** The type name messages show: `null`, a `typeof` name, or the constructor name. */
 export function typeName(x: unknown): string {
-  if (x == null) return "NoneType";
-  if (typeof x === "boolean") return "bool";
-  if (x instanceof BoxedFloat) return "float";
-  if (typeof x === "number") return Number.isInteger(x) ? "int" : "float";
-  if (typeof x === "bigint") return "int";
-  if (typeof x === "string") return "str";
-  if (typeof x === "function") return x.prototype && /^class\b/.test(Function.prototype.toString.call(x)) ? "type" : "function";
-  if (x instanceof Uint8Array) return "bytes";
-  if (Array.isArray(x)) return "list";
-  if (x instanceof Map) return "dict";
-  if (x instanceof Set) return "set";
-  return x.constructor?.name ?? "object";
+  if (x === null) return "null";
+  if (x instanceof BoxedFloat) return "number";
+  if (typeof x !== "object" && typeof x !== "function") return typeof x;
+  if (typeof x === "function") return x.prototype && /^class\b/.test(Function.prototype.toString.call(x)) ? "class" : "function";
+  return x.constructor?.name ?? "Object";
 }
 
 /** A Python Mapping: a `Map`, an object with `items()`, or one with `keys()` + `get()`. */

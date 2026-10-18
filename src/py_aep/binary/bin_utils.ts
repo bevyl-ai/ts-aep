@@ -10,12 +10,10 @@ import {
   Fraction,
   OSError,
   ValueError,
-  b,
   decode,
   divmod,
   encode,
   floatRepr,
-  round,
   struct,
   type IO,
 } from "../../pyrt/index.ts";
@@ -81,7 +79,7 @@ export function toFloat32Ratio(value: number): [number, number] {
  * turns 23.99999999 into 23 + 65536/65536, which overflows a u2 fraction.
  */
 export function toFixed1616(value: number): [number, number] {
-  return divmod(round(value * 65536), 65536);
+  return divmod(Math.round(value * 65536) + 0, 65536);
 }
 
 /** Return a cached `struct.Struct` for `fullFmt`. */
@@ -196,7 +194,7 @@ export function isReadable(fp: IO, size = 1): boolean {
 }
 
 /** The pad byte; `write` copies it out. */
-const _PAD = b("\x00");
+const _PAD = new Uint8Array(1);
 
 /** Write a pad byte if `size` is odd. Returns bytes written (0 or 1). */
 export function writePad(fp: IO, size: number): number {

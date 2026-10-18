@@ -10,7 +10,7 @@ import {
   BytesIO,
   Path,
   StopIteration,
-  getattr,
+  getMember,
   getOrThrow,
   len,
   assert,
@@ -240,10 +240,10 @@ class TestEffectParamPaths {
   static _stored_json(comp: CompItem, ctrlName: string): string {
     // The CPrp JSON of the named controller, straight from the chunks.
     for (const cctl of _cif3Cctls(comp)) {
-      const cps2 = asInstance(next(cctl.chunks, (c) => getattr(c, "listType", "") === "CpS2"), ListChunk);
+      const cps2 = asInstance(next(cctl.chunks, (c) => getMember(c, "listType", "") === "CpS2"), ListChunk);
       const name = asInstance(next(cps2.chunks, (c) => c.chunkType === "Utf8"), Utf8Chunk).value;
       if (!valueEquals(name, ctrlName)) continue;
-      const cprp = asInstance(next(cctl.chunks, (c) => getattr(c, "listType", "") === "CPrp"), ListChunk);
+      const cprp = asInstance(next(cctl.chunks, (c) => getMember(c, "listType", "") === "CPrp"), ListChunk);
       return asInstance(next(cprp.chunks, (c) => c.chunkType === "Utf8"), Utf8Chunk).value;
     }
     throw new AssertionError(`controller ${repr(ctrlName)} not found`);
@@ -511,7 +511,7 @@ describe("TestAddLayerMediaReplacement", () => {
     const utf8s = fixtureCctl.chunks.filter((c) => c.chunkType === "Utf8");
     const uuidStr = asInstance(utf8s[0], Utf8Chunk).value;
     const thumbnail = asInstance(utf8s[3], Utf8Chunk).value;
-    const cprp = asInstance(next(fixtureCctl.chunks, (c) => getattr(c, "listType", "") === "CPrp"), ListChunk);
+    const cprp = asInstance(next(fixtureCctl.chunks, (c) => getMember(c, "listType", "") === "CPrp"), ListChunk);
     const pathJson = asInstance(next(cprp.chunks, (c) => c.chunkType === "Utf8"), Utf8Chunk).value;
 
     const [built, _name, _ctyp] = buildMediaCctl(

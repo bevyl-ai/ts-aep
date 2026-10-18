@@ -22,10 +22,7 @@ import {
   type Path,
   fspath,
   valueEquals,
-  sum,
-  zip,
-  hypot,
-} from "../../pyrt/index.ts";
+  zip, hypot } from "../../pyrt/index.ts";
 
 /** The subset of a fontkit glyph this module reads. */
 export interface FontkitGlyph {
@@ -249,7 +246,7 @@ export function _advanceWidth(
 ): number {
   const [, advances, unitsPerEm] = glyphs;
   const scale = run.fontSize / unitsPerEm;
-  return sum(advances) * scale + run.letterSpacing * Array.from(run.text).length;
+  return advances.reduce((total, x) => total + x, 0) * scale + run.letterSpacing * Array.from(run.text).length;
 }
 
 /** Outline one run starting at `(pen_x, pen_y)`; return (subpaths, end_x). */
@@ -309,7 +306,7 @@ export function outlineRuns(
     let j = i + 1;
     while (j < n && runs[j].absX == null) j += 1;
     const first = runs[i];
-    const chunkAdvance = sum(Array.from({ length: j - i }, (_, k) => widths[i + k] + runs[i + k].dx));
+    const chunkAdvance = Array.from({ length: j - i }, (_, k) => widths[i + k] + runs[i + k].dx).reduce((total, x) => total + x, 0);
     const chunkAnchor = first.anchor || anchor;
     const shift =
       chunkAnchor === "middle"

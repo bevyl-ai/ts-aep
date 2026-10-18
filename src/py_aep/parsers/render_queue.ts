@@ -1,4 +1,4 @@
-import { at, getOrThrow } from "../../pyrt/index.ts";
+import { getOrThrow } from "../../pyrt/index.ts";
 import { ContainerChunk, ListChunk } from "../binary/chunk.ts";
 import type { Chunk } from "../binary/chunk.ts";
 import { LdatChunk } from "../binary/ldat_chunks.ts";
@@ -177,7 +177,7 @@ export function parseRenderQueueItems(
         const item = parseRenderQueueItem(
           listChunk,
           chunk,
-          at(renderSettings, itemIndex),
+          renderSettings.at(itemIndex)!,
           rcomContainer,
           rcomUtf8,
           routItems.slice(routStart, routStart + ROUT_ITEMS_PER_RQ_ITEM),
@@ -247,7 +247,7 @@ export function parseRenderQueueItem(
   for (const [omIndex, group] of omGroups.entries()) {
     const outputModule = parseOutputModule(
       group,
-      at(omLdatItems, omIndex),
+      omLdatItems.at(omIndex)!,
       renderQueueItem,
     );
     outputModules.push(outputModule);

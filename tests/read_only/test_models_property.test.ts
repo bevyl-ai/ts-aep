@@ -8,7 +8,7 @@ import {
   Path,
   StopIteration,
   float,
-  getattr,
+  getMember,
   getOrThrow,
   int,
   len,
@@ -19,7 +19,7 @@ import {
   truthyOr,
   range,
   repr,
-  setdefault,
+  getOrInsert,
   sorted,
   str,
   zip,
@@ -84,7 +84,7 @@ function _jsonValuesByMatchName(expected: unknown): Map<unknown, unknown> {
   const walk = (node: unknown): void => {
     if (typeof node === "object" && node !== null && !Array.isArray(node)) {
       if ("propertyType" in node && node.propertyType === "Property" && "matchName" in node) {
-        setdefault(values, node.matchName, "value" in node ? node.value ?? null : null);
+        getOrInsert(values, node.matchName, "value" in node ? node.value ?? null : null);
       }
       for (const child of Object.values(node)) {
         walk(child);
@@ -2826,7 +2826,7 @@ describe("TestMaskLayerSpace", () => {
       ["inTangents", "inTangents"],
       ["outTangents", "outTangents"],
     ] as const) {
-      const got = getattr(shape, attr).flatMap((point) => [...point]);
+      const got = getMember(shape, attr).flatMap((point) => [...point]);
       const want = expected[name].flatMap((point) => [...point]);
       assert(approx(got, want, { abs: 1e-4 }), attr);
     }
@@ -2919,7 +2919,7 @@ describe("TestRotoBezierTangents", () => {
         ["inTangents", "inTangents"],
         ["outTangents", "outTangents"],
       ] as const) {
-        const got = getattr(shape, attr).flatMap((point) => [...point]);
+        const got = getMember(shape, attr).flatMap((point) => [...point]);
         const want = expected[name].flatMap((point) => [...point]);
         assert(approx(got, want, { abs: 1e-3 }), attr);
       }

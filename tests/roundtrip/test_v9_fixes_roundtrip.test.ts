@@ -10,7 +10,7 @@
 
 import { describe, expect, test } from "bun:test";
 import { createHash } from "node:crypto";
-import { and, b, Bytes, bytesEq, decode, len, Path, truthy, valueEquals, StopIteration, struct } from "../../src/pyrt/index.ts";
+import { and, b, Bytes, bytesEqual, decode, len, Path, truthy, valueEquals, StopIteration, struct } from "../../src/pyrt/index.ts";
 import { makeTmpPath } from "../../src/pyrt/pytest.ts";
 import { ImportOptions, parse } from "../../src/py_aep/index.ts";
 import "../../src/py_aep/binary/_register.ts";
@@ -35,8 +35,8 @@ function _leaves(data: Uint8Array, inList: Uint8Array = b("")): [string, number]
       const body = off + 8;
       if (["LIST", "RIFX"].includes(ctype)) {
         const listType = Bytes.slice(data, body, body + 4);
-        if (!bytesEq(listType, b("btdk"))) {
-          walk(body + 4, body + size, inside || bytesEq(listType, inList));
+        if (!bytesEqual(listType, b("btdk"))) {
+          walk(body + 4, body + size, inside || bytesEqual(listType, inList));
         }
       } else if (inside) {
         out.push([ctype, body]);

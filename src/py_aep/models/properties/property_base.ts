@@ -3,11 +3,9 @@ import {
   ValueError,
   IndexError,
   descriptor,
-  max,
   assert,
   valueEquals,
   literal,
-  split,
 } from "../../../pyrt/index.ts";
 import { PropertyType, PropertyValueType } from "../../enums/index.ts";
 import { getAeVersionMajor } from "../../ae_version.ts";
@@ -126,7 +124,7 @@ export function _assignDuplicateMaskIdentity(
   const siblings = parent._properties
     .filter((m) => m._isMask && m !== newMask)
     .filter((m) => m._isMaskGroup());
-  const newId = max(siblings.map((m) => m._mkif.maskId), null, 0) + 1;
+  const newId = Math.max(0, ...siblings.map((m) => m._mkif.maskId)) + 1;
   newMask._mkif.maskId = newId;
   // Python `$` also matches before a trailing newline; the lookahead mirrors that.
   const base = source.name.replace(/ \p{Nd}+(?=\n?$)/u, "");
@@ -363,7 +361,7 @@ export class PropertyBase {
   get name(): string {
     if (this._name != null) return this._name;
     if (this._nameUtf8 != null) {
-      const text: string = split(this._nameUtf8.value, "\0")[0];
+      const text: string = this._nameUtf8.value.split("\0")[0];
       if (text && text !== TDSN_SENTINEL) return text;
     }
     return this.autoName;
@@ -398,7 +396,7 @@ export class PropertyBase {
   get isNameSet(): boolean {
     if (this._name != null) return true;
     if (this._nameUtf8 != null) {
-      const text: string = split(this._nameUtf8.value, "\0")[0];
+      const text: string = this._nameUtf8.value.split("\0")[0];
       return !!text && text !== TDSN_SENTINEL;
     }
     return false;

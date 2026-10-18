@@ -31,7 +31,7 @@
  */
 
 import { AudioBitDepth, AudioChannels, AudioCodec, FormatKind, MPEGAudioFormat, MPEGAudioLayer, MPEGMultiplexer, OutputAudio, OutputChannels, OutputColorDepth, OutputColorMode, OutputFormat, VideoCodec } from "../enums/index.ts";
-import { contains, getOrThrow, valueEquals, setdefault } from "../../pyrt/index.ts";
+import { contains, getOrThrow, valueEquals, getOrInsert } from "../../pyrt/index.ts";
 
 /**
  * One conditional rule: (conditions, constraints). Every condition must
@@ -589,7 +589,7 @@ export const _PLUS_DEPTHS: ReadonlySet<RuleValue> = new Set([_MILLIONS_PLUS, _TR
 for (const [_fmt, _fmtRules] of _FORMAT_RULES) {
   const _depths = _fmtRules.get("Depth") ?? null;
   if (_depths == null) continue;
-  const _rows = setdefault(_CONDITIONAL_RULES, _fmt, []);
+  const _rows = getOrInsert(_CONDITIONAL_RULES, _fmt, []);
   const _rgbaDepths = new Set([..._depths].filter((d) => _PLUS_DEPTHS.has(d)));
   if (_rgbaDepths.size > 0) {
     _rows.unshift([new Map<string, RuleValue | RuleValue[]>([["Channels", OutputChannels.RGBA]]), new Map<string, ReadonlySet<RuleValue>>([["Depth", _rgbaDepths]])]);

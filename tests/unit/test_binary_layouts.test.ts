@@ -11,7 +11,7 @@ import { LdtaChunk } from "../../src/py_aep/binary/layer_chunks.ts";
 import { WsnsChunk } from "../../src/py_aep/binary/project_chunks.ts";
 import { Tdb4Chunk, TdsbChunk } from "../../src/py_aep/binary/property_chunks.ts";
 import { CHUNK_TYPES } from "../../src/py_aep/binary/registry.ts";
-import { BytesIO, b, getattr, getOrThrow, len, assert, valueEquals, struct } from "../../src/pyrt/index.ts";
+import { BytesIO, b, getMember, getOrThrow, len, assert, valueEquals, struct } from "../../src/pyrt/index.ts";
 import { U4LeChunk } from "../../src/py_aep/binary/scalar_chunks.ts";
 import { asInstance } from "../helpers.ts";
 
@@ -49,13 +49,13 @@ describe("TestLittleEndianAtoms", () => {
 describe("TestSignedCounters", () => {
   test("test_four_byte", () => {
     for (const tag of ["CcCt", "CprC", "parn"]) {
-      expect(getattr(_read(tag, b("\xff\xff\xff\xff")), "value")).toBe(-1);
+      expect(getMember(_read(tag, b("\xff\xff\xff\xff")), "value")).toBe(-1);
     }
   });
 
   test("test_two_byte", () => {
     for (const tag of ["fipc", "fivc"]) {
-      expect(getattr(_read(tag, b("\xff\xfe")), "value")).toBe(-2);
+      expect(getMember(_read(tag, b("\xff\xfe")), "value")).toBe(-2);
     }
     const chunk = _read("wsns", b("\x00\x0e"));
     assert(chunk instanceof WsnsChunk);

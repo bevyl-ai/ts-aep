@@ -30,14 +30,13 @@ import {
   typeName,
   truthyOr,
   compositeKey,
-  setdefault,
+  getOrInsert,
   literal,
   encode,
   decode,
-  b,
   concat,
   Bytes,
-  reSearch, compare } from "../../pyrt/index.ts";
+  reSearch, compare, ascii } from "../../pyrt/index.ts";
 import { _compact, buildOcioEnvelope } from "./envelope.ts";
 import { aeGuid } from "./murmur3.ts";
 
@@ -320,14 +319,14 @@ export const _OCIO_PROFILE_TYPE = 3;
  */
 export function _colorSpaceGuid(profileName: string, profileData: string): Uint8Array {
   const inner = aeGuid(
-    concat(b("DVAColorProfile"), encode(profileName, "utf-8"), encode(profileData, "utf-8")),
+    concat(ascii("DVAColorProfile"), encode(profileName, "utf-8"), encode(profileData, "utf-8")),
   );
   return aeGuid(
     concat(
-      b("DVAColorSpace"),
+      ascii("DVAColorSpace"),
       inner,
       Bytes.intToBytes(_OCIO_PROFILE_TYPE, 4, "little"),
-      b("\x00"),
+      new Uint8Array(1),
     ),
   );
 }
@@ -492,7 +491,7 @@ export const _guidTableCached = lruCache(
       const [name, data] = _outputEnvelope(index, colorSpace);
       // Two names can resolve to the same envelope (e.g. two roles sharing
       // a target); keep the first, like the linear scan this table replaces.
-      setdefault(table, compositeKey(_colorSpaceGuid(name, data)), colorSpace);
+      getOrInsert(table, compositeKey(_colorSpaceGuid(name, data)), colorSpace);
     }
     return table;
   },

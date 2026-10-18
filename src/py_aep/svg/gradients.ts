@@ -11,7 +11,7 @@
  * module only produces the geometric/stop representation.
  */
 
-import { setdefault, max, degrees, hypot } from "../../pyrt/index.ts";
+import { getOrInsert, degrees, hypot } from "../../pyrt/index.ts";
 import { LengthContext, localName, parseLength, parseRatio } from "./_util.ts";
 import { parseColor } from "./colors.ts";
 import { _splitDeclarations } from "./style.ts";
@@ -81,7 +81,7 @@ export function collectGradients(root: Element): Map<string, GradientDef> {
         gd.stops = [...parent.stops];
       }
       for (const [k, v] of parent.attrs) {
-        setdefault(gd.attrs, k, v);
+        getOrInsert(gd.attrs, k, v);
       }
       ref = parent.href;
     }
@@ -100,7 +100,7 @@ export function _parseStops(elem: Element): GradientStop[] {
     // document order; AE 2026 imports `0.6 red, 0.3 blue` as red then a
     // hard switch to blue at 0.6).
     const parsedOffset = parseRatio(child.get("offset"), 0.0);
-    const offset = stops.length > 0 ? max([parsedOffset, stops[stops.length - 1].offset]) : parsedOffset;
+    const offset = stops.length > 0 ? Math.max(parsedOffset, stops[stops.length - 1].offset) : parsedOffset;
     const style = _stopStyle(child);
     const color = parseColor(style.get("stop-color") ?? "#000000") ?? [0.0, 0.0, 0.0, 1.0];
     const opacity = parseRatio(style.get("stop-opacity") ?? null, 1.0);

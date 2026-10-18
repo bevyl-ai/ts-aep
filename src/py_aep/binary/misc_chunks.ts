@@ -7,7 +7,7 @@
  */
 
 import { uuid4Bytes } from "../../pyrt/uuid.ts";
-import { define, field, b, Bytes, decode, encode, assert, round, descriptor, ValueError } from "../../pyrt/index.ts";
+import { define, field, Bytes, decode, encode, assert, descriptor, ValueError } from "../../pyrt/index.ts";
 import type { IO } from "../../pyrt/index.ts";
 import { readBytes } from "./bin_utils.ts";
 import { BitField } from "./bitfield.ts";
@@ -40,7 +40,7 @@ define(PrinChunk, {
   matchName: asciiField(48, { default: "ADBE Escher" }),
   displayName: asciiField(48, { default: "Classic 3D" }),
   _reserved68: bytesField(3, { repr: false }),
-  _endMarker: bytesField(1, { default: b("\x01"), repr: false }),
+  _endMarker: bytesField(1, { default: Uint8Array.of(0x01), repr: false }),
 });
 register("prin")(PrinChunk);
 
@@ -275,9 +275,9 @@ export class MkifChunk extends Chunk {
   }
 
   set color(value: number[]) {
-    this.colorR = round(value[0] * 255);
-    this.colorG = round(value[1] * 255);
-    this.colorB = round(value[2] * 255);
+    this.colorR = (Math.round(value[0] * 255) + 0);
+    this.colorG = (Math.round(value[1] * 255) + 0);
+    this.colorB = (Math.round(value[2] * 255) + 0);
   }
 }
 define(MkifChunk, {
@@ -335,13 +335,13 @@ export class ShphChunk extends Chunk {
 }
 define(ShphChunk, {
   chunkType: field({ default: "shph" }),
-  _reserved00: bytesField(3, { default: b("\xb3\xde\x02"), repr: false }),
+  _reserved00: bytesField(3, { default: Uint8Array.of(0xb3, 0xde, 0x02), repr: false }),
   _flags: u1Field({ default: 1, repr: false }),
   topLeftX: f4Field(),
   topLeftY: f4Field(),
   bottomRightX: f4Field(),
   bottomRightY: f4Field(),
-  _reserved14: bytesField(4, { default: b("\x01\x00\x00\x00"), repr: false }),
+  _reserved14: bytesField(4, { default: Uint8Array.of(0x01, 0x00, 0x00, 0x00), repr: false }),
 });
 register("shph")(ShphChunk);
 
@@ -383,7 +383,7 @@ export class NmhdChunk extends Chunk {
   }
 
   set durationSeconds(value: number) {
-    this.durationValue = round(value * 600);
+    this.durationValue = (Math.round(value * 600) + 0);
     this.durationScale = 600;
   }
 
@@ -573,7 +573,7 @@ export class PardChunk extends Chunk {
 
   /** Control type discriminator at byte 15 of the raw data. */
   get propertyControlType(): number {
-    const data = "data" in this ? this.data : b("");
+    const data = "data" in this ? this.data : new Uint8Array();
     if (data.length > 15) return data[15];
     return 0;
   }
@@ -607,9 +607,9 @@ export class PardChunk extends Chunk {
    * `canVaryOverTime` ground truth across the sample corpus.
    */
   get paramFlags(): number {
-    const pad: Uint8Array = this._padPost ?? b("");
+    const pad: Uint8Array = this._padPost ?? new Uint8Array();
     if (pad.length > 3) return pad[3];
-    const data = "data" in this ? this.data : b("");
+    const data = "data" in this ? this.data : new Uint8Array();
     if (data.length > 51) return data[51];
     return 0;
   }
@@ -623,16 +623,16 @@ export class PardChunk extends Chunk {
    * `canSetExpression = false` for every parameter with this bit set.
    */
   get expressionsDisabled(): boolean {
-    const pre: Uint8Array = this._padPre ?? b("");
+    const pre: Uint8Array = this._padPre ?? new Uint8Array();
     if (pre.length > 6) return (pre[6] & 0x02) !== 0;
-    const data = "data" in this ? this.data : b("");
+    const data = "data" in this ? this.data : new Uint8Array();
     if (data.length > 6) return (data[6] & 0x02) !== 0;
     return false;
   }
 
   /** Decoded parameter name (from `_rawName` up to first NUL). */
   get name(): string {
-    const raw: Uint8Array = "_rawName" in this ? this._rawName : b("");
+    const raw: Uint8Array = "_rawName" in this ? this._rawName : new Uint8Array();
     if (!raw.length) return "";
     const nul = Bytes.indexOf(raw, 0x00);
     if (nul >= 0) return decode(raw.slice(0, nul), "utf-8", "surrogateescape");
@@ -641,7 +641,7 @@ export class PardChunk extends Chunk {
 
   set name(value: string) {
     const encoded = encode(value, "utf-8", "surrogateescape").slice(0, 31);
-    this._rawName = Bytes.concat(encoded, Bytes.repeat(b("\x00"), 32 - encoded.length));
+    this._rawName = Bytes.concat(encoded, Bytes.repeat(new Uint8Array(1), 32 - encoded.length));
   }
 }
 define(PardChunk, {
@@ -1274,7 +1274,7 @@ export class ApidChunk extends Chunk {
 }
 define(ApidChunk, {
   chunkType: field({ default: "apid" }),
-  data: field({ default: Bytes.repeat(b("\xff"), 16) }),
+  data: field({ default: Bytes.repeat(Uint8Array.of(0xff), 16) }),
 });
 register("apid")(ApidChunk);
 
@@ -1285,7 +1285,7 @@ export class EpidChunk extends Chunk {
 }
 define(EpidChunk, {
   chunkType: field({ default: "epid" }),
-  data: field({ default: Bytes.repeat(b("\xff"), 16) }),
+  data: field({ default: Bytes.repeat(Uint8Array.of(0xff), 16) }),
 });
 register("epid")(EpidChunk);
 

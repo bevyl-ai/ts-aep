@@ -18,20 +18,17 @@ import { _CAMERA_LIGHT_TRANSFORM_SKIP, _OMITTED_EMPTY_GROUPS } from "../../synth
 import {
   at,
   Fraction,
-  b,
   Bytes,
-  bytesEq,
+  bytesEqual,
   descriptor,
   getOrThrow,
   assert,
   truthy,
   literal,
-  round,
   ValueError,
   type ClassAttributes,
   AttributeError,
-  typeName,
-} from "../../../pyrt/index.ts";
+  typeName, ascii } from "../../../pyrt/index.ts";
 import { ChunkField, type EffectParamDefs } from "../descriptors.ts";
 import { EssentialGraphicsController, SourcePropertyRef } from "../essential_graphics.ts";
 import { AVLayer, _unregisterSourceUsage } from "../layers/av_layer.ts";
@@ -423,7 +420,7 @@ export function _rewriteEgIdentity(
         // duplicate and re-derives them from the source property
         // (probed in AE 2026 on a slider controller).
         if (["CVal", "CDef"].includes(chunk.chunkType) && chunk.data?.length > 0) {
-          chunk.data = Bytes.repeat(b("\x00"), chunk.data.length);
+          chunk.data = Bytes.repeat(new Uint8Array(1), chunk.data.length);
         }
       }
       const cprp = findByListTypeOrNull(cctl.chunks, "CPrp");
@@ -700,7 +697,7 @@ export class CompItem extends AVItem {
   _keepTimesInside(): void {
     const cdta = this._cdta;
     const [timebase, unitsPerFrame] = _grid(cdta);
-    const endOfComp = round(cdta.duration * timebase);
+    const endOfComp = Math.round(cdta.duration * timebase) + 0;
     const lastFrame = endOfComp - unitsPerFrame;
     if (cdta.timeDividend > lastFrame) {
       cdta.timeDividend = lastFrame;
@@ -898,7 +895,7 @@ export class CompItem extends AVItem {
     cdta.workAreaStartDivisor = timebase;
     let endUnits: number | null =
       end == null ? null : _frameUnits(end, timebase, unitsPerFrame);
-    if (endUnits == null || endUnits >= round(cdta.duration * timebase)) {
+    if (endUnits == null || endUnits >= (Math.round(cdta.duration * timebase) + 0)) {
       endUnits = WORK_AREA_TO_END;
     }
     cdta.workAreaEndDividend = endUnits;
@@ -1248,7 +1245,7 @@ export class CompItem extends AVItem {
           const raw = lc._rawBody;
           if (
             raw.length >= _LDTA_SOURCE_ID_END &&
-            bytesEq(raw.slice(0, 4), b("ldta"))
+            bytesEqual(raw.slice(0, 4), ascii("ldta"))
           ) {
             const sid = Bytes.intFromBytes(
               raw.slice(_LDTA_SOURCE_ID_OFFSET, _LDTA_SOURCE_ID_END),
@@ -1697,8 +1694,8 @@ export class CompItem extends AVItem {
         uuidStr,
         source.width,
         source.height,
-        round(layer.inPoint * timebase),
-        round(layer.outPoint * timebase),
+        Math.round(layer.inPoint * timebase) + 0,
+        Math.round(layer.outPoint * timebase) + 0,
         timebase,
         thumbnail,
         this.id,
@@ -2162,7 +2159,7 @@ export class CompItem extends AVItem {
     this._insertLayer(layer);
 
     // AE rounds the zoom to 8 decimals before storing it.
-    const zoom = round((this.width * this.pixelAspect) / CameraLayer._zoomDividend, 8);
+    const zoom = Number(((this.width * this.pixelAspect) / CameraLayer._zoomDividend).toFixed(8));
 
     const transform = layer.transform;
     const anchorPoint = transform.property("ADBE Anchor Point");
@@ -2212,7 +2209,7 @@ export class CompItem extends AVItem {
     this._insertLayer(layer);
 
     // AE rounds the zoom to 8 decimals before storing it.
-    const zoom = round((this.width * this.pixelAspect) / LightLayer._zoomDividend, 8);
+    const zoom = Number(((this.width * this.pixelAspect) / LightLayer._zoomDividend).toFixed(8));
 
     const transform = layer.transform;
     const anchorPoint = transform.property("ADBE Anchor Point");
@@ -2684,7 +2681,7 @@ export class CompItem extends AVItem {
 
     // Text-document tdbs carries an empty cdat with 4 trailing zero
     // bytes (matches what AE writes).
-    const cdat = new CdatChunk({ pad: b("\x00\x00\x00\x00") });
+    const cdat = new CdatChunk({ pad: new Uint8Array(4) });
     const tdb4 = new Tdb4Chunk({
       dimensions: 1,
       timeBase: this._cdta.internalTimebase,

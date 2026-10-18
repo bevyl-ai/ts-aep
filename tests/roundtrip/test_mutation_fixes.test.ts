@@ -5,7 +5,7 @@
  */
 
 import { describe, expect, test } from "bun:test";
-import { getattr, hasattr, len, assert, truthy, valueEquals, StopIteration, ValueError, type Path } from "../../src/pyrt/index.ts";
+import { getMember, hasMember, len, assert, truthy, valueEquals, StopIteration, ValueError, type Path } from "../../src/pyrt/index.ts";
 import { makeTmpPath, raises } from "../../src/pyrt/pytest.ts";
 import { findByType } from "../../src/py_aep/binary/utils.ts";
 import { PropertyType } from "../../src/py_aep/enums/index.ts";
@@ -23,7 +23,7 @@ function* _walk(group: PropertyGroup, depth = 0): Generator<Property | PropertyG
   if (depth > 10) return;
   for (const child of group) {
     yield child;
-    if (!hasattr(child, "keyframes")) {
+    if (!hasMember(child, "keyframes")) {
       yield* _walk(asInstance(child, PropertyGroup), depth + 1);
     }
   }
@@ -36,7 +36,7 @@ function _layerRefs(app: Application): [string, string, string, number, boolean]
     const ids = new Set(comp.layers.map((lyr) => lyr.id));
     for (const lyr of comp.layers) {
       for (const prop of _walk(lyr)) {
-        const tdpi = getattr(prop, "_tdpi", null);
+        const tdpi = getMember(prop, "_tdpi", null);
         if (tdpi == null || !truthy(tdpi.value)) {
           continue;
         }
@@ -113,7 +113,7 @@ describe("TestEffectParameterIsNotIndexed", () => {
           param.moveTo(1);
         } else {
           // getattr returns the bare method, so bind it back to the param.
-          getattr(param, op).call(param);
+          getMember(param, op).call(param);
         }
       },
       "non-indexed group",
@@ -231,7 +231,7 @@ describe("TestCopyToCompTransform", () => {
         .filter(
           (prop): prop is Property =>
             prop instanceof Property &&
-            getattr(prop, "_tdb4", null) != null &&
+            getMember(prop, "_tdb4", null) != null &&
             !truthy(prop._tdbs.synthetic) &&
             truthy(prop._tdb4._timeBase),
         )
@@ -260,7 +260,7 @@ describe("TestCopyToCompTransform", () => {
         .filter(
           (prop): prop is Property =>
             prop instanceof Property &&
-            getattr(prop, "_tdb4", null) != null &&
+            getMember(prop, "_tdb4", null) != null &&
             !truthy(prop._tdbs.synthetic) &&
             truthy(prop._tdb4._timeBase),
         )

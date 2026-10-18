@@ -32,11 +32,7 @@ import {
   Bytes,
   decode,
   encode,
-  float,
-  rstrip,
-  setdefault,
-  split,
-  strip,
+  getOrInsert,
   ValueError, compare } from "../../pyrt/index.ts";
 import type { Path } from "../../pyrt/index.ts";
 
@@ -70,14 +66,14 @@ export function findPrefsFile(prefsDir: Path, prefType: PREFType): Path | null {
  * are appended to the previous logical line.
  */
 export function collapseContinuationLines(text: string): string[] {
-  const lines = split(text, "\n");
+  const lines = text.split("\n");
   const result: string[] = [];
   for (const line of lines) {
-    const stripped = rstrip(line);
+    const stripped = line.trimEnd();
     if (!stripped) continue;
     // Continuation lines start with tab and contain hex data
     if (result.length > 0 && stripped.startsWith("\t") && !stripped.startsWith('\t"')) {
-      result[result.length - 1] += strip(stripped);
+      result[result.length - 1] += stripped.trim();
     } else {
       result.push(stripped);
     }
@@ -113,9 +109,9 @@ export function parseHexValue(value: string): Uint8Array {
 
 /** Parse decimal text into an int when integral, else a float. */
 export function parseNumberText(text: string): number {
-  const stripped = strip(text);
+  const stripped = text.trim();
   // "30.0" and "30" both read as 30: integral values are plain numbers. `+ 0` turns "-0" into 0.
-  return /^[+-]?\d+$/.test(stripped) ? Number(stripped) + 0 : float(stripped);
+  return /^[+-]?\d+$/.test(stripped) ? Number(stripped) + 0 : Number(stripped);
 }
 
 /** Decode a preference value as text (hex escapes become UTF-8). */
@@ -167,7 +163,7 @@ export class PrefsFile {
     for (const line of collapseContinuationLines(text)) {
       const sectionMatch = _SECTION_RE.exec(line);
       if (sectionMatch) {
-        current = setdefault(sections, sectionMatch[1], new Map<string, string>());
+        current = getOrInsert(sections, sectionMatch[1], new Map<string, string>());
         continue;
       }
       const keyMatch = _KEY_RE.exec(line);

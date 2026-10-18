@@ -14,25 +14,19 @@ import * as zlib from "../../pyrt/zlib.ts";
 import {
   BytesIO,
   Path,
-  and,
-  at,
-  b,
   Bytes,
-  bytesEq,
+  bytesEqual,
   decode,
   IndexError,
   valueEquals,
   pySlice,
   literal,
-  rstrip,
   struct,
   StructError,
-  sum,
   UnicodeDecodeError,
   ValueError,
   warn,
-  type PathLike,
-} from "../../pyrt/index.ts";
+  type PathLike, ascii } from "../../pyrt/index.ts";
 import { PSB_8BYTE_KEYS as _PSB_8BYTE_KEYS, psdLayerRecordCount, readBounded } from "./media_probe.ts";
 
 /** Raised when a `.psd`/`.psb` file's layers cannot be enumerated. */
@@ -349,11 +343,11 @@ export const _ADJUSTMENT_KEYS: ReadonlySet<string> = new Set(
     "thrs",
     "grdm",
     "selc",
-  ].map((k) => Bytes.toHex(b(k))),
+  ].map((k) => Bytes.toHex(ascii(k))),
 );
 
 // Fill-layer additional-info keys: solid color, gradient and pattern fills.
-export const _FILL_KEYS: ReadonlySet<string> = new Set(["SoCo", "GdFl", "PtFl"].map((k) => Bytes.toHex(b(k))));
+export const _FILL_KEYS: ReadonlySet<string> = new Set(["SoCo", "GdFl", "PtFl"].map((k) => Bytes.toHex(ascii(k))));
 
 // Maps every byte to 0 (zero) or 1 (non-zero), so rows of samples can be
 // combined with integer AND / OR.
@@ -509,7 +503,7 @@ export function readPsdLayers(file: PathLike, kw: { maskBoxes?: boolean } = {}):
     // NOTE(port): Python opens the file and reads only the header and Layer Info; the whole file is read into a BytesIO here, so parsed results are identical (only peak memory differs).
     const fp = new BytesIO(new Path(file).readBytes());
     const header = fp.read(26);
-    if (!bytesEq(header.slice(0, 4), b("8BPS"))) {
+    if (!bytesEqual(header.slice(0, 4), ascii("8BPS"))) {
       throw new UnsupportedPsdLayersError(`${name}: not a valid PSD/PSB file.`);
     }
     const isPsb = struct.unpack(">H", header.slice(4, 6))[0] === 2;
@@ -543,11 +537,11 @@ export function readPsdLayers(file: PathLike, kw: { maskBoxes?: boolean } = {}):
       }
       channelLists.push(channels);
       off += 8; // blend mode signature (4) + key (4)
-      const clipped = at(data, off + 1) !== 0; // opacity, CLIPPING, flags, filler
+      const clipped = data.at(off + 1)! !== 0; // opacity, CLIPPING, flags, filler
       // Flags bit 1 marks a layer hidden in Photoshop; AE 2026 imports
       // it with the comp layer's video switch off (synthetic
       // hidden_layer.psd, COMP and COMP_CROPPED_LAYERS).
-      const visible = !(at(data, off + 2) & 0x02);
+      const visible = !(data.at(off + 2)! & 0x02);
       off += 4;
       const extraLen = struct.unpack(">I", data.slice(off, off + 4))[0];
       off += 4;
@@ -609,7 +603,7 @@ export function readPsdLayers(file: PathLike, kw: { maskBoxes?: boolean } = {}):
       const region: [number, number, number, number] = rec.isFill ? [0, 0, canvasW, canvasH] : rec.bounds;
       if (region[2] <= region[0] || region[3] <= region[1]) continue;
       const area = (region[2] - region[0]) * (region[3] - region[1]);
-      const source = rec.isFill ? data.length : sum(channels.map(([, n]) => n));
+      const source = rec.isFill ? data.length : channels.map(([, n]) => n).reduce((total, x) => total + x, 0);
       if (area > _MAX_INFLATION * source) {
         throw new UnsupportedPsdLayersError(`${name}: layer ${literal(rec.name)} is larger than its pixel data.`);
       }
@@ -650,7 +644,7 @@ export function _userMask(mask: Uint8Array, fileName: string, layerName: string)
   const flags = mask[17];
   let pos = 18;
   if (flags & 0x10) {
-    const parameters = at(mask, pos);
+    const parameters = mask.at(pos)!;
     pos += 1;
     if (parameters & 0x03) {
       // NOTE(port): message and category match warnings.warn; stacklevel=3 only picks the reported source location, which has no JS equivalent.
@@ -697,7 +691,7 @@ export function _visibleBox(
     maskData != null && mr > ml && mb > mt ? _channelFlags(maskData, mr - ml, mb - mt, depth, isPsb) : [];
   const alphaRows: Uint8Array[] | null =
     alpha != null ? _channelFlags(alpha, width, rb - rt, depth, isPsb) : null;
-  const defaultRow = Bytes.repeat(b(mask.default_ ? "\x01" : "\x00"), width);
+  const defaultRow = Bytes.repeat(ascii(mask.default_ ? "\x01" : "\x00"), width);
   // Outside its rectangle the mask takes its default color, so with a black
   // default only the rectangle's rows can show.
   const [y0, y1] = mask.default_ ? [rt, rb] : [Math.max(rt, mt), Math.min(rb, mb)];
@@ -827,7 +821,7 @@ export function _undoPrediction(row: Uint8Array, width: number, sample: number):
     let acc = 0;
     for (let i = 0; i < values.length; i++) {
       acc += values[i];
-      dv.setUint16(2 * i, and(acc, 0xffff), false);
+      dv.setUint16(2 * i, acc & 0xffff, false);
     }
     return out;
   }
@@ -835,7 +829,7 @@ export function _undoPrediction(row: Uint8Array, width: number, sample: number):
   let acc = 0;
   for (let i = 0; i < row.length; i++) {
     acc += row[i];
-    out[i] = and(acc, 0xff);
+    out[i] = acc & 0xff;
   }
   return out;
 }
@@ -908,7 +902,7 @@ export function _parseLayerExtra(
   pos += 4 + maskLen;
   pos += 4 + struct.unpack(">I", extra.slice(pos, pos + 4))[0];
   // Legacy Pascal name, padded so (1 + length) is a multiple of 4.
-  const pascalLen = at(extra, pos);
+  const pascalLen = extra.at(pos)!;
   const pascal = decode(extra.slice(pos + 1, pos + 1 + pascalLen), "latin-1");
   pos += 1 + pascalLen;
   pos += (4 - ((1 + pascalLen) % 4)) % 4;
@@ -923,12 +917,12 @@ export function _parseLayerExtra(
   let lfxs: Uint8Array | null = null;
   let fillOpacity: number | null = null;
   let blendInterior: boolean | null = null;
-  let channelRestrictions: Uint8Array = b("");
+  let channelRestrictions: Uint8Array = new Uint8Array();
   let vmsk: Uint8Array | null = null;
   let vsms: Uint8Array | null = null;
   while (pos + 12 <= extra.length) {
     const signature = extra.slice(pos, pos + 4);
-    if (!bytesEq(signature, b("8BIM")) && !bytesEq(signature, b("8B64"))) break;
+    if (!bytesEqual(signature, ascii("8BIM")) && !bytesEqual(signature, ascii("8B64"))) break;
     const key = extra.slice(pos + 4, pos + 8);
     let blockLen: number;
     let blockStart: number;
@@ -940,36 +934,36 @@ export function _parseLayerExtra(
       blockStart = pos + 12;
     }
     const block = extra.slice(blockStart, blockStart + blockLen);
-    if (bytesEq(key, b("luni"))) {
+    if (bytesEqual(key, ascii("luni"))) {
       const charCount = struct.unpack(">I", block.slice(0, 4))[0];
-      unicodeName = rstrip(decode(block.slice(4, 4 + charCount * 2), "utf-16-be"), "\x00");
-    } else if (bytesEq(key, b("lyid"))) {
+      unicodeName = decode(block.slice(4, 4 + charCount * 2), "utf-16-be").replace(/\0+$/, "");
+    } else if (bytesEqual(key, ascii("lyid"))) {
       layerId = struct.unpack(">I", block.slice(0, 4))[0];
-    } else if (bytesEq(key, b("lsct")) && blockLen >= 4) {
+    } else if (bytesEqual(key, ascii("lsct")) && blockLen >= 4) {
       sectionDivider = struct.unpack(">I", block.slice(0, 4))[0];
     } else if (_ADJUSTMENT_KEYS.has(Bytes.toHex(key))) {
       isAdjustment = true;
     } else if (_FILL_KEYS.has(Bytes.toHex(key))) {
       isFill = true;
-    } else if (bytesEq(key, b("lfx2"))) {
+    } else if (bytesEqual(key, ascii("lfx2"))) {
       lfx2 = block;
-    } else if (bytesEq(key, b("lmfx"))) {
+    } else if (bytesEqual(key, ascii("lmfx"))) {
       lmfx = block;
-    } else if (bytesEq(key, b("lfxs"))) {
+    } else if (bytesEqual(key, ascii("lfxs"))) {
       // Group headers store their styles under `lfxs` (same descriptor
       // layout as `lfx2`; probed Photoshop 2026, psd_group_styles.psd).
       lfxs = block;
-    } else if (bytesEq(key, b("vmsk"))) {
+    } else if (bytesEqual(key, ascii("vmsk"))) {
       vmsk = block;
-    } else if (bytesEq(key, b("vsms"))) {
+    } else if (bytesEqual(key, ascii("vsms"))) {
       // CS6+ variant of vmsk (written when the mask needs the newer
       // feature set); same path-record layout.
       vsms = block;
-    } else if (bytesEq(key, b("iOpa")) && blockLen >= 1) {
-      fillOpacity = at(block, 0);
-    } else if (bytesEq(key, b("infx")) && blockLen >= 1) {
-      blendInterior = at(block, 0) !== 0;
-    } else if (bytesEq(key, b("brst"))) {
+    } else if (bytesEqual(key, ascii("iOpa")) && blockLen >= 1) {
+      fillOpacity = block[0];
+    } else if (bytesEqual(key, ascii("infx")) && blockLen >= 1) {
+      blendInterior = block[0] !== 0;
+    } else if (bytesEqual(key, ascii("brst"))) {
       channelRestrictions = block;
     }
     pos = blockStart + blockLen + (blockLen % 2); // blocks padded to even

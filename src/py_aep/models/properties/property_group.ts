@@ -7,15 +7,13 @@ import {
   at,
   Bytes,
   getOr,
-  getattr,
+  getMember,
   getOrThrow,
-  max,
   objectGetattr,
   objectSetattr,
   assert,
   pyClassHooks,
   literal,
-  split,
   instanceDict,
   typeName,
 } from "../../../pyrt/index.ts";
@@ -554,7 +552,7 @@ export class PropertyGroup extends PropertyBase {
   get autoName(): string {
     if (this._autoName != null) return this._autoName;
     if (this._fnamUtf8 != null) {
-      const name: string = split(this._fnamUtf8.value, "\0")[0];
+      const name: string = this._fnamUtf8.value.split("\0")[0];
       return name;
     }
     return MATCH_NAME_TO_AUTO_NAME.get(this.matchName) ?? this.matchName;
@@ -926,10 +924,10 @@ export class PropertyGroup extends PropertyBase {
       // variable font's family (FontObject.familyPrefix semantics).
       // Python `layer.text.sourceText.value`: only a text layer has the group.
       const text = this._containingLayer.text;
-      if (text == null) throw new AttributeError("'NoneType' object has no attribute 'sourceText'");
+      if (text == null) throw new AttributeError("cannot read 'sourceText' of null");
       const textDoc = text.property("ADBE Text Document").value;
       const psName: string = textDoc.font || "";
-      const family = split(psName, "-", 1)[0];
+      const family = psName.split("-")[0];
       const resolved = family ? resolveFontExact(family) : null;
       if (resolved == null) {
         throw new ValueError(
@@ -968,7 +966,7 @@ export class PropertyGroup extends PropertyBase {
       ["_tdum", "tdum", axis.minValue],
       ["_tduM", "tduM", axis.maxValue],
     ] as const) {
-      const existing = getattr(slot, attr);
+      const existing = getMember(slot, attr);
       if (existing == null) {
         const created = new TdumChunk({ chunkType, values: [bound] });
         tdbs.chunks.push(created);
@@ -1069,11 +1067,7 @@ export class PropertyGroup extends PropertyBase {
     const existing = this.properties.filter(
       (m): m is MaskPropertyGroup => m._isMaskGroup(),
     );
-    const nextId = max(
-      existing.map((m) => m._mkif.maskId),
-      null,
-      0,
-    ) + 1;
+    const nextId = Math.max(0, ...existing.map((m) => m._mkif.maskId)) + 1;
     // The name is numbered past the highest "Mask N" name, independently
     // of the id (AE 2026: beside "Mask 1" and a mask renamed "stored" the
     // new mask is id 3 "Mask 2"; beside "Mask 1" and "Mask 3", "Mask 4").

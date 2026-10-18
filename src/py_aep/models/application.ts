@@ -8,7 +8,7 @@ import { ChunkField } from "./descriptors.ts";
 import { validateAeVersion, validateU1 } from "./validators.ts";
 import type { Preferences } from "./preferences.ts";
 import type { Viewer } from "./viewer/viewer.ts";
-import { descriptor, split, ValueError, type Path, type ClassAttributes } from "../../pyrt/index.ts";
+import { descriptor, ValueError, type Path, type ClassAttributes } from "../../pyrt/index.ts";
 import { Project } from "./project.ts";
 
 // Version-gated parts After Effects expects from the format version alone,
@@ -23,7 +23,7 @@ export const _LAYOUT_PARTS = ["matte layer id", "media replacement folder id"] a
 export function _validateVersion(value: string, obj: Application): void {
   validateAeVersion(value);
   const current = obj._head.aeVersionMajor;
-  const target = Number.parseInt(split(value, ".", 1)[0], 10);
+  const target = Number.parseInt(value.split(".")[0], 10);
   if (obj._head.fileFormatVersion < LEGACY_NAME_FORMAT) {
     // Every release py_aep writes reads names as `Utf8` children, where
     // this project holds them as bare strings (and lacks root chunks

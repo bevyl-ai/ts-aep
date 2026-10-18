@@ -17,7 +17,7 @@ import { describe, expect, test } from "bun:test";
 import {
   BytesIO,
   Bytes,
-  getattr,
+  getMember,
   getOrThrow,
   len,
   lruCache,
@@ -25,7 +25,7 @@ import {
   assert,
   truthy,
   valueEquals,
-  setdefault,
+  getOrInsert,
   sorted,
   StopIteration,
   compositeKey,
@@ -176,12 +176,12 @@ class _Structure {
       }
     }
     const itemType = asInstance(idta, IdtaChunk).itemType;
-    setdefault(this.items, itemType, new Set<string>()).add(tags.join(" "));
+    getOrInsert(this.items, itemType, new Set<string>()).add(tags.join(" "));
   }
 
   _add_view_layer(view: ListChunk): void {
     const ldta = view.chunks[0];
-    const name = getattr(view.chunks[1], "value");
+    const name = getMember(view.chunks[1], "value");
     this.view_layers.set(compositeKey(view.listType, name), _signature(view));
     this.view_ldta_tails.add(
       compositeKey(view.listType, Bytes.toHex(Bytes.slice(ldta.tobytes(), 147, 160))),
@@ -202,7 +202,7 @@ class _Structure {
       // A new shape layer has no contents yet; AE's samples have some.
       .filter((c) => c.chunkType === "tdmn" && _tag(c) !== "tdmn=ADBE Root Vectors Group")
       .map((c) => _tag(c));
-    setdefault(this.groups, ldta.layerType, new Set<string>()).add(groups.join(" "));
+    getOrInsert(this.groups, ldta.layerType, new Set<string>()).add(groups.join(" "));
     if (ldta.layerType === 1) {
       // light
       this.light_source_ids.add(ldta.sourceId);

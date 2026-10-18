@@ -10,18 +10,12 @@
 import { NUMBER_RE } from "./_util.ts";
 import { UnsupportedSVGError } from "./errors.ts";
 import {
-  float,
   islower,
   isspace,
-  max,
-  min,
-  mod,
   valueEquals,
   radians,
   literal,
-  hypot,
-  patternMatch,
-} from "../../pyrt/index.ts";
+  patternMatch, hypot } from "../../pyrt/index.ts";
 
 /** A cubic segment: start, control 1, control 2, end. */
 export type CubicSeg = [number, number, number, number, number, number, number, number];
@@ -178,7 +172,7 @@ export class _PathParser {
       if (this._i >= this._tokens.length || _COMMANDS.has(this._tokens[this._i])) {
         throw new UnsupportedSVGError("Path data ended mid-command");
       }
-      args.push(float(this._tokens[this._i]));
+      args.push(Number(this._tokens[this._i]));
       this._i += 1;
     }
     return args;
@@ -306,7 +300,7 @@ export class _PathParser {
     }
     rx = Math.abs(rx);
     ry = Math.abs(ry);
-    const phi = radians(mod(phiDeg, 360.0));
+    const phi = radians(((phiDeg % 360.0) + 360.0) % 360.0);
     const cosP = Math.cos(phi);
     const sinP = Math.sin(phi);
     const dx = (x1 - x) / 2.0;
@@ -328,7 +322,7 @@ export class _PathParser {
     } else {
       const num = rx * rx * ry * ry - rx * rx * y1p * y1p - ry * ry * x1p * x1p;
       const den = rx * rx * y1p * y1p + ry * ry * x1p * x1p;
-      co = den !== 0 ? Math.sqrt(max([0.0, num / den])) : 0.0;
+      co = den !== 0 ? Math.sqrt(Math.max(0.0, num / den)) : 0.0;
     }
     if (large === sweep) {
       co = -co;
@@ -341,7 +335,7 @@ export class _PathParser {
     const angle = (ux: number, uy: number, vx: number, vy: number): number => {
       const dot = ux * vx + uy * vy;
       const ln = hypot(ux, uy) * hypot(vx, vy);
-      const ang = ln !== 0 ? Math.acos(max([-1.0, min([1.0, dot / ln])])) : 0.0;
+      const ang = ln !== 0 ? Math.acos(Math.max(-1.0, Math.min(1.0, dot / ln))) : 0.0;
       return (ux * vy - uy * vx) < 0 ? -ang : ang;
     };
 
@@ -353,7 +347,7 @@ export class _PathParser {
       dtheta += 2 * Math.PI;
     }
 
-    const nSegs = max([1, Math.trunc(Math.ceil(Math.abs(dtheta) / (Math.PI / 2.0)))]);
+    const nSegs = Math.max(1, Math.trunc(Math.ceil(Math.abs(dtheta) / (Math.PI / 2.0))));
     const delta = dtheta / nSegs;
     const t = (4.0 / 3.0) * Math.tan(delta / 4.0);
     let theta = theta1;

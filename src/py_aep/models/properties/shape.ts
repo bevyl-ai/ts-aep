@@ -3,10 +3,7 @@
 import {
   AttributeError,
   ValueError,
-  mod,
   assert,
-  min,
-  max,
   descriptor,
   truediv,
 } from "../../../pyrt/index.ts";
@@ -275,10 +272,10 @@ export class Shape {
     const xs = all.map((p) => p[0]);
     const ys = all.map((p) => p[1]);
     const shph = this._shph;
-    shph.topLeftX = min(xs);
-    shph.topLeftY = min(ys);
-    shph.bottomRightX = max(xs);
-    shph.bottomRightY = max(ys);
+    shph.topLeftX = Math.min(...xs);
+    shph.topLeftY = Math.min(...ys);
+    shph.bottomRightX = Math.max(...xs);
+    shph.bottomRightY = Math.max(...ys);
     const total = this._points.length;
     for (let j = 0; j < count; j++) {
       const i = 3 * j;
@@ -495,7 +492,7 @@ export class Shape {
     let result: number[][] = [];
     for (let i = 0; i < this._points.length; i += 3) {
       const v = this._denormalizePoint(this._points[i]);
-      const t = this._denormalizePoint(this._points[mod(i + offset, this._points.length)]);
+      const t = this._denormalizePoint(this._points[(i + offset + this._points.length) % this._points.length]);
       result.push([t[0] - v[0], t[1] - v[1]]);
     }
     const maskSize = this._isMask ? this._compSize : null;

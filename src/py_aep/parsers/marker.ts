@@ -14,7 +14,6 @@ import type { Property } from "../models/properties/property.ts";
 import type { CompItem } from "../models/items/composition.ts";
 import type { Keyframe } from "../models/properties/keyframe.ts";
 import { parseProperty } from "./property_value.ts";
-import { at } from "../../pyrt/index.ts";
 import { late } from "../models/late.ts";
 
 /**
@@ -49,7 +48,7 @@ export function parseMarkers(
   markerProp._kfValueContainer = mrkyChunk;
   const nmrdChunks = filterByListType(mrkyChunk.chunks, "Nmrd");
   for (const [i, nmrdChunk] of nmrdChunks.entries()) {
-    const kf = at(markerProp.keyframes, i);
+    const kf = markerProp.keyframes.at(i)!;
     kf._cacheValue(
       parseMarker(
         nmrdChunk,
@@ -81,11 +80,11 @@ export function parseMarker(
 
   return MarkerValue._fromBinary({
     _nmhd: nmhdChunk,
-    _commentUtf8: at(utf8Chunks, 0),
-    _chapterUtf8: at(utf8Chunks, 1),
-    _urlUtf8: at(utf8Chunks, 2),
-    _frameTargetUtf8: at(utf8Chunks, 3),
-    _cuePointNameUtf8: at(utf8Chunks, 4),
+    _commentUtf8: utf8Chunks[0],
+    _chapterUtf8: utf8Chunks[1],
+    _urlUtf8: utf8Chunks[2],
+    _frameTargetUtf8: utf8Chunks[3],
+    _cuePointNameUtf8: utf8Chunks[4],
     _keyframe: keyframe,
     frameTime: frameTime,
     _paramUtf8s: paramUtf8s,

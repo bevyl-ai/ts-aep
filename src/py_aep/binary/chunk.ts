@@ -16,14 +16,13 @@ import {
   StopIteration,
   ValueError,
   attrsEq,
-  b,
   Bytes,
   decode,
   define,
   encode,
   field,
   fields,
-  getattr,
+  getMember,
   valueEquals,
   literal,
   struct,
@@ -261,7 +260,7 @@ export class Chunk extends AttrsBase {
     if (optionalStart < dataFields.length) {
       lastIdx = optionalStart;
       for (let i = dataFields.length - 1; i >= optionalStart; i--) {
-        if (getattr(this, dataFields[i].name) != null) {
+        if (getMember(this, dataFields[i].name) != null) {
           lastIdx = i + 1;
           break;
         }
@@ -275,7 +274,7 @@ export class Chunk extends AttrsBase {
       for (let i = 0; i < lastIdx; i++) {
         const f = dataFields[i];
         const fe = endians.get(i) ?? ">";
-        let value = getattr(this, f.name);
+        let value = getMember(this, f.name);
         value = _encodeValue(value, i, encodings, coerces, fe, f.metadata["fmt"]);
         written += fp.pack(_structFor(f.metadata["fmt"], fe), [value]);
       }
@@ -284,7 +283,7 @@ export class Chunk extends AttrsBase {
       const values: struct.PackValue[] = encodeFields !== null ? encodeFields(this) : [];
       for (let i = values.length; i < lastIdx; i++) {
         const f = dataFields[i];
-        let value = getattr(this, f.name);
+        let value = getMember(this, f.name);
         value = _encodeValue(value, i, encodings, coerces, ">", f.metadata["fmt"]);
         values.push(value);
       }
@@ -293,7 +292,7 @@ export class Chunk extends AttrsBase {
 
     if (itemsInfo != null) {
       const itemsName = itemsInfo[0];
-      for (const item of getattr(this, itemsName)) {
+      for (const item of getMember(this, itemsName)) {
         written += writeBytes(fp, item.tobytes());
       }
     }
@@ -327,9 +326,9 @@ export class Chunk extends AttrsBase {
 
 define(Chunk, {
   chunkType: field({ default: "" }),
-  data: field({ default: b("") }),
+  data: field({ default: new Uint8Array() }),
   synthetic: field({ default: false, repr: false }),
-  _trailing: field({ default: b(""), repr: false, eq: false, init: false }),
+  _trailing: field({ default: new Uint8Array(), repr: false, eq: false, init: false }),
 });
 
 /** LIST or RIFX container chunk.
@@ -454,12 +453,12 @@ export class DeferredListChunk extends ListChunk {
     const {
       chunkType = "LIST",
       listType = "",
-      rawBody = b(""),
+      rawBody = new Uint8Array(),
       rawCtx = null,
     } = kwargs;
     this.chunkType = chunkType;
     this.listType = listType;
-    this.data = b("");
+    this.data = new Uint8Array();
     this.synthetic = false;
     this._rawBody = rawBody;
     this._rawCtx = rawCtx;
@@ -500,14 +499,14 @@ Object.defineProperty(DeferredListChunk.prototype, "chunks", {
         deferListTypes: _deferredChildren(this.listType, ctx.grandparentListType),
       });
       this._parsedChunks = parsed;
-      this._rawBody = b("");
+      this._rawBody = new Uint8Array();
       this._rawCtx = null;
     }
     return parsed;
   },
   set(this: DeferredListChunk, value: Chunk[]) {
     this._parsedChunks = value;
-    this._rawBody = b("");
+    this._rawBody = new Uint8Array();
   },
 });
 
@@ -619,7 +618,7 @@ export class ContainerChunk extends Chunk {
     const encoded = encode(cls._legacyString(value), "UTF-8", "surrogateescape");
     const size = this.data.length || (_LEGACY_FIXED_BUFFERS.get(this.chunkType) ?? null);
     if (!_LEGACY_FIXED_BUFFERS.has(this.chunkType) || size == null) {
-      return Bytes.concat(encoded, b("\x00"));
+      return Bytes.concat(encoded, new Uint8Array(1));
     }
     if (encoded.length + 1 > size) {
       throw new ValueError(
@@ -662,7 +661,7 @@ export const _legacyNames = new ContextVar<boolean>("_legacy_names", { default: 
 
 /** The NUL-terminated string at the start of a legacy body. */
 export function _legacyText(data: Uint8Array): string {
-  const nul = Bytes.indexOf(data, b("\x00"));
+  const nul = Bytes.indexOf(data, new Uint8Array(1));
   return decode(nul >= 0 ? data.slice(0, nul) : data, "UTF-8", "surrogateescape");
 }
 
