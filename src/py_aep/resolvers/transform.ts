@@ -17,7 +17,17 @@
  * Standard rotation matrices apply without sign flips.
  */
 
-import { INSPECT, describe, hypot } from "../../pyrt/index.ts";
+import {
+  INSPECT,
+  describe,
+  hypot,
+  AttributeError,
+  NotImplementedError,
+  ValueError,
+  degrees,
+  typeName,
+  literal,
+} from "../../pyrt/index.ts";
 import { AutoOrientType, LayerType, LightType } from "../enums/index.ts";
 import type { CompItem } from "../models/items/composition.ts";
 import type { AVLayer } from "../models/layers/av_layer.ts";
@@ -26,7 +36,6 @@ import type { LightLayer } from "../models/layers/light_layer.ts";
 import type { MatchNameTypes } from "../models/properties/match_name_types.ts";
 import type { Property } from "../models/properties/property.ts";
 import type { PropertyGroup } from "../models/properties/property_group.ts";
-import { AttributeError, NotImplementedError, ValueError, degrees, typeName, literal } from "../../pyrt/index.ts";
 
 type _PropertyName = {
   [K in keyof MatchNameTypes]: MatchNameTypes[K] extends Property<infer _V> ? K : never;
@@ -34,9 +43,9 @@ type _PropertyName = {
 
 type _PropertyValueOf<K extends _PropertyName> = MatchNameTypes[K] extends Property<infer V> ? V : never;
 
-export const _DEG2RAD = Math.PI / 180.0;
-export const _RAD2DEG = 180.0 / Math.PI;
-export const _EPSILON = 1e-10;
+const _DEG2RAD = Math.PI / 180.0;
+const _RAD2DEG = 180.0 / Math.PI;
+const _EPSILON = 1e-10;
 
 /** 4x4 matrix stored row-major: `m{@link col | row}`. */
 export class Mat4 {
@@ -188,7 +197,7 @@ export function _translation(x: number, y: number, z: number): Mat4 {
   return m;
 }
 
-export function _scale(sx: number, sy: number, sz: number): Mat4 {
+function _scale(sx: number, sy: number, sz: number): Mat4 {
   const m = Mat4.identity();
   m.row(0)[0] = sx;
   m.row(1)[1] = sy;
@@ -387,9 +396,7 @@ export function buildWorldMatrix(
       spaceAspect = 1.0;
     } else {
       const sourceAspect = layerSourceAspect(lyr);
-      m = m.multiply(
-        _layerLocalMatrix(lyr, time, flatten2d, autoOrient, sourceAspect, spaceAspect),
-      );
+      m = m.multiply(_layerLocalMatrix(lyr, time, flatten2d, autoOrient, sourceAspect, spaceAspect));
       spaceAspect = sourceAspect;
     }
   }
@@ -423,19 +430,21 @@ export function aspectScale(aspect: number): Mat4 {
  * map square pixels to square pixels (so its rotation can be read).
  */
 export function squarePixels(matrix: Mat4, compAspect: number, spaceAspect: number): Mat4 {
-  return aspectScale(compAspect).multiply(matrix).multiply(aspectScale(1.0 / spaceAspect));
+  return aspectScale(compAspect)
+    .multiply(matrix)
+    .multiply(aspectScale(1.0 / spaceAspect));
 }
 
 /**
  * Evaluate `group[match_name]`: static `value` when `time` is `null`,
  * else `value_at_time(time)`.
  */
-export function _propValue<K extends _PropertyName>(
+function _propValue<K extends _PropertyName>(
   group: PropertyGroup,
   matchName: K,
   time: number | null,
 ): _PropertyValueOf<K>;
-export function _propValue(group: PropertyGroup, matchName: _PropertyName, time: number | null) {
+function _propValue(group: PropertyGroup, matchName: _PropertyName, time: number | null) {
   const prop = group.property(matchName);
   if (time == null) return prop.value;
   return prop.valueAtTime(time);
@@ -452,7 +461,7 @@ export function _propValue(group: PropertyGroup, matchName: _PropertyName, time:
  * a parent's Orientation does not turn it at all (measured on AE 2026: a
  * parent with Orientation [0, 0, 30] leaves the child's Rotate Z at 0).
  */
-export function _layerLocalMatrix(
+function _layerLocalMatrix(
   layer: Layer,
   time: number | null = null,
   flatten2d = false,
@@ -499,8 +508,8 @@ export function _layerLocalMatrix(
 }
 
 // Layer types (`ldta.layerType`) a child parents to as a rig: light, camera.
-export const _RIG_TYPES: ReadonlySet<number> = new Set<number>([LayerType.LIGHT, LayerType.CAMERA]);
-export const _AIMED_LIGHTS: ReadonlySet<number> = new Set<number>([LightType.SPOT, LightType.PARALLEL]);
+const _RIG_TYPES: ReadonlySet<number> = new Set<number>([LayerType.LIGHT, LayerType.CAMERA]);
+const _AIMED_LIGHTS: ReadonlySet<number> = new Set<number>([LightType.SPOT, LightType.PARALLEL]);
 
 /**
  * Whether a camera or light layer is a two-node rig that looks at its
@@ -520,8 +529,7 @@ function _isAvLayer(layer: Layer): layer is AVLayer {
 export function rigAimsAtPoi(layer: Layer): boolean {
   const layerType = layer._ldta.layerType;
   if (!_RIG_TYPES.has(layerType)) return false;
-  const aims =
-    layerType === LayerType.CAMERA || (_isLight(layer) && _AIMED_LIGHTS.has(layer.lightType));
+  const aims = layerType === LayerType.CAMERA || (_isLight(layer) && _AIMED_LIGHTS.has(layer.lightType));
   return aims && layer.autoOrient === AutoOrientType.CAMERA_OR_POINT_OF_INTEREST;
 }
 
@@ -536,7 +544,7 @@ export function rigAimsAtPoi(layer: Layer): boolean {
  * The look-at aims in square pixels, its Position and point of interest
  * widened by the pixel aspect of the space they live in.
  */
-export function _rigRotation(layer: Layer, time: number | null, spaceAspect: number): Mat4 {
+function _rigRotation(layer: Layer, time: number | null, spaceAspect: number): Mat4 {
   const transform = layer.transform;
 
   const value = <K extends _PropertyName>(matchName: K): _PropertyValueOf<K> => _propValue(transform, matchName, time);
@@ -563,7 +571,7 @@ export function _rigRotation(layer: Layer, time: number | null, spaceAspect: num
  * A camera or light's rig, turning in square pixels like a layer (see
  * `buildLocalMatrix`).
  */
-export function _rigMatrix(layer: Layer, time: number | null, spaceAspect: number): Mat4 {
+function _rigMatrix(layer: Layer, time: number | null, spaceAspect: number): Mat4 {
   const position = _propValue(layer.transform, "ADBE Position", time);
   let m = _rigRotation(layer, time, spaceAspect);
   if (spaceAspect !== 1.0) m = _scale(1.0 / spaceAspect, 1.0, 1.0).multiply(m);
@@ -582,7 +590,7 @@ export function _rigMatrix(layer: Layer, time: number | null, spaceAspect: numbe
  * @throws {@link NotImplementedError} For separated Position dimensions along a path, a parented
  *   layer turned towards the camera, and characters turned towards the camera.
  */
-export function _autoRotation(layer: Layer, time: number, position: number[]): [Mat4 | null, number] {
+function _autoRotation(layer: Layer, time: number, position: number[]): [Mat4 | null, number] {
   const mode = layer.autoOrient;
   const threeD = !!layer._ldta.threeDLayer;
   if (mode === AutoOrientType.ALONG_PATH) {
@@ -623,7 +631,7 @@ export function _autoRotation(layer: Layer, time: number, position: number[]): [
  * World position of the camera active at `time` in `layer`'s comp:
  * the front-most enabled camera layer, else the comp's default camera.
  */
-export function _cameraPosition(layer: Layer, time: number): number[] {
+function _cameraPosition(layer: Layer, time: number): number[] {
   const comp = layer.containingComp;
   // Python `cast("AVLayer", layer)._active_camera_at(time)`.
   if (!_isAvLayer(layer)) {
@@ -642,7 +650,7 @@ export function _cameraPosition(layer: Layer, time: number): number[] {
 // Matrix decomposition
 // ------------------------------------------------------------------
 
-export function _vec3Norm(v: number[]): number {
+function _vec3Norm(v: number[]): number {
   // hypot, not sqrt(x*x + y*y + z*z): squaring overflows to inf above ~1.34e154
   // and the norm then poisons every value derived from it. Nested 2-argument
   // calls because hypot only takes 3 arguments from Python 3.8.
@@ -650,14 +658,11 @@ export function _vec3Norm(v: number[]): number {
 }
 
 /** Determinant of the upper-left 3x3 of a 4x4 matrix. */
-export function _mat3Det(m: Mat4): number {
+function _mat3Det(m: Mat4): number {
   return (
-    m.row(0)[0] *
-      (m.row(1)[1] * m.row(2)[2] - m.row(1)[2] * m.row(2)[1]) -
-    m.row(0)[1] *
-      (m.row(1)[0] * m.row(2)[2] - m.row(1)[2] * m.row(2)[0]) +
-    m.row(0)[2] *
-      (m.row(1)[0] * m.row(2)[1] - m.row(1)[1] * m.row(2)[0])
+    m.row(0)[0] * (m.row(1)[1] * m.row(2)[2] - m.row(1)[2] * m.row(2)[1]) -
+    m.row(0)[1] * (m.row(1)[0] * m.row(2)[2] - m.row(1)[2] * m.row(2)[0]) +
+    m.row(0)[2] * (m.row(1)[0] * m.row(2)[1] - m.row(1)[1] * m.row(2)[0])
   );
 }
 
@@ -705,9 +710,7 @@ export function rotationPart(matrix: Mat4): Mat4 {
  * does not depend on them.
  */
 export function composeOrientation(orientation: number[], delta: Mat4): number[] {
-  const current = _rotateX(orientation[0])
-    .multiply(_rotateY(orientation[1]))
-    .multiply(_rotateZ(orientation[2]));
+  const current = _rotateX(orientation[0]).multiply(_rotateY(orientation[1])).multiply(_rotateZ(orientation[2]));
   const combined = delta.multiply(current);
   const angles = _eulerXyz(
     combined.row(0)[0],
@@ -765,10 +768,7 @@ export function stripOrientation(matrix: Mat4, orientation: number[]): Mat4 {
  * @returns A tuple of `(position, scale_pct, rotation_z, rotate_x, rotate_y)` where `scalePct` is
  *   in percentage units (100 = 1x).
  */
-export function decomposeTransform(
-  matrix: Mat4,
-  anchor: number[],
-): [number[], number[], number, number, number] {
+export function decomposeTransform(matrix: Mat4, anchor: number[]): [number[], number[], number, number, number] {
   const ax = anchor[0];
   const ay = anchor[1];
   const az = anchor.length > 2 ? anchor[2] : 0.0;
@@ -868,11 +868,11 @@ export function _eulerXyz(
 // Vector helpers
 // ------------------------------------------------------------------
 
-export function _vec3Cross(a: number[], b: number[]): number[] {
+function _vec3Cross(a: number[], b: number[]): number[] {
   return [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
 }
 
-export function _vec3Normalize(v: number[]): number[] {
+function _vec3Normalize(v: number[]): number[] {
   const n = _vec3Norm(v);
   if (n < _EPSILON) throw new ValueError("cannot normalize a zero-length vector");
   return [v[0] / n, v[1] / n, v[2] / n];
@@ -929,15 +929,7 @@ export function transformFromPoints(
   const yHat = yOrtho.map((c) => c / yOrthoLen);
   const zHat = _vec3Cross(xHat, yHat);
 
-  const [rxDeg, ryDeg, rzDeg] = _eulerXyz(
-    xHat[0],
-    yHat[0],
-    zHat[0],
-    xHat[1],
-    yHat[1],
-    zHat[1],
-    zHat[2],
-  );
+  const [rxDeg, ryDeg, rzDeg] = _eulerXyz(xHat[0], yHat[0], zHat[0], xHat[1], yHat[1], zHat[1], zHat[2]);
 
   return {
     anchor_point: [0.0, 0.0, 0.0],
@@ -1006,7 +998,7 @@ export function projectToComp(
  *   (|cross| is ~1.7e-9 at 1e-7 degrees off vertical, vs ~6e-17 or an
  *   exact 0 at the pole).
  */
-export function _lookAtRotation(eye: number[], target: number[]): Mat4 {
+function _lookAtRotation(eye: number[], target: number[]): Mat4 {
   const delta = [0, 1, 2].map((i) => target[i] - eye[i]);
   let forward: number[];
   if (_vec3Norm(delta) < _EPSILON) {
@@ -1073,11 +1065,7 @@ export function cameraRay(
 
   // The image plane is in square pixels; the rig matrix narrows the ray
   // back into comp pixels (see `buildLocalMatrix`).
-  const direction = world.transformVector([
-    (compPoint[0] - cx) * pixelAspect,
-    compPoint[1] - cy,
-    zoom,
-  ]);
+  const direction = world.transformVector([(compPoint[0] - cx) * pixelAspect, compPoint[1] - cy, zoom]);
   return [[...position], direction];
 }
 
@@ -1123,7 +1111,7 @@ export function intersectLayerPlane(world: Mat4, origin: number[], direction: nu
 }
 
 /** Determinant of the 3x3 matrix with columns `a`, `b`, `c`. */
-export function _det3(a: number[], b: number[], c: number[]): number {
+function _det3(a: number[], b: number[], c: number[]): number {
   const cross = _vec3Cross(b, c);
   return a[0] * cross[0] + a[1] * cross[1] + a[2] * cross[2];
 }

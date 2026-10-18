@@ -25,7 +25,8 @@ export const pyNumber: Kind<boolean | number | BoxedFloat> = (x): x is boolean |
   typeof x === "boolean" || typeof x === "number" || x instanceof BoxedFloat;
 
 /** `isinstance(x, str)`: a plain string or a `CosString`. */
-export const pyStr: Kind<string | CosString> = (x): x is string | CosString => typeof x === "string" || x instanceof CosString;
+export const pyStr: Kind<string | CosString> = (x): x is string | CosString =>
+  typeof x === "string" || x instanceof CosString;
 
 /** `isinstance(x, bool)`. */
 export const pyBoolKind: Kind<boolean> = (x): x is boolean => typeof x === "boolean";
@@ -137,10 +138,7 @@ export function cosAppend(x: CosNode, item: CosNode): void {
 }
 
 /** A COS value as Python hands it out: floats are plain numbers, at any depth. */
-export type CosUnboxed =
-  | Exclude<CosNode, BoxedFloat | CosNode[] | CosDict>
-  | CosUnboxed[]
-  | Map<string, CosUnboxed>;
+export type CosUnboxed = Exclude<CosNode, BoxedFloat | CosNode[] | CosDict> | CosUnboxed[] | Map<string, CosUnboxed>;
 
 /**
  * `x` as Python hands it out: a `BoxedFloat` unboxed to its number. A list or

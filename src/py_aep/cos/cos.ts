@@ -3,8 +3,10 @@
 // source: https://gitlab.com/mattbas/python-lottie/-/blob/master/lib/lottie/parsers/aep/cos.py
 // documentation: https://github.com/hunger-zh/lottie-docs/blob/main/docs/aep.md#list-btdk
 
-import { INSPECT, describe, ascii } from "../../pyrt/index.ts";
 import {
+  INSPECT,
+  describe,
+  ascii,
   at,
   auto,
   Bytes,
@@ -24,20 +26,20 @@ import type { EnumValue, ByteStream, BoxedFloat } from "../../pyrt/index.ts";
 import { is, pyInt } from "./kinds.ts";
 
 // io.SEEK_CUR
-export const SEEK_CUR = 1 as const;
+const SEEK_CUR = 1 as const;
 
 // Python bytes.isspace() on one byte: ASCII whitespace only (space, \t, \n, \x0b, \x0c, \r).
-export function isspaceB(c: number): boolean {
+function isspaceB(c: number): boolean {
   return c === 0x20 || (c >= 0x09 && c <= 0x0d);
 }
 
 // Python bytes.isdigit() on one byte: ASCII digits only.
-export function isdigitB(c: number): boolean {
+function isdigitB(c: number): boolean {
   return c >= 0x30 && c <= 0x39;
 }
 
 // Python bytes.isalpha() on one byte: ASCII letters only.
-export function isalphaB(c: number): boolean {
+function isalphaB(c: number): boolean {
   return (c >= 0x41 && c <= 0x5a) || (c >= 0x61 && c <= 0x7a);
 }
 
@@ -75,7 +77,7 @@ const STRING_ESCAPES: ReadonlyMap<number, number> = new Map([
 // Python's dataclass repr uses repr() on each field; dicts and lists need to
 // recurse so nested Maps print like Python dicts.
 // CPython `repr(bytes)`: double quotes when the content has `'` but no `"`.
-export function reprBytes(x: Uint8Array): string {
+function reprBytes(x: Uint8Array): string {
   let hasSingle = false;
   let hasDouble = false;
   for (const c of x) {
@@ -103,7 +105,7 @@ interface NamedEnum {
 }
 
 // `str(member)` / `repr(member)` for an Enum member.
-export function enumStr(E: NamedEnum, v: number): string {
+function enumStr(E: NamedEnum, v: number): string {
   return `${E.enumName}.${E.nameOf(v)}`;
 }
 
@@ -154,7 +156,7 @@ export function runSpans(doc: CosNode, docKey: string, styleKey: string | null):
   if (!Array.isArray(runs)) return spans;
   let pos = 0;
   for (const run of runs) {
-    const length = run instanceof Map ? run.get("1") ?? null : null;
+    const length = run instanceof Map ? (run.get("1") ?? null) : null;
     // Python `isinstance(True, int)` is True, so booleans count as lengths 1/0.
     if (!is(pyInt, length)) continue;
     const n = Number(length);
@@ -242,7 +244,11 @@ export class IndirectObject {
   }
 
   [INSPECT](): string {
-    return describe("IndirectObject", { objectNumber: this.objectNumber, generationNumber: this.generationNumber, data: this.data });
+    return describe("IndirectObject", {
+      objectNumber: this.objectNumber,
+      generationNumber: this.generationNumber,
+      data: this.data,
+    });
   }
 
   equals(other: IndirectObject): boolean {
@@ -348,7 +354,9 @@ export class Stream {
   }
 
   equals(other: Stream): boolean {
-    return other instanceof Stream && valueEquals(this.dictionary, other.dictionary) && valueEquals(this.data, other.data);
+    return (
+      other instanceof Stream && valueEquals(this.dictionary, other.dictionary) && valueEquals(this.data, other.data)
+    );
   }
 }
 

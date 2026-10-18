@@ -11,7 +11,7 @@ import type { Project } from "../models/project.ts";
 import type { Viewer } from "../models/viewer/viewer.ts";
 
 /** Recursively collect viewers from a folder and its subfolders. */
-export function* _collectViewers(folder: FolderItem): Generator<Viewer> {
+function* _collectViewers(folder: FolderItem): Generator<Viewer> {
   yield* folder._viewers;
   for (const item of folder.items) {
     if (item instanceof FolderItem) {
@@ -26,10 +26,7 @@ export function* _collectViewers(folder: FolderItem): Generator<Viewer> {
  * @param rifx - The parsed binary RIFX root chunk.
  * @param project - The already-parsed {@link Project}.
  */
-export const parseApp = _suppressMaterialization()(function parse_app(
-  rifx: ListChunk,
-  project: Project,
-): Application {
+export const parseApp = _suppressMaterialization()(function parse_app(rifx: ListChunk, project: Project): Application {
   const rootChunks = rifx.chunks;
   const headChunk = findByType(rootChunks, "head");
 

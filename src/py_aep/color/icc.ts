@@ -18,15 +18,7 @@
 
 import { md5 } from "../../pyrt/md5.ts";
 import * as host from "../../pyrt/host.ts";
-import {
-  LookupError,
-  OSError,
-  Path,
-  Bytes,
-  bytesEqual,
-  decode,
-  literal,
-  compare, ascii } from "../../pyrt/index.ts";
+import { LookupError, OSError, Path, Bytes, bytesEqual, decode, literal, compare, ascii } from "../../pyrt/index.ts";
 import { profileIdForName } from "../enums/mappings.ts";
 
 /**
@@ -246,7 +238,7 @@ export class IccProfileLibrary {
   }
 }
 
-export let _defaultLibrary: IccProfileLibrary | null = null;
+let _defaultLibrary: IccProfileLibrary | null = null;
 
 /**
  * Return a shared `IccProfileLibrary` over the standard Adobe Color dirs.

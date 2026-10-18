@@ -160,7 +160,12 @@ export function pyClassHooks(cls: Function, kw: { setattrPassesPrivate?: boolean
       return undefined;
     },
     set(target, key, value, receiver) {
-      if (typeof key === "symbol" || (privatePass && key.startsWith("_")) || receiver === setattrTarget || !_hasSetattr(receiver)) {
+      if (
+        typeof key === "symbol" ||
+        (privatePass && key.startsWith("_")) ||
+        receiver === setattrTarget ||
+        !_hasSetattr(receiver)
+      ) {
         return Reflect.set(target, key, value, receiver);
       }
       // `_assignAttribute` passes an existing name on to `object.__setattr__`, which reports no

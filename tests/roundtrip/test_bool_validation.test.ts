@@ -9,16 +9,7 @@
  */
 
 import { describe, expect, test } from "bun:test";
-import {
-  AssertionError,
-  getMember,
-  len,
-  Path,
-  truthy,
-  setMember,
-  StopIteration,
-  str,
-} from "../../src/pyrt/index.ts";
+import { AssertionError, getMember, len, Path, truthy, setMember, StopIteration, str } from "../../src/pyrt/index.ts";
 
 import { asInstance, parseAppFresh, parseProjectFresh } from "../helpers.ts";
 import { ImportOptions } from "../../src/py_aep/models/import_options.ts";
@@ -35,9 +26,7 @@ const VIEW = SAMPLES.div("models", "view", "grid_on.aep");
 
 function _fileSource(): FootageSource {
   const project = parseProjectFresh(FOOTAGE);
-  const footage = project.footages.find(
-    (f) => getMember(f, "mainSource", null)?.constructor?.name === "FileSource",
-  );
+  const footage = project.footages.find((f) => getMember(f, "mainSource", null)?.constructor?.name === "FileSource");
   if (footage === undefined) throw new StopIteration();
   return footage.mainSource;
 }
@@ -57,41 +46,17 @@ function _firstMask(): MaskPropertyGroup {
 
 // (id, factory returning a fresh mutable object, bool attribute name)
 const CASES: [string, () => object, string][] = [
-  [
-    "comp.motion_blur",
-    () => parseProjectFresh(LAYER).compositions[0],
-    "motionBlur",
-  ],
-  [
-    "comp.frame_blending",
-    () => parseProjectFresh(LAYER).compositions[0],
-    "frameBlending",
-  ],
-  [
-    "layer.enabled",
-    () => parseProjectFresh(LAYER).compositions[0].layers[0],
-    "enabled",
-  ],
-  [
-    "layer.solo",
-    () => parseProjectFresh(LAYER).compositions[0].layers[0],
-    "solo",
-  ],
+  ["comp.motion_blur", () => parseProjectFresh(LAYER).compositions[0], "motionBlur"],
+  ["comp.frame_blending", () => parseProjectFresh(LAYER).compositions[0], "frameBlending"],
+  ["layer.enabled", () => parseProjectFresh(LAYER).compositions[0].layers[0], "enabled"],
+  ["layer.solo", () => parseProjectFresh(LAYER).compositions[0].layers[0], "solo"],
   ["layer.shy", () => parseProjectFresh(LAYER).compositions[0].layers[0], "shy"],
-  [
-    "project.frames_use_feet_frames",
-    () => parseProjectFresh(LAYER),
-    "framesUseFeetFrames",
-  ],
+  ["project.frames_use_feet_frames", () => parseProjectFresh(LAYER), "framesUseFeetFrames"],
   ["footage.invert_alpha", _fileSource, "invertAlpha"],
   ["mask.inverted", _firstMask, "inverted"],
   ["view.grid", () => asInstance(parseAppFresh(VIEW).activeViewer, Viewer).views[0].options, "grid"],
   ["import.sequence", () => new ImportOptions(str(LAYER)), "sequence"],
-  [
-    "import.force_alphabetical",
-    () => new ImportOptions(str(LAYER)),
-    "forceAlphabetical",
-  ],
+  ["import.force_alphabetical", () => new ImportOptions(str(LAYER)), "forceAlphabetical"],
 ];
 
 const _IDS = CASES.map((c) => c[0]);

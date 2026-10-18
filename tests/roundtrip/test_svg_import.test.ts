@@ -1,7 +1,17 @@
 /** Tests for importing SVGs as cropped comps (`Project.importFile`). */
 
 import { describe, expect, test } from "bun:test";
-import { at, bytesEqual, getMember, assert, truthy, valueEquals, Path, StopIteration, ValueError } from "../../src/pyrt/index.ts";
+import {
+  at,
+  bytesEqual,
+  getMember,
+  assert,
+  truthy,
+  valueEquals,
+  Path,
+  StopIteration,
+  ValueError,
+} from "../../src/pyrt/index.ts";
 
 import { ImportAsType, ImportOptions, newProject, parse, type Application } from "../../src/py_aep/index.ts";
 import { CompItem } from "../../src/py_aep/models/items/composition.ts";
@@ -88,9 +98,9 @@ describe("TestSvgImportBasics", () => {
     const group = asInstance(contents.properties[0], PropertyGroup);
     const inner = group.property("ADBE Vectors Group");
     const path = inner.property("ADBE Vector Shape - Group").property("ADBE Vector Shape").value;
-    const posProp = group.property("ADBE Vector Transform Group").properties.find(
-      (p) => p.matchName === "ADBE Vector Position",
-    );
+    const posProp = group
+      .property("ADBE Vector Transform Group")
+      .properties.find((p) => p.matchName === "ADBE Vector Position");
     if (posProp == null) throw new StopIteration();
     const pos: number[] = asInstance(posProp, Property).value;
     const absV0 = [path.vertices[0][0] + pos[0], path.vertices[0][1] + pos[1]];
@@ -198,25 +208,26 @@ describe("TestSvgImportAeConventions", () => {
     // AE centres a group on the box of its vertices AND tangent handles
     // (all 21 butterfly.svg groups), not on the vertices alone: this
     // bulge's handles at y=10 pull the centre up to (50, 30).
-    const group = unpackOne(
-      _importText(tmpPath, '<path d="M10,50 C10,10 90,10 90,50 Z" fill="#f00"/>'),
-    );
+    const group = unpackOne(_importText(tmpPath, '<path d="M10,50 C10,10 90,10 90,50 Z" fill="#f00"/>'));
     const pos = group.property("ADBE Vector Transform Group").property("ADBE Vector Position").value;
     expect(approx(pos, [50.0, 30.0])).toBe(true);
     const shape = group
       .property("ADBE Vectors Group")
       .property("ADBE Vector Shape - Group")
       .property("ADBE Vector Shape").value;
-    expect(valueEquals(shape.vertices, [[-40.0, 20.0], [40.0, 20.0]])).toBe(true);
+    expect(
+      valueEquals(shape.vertices, [
+        [-40.0, 20.0],
+        [40.0, 20.0],
+      ]),
+    ).toBe(true);
   });
 
   test("test_line_has_no_fill", () => {
     const tmpPath = makeTmpPath();
     // A line has no interior, so the default black fill paints nothing;
     // AE adds only the Stroke.
-    const group = unpackOne(
-      _importText(tmpPath, '<line x1="20" y1="30" x2="150" y2="170" stroke="#000"/>'),
-    );
+    const group = unpackOne(_importText(tmpPath, '<line x1="20" y1="30" x2="150" y2="170" stroke="#000"/>'));
     const kinds = group.property("ADBE Vectors Group").properties.map((c) => c.matchName);
     expect(valueEquals(kinds, ["ADBE Vector Shape - Group", "ADBE Vector Graphic - Stroke"])).toBe(true);
   });
@@ -238,7 +249,12 @@ describe("TestSvgImportAeConventions", () => {
     );
     const fill = group.property("ADBE Vectors Group").property("ADBE Vector Graphic - G-Fill");
     const grad = fill.property("ADBE Vector Grad Colors").value;
-    expect(valueEquals(grad.colorStops.map((s) => s.offset), [0.0, 0.0, 0.5, 1.0])).toBe(true);
+    expect(
+      valueEquals(
+        grad.colorStops.map((s) => s.offset),
+        [0.0, 0.0, 0.5, 1.0],
+      ),
+    ).toBe(true);
     expect(
       valueEquals(
         grad.alphaStops.map((s) => [s.offset, s.alpha]),
@@ -407,7 +423,9 @@ describe("TestSvgImportByteFidelity", () => {
       if (nshapes > 1) {
         multi += 1;
         assert(merges.length === 1, `${group.name}: nshapes=${nshapes}`);
-        expect(asInstance(asInstance(merges[0], PropertyGroup).property("ADBE Vector Merge Type"), Property).value).toBe(1.0);
+        expect(
+          asInstance(asInstance(merges[0], PropertyGroup).property("ADBE Vector Merge Type"), Property).value,
+        ).toBe(1.0);
       } else {
         single += 1;
         assert(!truthy(merges), `${group.name} (single subpath) has a Merge`);

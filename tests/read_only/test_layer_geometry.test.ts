@@ -16,7 +16,18 @@
 
 import { describe, expect, test } from "bun:test";
 
-import { NotImplementedError, Path, StopIteration, ValueError, float, floatRepr, getOrThrow, assert, valueEquals, repr } from "../../src/pyrt/index.ts";
+import {
+  NotImplementedError,
+  Path,
+  StopIteration,
+  ValueError,
+  float,
+  floatRepr,
+  getOrThrow,
+  assert,
+  valueEquals,
+  repr,
+} from "../../src/pyrt/index.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { parseProject } from "../conftest.ts";
 import { fontVersionString } from "../../src/py_aep/svg/fonts.ts";
@@ -32,8 +43,16 @@ const SHAPES_AEP = SAMPLES_DIR.div("shape_source_rect.aep");
 const AUTO_ORIENT_AEP = SAMPLES_DIR.div("auto_orient.aep");
 const TEXT_INK_AEP = SAMPLES_DIR.div("text_ink.aep");
 
-const POINTS = [[0.0, 0.0], [100.0, 50.0], [960.0, 540.0]];
-const CAMERA_POINTS = [[0.0, 0.0], [100.0, 50.0], [200.0, 100.0]];
+const POINTS = [
+  [0.0, 0.0],
+  [100.0, 50.0],
+  [960.0, 540.0],
+];
+const CAMERA_POINTS = [
+  [0.0, 0.0],
+  [100.0, 50.0],
+  [200.0, 100.0],
+];
 
 /**
  * Skip where the text cannot be measured as the fixture was: without
@@ -142,10 +161,7 @@ describe("TestPointConversions", () => {
         const want = entry["s2c"][pi];
         if (want["ok"]) {
           const got = layer.sourcePointToComp(pt, timeVal);
-          assert(
-            approx(got, want["value"], { abs: 5e-3 }),
-            `${layerName} s2c ${_ptRepr(pt)} @ ${floatRepr(timeVal)}`,
-          );
+          assert(approx(got, want["value"], { abs: 5e-3 }), `${layerName} s2c ${_ptRepr(pt)} @ ${floatRepr(timeVal)}`);
         }
         const wantC2s = entry["c2s"][pi];
         if (wantC2s["ok"]) {
@@ -204,10 +220,7 @@ describe("TestPointConversionsUnderCameras", () => {
         const want = entry["s2c"][pi];
         if (want["ok"]) {
           const got = layer.sourcePointToComp(pt, timeVal);
-          assert(
-            approx(got, want["value"], { abs: 5e-3 }),
-            `${compName} s2c ${_ptRepr(pt)} @ ${floatRepr(timeVal)}`,
-          );
+          assert(approx(got, want["value"], { abs: 5e-3 }), `${compName} s2c ${_ptRepr(pt)} @ ${floatRepr(timeVal)}`);
         }
         const wantC2s = entry["c2s"][pi];
         if (wantC2s["ok"]) {
@@ -228,21 +241,98 @@ describe("TestCalculateTransformFromPoints", () => {
   // (fixture group, key) -> (tl, tr, bl) inputs used in the probe run.
   const _SQ = 141.4213562373095; // 200 * sin(45 deg)
   const SETS = new Map<string, number[][]>([
-    ["identity_bl", [[0, 0, 0], [200, 0, 0], [0, 100, 0]]],
-    ["identity_br", [[0, 0, 0], [200, 0, 0], [200, 100, 0]]],
-    ["translated", [[300, 200, 0], [500, 200, 0], [300, 300, 0]]],
-    ["rot90", [[0, 0, 0], [0, 200, 0], [-100, 0, 0]]],
-    ["scaled2x", [[0, 0, 0], [400, 0, 0], [0, 200, 0]]],
-    ["tilt_y45", [[0, 0, 0], [_SQ, 0, -_SQ], [0, 100, 0]]],
+    [
+      "identity_bl",
+      [
+        [0, 0, 0],
+        [200, 0, 0],
+        [0, 100, 0],
+      ],
+    ],
+    [
+      "identity_br",
+      [
+        [0, 0, 0],
+        [200, 0, 0],
+        [200, 100, 0],
+      ],
+    ],
+    [
+      "translated",
+      [
+        [300, 200, 0],
+        [500, 200, 0],
+        [300, 300, 0],
+      ],
+    ],
+    [
+      "rot90",
+      [
+        [0, 0, 0],
+        [0, 200, 0],
+        [-100, 0, 0],
+      ],
+    ],
+    [
+      "scaled2x",
+      [
+        [0, 0, 0],
+        [400, 0, 0],
+        [0, 200, 0],
+      ],
+    ],
+    [
+      "tilt_y45",
+      [
+        [0, 0, 0],
+        [_SQ, 0, -_SQ],
+        [0, 100, 0],
+      ],
+    ],
   ]);
   const MIRROR_SETS = new Map<string, number[][]>([
-    ["mirrorX", [[0, 0, 0], [-200, 0, 0], [0, 100, 0]]],
-    ["mirrorY", [[0, 0, 0], [200, 0, 0], [0, -100, 0]]],
-    ["mirrorBoth", [[0, 0, 0], [-200, 0, 0], [0, -100, 0]]],
+    [
+      "mirrorX",
+      [
+        [0, 0, 0],
+        [-200, 0, 0],
+        [0, 100, 0],
+      ],
+    ],
+    [
+      "mirrorY",
+      [
+        [0, 0, 0],
+        [200, 0, 0],
+        [0, -100, 0],
+      ],
+    ],
+    [
+      "mirrorBoth",
+      [
+        [0, 0, 0],
+        [-200, 0, 0],
+        [0, -100, 0],
+      ],
+    ],
   ]);
   const FOOTAGE_SETS = new Map<string, number[][]>([
-    ["identity_srcdims", [[0, 0, 0], [640, 0, 0], [0, 346, 0]]],
-    ["rect200x100", [[0, 0, 0], [200, 0, 0], [0, 100, 0]]],
+    [
+      "identity_srcdims",
+      [
+        [0, 0, 0],
+        [640, 0, 0],
+        [0, 346, 0],
+      ],
+    ],
+    [
+      "rect200x100",
+      [
+        [0, 0, 0],
+        [200, 0, 0],
+        [0, 100, 0],
+      ],
+    ],
   ]);
 
   function _assertMatches(got: Record<string, number | number[]>, want: CtfpValue): void {
@@ -367,11 +457,7 @@ describe("TestCalculateTransformFromPointsNumerics", () => {
     "test_huge_but_finite_points_give_a_finite_transform[%#]",
     (magnitude) => {
       const layer = _layer(_probeComp(parseProject(GEOMETRY_AEP)), "solid_default");
-      const got = layer.calculateTransformFromPoints(
-        [0.0, 0.0, 0.0],
-        [magnitude, 0.0, 0.0],
-        [0.0, magnitude, 0.0],
-      );
+      const got = layer.calculateTransformFromPoints([0.0, 0.0, 0.0], [magnitude, 0.0, 0.0], [0.0, magnitude, 0.0]);
       const values = [
         ..._vec(got["anchor_point"]),
         ..._vec(got["position"]),
@@ -380,7 +466,10 @@ describe("TestCalculateTransformFromPointsNumerics", () => {
         got["y_rotation"],
         got["z_rotation"],
       ];
-      assert(values.every((v) => Number.isFinite(v)), repr(got));
+      assert(
+        values.every((v) => Number.isFinite(v)),
+        repr(got),
+      );
     },
   );
 
@@ -388,11 +477,7 @@ describe("TestCalculateTransformFromPointsNumerics", () => {
     // 1e300 wide over a source `width` must scale to 1e300 / width * 100,
     // not saturate.
     const layer = _layer(_probeComp(parseProject(GEOMETRY_AEP)), "solid_default");
-    const got = layer.calculateTransformFromPoints(
-      [0.0, 0.0, 0.0],
-      [1e300, 0.0, 0.0],
-      [0.0, 1e300, 0.0],
-    );
+    const got = layer.calculateTransformFromPoints([0.0, 0.0, 0.0], [1e300, 0.0, 0.0], [0.0, 1e300, 0.0]);
     expect(approx(_vec(got["scale"])[0], (1e300 / layer.width) * 100.0)).toBe(true);
     expect(approx(_vec(got["scale"])[1], (1e300 / layer.height) * 100.0)).toBe(true);
   });
@@ -430,13 +515,10 @@ describe("TestShapeSourceRect", () => {
     }
   });
 
-  test.each(sorted(_UNMODELED_SHAPES).map((name) => [name]))(
-    "test_unmodeled_constructs_raise[%#]",
-    (name) => {
-      const comp = compFixture();
-      raises(NotImplementedError, () => _layer(comp, name).sourceRectAtTime(0.0, false));
-    },
-  );
+  test.each(sorted(_UNMODELED_SHAPES).map((name) => [name]))("test_unmodeled_constructs_raise[%#]", (name) => {
+    const comp = compFixture();
+    raises(NotImplementedError, () => _layer(comp, name).sourceRectAtTime(0.0, false));
+  });
 });
 
 const _ORIENT_TRUTH = _fixture<AutoOrientProbeJson>("auto_orient_probe.json");
@@ -473,10 +555,7 @@ describe("TestAutoOrientPointConversions", () => {
         ["inv", layer.compPointToSource([500.0, 400.0], time)],
       ];
       for (const [point, got] of probes) {
-        assert(
-          approx(got, record[point], { abs: 1e-2 }),
-          `(${repr(timeKey)}, ${repr(point)})`,
-        );
+        assert(approx(got, record[point], { abs: 1e-2 }), `(${repr(timeKey)}, ${repr(point)})`);
       }
     }
   });
@@ -497,7 +576,9 @@ describe("TestTextSourceRect", () => {
     return _textComp;
   }
 
-  const TEXT_CASES = sorted(Object.keys(_TEXT_TRUTH)).flatMap((name) => [false, true].map((extents): [string, boolean] => [name, extents]));
+  const TEXT_CASES = sorted(Object.keys(_TEXT_TRUTH)).flatMap((name) =>
+    [false, true].map((extents): [string, boolean] => [name, extents]),
+  );
 
   test.each(TEXT_CASES)("test_matches_ae[%#]", (name, extents) => {
     const layer = _layer(compFixture(), name);

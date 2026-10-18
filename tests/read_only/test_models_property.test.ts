@@ -2,12 +2,37 @@
 
 import { describe, expect, test } from "bun:test";
 
-import { AssertionError, IndexError, Path, StopIteration, float, getMember, getOrThrow, int, len, assert, truthy, valueEquals, truthyOr, repr, getOrInsert, str, zip } from "../../src/pyrt/index.ts";
+import {
+  AssertionError,
+  IndexError,
+  Path,
+  StopIteration,
+  float,
+  getMember,
+  getOrThrow,
+  int,
+  len,
+  assert,
+  truthy,
+  valueEquals,
+  truthyOr,
+  repr,
+  getOrInsert,
+  str,
+  zip,
+} from "../../src/pyrt/index.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { getComp, getCompFromJsonByName, getFirstLayer, getLayer, loadExpected, parseProject } from "../conftest.ts";
 import { asInstance, jsonField, type ExpectedProject, type ExpectedProperty } from "../helpers.ts";
 import { Project, parse as parseAep, type Application } from "../../src/py_aep/index.ts";
-import { KeyframeInterpolationType, MaskFeatherFalloff, MaskMode, MaskMotionBlur, PropertyType, PropertyValueType } from "../../src/py_aep/enums/index.ts";
+import {
+  KeyframeInterpolationType,
+  MaskFeatherFalloff,
+  MaskMode,
+  MaskMotionBlur,
+  PropertyType,
+  PropertyValueType,
+} from "../../src/py_aep/enums/index.ts";
 import { KfPosition } from "../../src/py_aep/binary/ldat_chunks.ts";
 import { AVLayer, MaskPropertyGroup, Property, PropertyGroup, Shape } from "../../src/py_aep/models/index.ts";
 import type { CompItem, Layer } from "../../src/py_aep/models/index.ts";
@@ -65,7 +90,7 @@ function _jsonValuesByMatchName(expected: unknown): Map<unknown, unknown> {
   const walk = (node: unknown): void => {
     if (typeof node === "object" && node !== null && !Array.isArray(node)) {
       if ("propertyType" in node && node.propertyType === "Property" && "matchName" in node) {
-        getOrInsert(values, node.matchName, "value" in node ? node.value ?? null : null);
+        getOrInsert(values, node.matchName, "value" in node ? (node.value ?? null) : null);
       }
       for (const child of Object.values(node)) {
         walk(child);
@@ -163,7 +188,12 @@ describe("TestKeyframeLabel", () => {
     const opacity = _findProperty(layer, "ADBE Opacity");
     expect(opacity).not.toBeNull();
     if (opacity === null) throw new AssertionError("opacity is None");
-    expect(valueEquals(opacity.keyframes.map((kf) => int(kf.label)), [1, 5, 16, 0, 0])).toBe(true);
+    expect(
+      valueEquals(
+        opacity.keyframes.map((kf) => int(kf.label)),
+        [1, 5, 16, 0, 0],
+      ),
+    ).toBe(true);
   });
 });
 
@@ -172,10 +202,7 @@ describe("TestKeyframes", () => {
 
   /** Position has 2 LINEAR keyframes with values [0,50,0] and [100,50,0]. */
   test("test_keyframe_LINEAR", () => {
-    const layer = getLayer(
-      parseProject(SAMPLES_DIR.div("keyframe_interpolation.aep")),
-      "keyframe_LINEAR",
-    );
+    const layer = getLayer(parseProject(SAMPLES_DIR.div("keyframe_interpolation.aep")), "keyframe_LINEAR");
     const position = _findProperty(layer, "ADBE Position");
     expect(position).not.toBeNull();
     if (position === null) throw new AssertionError("position is None");
@@ -190,10 +217,7 @@ describe("TestKeyframes", () => {
 
   /** Position has 2 BEZIER keyframes with values [0,50,0] and [100,50,0]. */
   test("test_keyframe_BEZIER", () => {
-    const layer = getLayer(
-      parseProject(SAMPLES_DIR.div("keyframe_interpolation.aep")),
-      "keyframe_BEZIER",
-    );
+    const layer = getLayer(parseProject(SAMPLES_DIR.div("keyframe_interpolation.aep")), "keyframe_BEZIER");
     const position = _findProperty(layer, "ADBE Position");
     expect(position).not.toBeNull();
     if (position === null) throw new AssertionError("position is None");
@@ -747,9 +771,33 @@ describe("TestMasks", () => {
    * size - scaling their masks by it multiplied every point by the comp.
    */
   test.each([
-    ["solid", [[10, 20], [70, 20], [70, 60], [10, 60]]],
-    ["shape", [[-50, -30], [50, -30], [50, 30], [-50, 30]]],
-    ["text", [[-40, -25], [40, -25], [40, 25], [-40, 25]]],
+    [
+      "solid",
+      [
+        [10, 20],
+        [70, 20],
+        [70, 60],
+        [10, 60],
+      ],
+    ],
+    [
+      "shape",
+      [
+        [-50, -30],
+        [50, -30],
+        [50, 30],
+        [-50, 30],
+      ],
+    ],
+    [
+      "text",
+      [
+        [-40, -25],
+        [40, -25],
+        [40, 25],
+        [-40, 25],
+      ],
+    ],
   ])("test_mask_vertices_on_each_layer_kind[%#]", (layerName: string, expected: number[][]) => {
     const project = parseProject(SAMPLES_DIR.div("mask_shape_and_text_layers.aep"));
     const comp = getComp(project, "masks_on_layer_kinds");
@@ -864,25 +912,19 @@ describe("TestMaskAttributes", () => {
   test("test_color_default", () => {
     const mask = TestMaskAttributes._get_mask("mask_add.aep");
     expect(len(mask.color)).toBe(3);
-    expect(
-      approx(mask.color, [30 / 255, 64 / 255, 30 / 255], { abs: 1e-3 }),
-    ).toBe(true);
+    expect(approx(mask.color, [30 / 255, 64 / 255, 30 / 255], { abs: 1e-3 })).toBe(true);
   });
 
   /** Custom mask color [0.102, 0.2, 0.302] (26/255, 51/255, 77/255). */
   test("test_color_custom_1", () => {
     const mask = TestMaskAttributes._get_mask("mask_color_0.102_0.2_0.302.aep");
-    expect(
-      approx(mask.color, [26 / 255, 51 / 255, 77 / 255], { abs: 1e-3 }),
-    ).toBe(true);
+    expect(approx(mask.color, [26 / 255, 51 / 255, 77 / 255], { abs: 1e-3 })).toBe(true);
   });
 
   /** Custom mask color [0.2, 0.302, 0.4] (51/255, 77/255, 102/255). */
   test("test_color_custom_2", () => {
     const mask = TestMaskAttributes._get_mask("mask_color_0.2_0.302_0.4.aep");
-    expect(
-      approx(mask.color, [51 / 255, 77 / 255, 102 / 255], { abs: 1e-3 }),
-    ).toBe(true);
+    expect(approx(mask.color, [51 / 255, 77 / 255, 102 / 255], { abs: 1e-3 })).toBe(true);
   });
 
   // --- maskFeatherFalloff ---
@@ -978,12 +1020,7 @@ describe("TestIsModified", () => {
   test("test_transform_defaults_at_default_values", () => {
     const layer = getFirstLayer(parseProject(SAMPLES_DIR.div("is_modified_false.aep")));
     // These transform properties are at their defaults in this sample.
-    for (const matchName of [
-      "ADBE Orientation",
-      "ADBE Rotate X",
-      "ADBE Rotate Y",
-      "ADBE Envir Appear in Reflect",
-    ]) {
+    for (const matchName of ["ADBE Orientation", "ADBE Rotate X", "ADBE Rotate Y", "ADBE Envir Appear in Reflect"]) {
       const prop = _findProperty(layer, matchName);
       if (prop != null) {
         assert(
@@ -1000,16 +1037,10 @@ describe("TestIsModified", () => {
     const posX = _findProperty(layer, "ADBE Position_0");
     const posY = _findProperty(layer, "ADBE Position_1");
     if (posX != null) {
-      assert(
-        posX.isModified === true,
-        `X Position value=${str(posX.value)}, default=${str(posX.defaultValue)}`,
-      );
+      assert(posX.isModified === true, `X Position value=${str(posX.value)}, default=${str(posX.defaultValue)}`);
     }
     if (posY != null) {
-      assert(
-        posY.isModified === true,
-        `Y Position value=${str(posY.value)}, default=${str(posY.defaultValue)}`,
-      );
+      assert(posY.isModified === true, `Y Position value=${str(posY.value)}, default=${str(posY.defaultValue)}`);
     }
   });
 
@@ -1069,10 +1100,7 @@ describe("TestIsModified", () => {
     const layer = getLayer(parseProject(SAMPLES_DIR.div("property_types.aep")), "property_rotation");
     const scale = _findProperty(layer, "ADBE Scale");
     if (scale != null && scale.defaultValue != null) {
-      assert(
-        scale.isModified === false,
-        `Scale value=${str(scale.value)}, default=${str(scale.defaultValue)}`,
-      );
+      assert(scale.isModified === false, `Scale value=${str(scale.value)}, default=${str(scale.defaultValue)}`);
     }
   });
 
@@ -1648,10 +1676,7 @@ describe("TestTemporalEase", () => {
 
   /** Asymmetric ease has different in/out influence values. */
   test("test_bezier_asymmetric_ease", () => {
-    const layer = getLayer(
-      parseProject(SAMPLES_DIR.div("keyframe_1D.aep")),
-      "keyframe_bezier_asymmetric_ease_1D",
-    );
+    const layer = getLayer(parseProject(SAMPLES_DIR.div("keyframe_1D.aep")), "keyframe_bezier_asymmetric_ease_1D");
     const opacity = _findProperty(layer, "ADBE Opacity");
     expect(opacity).not.toBeNull();
     if (opacity === null) throw new AssertionError("opacity is None");
@@ -1814,9 +1839,7 @@ describe("TestLinearHoldEase", () => {
     const kfLast = position.keyframes.at(-1);
     if (kfLast === undefined) throw new IndexError("list index out of range");
     expect(Math.abs(kfLast.outTemporalEase[0].speed) < 0.001).toBe(true);
-    expect(
-      Math.abs(kfLast.outTemporalEase[0].influence - TestLinearHoldEase.DEFAULT_INFLUENCE) < 0.001,
-    ).toBe(true);
+    expect(Math.abs(kfLast.outTemporalEase[0].influence - TestLinearHoldEase.DEFAULT_INFLUENCE) < 0.001).toBe(true);
   });
 
   /** Mixed interpolation: LINEAR opacity out speed = value_change / time. */
@@ -1964,12 +1987,42 @@ describe("TestShapeValue", () => {
     const layer = getLayer(parseProject(SAMPLES_DIR.div("shape_feather.aep")), "shape_feather_inner_hold");
     const shape = _getMaskShape(layer).value;
     expect(len(shape.featherPoints)).toBe(4);
-    expect(valueEquals(shape.featherPoints.map((fp) => fp.segLoc), [0, 1, 2, 3])).toBe(true);
-    expect(valueEquals(shape.featherPoints.map((fp) => fp.radius), [50.0, -30.0, 80.0, -20.0])).toBe(true);
-    expect(valueEquals(shape.featherPoints.map((fp) => fp.type), [0, 1, 0, 1])).toBe(true);
-    expect(valueEquals(shape.featherPoints.map((fp) => fp.interp), [0, 0, 1, 1])).toBe(true);
-    expect(valueEquals(shape.featherPoints.map((fp) => fp.tension), [0.0, 0.5, 1.0, 0.25])).toBe(true);
-    expect(valueEquals(shape.featherPoints.map((fp) => fp.relCornerAngle), [0.0, 0.0, 0.0, 0.0])).toBe(true);
+    expect(
+      valueEquals(
+        shape.featherPoints.map((fp) => fp.segLoc),
+        [0, 1, 2, 3],
+      ),
+    ).toBe(true);
+    expect(
+      valueEquals(
+        shape.featherPoints.map((fp) => fp.radius),
+        [50.0, -30.0, 80.0, -20.0],
+      ),
+    ).toBe(true);
+    expect(
+      valueEquals(
+        shape.featherPoints.map((fp) => fp.type),
+        [0, 1, 0, 1],
+      ),
+    ).toBe(true);
+    expect(
+      valueEquals(
+        shape.featherPoints.map((fp) => fp.interp),
+        [0, 0, 1, 1],
+      ),
+    ).toBe(true);
+    expect(
+      valueEquals(
+        shape.featherPoints.map((fp) => fp.tension),
+        [0.0, 0.5, 1.0, 0.25],
+      ),
+    ).toBe(true);
+    expect(
+      valueEquals(
+        shape.featherPoints.map((fp) => fp.relCornerAngle),
+        [0.0, 0.0, 0.0, 0.0],
+      ),
+    ).toBe(true);
   });
 
   /** Animated mask shape has 2 keyframes with different vertices. */
@@ -2002,8 +2055,18 @@ describe("TestShapeValue", () => {
     const layer = getLayer(parseProject(SAMPLES_DIR.div("shape_misc.aep")), "shape_many_points");
     const shape = _getMaskShape(layer).value;
     expect(len(shape.vertices)).toBe(300);
-    expect(valueEquals(shape.featherPoints.map((fp) => fp.segLoc), [0, 128, 255, 256, 270, 299])).toBe(true);
-    expect(valueEquals(shape.featherPoints.map((fp) => fp.radius), [10.0, 20.0, 30.0, 40.0, 50.0, 60.0])).toBe(true);
+    expect(
+      valueEquals(
+        shape.featherPoints.map((fp) => fp.segLoc),
+        [0, 128, 255, 256, 270, 299],
+      ),
+    ).toBe(true);
+    expect(
+      valueEquals(
+        shape.featherPoints.map((fp) => fp.radius),
+        [10.0, 20.0, 30.0, 40.0, 50.0, 60.0],
+      ),
+    ).toBe(true);
   });
 });
 
@@ -2157,9 +2220,7 @@ describe("TestEffectMetadata", () => {
       layer.property("ADBE Effect Parade").property("Pseudo/@@nQHCs0tHTTGgMy9vbNKNrQ"),
       PropertyGroup,
     );
-    expect(asInstance(control.property("Pseudo/@@nQHCs0tHTTGgMy9vbNKNrQ-0001"), Property).isDropdownEffect).toBe(
-      true,
-    );
+    expect(asInstance(control.property("Pseudo/@@nQHCs0tHTTGgMy9vbNKNrQ-0001"), Property).isDropdownEffect).toBe(true);
 
     layer = getFirstLayer(parseProject(SAMPLES_DIR.div("2_gaussian.aep")));
     const blur = asInstance(layer.property("ADBE Effect Parade").property("ADBE Gaussian Blur 2"), PropertyGroup);
@@ -2197,10 +2258,7 @@ describe("TestTextPathOptions", () => {
     const comp = getComp(parseProject(SAMPLES_DIR.div("all_animated.aep")), "type_text");
     const layer = comp.layers.find((ly) => ly.name === "TextLayer");
     if (layer === undefined) throw new StopIteration();
-    const path = layer
-      .property("ADBE Text Properties")
-      .property("ADBE Text Path Options")
-      .property("ADBE Text Path");
+    const path = layer.property("ADBE Text Properties").property("ADBE Text Path Options").property("ADBE Text Path");
     expect(path.propertyValueType).toBe(PropertyValueType.MASK_INDEX);
     expect(path.value).toBe(0);
   });
@@ -2604,17 +2662,13 @@ describe("TestEffectPointSpeed", () => {
     // cached project is shared, and reading ease anywhere creates it.
     const prop = TestEffectPointSpeed._ramp_start(parseAep(TestEffectPointSpeed.SAMPLE).project);
     expect(
-      prop.keyframes.every(
-        (keyframe) => keyframe._inTemporalEase == null && keyframe._outTemporalEase == null,
-      ),
+      prop.keyframes.every((keyframe) => keyframe._inTemporalEase == null && keyframe._outTemporalEase == null),
     ).toBe(true);
     for (const _ of range(3)) {
       expect(prop._effectScale).not.toBeNull();
     }
     expect(
-      prop.keyframes.every(
-        (keyframe) => keyframe._inTemporalEase == null && keyframe._outTemporalEase == null,
-      ),
+      prop.keyframes.every((keyframe) => keyframe._inTemporalEase == null && keyframe._outTemporalEase == null),
     ).toBe(true);
   });
 
@@ -2637,8 +2691,8 @@ describe("TestEffectPointSpeed", () => {
     Object.defineProperty(proto, "_effectPointSpeedFactor", { get: counting, configurable: true });
     try {
       for (const keyframe of prop.keyframes) {
-        keyframe.inTemporalEase;
-        keyframe.outTemporalEase;
+        void keyframe.inTemporalEase;
+        void keyframe.outTemporalEase;
       }
     } finally {
       Object.defineProperty(proto, "_effectPointSpeedFactor", original);
@@ -2700,7 +2754,10 @@ describe("TestEffectPointNormalization", () => {
   test("test_synthesized_point_uses_layer_not_comp", () => {
     const project = parseAep(LAYER_SAMPLES_DIR.div("geometry_probe.aep")).project;
     const comp = getComp(project, "PROBE_MAIN");
-    const layer = asInstance(comp.layers.find((lay) => lay.name === "solid_default"), AVLayer);
+    const layer = asInstance(
+      comp.layers.find((lay) => lay.name === "solid_default"),
+      AVLayer,
+    );
     expect(valueEquals([comp.width, comp.height], [1920, 1080])).toBe(true);
     expect(valueEquals([layer.width, layer.height], [200, 100])).toBe(true);
 

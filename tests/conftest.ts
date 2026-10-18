@@ -7,9 +7,7 @@
  */
 
 export {
-  SAMPLES_DIR,
   getComp,
-  getCompFromJson,
   getCompFromJsonByName,
   getCompMarkerFromJsonByName,
   getFirstFootage,
@@ -23,7 +21,6 @@ export {
   getLayerFromJsonByComp,
   getLayerMarkerFromJsonByComp,
   getRqi,
-  getSampleFiles,
   loadExpected,
   parseApp,
   parseProject,

@@ -9,10 +9,20 @@ import { parse as parseAep, type Project, type TextDocument } from "../../src/py
 import type { CompItem } from "../../src/py_aep/models/items/composition.ts";
 import { cosAt, cosItem } from "../../src/py_aep/cos/kinds.ts";
 import { CosName } from "../../src/py_aep/cos/index.ts";
-import { AutoKernType, BaselineDirection, BoxAutoFitPolicy, BoxFirstBaselineAlignment, BoxVerticalAlignment, DigitSet, LineJoinType, LineOrientation, ParagraphDirection, ParagraphJustification } from "../../src/py_aep/enums/index.ts";
+import {
+  AutoKernType,
+  BaselineDirection,
+  BoxAutoFitPolicy,
+  BoxFirstBaselineAlignment,
+  BoxVerticalAlignment,
+  DigitSet,
+  LineJoinType,
+  LineOrientation,
+  ParagraphDirection,
+  ParagraphJustification,
+} from "../../src/py_aep/enums/index.ts";
 import { contains, getMember, Path, assert, valueEquals, setMember, ValueError } from "../../src/pyrt/index.ts";
 import { approx, makeTmpPath, raises } from "../support/pytest.ts";
-
 
 const SAMPLES_DIR = new Path(import.meta.dir, "..", "..", "samples", "models", "layer");
 

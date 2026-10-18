@@ -2,7 +2,7 @@ import type { Chunk, ListChunk } from "../binary/chunk.ts";
 import { TdmnChunk } from "../binary/property_chunks.ts";
 import { truthy, getOrInsert } from "../../pyrt/index.ts";
 
-export const _SKIP_CHUNK_TYPES: readonly string[] = ["engv", "aRbs"];
+const _SKIP_CHUNK_TYPES: readonly string[] = ["engv", "aRbs"];
 
 /**
  * Group chunks into runs of consecutive same-match-name properties.

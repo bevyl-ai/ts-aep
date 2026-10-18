@@ -14,7 +14,21 @@
  */
 
 import { describe, expect, test } from "bun:test";
-import { ByteStream, Bytes, getMember, getOrThrow, len, lruCache, Path, assert, truthy, valueEquals, getOrInsert, StopIteration, compositeKey } from "../../src/pyrt/index.ts";
+import {
+  ByteStream,
+  Bytes,
+  getMember,
+  getOrThrow,
+  len,
+  lruCache,
+  Path,
+  assert,
+  truthy,
+  valueEquals,
+  getOrInsert,
+  StopIteration,
+  compositeKey,
+} from "../../src/pyrt/index.ts";
 
 import * as py_aep from "../../src/py_aep/index.ts";
 import { ImportOptions } from "../../src/py_aep/index.ts";
@@ -170,9 +184,7 @@ class _Structure {
     const ldta = view.chunks[0];
     const name = getMember(view.chunks[1], "value");
     this.view_layers.set(compositeKey(view.listType, name), _signature(view));
-    this.view_ldta_tails.add(
-      compositeKey(view.listType, Bytes.toHex(Bytes.slice(ldta.tobytes(), 147, 160))),
-    );
+    this.view_ldta_tails.add(compositeKey(view.listType, Bytes.toHex(Bytes.slice(ldta.tobytes(), 147, 160))));
   }
 
   _add_layer(layer: ListChunk): void {
@@ -185,7 +197,8 @@ class _Structure {
     );
     const tdgp = layer.chunks.find((c) => _tag(c) === "LIST:tdgp");
     if (tdgp === undefined) throw new StopIteration();
-    const groups = asInstance(tdgp, ListChunk).chunks
+    const groups = asInstance(tdgp, ListChunk)
+      .chunks
       // A new shape layer has no contents yet; AE's samples have some.
       .filter((c) => c.chunkType === "tdmn" && _tag(c) !== "tdmn=ADBE Root Vectors Group")
       .map((c) => _tag(c));
@@ -202,9 +215,7 @@ function _read(path: Path): ListChunk {
   return rifx;
 }
 
-const _afterEffects = lruCache(
-  (year: string): _Structure => new _Structure(_read(VERSIONS.div(year, "complete.aep"))),
-);
+const _afterEffects = lruCache((year: string): _Structure => new _Structure(_read(VERSIONS.div(year, "complete.aep"))));
 
 /**
  * `new(version)` plus one new item / layer of each kind, as the AE
@@ -238,10 +249,7 @@ describe("TestNewItemsMatchTheRelease", () => {
   test.each(ITEM_ROWS)("test_item_chunks[%#]", (year, itemType, kind) => {
     // iide / idpc (all items) and comr, CIF3 and the Default view layer
     // (comps) are absent from AE 15 files.
-    assert(
-      setLe(getOrThrow(written(year).items, itemType), getOrThrow(_afterEffects(year).items, itemType)),
-      kind,
-    );
+    assert(setLe(getOrThrow(written(year).items, itemType), getOrThrow(_afterEffects(year).items, itemType)), kind);
   });
 
   test.each(YEAR_ROWS)("test_comp_view_data[%#]", (year) => {
@@ -313,11 +321,7 @@ test("test_layer_comment_written_before_ovdg", () => {
   const sample = _read(VERSIONS.div("ae2018", "complete.aep"));
   const commented = new Set<string>();
   for (const [_parent, _i, chunk] of _walk(sample)) {
-    if (
-      chunk instanceof ListChunk &&
-      chunk.listType === "Layr" &&
-      chunk.chunks.some((c) => c.chunkType === "cmta")
-    ) {
+    if (chunk instanceof ListChunk && chunk.listType === "Layr" && chunk.chunks.some((c) => c.chunkType === "cmta")) {
       commented.add(chunk.chunks.map((c) => _tag(c)).join(" "));
     }
   }

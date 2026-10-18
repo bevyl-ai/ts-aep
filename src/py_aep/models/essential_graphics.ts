@@ -6,8 +6,7 @@
  * can have an EGP definition stored in a `LIST:CIF3` chunk.
  */
 
-import { INSPECT, describe } from "../../pyrt/index.ts";
-import { descriptor } from "../../pyrt/index.ts";
+import { INSPECT, describe, descriptor } from "../../pyrt/index.ts";
 import { ChunkField } from "./descriptors.ts";
 import { validateName } from "./validators.ts";
 import type { U4Chunk, Utf8Chunk } from "../binary/scalar_chunks.ts";
@@ -112,14 +111,7 @@ export class EssentialGraphicsController {
     sourceCompId?: number | null;
     sourceLayerId?: number | null;
   }) {
-    const {
-      _nameUtf8,
-      _ctyp,
-      uuid,
-      sourcePropertyPath,
-      sourceCompId = null,
-      sourceLayerId = null,
-    } = kw;
+    const { _nameUtf8, _ctyp, uuid, sourcePropertyPath, sourceCompId = null, sourceLayerId = null } = kw;
     this._nameUtf8 = _nameUtf8;
     this._ctyp = _ctyp;
     this.uuid = uuid;

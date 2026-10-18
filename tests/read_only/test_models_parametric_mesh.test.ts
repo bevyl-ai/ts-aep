@@ -16,7 +16,11 @@ import { parseProject } from "../conftest.ts";
 import { asInstance } from "../helpers.ts";
 import { validateAep } from "../../src/py_aep/cli/validate.ts";
 import { ParametricMeshType } from "../../src/py_aep/enums/index.ts";
-import { CubeMeshOptions, CylinderMeshOptions, ParametricMeshLayer } from "../../src/py_aep/models/layers/parametric_mesh_layer.ts";
+import {
+  CubeMeshOptions,
+  CylinderMeshOptions,
+  ParametricMeshLayer,
+} from "../../src/py_aep/models/layers/parametric_mesh_layer.ts";
 
 const SAMPLE_DIR = new Path(import.meta.dir).div("..", "..", "samples", "models", "layer");
 const MESH_AEP = SAMPLE_DIR.div("parametric_meshes.aep");

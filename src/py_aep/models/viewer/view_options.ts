@@ -127,9 +127,13 @@ export class ViewOptions {
     descriptor(this, "channels", ChunkField.enum(ChannelType, "_fips", "channels"));
     descriptor(this, "checkerboards", ChunkField.bool("_fips", "checkerboards"));
     descriptor(this, "draft3d", ChunkField.bool("_fips", "draft3d"));
-    descriptor(this, "exposure", new ChunkField("_fips", "exposure", {
-      validate: _validateNumber({ min: -40.0, max: 40.0 }),
-    }));
+    descriptor(
+      this,
+      "exposure",
+      new ChunkField("_fips", "exposure", {
+        validate: _validateNumber({ min: -40.0, max: 40.0 }),
+      }),
+    );
     descriptor(this, "grid", ChunkField.bool("_fips", "grid"));
     descriptor(this, "guidesLocked", ChunkField.bool("_fips", "guidesLocked", { minVersion: 16 }));
     descriptor(this, "guidesSnap", ChunkField.bool("_fips", "guidesSnap", { minVersion: 16 }));
@@ -137,40 +141,60 @@ export class ViewOptions {
     descriptor(this, "maskAndShapePath", ChunkField.bool("_fips", "maskAndShapePath"));
     descriptor(this, "proportionalGrid", ChunkField.bool("_fips", "proportionalGrid"));
     descriptor(this, "regionOfInterest", ChunkField.bool("_fips", "regionOfInterest"));
-    descriptor(this, "roiTop", new ChunkField("_fips", "roiTop", {
-      validate: _validateNumber({
-        min: 0,
-        max: (self: ViewOptions) => self.roiBottom - 1,
-        integer: true,
+    descriptor(
+      this,
+      "roiTop",
+      new ChunkField("_fips", "roiTop", {
+        validate: _validateNumber({
+          min: 0,
+          max: (self: ViewOptions) => self.roiBottom - 1,
+          integer: true,
+        }),
       }),
-    }));
-    descriptor(this, "roiLeft", new ChunkField("_fips", "roiLeft", {
-      validate: _validateNumber({
-        min: 0,
-        max: (self: ViewOptions) => self.roiRight - 1,
-        integer: true,
+    );
+    descriptor(
+      this,
+      "roiLeft",
+      new ChunkField("_fips", "roiLeft", {
+        validate: _validateNumber({
+          min: 0,
+          max: (self: ViewOptions) => self.roiRight - 1,
+          integer: true,
+        }),
       }),
-    }));
-    descriptor(this, "roiBottom", new ChunkField("_fips", "roiBottom", {
-      validate: _validateNumber({
-        min: (self: ViewOptions) => self.roiTop + 1,
-        max: (self: ViewOptions) => (self._item ? self._item.height : null),
-        integer: true,
+    );
+    descriptor(
+      this,
+      "roiBottom",
+      new ChunkField("_fips", "roiBottom", {
+        validate: _validateNumber({
+          min: (self: ViewOptions) => self.roiTop + 1,
+          max: (self: ViewOptions) => (self._item ? self._item.height : null),
+          integer: true,
+        }),
       }),
-    }));
-    descriptor(this, "roiRight", new ChunkField("_fips", "roiRight", {
-      validate: _validateNumber({
-        min: (self: ViewOptions) => self.roiLeft + 1,
-        max: (self: ViewOptions) => (self._item ? self._item.width : null),
-        integer: true,
+    );
+    descriptor(
+      this,
+      "roiRight",
+      new ChunkField("_fips", "roiRight", {
+        validate: _validateNumber({
+          min: (self: ViewOptions) => self.roiLeft + 1,
+          max: (self: ViewOptions) => (self._item ? self._item.width : null),
+          integer: true,
+        }),
       }),
-    }));
+    );
     descriptor(this, "rulers", ChunkField.bool("_fips", "rulers", { minVersion: 16 }));
     descriptor(this, "titleActionSafe", ChunkField.bool("_fips", "titleActionSafe"));
     descriptor(this, "useDisplayColorManagement", ChunkField.bool("_fips", "useDisplayColorManagement"));
-    descriptor(this, "zoom", new ChunkField("_fips", "zoom", {
-      validate: _validateNumber({ min: 0.01, max: 16.0 }),
-    }));
+    descriptor(
+      this,
+      "zoom",
+      new ChunkField("_fips", "zoom", {
+        validate: _validateNumber({ min: 0.01, max: 16.0 }),
+      }),
+    );
     descriptor(this, "fastPreview", ChunkField.enum(FastPreviewType, "_fips", "fastPreviewType", { minVersion: 12 }));
   }
 }

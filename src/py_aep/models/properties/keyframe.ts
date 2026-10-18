@@ -1,6 +1,14 @@
 import { KeyframeInterpolationType, Label } from "../../enums/index.ts";
 import { frameGrid } from "../../binary/composition_chunks.ts";
-import { _DEFAULT_INFLUENCE, autoPathSpeed, autoSpatialTangents, autoTemporalSpeeds, colorAutoSpeed, colorDistance, linearPathSpeed } from "../../resolvers/interpolation.ts";
+import {
+  _DEFAULT_INFLUENCE,
+  autoPathSpeed,
+  autoSpatialTangents,
+  autoTemporalSpeeds,
+  colorAutoSpeed,
+  colorDistance,
+  linearPathSpeed,
+} from "../../resolvers/interpolation.ts";
 import { ChunkField } from "../descriptors.ts";
 import { TextDocument } from "../text/text_document.ts";
 import { validateBool, validateInt, validateNumber, validateSequence } from "../validators.ts";
@@ -12,14 +20,7 @@ import { Shape } from "./shape.ts";
 import { KfMultiDimensional, KfPosition, type LdatItem } from "../../binary/ldat_chunks.ts";
 import type { Curves } from "./curves.ts";
 import type { Property } from "./property.ts";
-import {
-  ValueError,
-  descriptor,
-  getMember,
-  assert,
-  literal,
-  zip,
-} from "../../../pyrt/index.ts";
+import { ValueError, descriptor, getMember, assert, literal, zip } from "../../../pyrt/index.ts";
 import * as _property from "./property.ts";
 
 /**
@@ -46,15 +47,14 @@ export const _VALUE_FROM_CHUNK: unique symbol = Symbol("_VALUE_FROM_CHUNK");
  * params) would otherwise accept a LINEAR/BEZIER byte AE never writes.
  * An unbound keyframe has no property to ask, so it is left alone.
  */
-export function _validateInterpolationType(value: KeyframeInterpolationType, keyframe: Keyframe): void {
+function _validateInterpolationType(value: KeyframeInterpolationType, keyframe: Keyframe): void {
   const prop = keyframe._property;
   if (prop == null) return;
   // Raises for an out-of-enum value before the descriptor's own
   // membership check gets a chance to.
   if (!prop.isInterpolationTypeValid(value)) {
     throw new ValueError(
-      `${KeyframeInterpolationType.nameOf(value)} is not a valid ` +
-        `interpolation type for ${literal(prop.name)}.`,
+      `${KeyframeInterpolationType.nameOf(value)} is not a valid ` + `interpolation type for ${literal(prop.name)}.`,
     );
   }
 }
@@ -75,8 +75,7 @@ export function _timebaseUnits(frameRate: number): number {
 export function _checkTimeUnits(units: number): void {
   if (!(-0x80000000 <= units && units <= 0x7fffffff)) {
     throw new ValueError(
-      `keyframe time out of supported range: ${units} units ` +
-        `does not fit the 32-bit keyframe time field`,
+      `keyframe time out of supported range: ${units} units ` + `does not fit the 32-bit keyframe time field`,
     );
   }
 }
@@ -90,15 +89,13 @@ export function _checkTimeUnits(units: number): void {
  * caller sees the mistake rather than getting a write that appears to
  * succeed and does not.
  */
-export function _validateRoving(value: boolean, keyframe: Keyframe): void {
+function _validateRoving(value: boolean, keyframe: Keyframe): void {
   validateBool(value);
   if (!value) return;
   const prop = keyframe._property;
   if (prop == null) return;
   if (!prop._hasMotionPath) {
-    throw new ValueError(
-      `roving can only be set on a spatial property, not ${literal(prop.matchName)}`,
-    );
+    throw new ValueError(`roving can only be set on a spatial property, not ${literal(prop.matchName)}`);
   }
   if (keyframe._prev == null || keyframe._next == null) {
     throw new ValueError("the first and last keyframe of a property cannot rove");
@@ -511,9 +508,7 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
    * window rather than a special case here.
    */
   private _neighbourWindow(): [Keyframe[], number] {
-    const window = [this._prev, this, this._next].filter(
-      (kf): kf is Keyframe => kf != null,
-    );
+    const window = [this._prev, this, this._next].filter((kf): kf is Keyframe => kf != null);
     return [window, this._prev != null ? 1 : 0];
   }
 
@@ -565,10 +560,7 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
         window.map((kf) => kf._layerTime),
         at,
       );
-      return [
-        [this._prev == null ? 0.0 : speed],
-        [this._next == null ? 0.0 : speed],
-      ];
+      return [[this._prev == null ? 0.0 : speed], [this._next == null ? 0.0 : speed]];
     }
     if (prop != null && prop._hasMotionPath) {
       const keyframes = prop.keyframes;
@@ -579,10 +571,7 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
         // writes it on both sides; the outward side of an end key is
         // reported as 0, as on any other property.
         const speed = autoPathSpeed(keyframes, index, prop._arcMetric);
-        return [
-          [index === 0 ? 0.0 : speed],
-          [index === keyframes.length - 1 ? 0.0 : speed],
-        ];
+        return [[index === 0 ? 0.0 : speed], [index === keyframes.length - 1 ? 0.0 : speed]];
       }
     }
 
@@ -616,8 +605,7 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
     if (this._property != null && this._property._arbs != null) {
       return this._declared(this._property._keyframeCurves(this));
     }
-    const value =
-      this._property == null ? this._storedValue : this._property._maskInertZ(this._storedValue);
+    const value = this._property == null ? this._storedValue : this._property._maskInertZ(this._storedValue);
     // A list is handed out as a copy: the keyframe's own is its cache.
     return this._declared(Array.isArray(value) ? [...value] : value);
   }
@@ -702,8 +690,7 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
    * 2-D layer's motion path with the stored Z too.
    */
   get _storedValue(): _ValueType {
-    const val =
-      this._value !== _VALUE_FROM_CHUNK ? this._value : this._extractRawValue();
+    const val = this._value !== _VALUE_FROM_CHUNK ? this._value : this._extractRawValue();
     if (this._property != null && (typeof val === "number" || Array.isArray(val))) {
       return this._property._resolveValue(val);
     }
@@ -756,8 +743,7 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
         return;
       }
       throw new ValueError(
-        `value has ${new_.length} component(s) but this keyframe ` +
-          `expects ${kfData.value.length}`,
+        `value has ${new_.length} component(s) but this keyframe ` + `expects ${kfData.value.length}`,
       );
     }
     kfData.value = new_;
@@ -862,11 +848,8 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
     // matching what the format can hold.
     const resolved = this._resolveEase(backing, direction).length;
     if (value.length !== backing.length && value.length !== resolved) {
-      const expected =
-        resolved === backing.length ? String(backing.length) : `${backing.length} or ${resolved}`;
-      throw new ValueError(
-        `${field} expects ${expected} KeyframeEase object(s), got ${value.length}`,
-      );
+      const expected = resolved === backing.length ? String(backing.length) : `${backing.length} or ${resolved}`;
+      throw new ValueError(`${field} expects ${expected} KeyframeEase object(s), got ${value.length}`);
     }
     // The unit factor the getter applies, which a backing ease only
     // carries once it has been read as BEZIER: a LINEAR or end key of an
@@ -953,11 +936,7 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
       }
       if (chosen != null && chosen.length === rawEase.length) {
         return chosen.map(
-          (speed) =>
-            new KeyframeEase(
-              facingHold || neighbour == null ? 0.0 : speed,
-              _DEFAULT_INFLUENCE,
-            ),
+          (speed) => new KeyframeEase(facingHold || neighbour == null ? 0.0 : speed, _DEFAULT_INFLUENCE),
         );
       }
     }
@@ -1031,10 +1010,7 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
       // (measured on AE 2026: 191.25 for [1,0,0,1] -> [0,0.5,1,1] over
       // 2 s), not one per channel.
       const span = right._layerTime - left._layerTime;
-      const speed =
-        span > 0
-          ? colorDistance(left.value as number[], right.value as number[]) / span
-          : 0.0;
+      const speed = span > 0 ? colorDistance(left.value as number[], right.value as number[]) / span : 0.0;
       return rawEase.map(() => new KeyframeEase(speed, _DEFAULT_INFLUENCE));
     }
     if (prop != null && prop._hasMotionPath && kind == null) {
@@ -1218,8 +1194,7 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
       // immediately re-derive this keyframe's time from the path, so
       // accepting the value would silently discard it.
       throw new ValueError(
-        "a roving keyframe's time is derived from the spatial path; " +
-          "set roving to false before moving it",
+        "a roving keyframe's time is derived from the spatial path; " + "set roving to false before moving it",
       );
     }
     const prop = this._property;
@@ -1230,30 +1205,50 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
 
   static {
     // Descriptors for the `declare`d fields above.
-    descriptor(this, "inInterpolationType", ChunkField.enum(KeyframeInterpolationType, "_ldatItem", "inInterpolationType", {
-      validate: _validateInterpolationType,
-      postSet: "_onInterpolationTypeSet",
-    }));
+    descriptor(
+      this,
+      "inInterpolationType",
+      ChunkField.enum(KeyframeInterpolationType, "_ldatItem", "inInterpolationType", {
+        validate: _validateInterpolationType,
+        postSet: "_onInterpolationTypeSet",
+      }),
+    );
     descriptor(this, "label", ChunkField.enum(Label, "_ldatItem", "label"));
-    descriptor(this, "outInterpolationType", ChunkField.enum(KeyframeInterpolationType, "_ldatItem", "outInterpolationType", {
-      validate: _validateInterpolationType,
-      postSet: "_onInterpolationTypeSet",
-    }));
-    descriptor(this, "roving", ChunkField.bool("_ldatItem", "roving", {
-      validate: _validateRoving,
-      postSet: "_retimeRovingRuns",
-    }));
-    descriptor(this, "temporalAutoBezier", ChunkField.bool("_ldatItem", "temporalAutoBezier", {
-      postSet: "_onTemporalAutoBezierSet",
-    }));
-    descriptor(this, "temporalContinuous", ChunkField.bool("_ldatItem", "temporalContinuous", {
-      postSet: "_onTemporalContinuousSet",
-    }));
+    descriptor(
+      this,
+      "outInterpolationType",
+      ChunkField.enum(KeyframeInterpolationType, "_ldatItem", "outInterpolationType", {
+        validate: _validateInterpolationType,
+        postSet: "_onInterpolationTypeSet",
+      }),
+    );
+    descriptor(
+      this,
+      "roving",
+      ChunkField.bool("_ldatItem", "roving", {
+        validate: _validateRoving,
+        postSet: "_retimeRovingRuns",
+      }),
+    );
+    descriptor(
+      this,
+      "temporalAutoBezier",
+      ChunkField.bool("_ldatItem", "temporalAutoBezier", {
+        postSet: "_onTemporalAutoBezierSet",
+      }),
+    );
+    descriptor(
+      this,
+      "temporalContinuous",
+      ChunkField.bool("_ldatItem", "temporalContinuous", {
+        postSet: "_onTemporalContinuousSet",
+      }),
+    );
   }
 }
 
 /** Compute the constant speed between two adjacent keyframes. */
-export function _segmentSpeed(kfA: Keyframe, kfB: Keyframe): number[] {
+function _segmentSpeed(kfA: Keyframe, kfB: Keyframe): number[] {
   // Seconds rather than whole frames: two keyframes can sit inside the
   // same frame at different sub-frame times, and rounding them together
   // would report a zero-length segment. LAYER seconds, because AE stores

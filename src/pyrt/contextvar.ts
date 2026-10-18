@@ -4,7 +4,10 @@
 export class ContextVar<T> {
   private value: T;
 
-  constructor(readonly name: string, opts: { default: T }) {
+  constructor(
+    readonly name: string,
+    opts: { default: T },
+  ) {
     this.value = opts.default;
   }
 

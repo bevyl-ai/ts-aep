@@ -2,21 +2,64 @@
 
 import * as host from "../../../pyrt/host.ts";
 
-import { OptiChunk, SspcChunk, TextOptiChunk, buildAiDocumentOptiData, buildAiLayerOptiData, buildCrawOptiData, buildDpxOptiData, buildExrOptiData, buildGenericOptiData, buildPsdLayerOptiData, buildPsdOptiData, buildRhdrOptiData, buildTextOptiData, buildTiffOptiData } from "../../binary/footage_chunks.ts";
+import {
+  OptiChunk,
+  SspcChunk,
+  TextOptiChunk,
+  buildAiDocumentOptiData,
+  buildAiLayerOptiData,
+  buildCrawOptiData,
+  buildDpxOptiData,
+  buildExrOptiData,
+  buildGenericOptiData,
+  buildPsdLayerOptiData,
+  buildPsdOptiData,
+  buildRhdrOptiData,
+  buildTextOptiData,
+  buildTiffOptiData,
+} from "../../binary/footage_chunks.ts";
 import { EmpdChunk } from "../../binary/misc_chunks.ts";
 import { ColorProfileRecord, buildPinList } from "../../binary/mutations.ts";
 import { Utf8Chunk, type U1Chunk } from "../../binary/scalar_chunks.ts";
-import { buildAls2List, buildStvcList, ChunkNotFoundError, filterByType, findByListType, findByListTypeOrNull, findByType, findChunksBefore, alasFullpath, alasTargetIsFolder, indexByIdentity, parseAlasData, UNDEFINED_FRAME } from "../../binary/utils.ts";
+import {
+  buildAls2List,
+  buildStvcList,
+  ChunkNotFoundError,
+  filterByType,
+  findByListType,
+  findByListTypeOrNull,
+  findByType,
+  findChunksBefore,
+  alasFullpath,
+  alasTargetIsFolder,
+  indexByIdentity,
+  parseAlasData,
+  UNDEFINED_FRAME,
+} from "../../binary/utils.ts";
 import type { Chunk, ListChunk } from "../../binary/chunk.ts";
 import { buildIccEnvelope } from "../../color/envelope.ts";
 import { ColorProfileNotFoundError, defaultIccLibrary, iccProfileDescription, iccProfileId } from "../../color/icc.ts";
 import { ocioInputEnvelope, resolveOcioConfig } from "../../color/ocio.ts";
-import { AI_COMP_EXTENSIONS, FORMAT_3D_MODEL_SCENE, PSD_COMP_EXTENSIONS, getFileFormat, platformSourceFormat, type FileFormat } from "../../data/file_formats.ts";
+import {
+  AI_COMP_EXTENSIONS,
+  FORMAT_3D_MODEL_SCENE,
+  PSD_COMP_EXTENSIONS,
+  getFileFormat,
+  platformSourceFormat,
+  type FileFormat,
+} from "../../data/file_formats.ts";
 import { ColorManagementSystem, LinearLightMode } from "../../enums/index.ts";
 import type { Box } from "../../resolvers/ai_bounds.ts";
 import { EMPTY_BOX, footageSize, readAiIccProfile, readAiLayerBounds } from "../../resolvers/ai_bounds.ts";
 import { UnsupportedAiLayersError, readAiLayerOcgs } from "../../resolvers/ai_layers.ts";
-import { MediaInfo, pixelBufferSize, probeMedia, psdLayerChannels, psdLayerDepth, type MediaInfoFields } from "../../resolvers/media_probe.ts";
+import {
+  MediaInfo,
+  pixelBufferSize,
+  probeMedia,
+  psdLayerChannels,
+  psdLayerDepth,
+  type MediaInfoFields,
+} from "../../resolvers/media_probe.ts";
 import { platformPath } from "../../resolvers/platform_paths.ts";
 import { psdLayerBox } from "../../resolvers/psd_bounds.ts";
 import { readGlobalLight } from "../../resolvers/psd_styles.ts";
@@ -43,21 +86,27 @@ import {
   type PathLike,
   PurePosixPath,
   PureWindowsPath,
-  pyRe, compare, ascii } from "../../../pyrt/index.ts";
+  pyRe,
+  compare,
+  ascii,
+} from "../../../pyrt/index.ts";
 
 /**
  * `NamedTuple._replace(**kw)` for the translated NamedTuples (`MediaInfo`,
  * `FileFormat`) that may not carry a `_replace` method.
  */
-export function _replace(obj: MediaInfo, kw: Partial<MediaInfoFields>): MediaInfo;
-export function _replace(obj: FileFormat, kw: Partial<FileFormat>): FileFormat;
-export function _replace(obj: MediaInfo | FileFormat, kw: Partial<MediaInfoFields> & Partial<FileFormat>): MediaInfo | FileFormat {
+function _replace(obj: MediaInfo, kw: Partial<MediaInfoFields>): MediaInfo;
+function _replace(obj: FileFormat, kw: Partial<FileFormat>): FileFormat;
+function _replace(
+  obj: MediaInfo | FileFormat,
+  kw: Partial<MediaInfoFields> & Partial<FileFormat>,
+): MediaInfo | FileFormat {
   if (obj instanceof MediaInfo) return obj._replace(kw);
   return Object.assign(Object.create(Object.getPrototypeOf(obj)), obj, kw);
 }
 
 /** `os.path.splitext(name)[1]` */
-export function _splitextExt(name: string): string {
+function _splitextExt(name: string): string {
   // Leading dots belong to the stem, as in os.path.splitext.
   const stripped = name.replace(/^\.+/, "");
   const i = stripped.lastIndexOf(".");
@@ -69,7 +118,7 @@ export function _splitextExt(name: string): string {
  * `Path` lets raw Node errors through, which are not `OSError` instances, so
  * the `errno` check matches Python's `except OSError` for fs failures.
  */
-export function _isOsError(e: unknown): boolean {
+function _isOsError(e: unknown): boolean {
   return e instanceof OSError || (typeof e === "object" && e !== null && "errno" in e && typeof e.errno === "number");
 }
 
@@ -103,7 +152,7 @@ export function _isOsError(e: unknown): boolean {
  *   embedded as big-endian u16; an Illustrator/PDF document adds its
  *   layer count, page count and page-size tail, an EPS file does not.
  */
-export function _optiData(
+function _optiData(
   fmt: FileFormat,
   info: MediaInfo,
   path: Path,
@@ -151,7 +200,7 @@ export function _optiData(
  * truncated PDF objects) counts 0 as well: the count only annotates the
  * footage, which imports without it.
  */
-export function _aiLayerCount(path: Path, data: Uint8Array | null = null): number {
+function _aiLayerCount(path: Path, data: Uint8Array | null = null): number {
   try {
     return readAiLayerOcgs(path, data).length;
   } catch (e) {
@@ -168,7 +217,7 @@ export function _aiLayerCount(path: Path, data: Uint8Array | null = null): numbe
  * instead: `w * h * channels * bytes per channel` (`MediaInfo.pixel_channels`;
  * choose_layer_merged / flattened_rgb_comp / footage_depth.aep fixtures).
  */
-export function _stillDataSize(fmt: FileFormat, info: MediaInfo, path: Path): number {
+function _stillDataSize(fmt: FileFormat, info: MediaInfo, path: Path): number {
   if (!["psd", "tiff"].includes(fmt.opti)) return path.stat().size;
   return pixelBufferSize(info.width, info.height, info.pixelChannels, info.bitDepth);
 }
@@ -242,12 +291,7 @@ export function psdLayerFootage(
       layerChannels,
     },
   );
-  const dataSize = pixelBufferSize(
-    Math.max(right - left, 0),
-    Math.max(bottom - top, 0),
-    layerChannels,
-    info.bitDepth,
-  );
+  const dataSize = pixelBufferSize(Math.max(right - left, 0), Math.max(bottom - top, 0), layerChannels, info.bitDepth);
   return new PsdLayerFootage(
     box,
     optiData,
@@ -264,11 +308,7 @@ export function psdLayerFootage(
  * imported by script or through the Import dialog; AE on macOS keeps the
  * alpha channel (`format_options/heic` fixture).
  */
-export function _platformMediaInfo(
-  info: MediaInfo,
-  fmt: FileFormat,
-  kw: { windows: boolean },
-): MediaInfo {
+function _platformMediaInfo(info: MediaInfo, fmt: FileFormat, kw: { windows: boolean }): MediaInfo {
   const { windows } = kw;
   if (windows && fmt.sourceFormat === "AIDE" && info.hasAlpha) {
     // The same channels without the alpha one (32 -> 24 on Windows).
@@ -280,7 +320,7 @@ export function _platformMediaInfo(
 /**
  * The profile AE falls back to for media that carries none of its own.
  */
-export const _DEFAULT_PROFILE = "sRGB IEC61966-2.1";
+const _DEFAULT_PROFILE = "sRGB IEC61966-2.1";
 
 /**
  * What AE assigns instead to video it decodes itself - an animated GIF, an
@@ -288,8 +328,8 @@ export const _DEFAULT_PROFILE = "sRGB IEC61966-2.1";
  * keeps the default, and QuickTime/MP4 name their space instead. STIL and
  * IMIO are BMP/GIF on Windows and macOS (see `GENERIC_STILL_FORMATS`).
  */
-export const _VIDEO_PROFILE = "Rec.709 Gamma 2.4";
-export const _VIDEO_DECODED_FORMATS = new Set(["STIL", "IMIO", "SWF ", "MPEO", "WMED"]);
+const _VIDEO_PROFILE = "Rec.709 Gamma 2.4";
+const _VIDEO_DECODED_FORMATS = new Set(["STIL", "IMIO", "SWF ", "MPEO", "WMED"]);
 
 /**
  * Formats whose importer embeds After Effects' own catalogued copy of the
@@ -299,20 +339,20 @@ export const _VIDEO_DECODED_FORMATS = new Set(["STIL", "IMIO", "SWF ", "MPEO", "
  * An Illustrator/PDF file's RGB profile is recorded the same way (AE 2026,
  * complex.ai).
  */
-export const _CATALOGUED_PROFILE_FORMATS = new Set(["TIF ", "8BPS"]);
+const _CATALOGUED_PROFILE_FORMATS = new Set(["TIF ", "8BPS"]);
 
 /**
  * DPX and Cineon: AE records no profile at all and interprets the footage
  * in the working space (`ipws` 1; AE 2026 on Windows and the macOS
  * media_gap_formats.aep fixture).
  */
-export const _UNPROFILED_FORMATS = new Set(["sDPX"]);
+const _UNPROFILED_FORMATS = new Set(["sDPX"]);
 
 /**
  * The profile AE embeds for a Camera Raw file, which carries none: the
  * catalogued ProPhoto RGB Camera Raw develops into (AE 2026, crw.crw).
  */
-export const _CAMERA_RAW_PROFILES = new Map<string, string>([["Craw", "ProPhoto RGB"]]);
+const _CAMERA_RAW_PROFILES = new Map<string, string>([["Craw", "ProPhoto RGB"]]);
 
 /**
  * The profile AE records by name only (`empd`, no ICC data, interpreted in
@@ -321,13 +361,13 @@ export const _CAMERA_RAW_PROFILES = new Map<string, string>([["Craw", "ProPhoto 
  * depth/*.psd and *.tif). A 32-bit float grayscale TIFF names the linear
  * one; a bitmap (1-bit) image is assigned sRGB like any untagged media.
  */
-export const _MODE_PROFILE_NAMES = new Map<number, string>([
+const _MODE_PROFILE_NAMES = new Map<number, string>([
   [1, "Dot Gain 20%"],
   [2, "sRGB IEC61966-2.1"],
   [4, "U.S. Web Coated (SWOP) v2"],
   [9, "Lab D50"],
 ]);
-export const _LINEAR_GRAY_PROFILE_NAME = "Linear Grayscale Profile";
+const _LINEAR_GRAY_PROFILE_NAME = "Linear Grayscale Profile";
 
 /**
  * Formats AE leaves without any profile record when the file carries none:
@@ -335,8 +375,8 @@ export const _LINEAR_GRAY_PROFILE_NAME = "Linear Grayscale Profile";
  * (`empd` + e.g. "Rec. 709") from data py_aep cannot read yet. The record
  * still counts as managed - AE fills the name in when it opens the project.
  */
-export const _UNRECORDED_PROFILE_FORMATS = new Set(["ZPEG"]);
-export const _VIDEO_CONTAINER_FORMATS = new Set(["MOoV", "XCEX"]);
+const _UNRECORDED_PROFILE_FORMATS = new Set(["ZPEG"]);
+const _VIDEO_CONTAINER_FORMATS = new Set(["MOoV", "XCEX"]);
 
 /**
  * Formats AE imports with Interpret As Linear Light off rather than the
@@ -345,20 +385,10 @@ export const _VIDEO_CONTAINER_FORMATS = new Set(["MOoV", "XCEX"]);
  * default. The setting is inert below 32 bpc either way. HEIC (`AIDE`) is
  * one of them: off in every AE 2026 HEIC import (Windows and macOS).
  */
-export const _LINEAR_LIGHT_OFF_FORMATS = new Set([
-  "ZPEG",
-  "STIL",
-  "IMIO",
-  "SWF ",
-  "MPEO",
-  "WMED",
-  "MOoV",
-  "XCEX",
-  "AIDE",
-]);
+const _LINEAR_LIGHT_OFF_FORMATS = new Set(["ZPEG", "STIL", "IMIO", "SWF ", "MPEO", "WMED", "MOoV", "XCEX", "AIDE"]);
 
 /** After Effects' own copy of the named profile, if it is installed. */
-export function _cataloguedProfile(name: string): Uint8Array | null {
+function _cataloguedProfile(name: string): Uint8Array | null {
   try {
     return defaultIccLibrary().bytesFor(name);
   } catch (e) {
@@ -367,7 +397,7 @@ export function _cataloguedProfile(name: string): Uint8Array | null {
   }
 }
 
-export function _profileRecord(blob: Uint8Array): ColorProfileRecord {
+function _profileRecord(blob: Uint8Array): ColorProfileRecord {
   const name = iccProfileDescription(blob) || "";
   return new ColorProfileRecord(iccProfileId(blob), buildIccEnvelope(name, blob));
 }
@@ -400,10 +430,7 @@ export function namedMediaProfile(sourceFormat: string, info: MediaInfo): string
  * or the name of a non-RGB one, which AE records by name only (AE 2026:
  * complex.ai embeds sRGB, ai.ai names Coated FOGRA39).
  */
-export function aiDocumentProfile(
-  path: Path,
-  data: Uint8Array | null = null,
-): [Uint8Array | null, string | null] {
+export function aiDocumentProfile(path: Path, data: Uint8Array | null = null): [Uint8Array | null, string | null] {
   const icc = readAiIccProfile(path, data);
   if (icc == null) return [null, null];
   if (bytesEqual(icc.slice(16, 20), ascii("RGB "))) return [icc, null];
@@ -432,7 +459,7 @@ export function aiDocumentProfile(
  *   {@link MediaInfo | MediaInfo.color_mode}); an untagged bitmap
  *   TIFF/PSD is assigned sRGB rather than taken as carrying it.
  */
-export function _mediaProfileRecords(
+function _mediaProfileRecords(
   iccProfile: Uint8Array | null,
   sourceFormat: string,
   hasVideo: boolean,
@@ -449,24 +476,17 @@ export function _mediaProfileRecords(
     blob = _cataloguedProfile(cameraRawProfile);
   } else if (blob == null && _CATALOGUED_PROFILE_FORMATS.has(sourceFormat) && colorMode !== 0) {
     blob = _cataloguedProfile(_DEFAULT_PROFILE);
-  } else if (
-    blob != null &&
-    (_CATALOGUED_PROFILE_FORMATS.has(sourceFormat) || sourceFormat === "TEXT")
-  ) {
+  } else if (blob != null && (_CATALOGUED_PROFILE_FORMATS.has(sourceFormat) || sourceFormat === "TEXT")) {
     const catalogued = _cataloguedProfile(iccProfileDescription(blob) || "");
     if (catalogued != null && bytesEqual(iccProfileId(catalogued), iccProfileId(blob))) {
       blob = catalogued;
     }
   }
   if (blob != null) return [_profileRecord(blob), null];
-  if (
-    _UNRECORDED_PROFILE_FORMATS.has(sourceFormat) ||
-    (hasVideo && _VIDEO_CONTAINER_FORMATS.has(sourceFormat))
-  ) {
+  if (_UNRECORDED_PROFILE_FORMATS.has(sourceFormat) || (hasVideo && _VIDEO_CONTAINER_FORMATS.has(sourceFormat))) {
     return [null, null];
   }
-  const name =
-    isVideo && _VIDEO_DECODED_FORMATS.has(sourceFormat) ? _VIDEO_PROFILE : _DEFAULT_PROFILE;
+  const name = isVideo && _VIDEO_DECODED_FORMATS.has(sourceFormat) ? _VIDEO_PROFILE : _DEFAULT_PROFILE;
   const assigned = _cataloguedProfile(name);
   if (assigned == null) {
     // Nothing to assign without the profile's bytes; the record stays
@@ -480,7 +500,7 @@ export function _mediaProfileRecords(
  * The `sspc` alpha byte AE stores: 3 = no alpha, 1 = premultiplied,
  * 0 = straight.
  */
-export function _alphaModeRaw(hasAlpha: boolean, premultiplied: boolean): number {
+function _alphaModeRaw(hasAlpha: boolean, premultiplied: boolean): number {
   if (!hasAlpha) return 3;
   return premultiplied ? 1 : 0;
 }
@@ -494,9 +514,8 @@ export function _alphaModeRaw(hasAlpha: boolean, premultiplied: boolean): number
  * a premultiplied black background; measured against an AE-resaved
  * crystal.fbx).
  */
-export function _syncPremultiplied(sspc: SspcChunk): void {
-  sspc.premultiplied =
-    sspc.alphaModeRaw === 1 || sspc.sourceFormatType === FORMAT_3D_MODEL_SCENE;
+function _syncPremultiplied(sspc: SspcChunk): void {
+  sspc.premultiplied = sspc.alphaModeRaw === 1 || sspc.sourceFormatType === FORMAT_3D_MODEL_SCENE;
 }
 
 // `sspc` kind bytes (0xC8-0xC9) for a PSD single-layer binding: byte 0xC9
@@ -509,19 +528,19 @@ export const PSD_LAYER_STYLES_C8 = new Map<string, Uint8Array>([
   ["merge", Uint8Array.of(0x00, 0x01)],
   ["editable", Uint8Array.of(0x00, 0x02)],
 ]);
-export const _C9_TO_LAYER_STYLES = new Map<number, string>(
+const _C9_TO_LAYER_STYLES = new Map<number, string>(
   [...PSD_LAYER_STYLES_C8].map(([k, v]): [number, string] => [v[1], k]),
 );
 
 // A sequence frame number is at most the last 9 digits of the file stem; any
 // digits before them belong to the prefix (AE 2026: f_99999999998.png and
 // f_99999999999.png import as `f_99[999999998-999999999].png`).
-export const _FRAME_NUMBER_RE = pyRe(String.raw`(\d{1,9})$`);
+const _FRAME_NUMBER_RE = pyRe(String.raw`(\d{1,9})$`);
 
 // AE reads the `sspc` width and height as signed 16-bit values: a py_aep file
 // holding a 65535-px-wide PNG opens -1 px wide in AE 2026, and 65536 does not
 // fit the field at all.
-export const _MAX_FOOTAGE_SIZE = 32767;
+const _MAX_FOOTAGE_SIZE = 32767;
 
 /**
  * Reject footage dimensions After Effects cannot store or read back.
@@ -531,8 +550,7 @@ export const _MAX_FOOTAGE_SIZE = 32767;
 export function checkFootageSize(name: string, width: number, height: number): void {
   if (!(0 <= width && width <= _MAX_FOOTAGE_SIZE && 0 <= height && height <= _MAX_FOOTAGE_SIZE)) {
     throw new ValueError(
-      `${name}: ${width}x${height} px is outside the 0-${_MAX_FOOTAGE_SIZE} px ` +
-        "After Effects footage can hold",
+      `${name}: ${width}x${height} px is outside the 0-${_MAX_FOOTAGE_SIZE} px ` + "After Effects footage can hold",
     );
   }
 }
@@ -545,7 +563,7 @@ export function checkFootageSize(name: string, width: number, height: number): v
  * splits any embedded `/`, while `PurePosixPath` leaves a native POSIX path
  * intact (`PureWindowsPath` would rewrite its forward slashes to `\`).
  */
-export function _joinSequenceFrame(folder: string, frameName: string): string {
+function _joinSequenceFrame(folder: string, frameName: string): string {
   if (folder.includes("\\")) return String(new PureWindowsPath(folder).div(frameName));
   return String(new PurePosixPath(folder).div(frameName));
 }
@@ -634,11 +652,7 @@ export class FileSource extends FootageSource {
    * numbers undefined and keeps the file names in the Pin's StVc list.
    */
   private get _isAlphabetical(): boolean {
-    return (
-      this._targetIsFolder &&
-      this._sspc.startFrame === UNDEFINED_FRAME &&
-      this._fileNames?.length > 0
-    );
+    return this._targetIsFolder && this._sspc.startFrame === UNDEFINED_FRAME && this._fileNames?.length > 0;
   }
 
   /**
@@ -655,10 +669,7 @@ export class FileSource extends FootageSource {
    */
   _joinProject(project: Project): void {
     super._joinProject(project);
-    if (
-      this._clrs == null ||
-      project.colorManagementSystem !== ColorManagementSystem.OCIO
-    ) {
+    if (this._clrs == null || project.colorManagementSystem !== ColorManagementSystem.OCIO) {
       return;
     }
     const profile = this._ocspProfile();
@@ -778,11 +789,7 @@ export class FileSource extends FootageSource {
     // Old-format AE files lack the StVc LIST that stores per-frame
     // filenames for image sequences.  Construct the first-frame path
     // from the Utf8 prefix/extension chunks stored before opti.
-    if (
-      !this._fileNames?.length &&
-      _sspc.framePadding > 0 &&
-      _sspc.startFrame !== UNDEFINED_FRAME
-    ) {
+    if (!this._fileNames?.length && _sspc.framePadding > 0 && _sspc.startFrame !== UNDEFINED_FRAME) {
       let utf8BeforeOpti: Utf8Chunk[];
       try {
         utf8BeforeOpti = findChunksBefore(pinChunks, "Utf8", "opti");
@@ -794,9 +801,7 @@ export class FileSource extends FootageSource {
         const prefix = utf8BeforeOpti[utf8BeforeOpti.length - 2].value;
         const extension = utf8BeforeOpti[utf8BeforeOpti.length - 1].value;
         if (prefix || extension) {
-          const firstFrame =
-            `${prefix}${String(_sspc.startFrame).padStart(_sspc.framePadding, "0")}` +
-            `${extension}`;
+          const firstFrame = `${prefix}${String(_sspc.startFrame).padStart(_sspc.framePadding, "0")}` + `${extension}`;
           this._file = _joinSequenceFrame(this._file, firstFrame);
         }
       }
@@ -1106,8 +1111,7 @@ export class FileSource extends FootageSource {
     }
     if (sequence && !fmt.sequence) {
       throw new ValueError(
-        `After Effects cannot import ${path.suffix} files as an image ` +
-          "sequence; import the file on its own.",
+        `After Effects cannot import ${path.suffix} files as an image ` + "sequence; import the file on its own.",
       );
     }
     if (sequence) {
@@ -1135,10 +1139,11 @@ export class FileSource extends FootageSource {
     // Merged PSD footage: AE writes kind 0x0003. An AI/EPS/PDF file
     // imported whole takes the file-footage 0x0002 (footage_depth.aep),
     // not the 0x0000 of an Illustrator composition's layers.
-    const reservedC8 = (new Map<string, Uint8Array>([
+    const reservedC8 =
+      new Map<string, Uint8Array>([
         ["psd", Uint8Array.of(0x00, 0x03)],
         ["text", Uint8Array.of(0x00, 0x02)],
-      ])).get(fmt.opti) ?? null;
+      ]).get(fmt.opti) ?? null;
     const dataSize = _stillDataSize(fmt, info, path);
     return this._new(path, {
       sourceFormat: fmt.sourceFormat,
@@ -1354,13 +1359,11 @@ export class FileSource extends FootageSource {
       const suffix = file.suffix.toLowerCase();
       // scandir's entries know their type, and the cheap name test runs
       // first: no stat per file of a large frame folder.
-      fileNames = [...host
-          .scandir(file.parent.path)
-          .map((ent) => ent.name)
-          .filter(
-            (name) =>
-              _splitextExt(name).toLowerCase() === suffix && file.parent.div(name).isFile(),
-          )].sort((a, b) => compare(a.toLowerCase(), b.toLowerCase()));
+      fileNames = host
+        .scandir(file.parent.path)
+        .map((ent) => ent.name)
+        .filter((name) => _splitextExt(name).toLowerCase() === suffix && file.parent.div(name).isFile())
+        .sort((a, b) => compare(a.toLowerCase(), b.toLowerCase()));
       firstFrame = fileNames[0];
       startFrame = endFrame = UNDEFINED_FRAME;
       padding = 0;
@@ -1388,9 +1391,7 @@ export class FileSource extends FootageSource {
       if (hasRange) {
         frames = frames.filter((fr) => rangeStart <= fr[0] && fr[0] <= rangeEnd);
         if (!frames?.length) {
-          throw new ValueError(
-            `no sequence frames numbered within [${rangeStart}, ` + `${rangeEnd}]`,
-          );
+          throw new ValueError(`no sequence frames numbered within [${rangeStart}, ` + `${rangeEnd}]`);
         }
       }
 
@@ -1533,13 +1534,11 @@ export class FileSource extends FootageSource {
       const rangeStart = sspc.frameRangeSet ? this._startFrame : 0;
       const rangeEnd = sspc.frameRangeSet ? this._endFrame : 0;
       const alphabetical = this._isAlphabetical;
-      const fresh = FileSource._buildSequence(
-        path,
-        fmt,
-        alphabetical,
-        truthyOr(sspc.nativeFrameRate, 30.0),
-        { windows: this._windows, rangeStart, rangeEnd },
-      );
+      const fresh = FileSource._buildSequence(path, fmt, alphabetical, truthyOr(sspc.nativeFrameRate, 30.0), {
+        windows: this._windows,
+        rangeStart,
+        rangeEnd,
+      });
       // The duration as frames over rate, unreduced, as the import writes
       // it (the float setter would store 3/30 as 1/10).
       this._adoptMeasured(
@@ -1566,15 +1565,11 @@ export class FileSource extends FootageSource {
       // and AI comp layers keep their names and sizes - ae1 probe). The
       // stored index is rebound the way `replace(..., CURRENT_VALUE)`
       // does, and everything is measured before anything is written.
-      const fresh = FileSource._fromLayer(
-        path,
-        layerIndexForStored(path, sspc.layerIndex),
-        {
-          dimensions: sspc.fullFrame ? null : "layer",
-          layerStyles: this.layerStyles,
-          windows: this._windows,
-        },
-      );
+      const fresh = FileSource._fromLayer(path, layerIndexForStored(path, sspc.layerIndex), {
+        dimensions: sspc.fullFrame ? null : "layer",
+        layerStyles: this.layerStyles,
+        windows: this._windows,
+      });
       this._adoptMeasured(fresh, "pixelAspect", "layerId");
     } else {
       const data = fmt.opti === "text" ? path.readBytes() : null;
@@ -1788,8 +1783,7 @@ export class FileSource extends FootageSource {
 
     const framePadding = this._sspc.framePadding;
     const frameRange =
-      `[${String(startFrame).padStart(framePadding, "0")}` +
-      `-${String(endFrame).padStart(framePadding, "0")}]`;
+      `[${String(startFrame).padStart(framePadding, "0")}` + `-${String(endFrame).padStart(framePadding, "0")}]`;
     return `${prefix}${frameRange}${extension}`;
   }
 }

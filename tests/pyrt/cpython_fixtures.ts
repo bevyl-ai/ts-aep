@@ -1,1227 +1,482 @@
 // Generated from CPython 3.12 by a differential script; do not edit by hand.
 export const CPY = {
- "hypot": [
-  [
-   "0x1.8000000000000p+1",
-   "0x1.0000000000000p+2",
-   "0x1.4000000000000p+2"
+  hypot: [
+    ["0x1.8000000000000p+1", "0x1.0000000000000p+2", "0x1.4000000000000p+2"],
+    ["0x0.0p+0", "-0x0.0p+0", "0x0.0p+0"],
+    ["0x0.0000000000001p-1022", "0x0.0000000000001p-1022", "0x0.0000000000001p-1022"],
+    ["0x1.fffffffffffffp+1023", "0x1.fffffffffffffp+1023", "inf"],
+    ["inf", "nan", "inf"],
+    ["nan", "0x1.0000000000000p+0", "nan"],
+    ["-inf", "0x0.0p+0", "inf"],
+    ["0x0.012688b70e62bp-1022", "0x0.03739a252b281p-1022", "0x0.03a365ff2ea11p-1022"],
+    ["0x0.0000000000001p-1022", "0x1.0000000000000p-1022", "0x1.0000000000000p-1022"],
+    ["0x1.7e43c8800759cp+996", "0x1.56e1fc2f8f359p-997", "0x1.7e43c8800759cp+996"],
+    ["0x1.999999999999ap-4", "0x1.999999999999ap-3", "0x1.c9f25c5bfeddap-3"],
+    ["0x1.85e404999c126p-1", "-0x1.d793fc3f9931cp-5", "0x1.8700cd3d95a7dp-1"],
+    ["-0x1.012dbadd50e36p-2", "-0x1.e072ee67ee4cbp-1", "0x1.f15c03d586864p-1"],
+    ["-0x1.afc235dc71e38p-1", "-0x1.95d180f9ba5b5p+2", "0x1.996430f2635c1p+2"],
+    ["0x1.a507d658d6d31p+2", "-0x1.37dcc27623c4cp-1", "0x1.a6d4da0230d6fp+2"],
+    ["-0x1.b32ee6644855ep-2", "-0x1.e4cab62dde15cp+0", "0x1.f0d988112a0cep+0"],
+    ["-0x1.e04bc5a87f194p-2", "-0x1.13dd63476af80p-5", "0x1.e188422c25c5ep-2"],
+    ["0x1.a14f3c5ccedc4p-1009", "-0x0.0000000ec96a0p-1022", "0x1.a14f3c5ccedc4p-1009"],
+    ["0x0.01f413948348dp-1022", "-0x0.0000000037403p-1022", "0x0.01f413948348dp-1022"],
+    ["0x0.0000000261b52p-1022", "-0x0.0p+0", "0x0.0000000261b52p-1022"],
+    ["-0x0.f28c546bc4707p-1022", "-0x0.000000000077ep-1022", "0x0.f28c546bc4707p-1022"],
+    ["-0x0.0p+0", "0x1.519c4511626c2p-1010", "0x1.519c4511626c2p-1010"],
+    ["0x0.000000000001ap-1022", "-0x1.c59aa7a0f844ep-1007", "0x1.c59aa7a0f844ep-1007"],
+    ["0x1.a677f070e2042p+1003", "0x1.e1f8f2ac7adcbp+1014", "0x1.e1f8f5911a066p+1014"],
+    ["-0x1.0c236cbd11e14p+1019", "-0x1.37504e7c3d011p+1012", "0x1.0c263f9b15813p+1019"],
+    ["-0x1.8b32043cc82e8p+1000", "0x1.64a0edfdba24cp+1002", "0x1.720fa201ce85fp+1002"],
+    ["0x1.2a01e7ec9409cp+1003", "0x1.8a87c71ff1cdcp+1006", "0x1.8c48fa258a055p+1006"],
+    ["0x1.e01b05b73a398p+1007", "-0x1.5b4d5e84a2075p+1015", "0x1.5b4eaa5c74c0ap+1015"],
+    ["0x1.6d50595eff200p+994", "0x1.bb071c608162cp+1009", "0x1.bb071c62dbd9ap+1009"],
+    ["0x1.a50d4d73fde71p-10", "0x1.a800b5e826f2cp-15", "0x1.a542a93faa409p-10"],
+    ["-0x1.732653e12b644p-59", "0x1.717d6bf6db67cp-10", "0x1.717d6bf6db67cp-10"],
+    ["0x1.d7783c4fb923cp+46", "-0x1.4e85ae2e13ef7p-22", "0x1.d7783c4fb923cp+46"],
+    ["-0x1.bf9b182c0640fp+31", "0x1.bfb36ec395100p+40", "0x1.bfb3a6b3e9ee4p+40"],
+    ["-0x1.88c287a5efac4p-6", "-0x1.c3d9f9dc052cbp-8", "0x1.98ae94231068cp-6"],
+    ["0x1.1d6541019cf68p-27", "0x1.938f7ede88c7ap+7", "0x1.938f7ede88c7ap+7"],
+    ["-0x1.dc12c6b958486p-24", "0x1.c35e4e529dd10p+601", "0x1.c35e4e529dd10p+601"],
+    ["-0x1.2110dab081b7ep+726", "-0x1.84f0b8ab1dce0p-267", "0x1.2110dab081b7ep+726"],
+    ["0x1.1a8bf55890f00p+373", "0x1.ede646b66dde7p-284", "0x1.1a8bf55890f00p+373"],
+    ["-0x1.94385d68f6d09p-7", "0x1.7c6c9c702b6e4p-128", "0x1.94385d68f6d09p-7"],
+    ["0x1.b8942a3726f38p+340", "0x1.da40c73073300p+971", "0x1.da40c73073300p+971"],
+    ["-0x1.52cfc2d42d600p+187", "-0x1.05b0fdb23b55fp+744", "0x1.05b0fdb23b55fp+744"],
+  ],
+  dumps: [
+    [
+      '{"b": 1, "a": [1.0, 2, -0, 1e400, NaN, -Infinity], "10": {"2": null, "1": true}}',
+      {},
+      '{"b": 1, "a": [1.0, 2, 0, Infinity, NaN, -Infinity], "10": {"2": null, "1": true}}',
+    ],
+    [
+      '{"b": 1, "a": [1.0, 2, -0, 1e400, NaN, -Infinity], "10": {"2": null, "1": true}}',
+      {
+        separators: [",", ":"],
+      },
+      '{"b":1,"a":[1.0,2,0,Infinity,NaN,-Infinity],"10":{"2":null,"1":true}}',
+    ],
+    [
+      '{"b": 1, "a": [1.0, 2, -0, 1e400, NaN, -Infinity], "10": {"2": null, "1": true}}',
+      {
+        sortKeys: true,
+      },
+      '{"10": {"1": true, "2": null}, "a": [1.0, 2, 0, Infinity, NaN, -Infinity], "b": 1}',
+    ],
+    [
+      '{"b": 1, "a": [1.0, 2, -0, 1e400, NaN, -Infinity], "10": {"2": null, "1": true}}',
+      {
+        ensureAscii: false,
+      },
+      '{"b": 1, "a": [1.0, 2, 0, Infinity, NaN, -Infinity], "10": {"2": null, "1": true}}',
+    ],
+    [
+      '{"b": 1, "a": [1.0, 2, -0, 1e400, NaN, -Infinity], "10": {"2": null, "1": true}}',
+      {
+        indent: 2,
+      },
+      '{\n  "b": 1,\n  "a": [\n    1.0,\n    2,\n    0,\n    Infinity,\n    NaN,\n    -Infinity\n  ],\n  "10": {\n    "2": null,\n    "1": true\n  }\n}',
+    ],
+    [
+      '[12345678901234567890, 0.1, "\\ud83d\\ude00\\u00e9\\n"]',
+      {},
+      '[12345678901234567890, 0.1, "\\ud83d\\ude00\\u00e9\\n"]',
+    ],
+    [
+      '[12345678901234567890, 0.1, "\\ud83d\\ude00\\u00e9\\n"]',
+      {
+        separators: [",", ":"],
+      },
+      '[12345678901234567890,0.1,"\\ud83d\\ude00\\u00e9\\n"]',
+    ],
+    [
+      '[12345678901234567890, 0.1, "\\ud83d\\ude00\\u00e9\\n"]',
+      {
+        sortKeys: true,
+      },
+      '[12345678901234567890, 0.1, "\\ud83d\\ude00\\u00e9\\n"]',
+    ],
+    [
+      '[12345678901234567890, 0.1, "\\ud83d\\ude00\\u00e9\\n"]',
+      {
+        ensureAscii: false,
+      },
+      '[12345678901234567890, 0.1, "\ud83d\ude00\u00e9\\n"]',
+    ],
+    [
+      '[12345678901234567890, 0.1, "\\ud83d\\ude00\\u00e9\\n"]',
+      {
+        indent: 2,
+      },
+      '[\n  12345678901234567890,\n  0.1,\n  "\\ud83d\\ude00\\u00e9\\n"\n]',
+    ],
+    ['"x"', {}, '"x"'],
+    [
+      '"x"',
+      {
+        separators: [",", ":"],
+      },
+      '"x"',
+    ],
+    [
+      '"x"',
+      {
+        sortKeys: true,
+      },
+      '"x"',
+    ],
+    [
+      '"x"',
+      {
+        ensureAscii: false,
+      },
+      '"x"',
+    ],
+    [
+      '"x"',
+      {
+        indent: 2,
+      },
+      '"x"',
+    ],
+    [' {"a" : {} , "b":[ ]} ', {}, '{"a": {}, "b": []}'],
+    [
+      ' {"a" : {} , "b":[ ]} ',
+      {
+        separators: [",", ":"],
+      },
+      '{"a":{},"b":[]}',
+    ],
+    [
+      ' {"a" : {} , "b":[ ]} ',
+      {
+        sortKeys: true,
+      },
+      '{"a": {}, "b": []}',
+    ],
+    [
+      ' {"a" : {} , "b":[ ]} ',
+      {
+        ensureAscii: false,
+      },
+      '{"a": {}, "b": []}',
+    ],
+    [
+      ' {"a" : {} , "b":[ ]} ',
+      {
+        indent: 2,
+      },
+      '{\n  "a": {},\n  "b": []\n}',
+    ],
+    ['{"a": 1, "a": 2, "b": 3}', {}, '{"a": 2, "b": 3}'],
+    [
+      '{"a": 1, "a": 2, "b": 3}',
+      {
+        separators: [",", ":"],
+      },
+      '{"a":2,"b":3}',
+    ],
+    [
+      '{"a": 1, "a": 2, "b": 3}',
+      {
+        sortKeys: true,
+      },
+      '{"a": 2, "b": 3}',
+    ],
+    [
+      '{"a": 1, "a": 2, "b": 3}',
+      {
+        ensureAscii: false,
+      },
+      '{"a": 2, "b": 3}',
+    ],
+    [
+      '{"a": 1, "a": 2, "b": 3}',
+      {
+        indent: 2,
+      },
+      '{\n  "a": 2,\n  "b": 3\n}',
+    ],
+  ],
+  errs: [
+    ["", "Expecting value: line 1 column 1 (char 0)"],
+    ['{"a":1,}', "Expecting property name enclosed in double quotes: line 1 column 8 (char 7)"],
+    ["[1 2]", "Expecting ',' delimiter: line 1 column 4 (char 3)"],
+    ['"abc', "Unterminated string starting at: line 1 column 1 (char 0)"],
+    ['"\\x"', "Invalid \\escape: line 1 column 2 (char 1)"],
+    ['{"a" 1}', "Expecting ':' delimiter: line 1 column 6 (char 5)"],
+    ["\n  [1,\n 2,,]", "Expecting value: line 3 column 4 (char 10)"],
+    ["1 2", "Extra data: line 1 column 3 (char 2)"],
+    ["01", "Extra data: line 1 column 2 (char 1)"],
+  ],
+  int: [
+    ["12", 10, "12"],
+    [" -7 ", 10, "-7"],
+    ["1_000", 10, "1000"],
+    ["\u0663\u0664", 10, "34"],
+    ["0x1f", 16, "31"],
+    ["0o17", 0, "15"],
+    ["ff", 16, "255"],
+    ["1__0", 10, "ValueError: invalid literal for int() with base 10: '1__0'"],
+    ["", 10, "ValueError: invalid literal for int() with base 10: ''"],
+    ["12a", 10, "ValueError: invalid literal for int() with base 10: '12a'"],
+    ["010", 0, "ValueError: invalid literal for int() with base 0: '010'"],
+  ],
+  float: [
+    ["1.5", "1.5"],
+    [" -2e3 ", "-2000.0"],
+    ["1_0.5", "10.5"],
+    ["\u0663.\u0665", "3.5"],
+    ["inf", "inf"],
+    ["-nan", "nan"],
+    [".", "ValueError: could not convert string to float: '.'"],
+    ["1__0", "ValueError: could not convert string to float: '1__0'"],
+    ["abc", "ValueError: could not convert string to float: 'abc'"],
+  ],
+  re: [
+    ["(?P<y>\\d{4})-(?P=y)", "2024-2024", 0, [0, 9]],
+    ["\\Aab", "xab", 0, null],
+    ["b$", "ab\n", 0, [1, 2]],
+    ["^c", "ab\nc", 8, [3, 4]],
+    ["a.c", "a\nc", 0, null],
+    ["a.c", "a\nc", 16, [0, 3]],
+    ["\\w+", "h\u00e9llo_1 x", 0, [0, 7]],
+    ["\\d+", "\u0663\u0664x", 0, [0, 2]],
+    ["\\d+", "\u0663\u0664x5", 256, [3, 4]],
+    ["\\bfoo\\b", "\u00e9foo foo", 0, [5, 8]],
+    ["(?i)ABC", "xabc", 0, [1, 4]],
+    ["a{,2}", "aaa", 0, [0, 2]],
+    ["a{2", "a{2", 0, [0, 3]],
+    ["[]a]+", "]a]", 0, [0, 3]],
+    ["\\s+", "a\u001c\u0085b", 0, [1, 3]],
+    ["(?x) a b # c", "ab", 0, [0, 2]],
+  ],
+  re_escape: [
+    ["a.b", "a\\.b"],
+    ["x-y z#1", "x\\-y\\ z\\#1"],
+    ["\u00e9~&", "\u00e9\\~\\&"],
+  ],
+  paths: [
+    [
+      "PurePosixPath",
+      "C:\\a\\b.txt",
+      "C:\\a\\b.txt",
+      ["C:\\a\\b.txt"],
+      "",
+      "",
+      "C:\\a\\b.txt",
+      "C:\\a\\b",
+      ".txt",
+      ".",
+      "C:\\a\\b.txt/f.png",
+    ],
+    [
+      "PureWindowsPath",
+      "C:\\a\\b.txt",
+      "C:\\a\\b.txt",
+      ["C:\\", "a", "b.txt"],
+      "C:",
+      "\\",
+      "b.txt",
+      "b",
+      ".txt",
+      "C:\\a",
+      "C:\\a\\b.txt\\f.png",
+    ],
+    ["PurePosixPath", "C:/a/b", "C:/a/b", ["C:", "a", "b"], "", "", "b", "b", "", "C:/a", "C:/a/b/f.png"],
+    ["PureWindowsPath", "C:/a/b", "C:\\a\\b", ["C:\\", "a", "b"], "C:", "\\", "b", "b", "", "C:\\a", "C:\\a\\b\\f.png"],
+    [
+      "PurePosixPath",
+      "\\\\server\\share\\x\\y.png",
+      "\\\\server\\share\\x\\y.png",
+      ["\\\\server\\share\\x\\y.png"],
+      "",
+      "",
+      "\\\\server\\share\\x\\y.png",
+      "\\\\server\\share\\x\\y",
+      ".png",
+      ".",
+      "\\\\server\\share\\x\\y.png/f.png",
+    ],
+    [
+      "PureWindowsPath",
+      "\\\\server\\share\\x\\y.png",
+      "\\\\server\\share\\x\\y.png",
+      ["\\\\server\\share\\", "x", "y.png"],
+      "\\\\server\\share",
+      "\\",
+      "y.png",
+      "y",
+      ".png",
+      "\\\\server\\share\\x",
+      "\\\\server\\share\\x\\y.png\\f.png",
+    ],
+    [
+      "PurePosixPath",
+      "//server/share",
+      "//server/share",
+      ["//", "server", "share"],
+      "",
+      "//",
+      "share",
+      "share",
+      "",
+      "//server",
+      "//server/share/f.png",
+    ],
+    [
+      "PureWindowsPath",
+      "//server/share",
+      "\\\\server\\share\\",
+      ["\\\\server\\share\\"],
+      "\\\\server\\share",
+      "\\",
+      "",
+      "",
+      "",
+      "\\\\server\\share\\",
+      "\\\\server\\share\\f.png",
+    ],
+    ["PurePosixPath", "rel\\x", "rel\\x", ["rel\\x"], "", "", "rel\\x", "rel\\x", "", ".", "rel\\x/f.png"],
+    ["PureWindowsPath", "rel\\x", "rel\\x", ["rel", "x"], "", "", "x", "x", "", "rel", "rel\\x\\f.png"],
+    ["PurePosixPath", "C:", "C:", ["C:"], "", "", "C:", "C:", "", ".", "C:/f.png"],
+    ["PureWindowsPath", "C:", "C:", ["C:"], "C:", "", "", "", "", "C:", "C:f.png"],
+    [
+      "PurePosixPath",
+      "/posix/path.tar.gz",
+      "/posix/path.tar.gz",
+      ["/", "posix", "path.tar.gz"],
+      "",
+      "/",
+      "path.tar.gz",
+      "path.tar",
+      ".gz",
+      "/posix",
+      "/posix/path.tar.gz/f.png",
+    ],
+    [
+      "PureWindowsPath",
+      "/posix/path.tar.gz",
+      "\\posix\\path.tar.gz",
+      ["\\", "posix", "path.tar.gz"],
+      "",
+      "\\",
+      "path.tar.gz",
+      "path.tar",
+      ".gz",
+      "\\posix",
+      "\\posix\\path.tar.gz\\f.png",
+    ],
+    ["PurePosixPath", "a/./b//c", "a/b/c", ["a", "b", "c"], "", "", "c", "c", "", "a/b", "a/b/c/f.png"],
+    ["PureWindowsPath", "a/./b//c", "a\\b\\c", ["a", "b", "c"], "", "", "c", "c", "", "a\\b", "a\\b\\c\\f.png"],
+  ],
+  u32: [
+    ["41000000", "utf-32", "strict", "'A'"],
+    ["41000000", "utf-32", "replace", "'A'"],
+    ["41000000", "utf-32-le", "strict", "'A'"],
+    ["41000000", "utf-32-le", "replace", "'A'"],
+    [
+      "41000000",
+      "utf-32-be",
+      "strict",
+      "UnicodeDecodeError: 'utf-32-be' codec can't decode bytes in position 0-3: code point not in range(0x110000)",
+    ],
+    ["41000000", "utf-32-be", "replace", "'\ufffd'"],
+    ["fffe000041000000", "utf-32", "strict", "'A'"],
+    ["fffe000041000000", "utf-32", "replace", "'A'"],
+    ["fffe000041000000", "utf-32-le", "strict", "'\\ufeffA'"],
+    ["fffe000041000000", "utf-32-le", "replace", "'\\ufeffA'"],
+    [
+      "fffe000041000000",
+      "utf-32-be",
+      "strict",
+      "UnicodeDecodeError: 'utf-32-be' codec can't decode bytes in position 0-3: code point not in range(0x110000)",
+    ],
+    ["fffe000041000000", "utf-32-be", "replace", "'\ufffd\ufffd'"],
+    ["0000feff00000041", "utf-32", "strict", "'A'"],
+    ["0000feff00000041", "utf-32", "replace", "'A'"],
+    [
+      "0000feff00000041",
+      "utf-32-le",
+      "strict",
+      "UnicodeDecodeError: 'utf-32-le' codec can't decode bytes in position 0-3: code point not in range(0x110000)",
+    ],
+    ["0000feff00000041", "utf-32-le", "replace", "'\ufffd\ufffd'"],
+    ["0000feff00000041", "utf-32-be", "strict", "'\\ufeffA'"],
+    ["0000feff00000041", "utf-32-be", "replace", "'\\ufeffA'"],
+    [
+      "410000",
+      "utf-32",
+      "strict",
+      "UnicodeDecodeError: 'utf-32-le' codec can't decode bytes in position 0-2: truncated data",
+    ],
+    ["410000", "utf-32", "replace", "'\ufffd'"],
+    [
+      "410000",
+      "utf-32-le",
+      "strict",
+      "UnicodeDecodeError: 'utf-32-le' codec can't decode bytes in position 0-2: truncated data",
+    ],
+    ["410000", "utf-32-le", "replace", "'\ufffd'"],
+    [
+      "410000",
+      "utf-32-be",
+      "strict",
+      "UnicodeDecodeError: 'utf-32-be' codec can't decode bytes in position 0-2: truncated data",
+    ],
+    ["410000", "utf-32-be", "replace", "'\ufffd'"],
+    [
+      "00d80000",
+      "utf-32",
+      "strict",
+      "UnicodeDecodeError: 'utf-32-le' codec can't decode bytes in position 0-3: code point in surrogate code point range(0xd800, 0xe000)",
+    ],
+    ["00d80000", "utf-32", "replace", "'\ufffd'"],
+    [
+      "00d80000",
+      "utf-32-le",
+      "strict",
+      "UnicodeDecodeError: 'utf-32-le' codec can't decode bytes in position 0-3: code point in surrogate code point range(0xd800, 0xe000)",
+    ],
+    ["00d80000", "utf-32-le", "replace", "'\ufffd'"],
+    [
+      "00d80000",
+      "utf-32-be",
+      "strict",
+      "UnicodeDecodeError: 'utf-32-be' codec can't decode bytes in position 0-3: code point not in range(0x110000)",
+    ],
+    ["00d80000", "utf-32-be", "replace", "'\ufffd'"],
+  ],
+  u32_enc: [
+    ["a\ud83d\ude00", "utf-32", "fffe00006100000000f60100"],
+    ["a\ud83d\ude00", "utf-32-le", "6100000000f60100"],
+    ["a\ud83d\ude00", "utf-32-be", "000000610001f600"],
+    ["", "utf-32", "fffe0000"],
+    ["", "utf-32-le", ""],
+    ["", "utf-32-be", ""],
+  ],
+  repr: [
+    "{}",
+    "{'a': 1}",
+    "{'a': [1, 2.5, None, True], 'b': {'c': 'd'}}",
+    "set()",
+    "{1}",
+    "'a\\ufeffb\\u200b'",
+    '"it\'s"',
+  ],
+  pack_into_err: [
+    "error: pack_into requires a buffer of at least 10 bytes for packing 4 bytes at offset 6 (actual buffer size is 8)",
+    "error: no space to pack 4 bytes at offset -2",
+    "error: offset -9 out of range for 8-byte buffer",
+  ],
+  bsplit: [
+    ["2020612062090a632020", -1, ["61", "62", "63"]],
+    ["2020612062090a632020", 1, ["61", "62090a632020"]],
+    ["", -1, []],
+    ["", 1, []],
+    ["616263", -1, ["616263"]],
+    ["616263", 1, ["616263"]],
+    ["1c2061", -1, ["1c", "61"]],
+    ["1c2061", 1, ["1c", "61"]],
   ],
-  [
-   "0x0.0p+0",
-   "-0x0.0p+0",
-   "0x0.0p+0"
-  ],
-  [
-   "0x0.0000000000001p-1022",
-   "0x0.0000000000001p-1022",
-   "0x0.0000000000001p-1022"
-  ],
-  [
-   "0x1.fffffffffffffp+1023",
-   "0x1.fffffffffffffp+1023",
-   "inf"
-  ],
-  [
-   "inf",
-   "nan",
-   "inf"
-  ],
-  [
-   "nan",
-   "0x1.0000000000000p+0",
-   "nan"
-  ],
-  [
-   "-inf",
-   "0x0.0p+0",
-   "inf"
-  ],
-  [
-   "0x0.012688b70e62bp-1022",
-   "0x0.03739a252b281p-1022",
-   "0x0.03a365ff2ea11p-1022"
-  ],
-  [
-   "0x0.0000000000001p-1022",
-   "0x1.0000000000000p-1022",
-   "0x1.0000000000000p-1022"
-  ],
-  [
-   "0x1.7e43c8800759cp+996",
-   "0x1.56e1fc2f8f359p-997",
-   "0x1.7e43c8800759cp+996"
-  ],
-  [
-   "0x1.999999999999ap-4",
-   "0x1.999999999999ap-3",
-   "0x1.c9f25c5bfeddap-3"
-  ],
-  [
-   "0x1.85e404999c126p-1",
-   "-0x1.d793fc3f9931cp-5",
-   "0x1.8700cd3d95a7dp-1"
-  ],
-  [
-   "-0x1.012dbadd50e36p-2",
-   "-0x1.e072ee67ee4cbp-1",
-   "0x1.f15c03d586864p-1"
-  ],
-  [
-   "-0x1.afc235dc71e38p-1",
-   "-0x1.95d180f9ba5b5p+2",
-   "0x1.996430f2635c1p+2"
-  ],
-  [
-   "0x1.a507d658d6d31p+2",
-   "-0x1.37dcc27623c4cp-1",
-   "0x1.a6d4da0230d6fp+2"
-  ],
-  [
-   "-0x1.b32ee6644855ep-2",
-   "-0x1.e4cab62dde15cp+0",
-   "0x1.f0d988112a0cep+0"
-  ],
-  [
-   "-0x1.e04bc5a87f194p-2",
-   "-0x1.13dd63476af80p-5",
-   "0x1.e188422c25c5ep-2"
-  ],
-  [
-   "0x1.a14f3c5ccedc4p-1009",
-   "-0x0.0000000ec96a0p-1022",
-   "0x1.a14f3c5ccedc4p-1009"
-  ],
-  [
-   "0x0.01f413948348dp-1022",
-   "-0x0.0000000037403p-1022",
-   "0x0.01f413948348dp-1022"
-  ],
-  [
-   "0x0.0000000261b52p-1022",
-   "-0x0.0p+0",
-   "0x0.0000000261b52p-1022"
-  ],
-  [
-   "-0x0.f28c546bc4707p-1022",
-   "-0x0.000000000077ep-1022",
-   "0x0.f28c546bc4707p-1022"
-  ],
-  [
-   "-0x0.0p+0",
-   "0x1.519c4511626c2p-1010",
-   "0x1.519c4511626c2p-1010"
-  ],
-  [
-   "0x0.000000000001ap-1022",
-   "-0x1.c59aa7a0f844ep-1007",
-   "0x1.c59aa7a0f844ep-1007"
-  ],
-  [
-   "0x1.a677f070e2042p+1003",
-   "0x1.e1f8f2ac7adcbp+1014",
-   "0x1.e1f8f5911a066p+1014"
-  ],
-  [
-   "-0x1.0c236cbd11e14p+1019",
-   "-0x1.37504e7c3d011p+1012",
-   "0x1.0c263f9b15813p+1019"
-  ],
-  [
-   "-0x1.8b32043cc82e8p+1000",
-   "0x1.64a0edfdba24cp+1002",
-   "0x1.720fa201ce85fp+1002"
-  ],
-  [
-   "0x1.2a01e7ec9409cp+1003",
-   "0x1.8a87c71ff1cdcp+1006",
-   "0x1.8c48fa258a055p+1006"
-  ],
-  [
-   "0x1.e01b05b73a398p+1007",
-   "-0x1.5b4d5e84a2075p+1015",
-   "0x1.5b4eaa5c74c0ap+1015"
-  ],
-  [
-   "0x1.6d50595eff200p+994",
-   "0x1.bb071c608162cp+1009",
-   "0x1.bb071c62dbd9ap+1009"
-  ],
-  [
-   "0x1.a50d4d73fde71p-10",
-   "0x1.a800b5e826f2cp-15",
-   "0x1.a542a93faa409p-10"
-  ],
-  [
-   "-0x1.732653e12b644p-59",
-   "0x1.717d6bf6db67cp-10",
-   "0x1.717d6bf6db67cp-10"
-  ],
-  [
-   "0x1.d7783c4fb923cp+46",
-   "-0x1.4e85ae2e13ef7p-22",
-   "0x1.d7783c4fb923cp+46"
-  ],
-  [
-   "-0x1.bf9b182c0640fp+31",
-   "0x1.bfb36ec395100p+40",
-   "0x1.bfb3a6b3e9ee4p+40"
-  ],
-  [
-   "-0x1.88c287a5efac4p-6",
-   "-0x1.c3d9f9dc052cbp-8",
-   "0x1.98ae94231068cp-6"
-  ],
-  [
-   "0x1.1d6541019cf68p-27",
-   "0x1.938f7ede88c7ap+7",
-   "0x1.938f7ede88c7ap+7"
-  ],
-  [
-   "-0x1.dc12c6b958486p-24",
-   "0x1.c35e4e529dd10p+601",
-   "0x1.c35e4e529dd10p+601"
-  ],
-  [
-   "-0x1.2110dab081b7ep+726",
-   "-0x1.84f0b8ab1dce0p-267",
-   "0x1.2110dab081b7ep+726"
-  ],
-  [
-   "0x1.1a8bf55890f00p+373",
-   "0x1.ede646b66dde7p-284",
-   "0x1.1a8bf55890f00p+373"
-  ],
-  [
-   "-0x1.94385d68f6d09p-7",
-   "0x1.7c6c9c702b6e4p-128",
-   "0x1.94385d68f6d09p-7"
-  ],
-  [
-   "0x1.b8942a3726f38p+340",
-   "0x1.da40c73073300p+971",
-   "0x1.da40c73073300p+971"
-  ],
-  [
-   "-0x1.52cfc2d42d600p+187",
-   "-0x1.05b0fdb23b55fp+744",
-   "0x1.05b0fdb23b55fp+744"
-  ]
- ],
- "dumps": [
-  [
-   "{\"b\": 1, \"a\": [1.0, 2, -0, 1e400, NaN, -Infinity], \"10\": {\"2\": null, \"1\": true}}",
-   {},
-   "{\"b\": 1, \"a\": [1.0, 2, 0, Infinity, NaN, -Infinity], \"10\": {\"2\": null, \"1\": true}}"
-  ],
-  [
-   "{\"b\": 1, \"a\": [1.0, 2, -0, 1e400, NaN, -Infinity], \"10\": {\"2\": null, \"1\": true}}",
-   {
-    "separators": [
-     ",",
-     ":"
-    ]
-   },
-   "{\"b\":1,\"a\":[1.0,2,0,Infinity,NaN,-Infinity],\"10\":{\"2\":null,\"1\":true}}"
-  ],
-  [
-   "{\"b\": 1, \"a\": [1.0, 2, -0, 1e400, NaN, -Infinity], \"10\": {\"2\": null, \"1\": true}}",
-   {
-    "sortKeys": true
-   },
-   "{\"10\": {\"1\": true, \"2\": null}, \"a\": [1.0, 2, 0, Infinity, NaN, -Infinity], \"b\": 1}"
-  ],
-  [
-   "{\"b\": 1, \"a\": [1.0, 2, -0, 1e400, NaN, -Infinity], \"10\": {\"2\": null, \"1\": true}}",
-   {
-    "ensureAscii": false
-   },
-   "{\"b\": 1, \"a\": [1.0, 2, 0, Infinity, NaN, -Infinity], \"10\": {\"2\": null, \"1\": true}}"
-  ],
-  [
-   "{\"b\": 1, \"a\": [1.0, 2, -0, 1e400, NaN, -Infinity], \"10\": {\"2\": null, \"1\": true}}",
-   {
-    "indent": 2
-   },
-   "{\n  \"b\": 1,\n  \"a\": [\n    1.0,\n    2,\n    0,\n    Infinity,\n    NaN,\n    -Infinity\n  ],\n  \"10\": {\n    \"2\": null,\n    \"1\": true\n  }\n}"
-  ],
-  [
-   "[12345678901234567890, 0.1, \"\\ud83d\\ude00\\u00e9\\n\"]",
-   {},
-   "[12345678901234567890, 0.1, \"\\ud83d\\ude00\\u00e9\\n\"]"
-  ],
-  [
-   "[12345678901234567890, 0.1, \"\\ud83d\\ude00\\u00e9\\n\"]",
-   {
-    "separators": [
-     ",",
-     ":"
-    ]
-   },
-   "[12345678901234567890,0.1,\"\\ud83d\\ude00\\u00e9\\n\"]"
-  ],
-  [
-   "[12345678901234567890, 0.1, \"\\ud83d\\ude00\\u00e9\\n\"]",
-   {
-    "sortKeys": true
-   },
-   "[12345678901234567890, 0.1, \"\\ud83d\\ude00\\u00e9\\n\"]"
-  ],
-  [
-   "[12345678901234567890, 0.1, \"\\ud83d\\ude00\\u00e9\\n\"]",
-   {
-    "ensureAscii": false
-   },
-   "[12345678901234567890, 0.1, \"\ud83d\ude00\u00e9\\n\"]"
-  ],
-  [
-   "[12345678901234567890, 0.1, \"\\ud83d\\ude00\\u00e9\\n\"]",
-   {
-    "indent": 2
-   },
-   "[\n  12345678901234567890,\n  0.1,\n  \"\\ud83d\\ude00\\u00e9\\n\"\n]"
-  ],
-  [
-   "\"x\"",
-   {},
-   "\"x\""
-  ],
-  [
-   "\"x\"",
-   {
-    "separators": [
-     ",",
-     ":"
-    ]
-   },
-   "\"x\""
-  ],
-  [
-   "\"x\"",
-   {
-    "sortKeys": true
-   },
-   "\"x\""
-  ],
-  [
-   "\"x\"",
-   {
-    "ensureAscii": false
-   },
-   "\"x\""
-  ],
-  [
-   "\"x\"",
-   {
-    "indent": 2
-   },
-   "\"x\""
-  ],
-  [
-   " {\"a\" : {} , \"b\":[ ]} ",
-   {},
-   "{\"a\": {}, \"b\": []}"
-  ],
-  [
-   " {\"a\" : {} , \"b\":[ ]} ",
-   {
-    "separators": [
-     ",",
-     ":"
-    ]
-   },
-   "{\"a\":{},\"b\":[]}"
-  ],
-  [
-   " {\"a\" : {} , \"b\":[ ]} ",
-   {
-    "sortKeys": true
-   },
-   "{\"a\": {}, \"b\": []}"
-  ],
-  [
-   " {\"a\" : {} , \"b\":[ ]} ",
-   {
-    "ensureAscii": false
-   },
-   "{\"a\": {}, \"b\": []}"
-  ],
-  [
-   " {\"a\" : {} , \"b\":[ ]} ",
-   {
-    "indent": 2
-   },
-   "{\n  \"a\": {},\n  \"b\": []\n}"
-  ],
-  [
-   "{\"a\": 1, \"a\": 2, \"b\": 3}",
-   {},
-   "{\"a\": 2, \"b\": 3}"
-  ],
-  [
-   "{\"a\": 1, \"a\": 2, \"b\": 3}",
-   {
-    "separators": [
-     ",",
-     ":"
-    ]
-   },
-   "{\"a\":2,\"b\":3}"
-  ],
-  [
-   "{\"a\": 1, \"a\": 2, \"b\": 3}",
-   {
-    "sortKeys": true
-   },
-   "{\"a\": 2, \"b\": 3}"
-  ],
-  [
-   "{\"a\": 1, \"a\": 2, \"b\": 3}",
-   {
-    "ensureAscii": false
-   },
-   "{\"a\": 2, \"b\": 3}"
-  ],
-  [
-   "{\"a\": 1, \"a\": 2, \"b\": 3}",
-   {
-    "indent": 2
-   },
-   "{\n  \"a\": 2,\n  \"b\": 3\n}"
-  ]
- ],
- "errs": [
-  [
-   "",
-   "Expecting value: line 1 column 1 (char 0)"
-  ],
-  [
-   "{\"a\":1,}",
-   "Expecting property name enclosed in double quotes: line 1 column 8 (char 7)"
-  ],
-  [
-   "[1 2]",
-   "Expecting ',' delimiter: line 1 column 4 (char 3)"
-  ],
-  [
-   "\"abc",
-   "Unterminated string starting at: line 1 column 1 (char 0)"
-  ],
-  [
-   "\"\\x\"",
-   "Invalid \\escape: line 1 column 2 (char 1)"
-  ],
-  [
-   "{\"a\" 1}",
-   "Expecting ':' delimiter: line 1 column 6 (char 5)"
-  ],
-  [
-   "\n  [1,\n 2,,]",
-   "Expecting value: line 3 column 4 (char 10)"
-  ],
-  [
-   "1 2",
-   "Extra data: line 1 column 3 (char 2)"
-  ],
-  [
-   "01",
-   "Extra data: line 1 column 2 (char 1)"
-  ]
- ],
- "int": [
-  [
-   "12",
-   10,
-   "12"
-  ],
-  [
-   " -7 ",
-   10,
-   "-7"
-  ],
-  [
-   "1_000",
-   10,
-   "1000"
-  ],
-  [
-   "\u0663\u0664",
-   10,
-   "34"
-  ],
-  [
-   "0x1f",
-   16,
-   "31"
-  ],
-  [
-   "0o17",
-   0,
-   "15"
-  ],
-  [
-   "ff",
-   16,
-   "255"
-  ],
-  [
-   "1__0",
-   10,
-   "ValueError: invalid literal for int() with base 10: '1__0'"
-  ],
-  [
-   "",
-   10,
-   "ValueError: invalid literal for int() with base 10: ''"
-  ],
-  [
-   "12a",
-   10,
-   "ValueError: invalid literal for int() with base 10: '12a'"
-  ],
-  [
-   "010",
-   0,
-   "ValueError: invalid literal for int() with base 0: '010'"
-  ]
- ],
- "float": [
-  [
-   "1.5",
-   "1.5"
-  ],
-  [
-   " -2e3 ",
-   "-2000.0"
-  ],
-  [
-   "1_0.5",
-   "10.5"
-  ],
-  [
-   "\u0663.\u0665",
-   "3.5"
-  ],
-  [
-   "inf",
-   "inf"
-  ],
-  [
-   "-nan",
-   "nan"
-  ],
-  [
-   ".",
-   "ValueError: could not convert string to float: '.'"
-  ],
-  [
-   "1__0",
-   "ValueError: could not convert string to float: '1__0'"
-  ],
-  [
-   "abc",
-   "ValueError: could not convert string to float: 'abc'"
-  ]
- ],
- "re": [
-  [
-   "(?P<y>\\d{4})-(?P=y)",
-   "2024-2024",
-   0,
-   [
-    0,
-    9
-   ]
-  ],
-  [
-   "\\Aab",
-   "xab",
-   0,
-   null
-  ],
-  [
-   "b$",
-   "ab\n",
-   0,
-   [
-    1,
-    2
-   ]
-  ],
-  [
-   "^c",
-   "ab\nc",
-   8,
-   [
-    3,
-    4
-   ]
-  ],
-  [
-   "a.c",
-   "a\nc",
-   0,
-   null
-  ],
-  [
-   "a.c",
-   "a\nc",
-   16,
-   [
-    0,
-    3
-   ]
-  ],
-  [
-   "\\w+",
-   "h\u00e9llo_1 x",
-   0,
-   [
-    0,
-    7
-   ]
-  ],
-  [
-   "\\d+",
-   "\u0663\u0664x",
-   0,
-   [
-    0,
-    2
-   ]
-  ],
-  [
-   "\\d+",
-   "\u0663\u0664x5",
-   256,
-   [
-    3,
-    4
-   ]
-  ],
-  [
-   "\\bfoo\\b",
-   "\u00e9foo foo",
-   0,
-   [
-    5,
-    8
-   ]
-  ],
-  [
-   "(?i)ABC",
-   "xabc",
-   0,
-   [
-    1,
-    4
-   ]
-  ],
-  [
-   "a{,2}",
-   "aaa",
-   0,
-   [
-    0,
-    2
-   ]
-  ],
-  [
-   "a{2",
-   "a{2",
-   0,
-   [
-    0,
-    3
-   ]
-  ],
-  [
-   "[]a]+",
-   "]a]",
-   0,
-   [
-    0,
-    3
-   ]
-  ],
-  [
-   "\\s+",
-   "a\u001c\u0085b",
-   0,
-   [
-    1,
-    3
-   ]
-  ],
-  [
-   "(?x) a b # c",
-   "ab",
-   0,
-   [
-    0,
-    2
-   ]
-  ]
- ],
- "re_escape": [
-  [
-   "a.b",
-   "a\\.b"
-  ],
-  [
-   "x-y z#1",
-   "x\\-y\\ z\\#1"
-  ],
-  [
-   "\u00e9~&",
-   "\u00e9\\~\\&"
-  ]
- ],
- "paths": [
-  [
-   "PurePosixPath",
-   "C:\\a\\b.txt",
-   "C:\\a\\b.txt",
-   [
-    "C:\\a\\b.txt"
-   ],
-   "",
-   "",
-   "C:\\a\\b.txt",
-   "C:\\a\\b",
-   ".txt",
-   ".",
-   "C:\\a\\b.txt/f.png"
-  ],
-  [
-   "PureWindowsPath",
-   "C:\\a\\b.txt",
-   "C:\\a\\b.txt",
-   [
-    "C:\\",
-    "a",
-    "b.txt"
-   ],
-   "C:",
-   "\\",
-   "b.txt",
-   "b",
-   ".txt",
-   "C:\\a",
-   "C:\\a\\b.txt\\f.png"
-  ],
-  [
-   "PurePosixPath",
-   "C:/a/b",
-   "C:/a/b",
-   [
-    "C:",
-    "a",
-    "b"
-   ],
-   "",
-   "",
-   "b",
-   "b",
-   "",
-   "C:/a",
-   "C:/a/b/f.png"
-  ],
-  [
-   "PureWindowsPath",
-   "C:/a/b",
-   "C:\\a\\b",
-   [
-    "C:\\",
-    "a",
-    "b"
-   ],
-   "C:",
-   "\\",
-   "b",
-   "b",
-   "",
-   "C:\\a",
-   "C:\\a\\b\\f.png"
-  ],
-  [
-   "PurePosixPath",
-   "\\\\server\\share\\x\\y.png",
-   "\\\\server\\share\\x\\y.png",
-   [
-    "\\\\server\\share\\x\\y.png"
-   ],
-   "",
-   "",
-   "\\\\server\\share\\x\\y.png",
-   "\\\\server\\share\\x\\y",
-   ".png",
-   ".",
-   "\\\\server\\share\\x\\y.png/f.png"
-  ],
-  [
-   "PureWindowsPath",
-   "\\\\server\\share\\x\\y.png",
-   "\\\\server\\share\\x\\y.png",
-   [
-    "\\\\server\\share\\",
-    "x",
-    "y.png"
-   ],
-   "\\\\server\\share",
-   "\\",
-   "y.png",
-   "y",
-   ".png",
-   "\\\\server\\share\\x",
-   "\\\\server\\share\\x\\y.png\\f.png"
-  ],
-  [
-   "PurePosixPath",
-   "//server/share",
-   "//server/share",
-   [
-    "//",
-    "server",
-    "share"
-   ],
-   "",
-   "//",
-   "share",
-   "share",
-   "",
-   "//server",
-   "//server/share/f.png"
-  ],
-  [
-   "PureWindowsPath",
-   "//server/share",
-   "\\\\server\\share\\",
-   [
-    "\\\\server\\share\\"
-   ],
-   "\\\\server\\share",
-   "\\",
-   "",
-   "",
-   "",
-   "\\\\server\\share\\",
-   "\\\\server\\share\\f.png"
-  ],
-  [
-   "PurePosixPath",
-   "rel\\x",
-   "rel\\x",
-   [
-    "rel\\x"
-   ],
-   "",
-   "",
-   "rel\\x",
-   "rel\\x",
-   "",
-   ".",
-   "rel\\x/f.png"
-  ],
-  [
-   "PureWindowsPath",
-   "rel\\x",
-   "rel\\x",
-   [
-    "rel",
-    "x"
-   ],
-   "",
-   "",
-   "x",
-   "x",
-   "",
-   "rel",
-   "rel\\x\\f.png"
-  ],
-  [
-   "PurePosixPath",
-   "C:",
-   "C:",
-   [
-    "C:"
-   ],
-   "",
-   "",
-   "C:",
-   "C:",
-   "",
-   ".",
-   "C:/f.png"
-  ],
-  [
-   "PureWindowsPath",
-   "C:",
-   "C:",
-   [
-    "C:"
-   ],
-   "C:",
-   "",
-   "",
-   "",
-   "",
-   "C:",
-   "C:f.png"
-  ],
-  [
-   "PurePosixPath",
-   "/posix/path.tar.gz",
-   "/posix/path.tar.gz",
-   [
-    "/",
-    "posix",
-    "path.tar.gz"
-   ],
-   "",
-   "/",
-   "path.tar.gz",
-   "path.tar",
-   ".gz",
-   "/posix",
-   "/posix/path.tar.gz/f.png"
-  ],
-  [
-   "PureWindowsPath",
-   "/posix/path.tar.gz",
-   "\\posix\\path.tar.gz",
-   [
-    "\\",
-    "posix",
-    "path.tar.gz"
-   ],
-   "",
-   "\\",
-   "path.tar.gz",
-   "path.tar",
-   ".gz",
-   "\\posix",
-   "\\posix\\path.tar.gz\\f.png"
-  ],
-  [
-   "PurePosixPath",
-   "a/./b//c",
-   "a/b/c",
-   [
-    "a",
-    "b",
-    "c"
-   ],
-   "",
-   "",
-   "c",
-   "c",
-   "",
-   "a/b",
-   "a/b/c/f.png"
-  ],
-  [
-   "PureWindowsPath",
-   "a/./b//c",
-   "a\\b\\c",
-   [
-    "a",
-    "b",
-    "c"
-   ],
-   "",
-   "",
-   "c",
-   "c",
-   "",
-   "a\\b",
-   "a\\b\\c\\f.png"
-  ]
- ],
- "u32": [
-  [
-   "41000000",
-   "utf-32",
-   "strict",
-   "'A'"
-  ],
-  [
-   "41000000",
-   "utf-32",
-   "replace",
-   "'A'"
-  ],
-  [
-   "41000000",
-   "utf-32-le",
-   "strict",
-   "'A'"
-  ],
-  [
-   "41000000",
-   "utf-32-le",
-   "replace",
-   "'A'"
-  ],
-  [
-   "41000000",
-   "utf-32-be",
-   "strict",
-   "UnicodeDecodeError: 'utf-32-be' codec can't decode bytes in position 0-3: code point not in range(0x110000)"
-  ],
-  [
-   "41000000",
-   "utf-32-be",
-   "replace",
-   "'\ufffd'"
-  ],
-  [
-   "fffe000041000000",
-   "utf-32",
-   "strict",
-   "'A'"
-  ],
-  [
-   "fffe000041000000",
-   "utf-32",
-   "replace",
-   "'A'"
-  ],
-  [
-   "fffe000041000000",
-   "utf-32-le",
-   "strict",
-   "'\\ufeffA'"
-  ],
-  [
-   "fffe000041000000",
-   "utf-32-le",
-   "replace",
-   "'\\ufeffA'"
-  ],
-  [
-   "fffe000041000000",
-   "utf-32-be",
-   "strict",
-   "UnicodeDecodeError: 'utf-32-be' codec can't decode bytes in position 0-3: code point not in range(0x110000)"
-  ],
-  [
-   "fffe000041000000",
-   "utf-32-be",
-   "replace",
-   "'\ufffd\ufffd'"
-  ],
-  [
-   "0000feff00000041",
-   "utf-32",
-   "strict",
-   "'A'"
-  ],
-  [
-   "0000feff00000041",
-   "utf-32",
-   "replace",
-   "'A'"
-  ],
-  [
-   "0000feff00000041",
-   "utf-32-le",
-   "strict",
-   "UnicodeDecodeError: 'utf-32-le' codec can't decode bytes in position 0-3: code point not in range(0x110000)"
-  ],
-  [
-   "0000feff00000041",
-   "utf-32-le",
-   "replace",
-   "'\ufffd\ufffd'"
-  ],
-  [
-   "0000feff00000041",
-   "utf-32-be",
-   "strict",
-   "'\\ufeffA'"
-  ],
-  [
-   "0000feff00000041",
-   "utf-32-be",
-   "replace",
-   "'\\ufeffA'"
-  ],
-  [
-   "410000",
-   "utf-32",
-   "strict",
-   "UnicodeDecodeError: 'utf-32-le' codec can't decode bytes in position 0-2: truncated data"
-  ],
-  [
-   "410000",
-   "utf-32",
-   "replace",
-   "'\ufffd'"
-  ],
-  [
-   "410000",
-   "utf-32-le",
-   "strict",
-   "UnicodeDecodeError: 'utf-32-le' codec can't decode bytes in position 0-2: truncated data"
-  ],
-  [
-   "410000",
-   "utf-32-le",
-   "replace",
-   "'\ufffd'"
-  ],
-  [
-   "410000",
-   "utf-32-be",
-   "strict",
-   "UnicodeDecodeError: 'utf-32-be' codec can't decode bytes in position 0-2: truncated data"
-  ],
-  [
-   "410000",
-   "utf-32-be",
-   "replace",
-   "'\ufffd'"
-  ],
-  [
-   "00d80000",
-   "utf-32",
-   "strict",
-   "UnicodeDecodeError: 'utf-32-le' codec can't decode bytes in position 0-3: code point in surrogate code point range(0xd800, 0xe000)"
-  ],
-  [
-   "00d80000",
-   "utf-32",
-   "replace",
-   "'\ufffd'"
-  ],
-  [
-   "00d80000",
-   "utf-32-le",
-   "strict",
-   "UnicodeDecodeError: 'utf-32-le' codec can't decode bytes in position 0-3: code point in surrogate code point range(0xd800, 0xe000)"
-  ],
-  [
-   "00d80000",
-   "utf-32-le",
-   "replace",
-   "'\ufffd'"
-  ],
-  [
-   "00d80000",
-   "utf-32-be",
-   "strict",
-   "UnicodeDecodeError: 'utf-32-be' codec can't decode bytes in position 0-3: code point not in range(0x110000)"
-  ],
-  [
-   "00d80000",
-   "utf-32-be",
-   "replace",
-   "'\ufffd'"
-  ]
- ],
- "u32_enc": [
-  [
-   "a\ud83d\ude00",
-   "utf-32",
-   "fffe00006100000000f60100"
-  ],
-  [
-   "a\ud83d\ude00",
-   "utf-32-le",
-   "6100000000f60100"
-  ],
-  [
-   "a\ud83d\ude00",
-   "utf-32-be",
-   "000000610001f600"
-  ],
-  [
-   "",
-   "utf-32",
-   "fffe0000"
-  ],
-  [
-   "",
-   "utf-32-le",
-   ""
-  ],
-  [
-   "",
-   "utf-32-be",
-   ""
-  ]
- ],
- "repr": [
-  "{}",
-  "{'a': 1}",
-  "{'a': [1, 2.5, None, True], 'b': {'c': 'd'}}",
-  "set()",
-  "{1}",
-  "'a\\ufeffb\\u200b'",
-  "\"it's\""
- ],
- "pack_into_err": [
-  "error: pack_into requires a buffer of at least 10 bytes for packing 4 bytes at offset 6 (actual buffer size is 8)",
-  "error: no space to pack 4 bytes at offset -2",
-  "error: offset -9 out of range for 8-byte buffer"
- ],
- "bsplit": [
-  [
-   "2020612062090a632020",
-   -1,
-   [
-    "61",
-    "62",
-    "63"
-   ]
-  ],
-  [
-   "2020612062090a632020",
-   1,
-   [
-    "61",
-    "62090a632020"
-   ]
-  ],
-  [
-   "",
-   -1,
-   []
-  ],
-  [
-   "",
-   1,
-   []
-  ],
-  [
-   "616263",
-   -1,
-   [
-    "616263"
-   ]
-  ],
-  [
-   "616263",
-   1,
-   [
-    "616263"
-   ]
-  ],
-  [
-   "1c2061",
-   -1,
-   [
-    "1c",
-    "61"
-   ]
-  ],
-  [
-   "1c2061",
-   1,
-   [
-    "1c",
-    "61"
-   ]
-  ]
- ]
 } as const;

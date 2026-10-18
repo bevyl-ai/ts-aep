@@ -18,7 +18,13 @@ import { ocioColorProfileEnvelope, requireOcioConfig } from "../../color/ocio.ts
 import { AlphaMode, FieldSeparationType, LinearLightMode, PulldownPhase } from "../../enums/index.ts";
 import { mapMediaColorSpace, profileIdForName } from "../../enums/mappings.ts";
 import { ChunkField } from "../descriptors.ts";
-import { _validateNumber, validateBool, validateConformFrameRate, validateRgbColor, validateString } from "../validators.ts";
+import {
+  _validateNumber,
+  validateBool,
+  validateConformFrameRate,
+  validateRgbColor,
+  validateString,
+} from "../validators.ts";
 
 import type { Chunk, ListChunk } from "../../binary/chunk.ts";
 import type { SspcChunk } from "../../binary/footage_chunks.ts";
@@ -37,7 +43,7 @@ export const _UNASSIGNED_PROFILE = Bytes.repeat(Uint8Array.of(0xff), 16);
  * it (clrs_ae20XX.aep fixtures) - and `Mcsp`/`ocsp` arrived with 93.40
  * (samples/versions: absent from the AE 2018 project, present from AE 2022).
  */
-export const _CLRS_RECORDS_SINCE: ReadonlyArray<readonly [string, readonly [number, number]]> = [
+const _CLRS_RECORDS_SINCE: ReadonlyArray<readonly [string, readonly [number, number]]> = [
   ["hdrm", [96, 9]],
   ["Mcsp", [93, 40]],
   ["ocsp", [93, 40]],
@@ -50,17 +56,14 @@ export const _CLRS_RECORDS_SINCE: ReadonlyArray<readonly [string, readonly [numb
  * writing a mode over it would claim an alpha channel the media does not
  * have. AE greys the whole alpha section out for such footage.
  */
-export function _validateHasAlpha(value: AlphaMode, instance: { hasAlpha?: boolean } | null = null): void {
+function _validateHasAlpha(value: AlphaMode, instance: { hasAlpha?: boolean } | null = null): void {
   if (instance != null && !instance.hasAlpha) {
-    throw new ValueError(
-      "cannot set alphaMode: the footage has no alpha channel " +
-        "(hasAlpha is false)",
-    );
+    throw new ValueError("cannot set alphaMode: the footage has no alpha channel " + "(hasAlpha is false)");
   }
 }
 
 /** The smallest non-zero conform rate After Effects can open a project with. */
-export const _MIN_CONFORM_FRAME_RATE = 0.0005;
+const _MIN_CONFORM_FRAME_RATE = 0.0005;
 
 /**
  * Move an image sequence to `rate`, keeping its frame count.
@@ -70,7 +73,7 @@ export const _MIN_CONFORM_FRAME_RATE = 0.0005;
  * 29.9700012) and leaves the fraction unreduced: 12 frames is 12/24 at
  * 24 fps, 1200/2997 at 29.97 (measured on AE 2026).
  */
-export function _retimeSequence(sspc: SspcChunk, rate: number): void {
+function _retimeSequence(sspc: SspcChunk, rate: number): void {
   const frames = Math.round(sspc.duration * sspc.nativeFrameRate) + 0;
   sspc.nativeFrameRate = rate;
   _storeFramesOverRate(sspc, frames, Number(rate.toFixed(3)));
@@ -203,8 +206,7 @@ export class FootageSource {
       // denominator in ratio multiply"); 0.0005 opens, as a 3000 s
       // 3-frame sequence.
       throw new ValueError(
-        "conformFrameRate must be 0 or at least " +
-          `${floatRepr(_MIN_CONFORM_FRAME_RATE)}, got ${floatRepr(value)}`,
+        "conformFrameRate must be 0 or at least " + `${floatRepr(_MIN_CONFORM_FRAME_RATE)}, got ${floatRepr(value)}`,
       );
     }
     const sspc = this._sspc;
@@ -319,11 +321,7 @@ export class FootageSource {
   declare _clrs: ListChunk | null;
   declare _project: Project | null;
 
-  constructor(kw: {
-    _sspc: SspcChunk;
-    _linl?: U1Chunk | null;
-    _clrs?: ListChunk | null;
-  }) {
+  constructor(kw: { _sspc: SspcChunk; _linl?: U1Chunk | null; _clrs?: ListChunk | null }) {
     const { _sspc, _linl = null, _clrs = null } = kw;
     this._sspc = _sspc;
     this._linl = _linl;
@@ -406,12 +404,7 @@ export class FootageSource {
         // duration it measured and gets the conform factor applied.
         _retimeSequence(newSspc, rate);
       }
-    } else if (
-      rate &&
-      !this._rateIsAssumed &&
-      !new_._rateIsAssumed &&
-      !new_.isStill
-    ) {
+    } else if (rate && !this._rateIsAssumed && !new_._rateIsAssumed && !new_.isStill) {
       newSspc.conformFrameRate = rate;
     }
 
@@ -436,9 +429,7 @@ export class FootageSource {
     const head = project._head;
     const version = [head.fileFormatVersion, head._formatSubversion];
     const dropped = new Set(
-      _CLRS_RECORDS_SINCE.filter(([, since]) => compare(version, since) < 0).map(
-        ([marker]) => marker,
-      ),
+      _CLRS_RECORDS_SINCE.filter(([, since]) => compare(version, since) < 0).map(([marker]) => marker),
     );
     const chunks = this._clrs.chunks;
     const kept: Chunk[] = [];
@@ -496,7 +487,7 @@ export class FootageSource {
    * method reads it back from, or the rename is lost on save. Only called
    * for a source that owns its name (see `_ownsName`).
    */
-  _storeName(value: string): void {
+  _storeName(_value: string): void {
     throw new NotImplementedError();
   }
 
@@ -666,9 +657,7 @@ export class FootageSource {
   _writeOcsp(envelope: string): void {
     const utf8 = this._ocspUtf8();
     if (utf8 == null) {
-      throw new AttributeError(
-        "Cannot set mediaColorSpace: no 'ocsp' color chunk in CLRS.",
-      );
+      throw new AttributeError("Cannot set mediaColorSpace: no 'ocsp' color chunk in CLRS.");
     }
     utf8.value = envelope;
   }
@@ -684,25 +673,41 @@ export class FootageSource {
   static {
     // Descriptor fields. Each reads from / writes to a chunk attribute, so
     // assigning to them mutates the underlying binary data.
-    descriptor(this, "alphaMode", ChunkField.enum(AlphaMode, "_sspc", "alphaModeRaw", {
-      validate: _validateHasAlpha,
-      postSet: "_onAlphaModeSet",
-    }));
+    descriptor(
+      this,
+      "alphaMode",
+      ChunkField.enum(AlphaMode, "_sspc", "alphaModeRaw", {
+        validate: _validateHasAlpha,
+        postSet: "_onAlphaModeSet",
+      }),
+    );
     descriptor(this, "fieldSeparationType", ChunkField.enum(FieldSeparationType, "_sspc", "fieldSeparationType"));
     descriptor(this, "hasAlpha", new ChunkField("_sspc", "hasAlpha", { readOnly: true }));
     descriptor(this, "highQualityFieldSeparation", ChunkField.bool("_sspc", "highQualityFieldSeparation"));
     descriptor(this, "invertAlpha", ChunkField.bool("_sspc", "invertAlpha"));
-    descriptor(this, "loop", new ChunkField("_sspc", "loop", {
-      validate: _validateNumber({ min: 1, max: 9999, integer: true }),
-    }));
+    descriptor(
+      this,
+      "loop",
+      new ChunkField("_sspc", "loop", {
+        validate: _validateNumber({ min: 1, max: 9999, integer: true }),
+      }),
+    );
     descriptor(this, "premulColor", new ChunkField("_sspc", "premulColor", { validate: validateRgbColor }));
-    descriptor(this, "interpretAsLinearLight", ChunkField.enum(LinearLightMode, "_linl", "value", {
-      default: LinearLightMode.OFF,
-    }));
+    descriptor(
+      this,
+      "interpretAsLinearLight",
+      ChunkField.enum(LinearLightMode, "_linl", "value", {
+        default: LinearLightMode.OFF,
+      }),
+    );
     descriptor(this, "displayFrameRate", new ChunkField("_sspc", "displayFrameRate", { readOnly: true }));
-    descriptor(this, "removePulldown", ChunkField.enum(PulldownPhase, "_sspc", "removePulldown", {
-      postSet: "_onRemovePulldownSet",
-    }));
+    descriptor(
+      this,
+      "removePulldown",
+      ChunkField.enum(PulldownPhase, "_sspc", "removePulldown", {
+        postSet: "_onRemovePulldownSet",
+      }),
+    );
     descriptor(this, "nativeFrameRate", new ChunkField("_sspc", "nativeFrameRate", { readOnly: true }));
     descriptor(this, "_width", new ChunkField("_sspc", "width", { readOnly: true }));
     descriptor(this, "_height", new ChunkField("_sspc", "height", { readOnly: true }));

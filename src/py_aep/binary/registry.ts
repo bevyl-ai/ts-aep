@@ -33,6 +33,7 @@ export function register(...chunkTypes: string[]): <T extends typeof Chunk>(cls:
  */
 export function registered<K extends keyof ChunkClasses>(chunkType: K): ChunkClasses[K] {
   const cls = CHUNK_TYPES.get(chunkType);
-  if (cls === undefined) throw new Error(`chunk type "${chunkType}" is not registered: import py_aep/binary/_register.ts`);
+  if (cls === undefined)
+    throw new Error(`chunk type "${chunkType}" is not registered: import py_aep/binary/_register.ts`);
   return cls;
 }

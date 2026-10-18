@@ -16,11 +16,21 @@ export const LAYERS: [string, RegExp][] = [
 ];
 const layerOf = (f: string) => LAYERS.find(([, re]) => re.test(f))?.[0] ?? "other";
 
-const cfg = ts.getParsedCommandLineOfConfigFile(path.join(ROOT, "tsconfig.json"), {}, { ...ts.sys, onUnRecoverableConfigFileDiagnostic: () => {} })!;
-const program = ts.createProgram(cfg.fileNames, { ...cfg.options, strict: true, noImplicitAny: true, strictNullChecks: true });
+const cfg = ts.getParsedCommandLineOfConfigFile(
+  path.join(ROOT, "tsconfig.json"),
+  {},
+  { ...ts.sys, onUnRecoverableConfigFileDiagnostic: () => {} },
+)!;
+const program = ts.createProgram(cfg.fileNames, {
+  ...cfg.options,
+  strict: true,
+  noImplicitAny: true,
+  strictNullChecks: true,
+});
 const rows = new Map<string, { strict: number; any: number; unknown: number; casts: number; files: number }>();
 const filesOf = new Map<string, string[]>();
-const bump = (l: string) => rows.get(l) ?? (rows.set(l, { strict: 0, any: 0, unknown: 0, casts: 0, files: 0 }), rows.get(l)!);
+const bump = (l: string) =>
+  rows.get(l) ?? (rows.set(l, { strict: 0, any: 0, unknown: 0, casts: 0, files: 0 }), rows.get(l)!);
 for (const sf of program.getSourceFiles()) {
   const rel = path.relative(ROOT, sf.fileName);
   if (!rel.startsWith("src/") && !rel.startsWith("tests/")) continue;
@@ -32,7 +42,11 @@ for (const sf of program.getSourceFiles()) {
   const visit = (n: ts.Node) => {
     if (n.kind === ts.SyntaxKind.AnyKeyword) r.any++;
     if (n.kind === ts.SyntaxKind.UnknownKeyword) r.unknown++;
-    if ((ts.isAsExpression(n) && !(ts.isTypeReferenceNode(n.type) && n.type.typeName.getText(sf) === "const")) || ts.isTypeAssertionExpression(n)) r.casts++;
+    if (
+      (ts.isAsExpression(n) && !(ts.isTypeReferenceNode(n.type) && n.type.typeName.getText(sf) === "const")) ||
+      ts.isTypeAssertionExpression(n)
+    )
+      r.casts++;
     ts.forEachChild(n, visit);
   };
   visit(sf);
@@ -46,8 +60,12 @@ else {
   let t = { strict: 0, any: 0, unknown: 0, casts: 0, files: 0 };
   for (const [l] of LAYERS) {
     const r = rows.get(l)!;
-    console.log(`${l.padEnd(24)}${String(r.files).padStart(5)}${String(r.strict).padStart(15)}${String(r.any).padStart(7)}${String(r.unknown).padStart(9)}${String(r.casts).padStart(7)}`);
+    console.log(
+      `${l.padEnd(24)}${String(r.files).padStart(5)}${String(r.strict).padStart(15)}${String(r.any).padStart(7)}${String(r.unknown).padStart(9)}${String(r.casts).padStart(7)}`,
+    );
     for (const k of Object.keys(t) as (keyof typeof t)[]) t[k] += r[k];
   }
-  console.log(`${"total".padEnd(24)}${String(t.files).padStart(5)}${String(t.strict).padStart(15)}${String(t.any).padStart(7)}${String(t.unknown).padStart(9)}${String(t.casts).padStart(7)}`);
+  console.log(
+    `${"total".padEnd(24)}${String(t.files).padStart(5)}${String(t.strict).padStart(15)}${String(t.any).padStart(7)}${String(t.unknown).padStart(9)}${String(t.casts).padStart(7)}`,
+  );
 }

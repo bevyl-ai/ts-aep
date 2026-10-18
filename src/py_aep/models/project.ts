@@ -1,62 +1,8 @@
 // Port of py_aep/models/project.py.
 
-import { INSPECT, describe } from "../../pyrt/index.ts";
-import * as host from "../../pyrt/host.ts";
-import { uuid4 } from "../../pyrt/uuid.ts";
-
-import { fromstring, tostring } from "../../pyrt/etree.ts";
-import { aeWrites, requiresVersion } from "../ae_version.ts";
-import { toF4, truncateUtf8 } from "../binary/bin_utils.ts";
-import { writeAep as _writeAep } from "../binary/chunk.ts";
-import { Chunk, ListChunk } from "../binary/chunk.ts";
-import { buildAiLayerOptiData, buildPsdFlattenedOptiData, buildTextOptiData } from "../binary/footage_chunks.ts";
-import { HeadChunk, NhedChunk, NnhdChunk, TimeDisplayPrefItem } from "../binary/item_chunks.ts";
-import { DwgaChunk } from "../binary/misc_chunks.ts";
-import { CpidChunk, FdtaChunk, SvapChunk, WsnmChunk, WsnsChunk } from "../binary/project_chunks.ts";
-import { F8Chunk, U1Chunk, U2Chunk, U4Chunk, U4LeChunk, Utf8Chunk } from "../binary/scalar_chunks.ts";
-import { alasFullpath, dumpAlas, filterByType, findByListType, findByListTypeOrNull, findByType, findByTypeOrNull, indexByIdentity, PENDING_ASCENDCOUNT, recursiveFind, toggleFlagChunk } from "../binary/utils.ts";
-import type { RenderSettingsItem } from "../binary/render_chunks.ts";
-import { buildIccEnvelope, buildOcioDisplayEnvelope, envelopeProfileName } from "../color/envelope.ts";
-import { IccProfileLibrary, iccProfileDescription, iccProfileId } from "../color/icc.ts";
-import { listConfigColorSpaces, ocioColorProfileEnvelope, requireOcioConfig, resolveOcioConfig } from "../color/ocio.ts";
-import { AI_COMP_EXTENSIONS, EPS_COMP_EXTENSIONS, PSD_COMP_EXTENSIONS } from "../data/file_formats.ts";
-import { BitsPerChannel, ColorManagementSystem, FeetFramesFilmType, FootageTimecodeDisplayStartType, FramesCountType, GpuAccelType, ImportAsType, LutInterpolationMethod, PREFType, TimeDisplayType } from "../enums/index.ts";
-import { adobeColorProfileNames } from "../enums/mappings.ts";
-import { EMPTY_BOX, footageSize, readAiLayerBounds } from "../resolvers/ai_bounds.ts";
-import { readAiLayerOcgs } from "../resolvers/ai_layers.ts";
-import { NORMALIZED_ARC_ACCURACY } from "../resolvers/interpolation.ts";
-import { pixelBufferSize, probeMedia } from "../resolvers/media_probe.ts";
-import { MediaInfo } from "../resolvers/media_probe.ts";
-import { platformPath, relativePathCounts } from "../resolvers/platform_paths.ts";
-import { FlattenedPsdError, PsdGroup, PsdLayer, readPsdLayers } from "../resolvers/psd_layers.ts";
-import { parseVectorMask } from "../resolvers/psd_paths.ts";
-import { hasEnabledStyles, parseLayerStyles, readGlobalLight } from "../resolvers/psd_styles.ts";
-import type { PsdLayerStyles } from "../resolvers/psd_styles.ts";
-import { LayerGroupSpec, LayerSpec } from "../synthesis/layer.ts";
-import { _ADV_BLEND_SPECS, _BLEND_OPTIONS_SPECS, _LAYER_STYLE_CHILD_SPECS, _STYLE_ANGLE_SUFFIXES, _STYLE_ENUM_SUFFIXES, _STYLE_HINT_BOUNDS, _STYLE_HINT_BOUNDS_EXCEPTIONS, PropSpec } from "../synthesis/property.ts";
-import { ChunkField, type EffectParamDefs } from "./descriptors.ts";
-import { ImportOptions } from "./import_options.ts";
-import { CompItem } from "./items/composition.ts";
-import { FolderItem } from "./items/folder.ts";
-import { FootageItem } from "./items/footage.ts";
-import { Item } from "./items/item.ts";
-import { AVItem } from "./items/av_item.ts";
-
-import { Preferences, defaultSequenceFps, psdCompLayerStyles, psdFootageDimensions, psdFootageLayerStyles } from "./preferences.ts";
-import { Gradient } from "./properties/gradient.ts";
-import { Property, _valuesEqual } from "./properties/property.ts";
-import { PropertyGroup } from "./properties/property_group.ts";
-import { Shape } from "./properties/shape.ts";
-import { RenderQueue } from "./renderqueue/render_queue.ts";
-import type { Layer } from "./layers/layer.ts";
-import { PSD_LAYER_STYLES_C8, FileSource, aiDocumentProfile, checkFootageSize, namedMediaProfile, psdLayerFootage } from "./sources/file.ts";
-import { _replaceLayerFont } from "./text/ranges.ts";
-import type { FontObject } from "./text/font_object.ts";
-import type { TextDocument } from "./text/text_document.ts";
-import { _validateNumber, validateBool, validateEnum, validateFontName, validateOneOf, validatePath, validatePathDoesNotExist, validatePathExists, validateString, validateU4 } from "./validators.ts";
-import type { OutputModuleTemplate } from "../parsers/templates.ts";
-
 import {
+  INSPECT,
+  describe,
   ValueError,
   KeyError,
   NotImplementedError,
@@ -87,8 +33,122 @@ import {
   AttributeError,
   jsonInt,
   type JsonValue,
+  type PathLike,
 } from "../../pyrt/index.ts";
-import type { PathLike } from "../../pyrt/index.ts";
+import * as host from "../../pyrt/host.ts";
+import { uuid4 } from "../../pyrt/uuid.ts";
+
+import { fromstring, tostring } from "../../pyrt/etree.ts";
+import { aeWrites, requiresVersion } from "../ae_version.ts";
+import { toF4, truncateUtf8 } from "../binary/bin_utils.ts";
+import { Chunk, ListChunk, writeAep as _writeAep } from "../binary/chunk.ts";
+import { buildAiLayerOptiData, buildPsdFlattenedOptiData, buildTextOptiData } from "../binary/footage_chunks.ts";
+import { HeadChunk, NhedChunk, NnhdChunk, TimeDisplayPrefItem } from "../binary/item_chunks.ts";
+import { DwgaChunk } from "../binary/misc_chunks.ts";
+import { CpidChunk, FdtaChunk, SvapChunk, WsnmChunk, WsnsChunk } from "../binary/project_chunks.ts";
+import { F8Chunk, U1Chunk, U2Chunk, U4Chunk, U4LeChunk, Utf8Chunk } from "../binary/scalar_chunks.ts";
+import {
+  alasFullpath,
+  dumpAlas,
+  filterByType,
+  findByListType,
+  findByListTypeOrNull,
+  findByType,
+  findByTypeOrNull,
+  indexByIdentity,
+  PENDING_ASCENDCOUNT,
+  recursiveFind,
+  toggleFlagChunk,
+} from "../binary/utils.ts";
+import type { RenderSettingsItem } from "../binary/render_chunks.ts";
+import { buildIccEnvelope, buildOcioDisplayEnvelope, envelopeProfileName } from "../color/envelope.ts";
+import { IccProfileLibrary, iccProfileDescription, iccProfileId } from "../color/icc.ts";
+import {
+  listConfigColorSpaces,
+  ocioColorProfileEnvelope,
+  requireOcioConfig,
+  resolveOcioConfig,
+} from "../color/ocio.ts";
+import { AI_COMP_EXTENSIONS, EPS_COMP_EXTENSIONS, PSD_COMP_EXTENSIONS } from "../data/file_formats.ts";
+import {
+  BitsPerChannel,
+  ColorManagementSystem,
+  FeetFramesFilmType,
+  FootageTimecodeDisplayStartType,
+  FramesCountType,
+  GpuAccelType,
+  ImportAsType,
+  LutInterpolationMethod,
+  PREFType,
+  TimeDisplayType,
+} from "../enums/index.ts";
+import { adobeColorProfileNames } from "../enums/mappings.ts";
+import { EMPTY_BOX, footageSize, readAiLayerBounds } from "../resolvers/ai_bounds.ts";
+import { readAiLayerOcgs } from "../resolvers/ai_layers.ts";
+import { NORMALIZED_ARC_ACCURACY } from "../resolvers/interpolation.ts";
+import { MediaInfo, pixelBufferSize, probeMedia } from "../resolvers/media_probe.ts";
+import { platformPath, relativePathCounts } from "../resolvers/platform_paths.ts";
+import { FlattenedPsdError, PsdGroup, PsdLayer, readPsdLayers } from "../resolvers/psd_layers.ts";
+import { parseVectorMask } from "../resolvers/psd_paths.ts";
+import { hasEnabledStyles, parseLayerStyles, readGlobalLight } from "../resolvers/psd_styles.ts";
+import type { PsdLayerStyles } from "../resolvers/psd_styles.ts";
+import { LayerGroupSpec, LayerSpec } from "../synthesis/layer.ts";
+import {
+  _ADV_BLEND_SPECS,
+  _BLEND_OPTIONS_SPECS,
+  _LAYER_STYLE_CHILD_SPECS,
+  _STYLE_ANGLE_SUFFIXES,
+  _STYLE_ENUM_SUFFIXES,
+  _STYLE_HINT_BOUNDS,
+  _STYLE_HINT_BOUNDS_EXCEPTIONS,
+  PropSpec,
+} from "../synthesis/property.ts";
+import { ChunkField, type EffectParamDefs } from "./descriptors.ts";
+import { ImportOptions } from "./import_options.ts";
+import { CompItem } from "./items/composition.ts";
+import { FolderItem } from "./items/folder.ts";
+import { FootageItem } from "./items/footage.ts";
+import { Item } from "./items/item.ts";
+import { AVItem } from "./items/av_item.ts";
+
+import {
+  Preferences,
+  defaultSequenceFps,
+  psdCompLayerStyles,
+  psdFootageDimensions,
+  psdFootageLayerStyles,
+} from "./preferences.ts";
+import { Gradient } from "./properties/gradient.ts";
+import { Property, _valuesEqual } from "./properties/property.ts";
+import { PropertyGroup } from "./properties/property_group.ts";
+import { Shape } from "./properties/shape.ts";
+import { RenderQueue } from "./renderqueue/render_queue.ts";
+import type { Layer } from "./layers/layer.ts";
+import {
+  PSD_LAYER_STYLES_C8,
+  FileSource,
+  aiDocumentProfile,
+  checkFootageSize,
+  namedMediaProfile,
+  psdLayerFootage,
+} from "./sources/file.ts";
+import { _replaceLayerFont } from "./text/ranges.ts";
+import type { FontObject } from "./text/font_object.ts";
+import type { TextDocument } from "./text/text_document.ts";
+import {
+  _validateNumber,
+  validateBool,
+  validateEnum,
+  validateFontName,
+  validateOneOf,
+  validatePath,
+  validatePathDoesNotExist,
+  validatePathExists,
+  validateString,
+  validateU4,
+} from "./validators.ts";
+import type { OutputModuleTemplate } from "../parsers/templates.ts";
+
 import type { Element } from "../../pyrt/etree.ts";
 import type { Box } from "../resolvers/ai_bounds.ts";
 import type { PsdNode } from "../resolvers/psd_layers.ts";
@@ -107,28 +167,28 @@ import { buildShapeLayerContents } from "../svg/build.ts";
 import type { AVLayer } from "./layers/av_layer.ts";
 
 /** `itertools.count(start)` (the clip-run counter). */
-export function* count(start = 0): Generator<number> {
+function* count(start = 0): Generator<number> {
   for (let i = start; ; i++) yield i;
 }
 
-export function ET_fromstring(text: string): Element {
+function ET_fromstring(text: string): Element {
   return fromstring(text);
 }
 
-export function ET_tostring(el: Element): string {
+function ET_tostring(el: Element): string {
   return tostring(el, "unicode");
 }
 
 /** `isinstance(x, (list, tuple))` as used by the port. */
-export function isListOrTuple(x: unknown): x is unknown[] {
+function isListOrTuple(x: unknown): x is unknown[] {
   return Array.isArray(x);
 }
 
-export const _validateExpressionEngine = validateOneOf(["extendscript", "javascript-1.0"]);
+const _validateExpressionEngine = validateOneOf(["extendscript", "javascript-1.0"]);
 
 /** Accept a `GpuAccelType` or a renderer UUID string (what the getter
  * returns for an id it does not recognise). */
-export function _validateGpuAccelType(value: GpuAccelType | string, obj: Project): void {
+function _validateGpuAccelType(value: GpuAccelType | string, _obj: Project): void {
   if (typeof value === "string") {
     GpuAccelType.toBinary(value);
   } else {
@@ -137,7 +197,7 @@ export function _validateGpuAccelType(value: GpuAccelType | string, obj: Project
 }
 
 /** The PostScript name of a `replaceFont` argument. */
-export function _fontPostScriptName(font: FontObject | string): string {
+function _fontPostScriptName(font: FontObject | string): string {
   if (typeof font === "string") {
     validateFontName(font);
     return font;
@@ -154,12 +214,12 @@ export function _fontPostScriptName(font: FontObject | string): string {
 // factory default, not a preference: verified by deleting every AE pref
 // file and cold-starting AE (regenerated factory prefs, "Composition
 // Settings7" empty) - a layered PSD still imported at 29.97 fps / 30 s.
-export const _LAYERED_COMP_FRAME_RATE = 29.97;
-export const _LAYERED_COMP_DURATION_SECONDS = 30.0;
+const _LAYERED_COMP_FRAME_RATE = 29.97;
+const _LAYERED_COMP_DURATION_SECONDS = 30.0;
 
 /** Wrap a setter with `@requires_version(N)`: the setter body is passed to the
  * decorator factory once, at module load, and invoked with the project as `this`. */
-export const _setLinearizeWorkingSpace = requiresVersion(15)(function linearize_working_space(
+const _setLinearizeWorkingSpace = requiresVersion(15)(function linearize_working_space(
   this: Project,
   value: boolean,
 ): void {
@@ -169,10 +229,7 @@ export const _setLinearizeWorkingSpace = requiresVersion(15)(function linearize_
   toggleFlagChunk(this._rifx, "lnrp", value, { afterTypes: ["lnrb", "cpid"] });
 });
 
-export const _setExpressionEngine = requiresVersion(16)(function expression_engine(
-  this: Project,
-  value: string,
-): void {
+const _setExpressionEngine = requiresVersion(16)(function expression_engine(this: Project, value: string): void {
   _validateExpressionEngine(value);
   if (this._exenUtf8 != null) {
     this._exenUtf8.value = value;
@@ -184,7 +241,7 @@ export const _setExpressionEngine = requiresVersion(16)(function expression_engi
   }
 });
 
-export const _setColorManagementSystem = requiresVersion(24)(function color_management_system(
+const _setColorManagementSystem = requiresVersion(24)(function color_management_system(
   this: Project,
   value: ColorManagementSystem | number,
 ): void {
@@ -192,7 +249,7 @@ export const _setColorManagementSystem = requiresVersion(24)(function color_mana
   this._updateCmsSetting("colorManagementSystem", Math.trunc(value));
 });
 
-export const _setLutInterpolationMethod = requiresVersion(24)(function lut_interpolation_method(
+const _setLutInterpolationMethod = requiresVersion(24)(function lut_interpolation_method(
   this: Project,
   value: LutInterpolationMethod | number,
 ): void {
@@ -200,7 +257,7 @@ export const _setLutInterpolationMethod = requiresVersion(24)(function lut_inter
   this._updateCmsSetting("lutInterpolationMethod", Math.trunc(value));
 });
 
-export const _setOcioConfigurationFile = requiresVersion(24)(function ocio_configuration_file(
+const _setOcioConfigurationFile = requiresVersion(24)(function ocio_configuration_file(
   this: Project,
   value: PathLike,
 ): void {
@@ -480,11 +537,7 @@ export class Project {
    * inherits them. Missing or malformed values leave the AE-factory
    * chunk defaults untouched.
    */
-  static _applyProjectSettingsPrefs(
-    preferences: Preferences,
-    nhed: NhedChunk,
-    nnhd: NnhdChunk,
-  ): void {
+  static _applyProjectSettingsPrefs(preferences: Preferences, nhed: NhedChunk, nnhd: NnhdChunk): void {
     const depth = preferences.getPrefAsNumber("Project Pref Section", "Project Settings Depth", undefined, {
       default: 0,
     });
@@ -522,11 +575,7 @@ export class Project {
    * running operating system) selects the header stamps AE writes on
    * that platform. See {@link Application} and `py_aep.new`.
    */
-  static _new(
-    version: string,
-    aePreferencesDir: Path | null = null,
-    platform: string | null = null,
-  ): Project {
+  static _new(version: string, aePreferencesDir: Path | null = null, platform: string | null = null): Project {
     platform = platform || this._platform;
     const macos = platform === "macos";
     const preferences = new Preferences(aePreferencesDir);
@@ -595,10 +644,7 @@ export class Project {
       new ListChunk({ listType: "gpuG", chunks: [gpugUtf8] }),
       new ListChunk({
         listType: "sfnm",
-        chunks: [
-          new Utf8Chunk({ value: solidsName || "Solids" }),
-          new U4LeChunk({ chunkType: "sfid" }),
-        ],
+        chunks: [new Utf8Chunk({ value: solidsName || "Solids" }), new U4LeChunk({ chunkType: "sfid" })],
       }),
     ];
     if (aeWrites("media replacement folder id", major)) {
@@ -787,8 +833,7 @@ export class Project {
    * (`workingGamma`, `gpuAccelType`) are gated by `minVersion`
    * instead of being dropped on save.
    */
-  _ensureMaterialized(): void {
-  }
+  _ensureMaterialized(): void {}
 
   /**
    * When True, linear blending is used for the project. When False,
@@ -965,10 +1010,7 @@ export class Project {
   set iccProfileDirs(value: PathLike[] | null) {
     if (value != null) {
       if (!isListOrTuple(value)) {
-        throw new TypeError(
-          "iccProfileDirs must be a list of directories or null, " +
-            `got ${typeName(value)}`,
-        );
+        throw new TypeError("iccProfileDirs must be a list of directories or null, " + `got ${typeName(value)}`);
       }
       for (const p of value) validatePathExists(p);
     }
@@ -1028,8 +1070,7 @@ export class Project {
       [display, view] = value;
     } else {
       throw new TypeError(
-        "displayColorSpace expects a 'display/view' string or a " +
-          `(display, view) tuple, got ${typeName(value)}`,
+        "displayColorSpace expects a 'display/view' string or a " + `(display, view) tuple, got ${typeName(value)}`,
       );
     }
     validateString(display);
@@ -1249,9 +1290,7 @@ export class Project {
 
     if (options.layerIndex != null) {
       if (options.importAs !== ImportAsType.FOOTAGE) {
-        throw new ValueError(
-          "layerIndex applies to ImportAsType.FOOTAGE only; COMP " + "imports include every layer",
-        );
+        throw new ValueError("layerIndex applies to ImportAsType.FOOTAGE only; COMP " + "imports include every layer");
       }
       if (options.sequence) {
         throw new ValueError("layerIndex cannot be combined with sequence");
@@ -1275,14 +1314,12 @@ export class Project {
         }
         if (options.layerStyles === "editable") {
           throw new ValueError(
-            "editable layer styles require a COMP import; a " +
-              'FOOTAGE import offers "merge" or "ignore"',
+            "editable layer styles require a COMP import; a " + 'FOOTAGE import offers "merge" or "ignore"',
           );
         }
       } else if (options.layerStyles === "ignore") {
         throw new ValueError(
-          'a COMP import offers "editable" or "merge" layer ' +
-            "styles (AE's dialog has no Ignore option there)",
+          'a COMP import offers "editable" or "merge" layer ' + "styles (AE's dialog has no Ignore option there)",
         );
       }
     }
@@ -1315,7 +1352,8 @@ export class Project {
     }
     if (options.importAs === ImportAsType.PROJECT) {
       throw new ValueError(
-        "importFile does not support PROJECT import (importing an " + ".aep/.aet, or an AE project embedded in a .mov/.m4a)",
+        "importFile does not support PROJECT import (importing an " +
+          ".aep/.aet, or an AE project embedded in a .mov/.m4a)",
       );
     }
     if (options.importAs !== ImportAsType.FOOTAGE) {
@@ -1916,9 +1954,7 @@ export class Project {
     for (const [layer, sourceText] of this._iterTextSourceProperties()) {
       let entries: [TextDocument, number][];
       if (sourceText.keyframes?.length > 0) {
-        entries = sourceText.keyframes.map(
-          (kf) => [kf.value, kf.time - layer.startTime],
-        );
+        entries = sourceText.keyframes.map((kf) => [kf.value, kf.time - layer.startTime]);
       } else {
         entries = [[sourceText.value, 0.0]];
       }
@@ -1936,7 +1972,9 @@ export class Project {
         }
       }
     }
-    return [...records.values()].sort((a, b) => compare(a.name, b.name)).map((r) => ({ font: r.font, usedAt: r.usedAt }));
+    return [...records.values()]
+      .sort((a, b) => compare(a.name, b.name))
+      .map((r) => ({ font: r.font, usedAt: r.usedAt }));
   }
 
   /**
@@ -2319,7 +2357,7 @@ export class Project {
   get _solidsFolder(): FolderItem {
     const sfid = this._sfid;
     const recorded = sfid != null ? sfid.value : 0;
-    const folder = recorded ? this.items.get(recorded) ?? null : null;
+    const folder = recorded ? (this.items.get(recorded) ?? null) : null;
     if (folder instanceof FolderItem) return folder;
     const name = this._solidsFolderName;
     for (const existing of this.rootFolder.folders) {
@@ -2365,65 +2403,121 @@ export class Project {
 
   static {
     // Descriptors for the `declare`d fields above.
-    descriptor(this, "bitsPerChannel", ChunkField.enum(BitsPerChannel, "_nnhd", "bitsPerChannel", {
-      postSet: (obj: Project) => obj._syncNhedField("bitsPerChannel"),
-    }));
-    descriptor(this, "feetFramesFilmType", ChunkField.enum(FeetFramesFilmType, "_nnhd", "feetFramesFilmType", {
-      postSet: (obj: Project) => obj._syncNhedField("_displayByte"),
-    }));
-    descriptor(this, "footageTimecodeDisplayStartType", ChunkField.enum(FootageTimecodeDisplayStartType, "_nnhd", "footageTimecodeDisplayStartType", {
-      postSet: (obj: Project) => obj._syncNhedField("footageTimecodeDisplayStartType"),
-    }));
-    descriptor(this, "_timecodeDefaultBase", new ChunkField("_nnhd", "timecodeDefaultBase", {
-      // nhed holds it as a u1, so a CC 12.0 project (whose nnhd is a
-      // synthetic stand-in) persists at most 255.
-      validate: _validateNumber({
-        min: 1,
-        max: (obj: Project) => (obj._nnhd.synthetic ? 255 : 999),
-        integer: true,
+    descriptor(
+      this,
+      "bitsPerChannel",
+      ChunkField.enum(BitsPerChannel, "_nnhd", "bitsPerChannel", {
+        postSet: (obj: Project) => obj._syncNhedField("bitsPerChannel"),
       }),
-      postSet: (obj: Project) => obj._syncNhedTimecodeDefaultBase(),
-    }));
-    descriptor(this, "framesCountType", ChunkField.enum(FramesCountType, "_nnhd", "framesCountType", {
-      postSet: (obj: Project) => obj._syncNhedField("framesCountType"),
-    }));
-    descriptor(this, "displayStartFrame", new ChunkField("_nnhd", "displayStartFrame", {
-      validate: validateOneOf([0, 1]),
-      postSet: (obj: Project) => obj._syncNhedField("framesCountType"),
-    }));
-    descriptor(this, "framesUseFeetFrames", ChunkField.bool("_nnhd", "framesUseFeetFrames", {
-      postSet: (obj: Project) => obj._syncNhedField("_feetByte"),
-    }));
-    descriptor(this, "timeDisplayType", ChunkField.enum(TimeDisplayType, "_nnhd", "timeDisplayType", {
-      postSet: (obj: Project) => obj._syncNhedField("_displayByte"),
-    }));
-    descriptor(this, "transparencyGridThumbnails", ChunkField.bool("_nnhd", "transparencyGridThumbnails", {
-      postSet: (obj: Project) => obj._syncNhedField("transparencyGridThumbnails"),
-    }));
+    );
+    descriptor(
+      this,
+      "feetFramesFilmType",
+      ChunkField.enum(FeetFramesFilmType, "_nnhd", "feetFramesFilmType", {
+        postSet: (obj: Project) => obj._syncNhedField("_displayByte"),
+      }),
+    );
+    descriptor(
+      this,
+      "footageTimecodeDisplayStartType",
+      ChunkField.enum(FootageTimecodeDisplayStartType, "_nnhd", "footageTimecodeDisplayStartType", {
+        postSet: (obj: Project) => obj._syncNhedField("footageTimecodeDisplayStartType"),
+      }),
+    );
+    descriptor(
+      this,
+      "_timecodeDefaultBase",
+      new ChunkField("_nnhd", "timecodeDefaultBase", {
+        // nhed holds it as a u1, so a CC 12.0 project (whose nnhd is a
+        // synthetic stand-in) persists at most 255.
+        validate: _validateNumber({
+          min: 1,
+          max: (obj: Project) => (obj._nnhd.synthetic ? 255 : 999),
+          integer: true,
+        }),
+        postSet: (obj: Project) => obj._syncNhedTimecodeDefaultBase(),
+      }),
+    );
+    descriptor(
+      this,
+      "framesCountType",
+      ChunkField.enum(FramesCountType, "_nnhd", "framesCountType", {
+        postSet: (obj: Project) => obj._syncNhedField("framesCountType"),
+      }),
+    );
+    descriptor(
+      this,
+      "displayStartFrame",
+      new ChunkField("_nnhd", "displayStartFrame", {
+        validate: validateOneOf([0, 1]),
+        postSet: (obj: Project) => obj._syncNhedField("framesCountType"),
+      }),
+    );
+    descriptor(
+      this,
+      "framesUseFeetFrames",
+      ChunkField.bool("_nnhd", "framesUseFeetFrames", {
+        postSet: (obj: Project) => obj._syncNhedField("_feetByte"),
+      }),
+    );
+    descriptor(
+      this,
+      "timeDisplayType",
+      ChunkField.enum(TimeDisplayType, "_nnhd", "timeDisplayType", {
+        postSet: (obj: Project) => obj._syncNhedField("_displayByte"),
+      }),
+    );
+    descriptor(
+      this,
+      "transparencyGridThumbnails",
+      ChunkField.bool("_nnhd", "transparencyGridThumbnails", {
+        postSet: (obj: Project) => obj._syncNhedField("transparencyGridThumbnails"),
+      }),
+    );
     descriptor(this, "revision", new ChunkField("_head", "fileRevision", { validate: validateU4 }));
-    descriptor(this, "compensateForSceneReferredProfiles", ChunkField.bool("_acer", "value", {
-      transform: (v: number) => v !== 0,
-      reverse: (v: boolean) => Number(v),
-      minVersion: 16,
-    }));
-    descriptor(this, "audioSampleRate", new ChunkField("_adfr", "value", {
-      validate: validateOneOf([22050, 32000, 44100, 48000, 96000]),
-    }));
-    descriptor(this, "workingGamma", new ChunkField("_dwga", "workingGamma", {
-      validate: validateOneOf([2.2, 2.4]),
-      // A CC 12.0 project has no dwga to keep it in.
-      minVersion: 13,
-    }));
-    descriptor(this, "gpuAccelType", ChunkField.enum(GpuAccelType, "_gpugUtf8", "value", {
-      allowOutOfEnumValues: true,
-      validate: _validateGpuAccelType,
-      minVersion: 13,
-    }));
+    descriptor(
+      this,
+      "compensateForSceneReferredProfiles",
+      ChunkField.bool("_acer", "value", {
+        transform: (v: number) => v !== 0,
+        reverse: (v: boolean) => Number(v),
+        minVersion: 16,
+      }),
+    );
+    descriptor(
+      this,
+      "audioSampleRate",
+      new ChunkField("_adfr", "value", {
+        validate: validateOneOf([22050, 32000, 44100, 48000, 96000]),
+      }),
+    );
+    descriptor(
+      this,
+      "workingGamma",
+      new ChunkField("_dwga", "workingGamma", {
+        validate: validateOneOf([2.2, 2.4]),
+        // A CC 12.0 project has no dwga to keep it in.
+        minVersion: 13,
+      }),
+    );
+    descriptor(
+      this,
+      "gpuAccelType",
+      ChunkField.enum(GpuAccelType, "_gpugUtf8", "value", {
+        allowOutOfEnumValues: true,
+        validate: _validateGpuAccelType,
+        minVersion: 13,
+      }),
+    );
     // The XMP packet: `ET.fromstring` / `ET.tostring` (see the TODO above).
-    descriptor(this, "xmpPacket", new ChunkField("_aep", "_xmp", {
-      transform: (s) => (!!s && s.trim() ? ET_fromstring(s) : null),
-      reverse: (el: Element | null) => (el != null ? ET_tostring(el) : ""),
-    }));
+    descriptor(
+      this,
+      "xmpPacket",
+      new ChunkField("_aep", "_xmp", {
+        transform: (s) => (!!s && s.trim() ? ET_fromstring(s) : null),
+        reverse: (el: Element | null) => (el != null ? ET_tostring(el) : ""),
+      }),
+    );
   }
 }
 
@@ -2452,7 +2546,7 @@ export function _aiCroppedTransform(
 }
 
 /** Get the array of effect names used in the project. */
-export function _getEffectNames(rootChunks: Chunk[]): string[] {
+function _getEffectNames(rootChunks: Chunk[]): string[] {
   const peflChunk = findByListType(rootChunks, "Pefl");
   const pjefChunks = filterByType(peflChunk.chunks, "pjef");
   return pjefChunks.map((chunk) => chunk.value);
@@ -2469,15 +2563,24 @@ export function _getEffectNames(rootChunks: Chunk[]): string[] {
 // uncanonized, the 2D point rows come from the psd_styles_offset_phase
 // fixture, and the blend-options leaves are keyed by full match name.
 /** `[hint, hint_flag, cvot, type_flags, category, pad2a, vector, spatial]`. */
-export type Tdb4Row = [number, number | null, number | null, number | null, number | null, number | null, boolean | null, boolean];
+type Tdb4Row = [
+  number,
+  number | null,
+  number | null,
+  number | null,
+  number | null,
+  number | null,
+  boolean | null,
+  boolean,
+];
 
-export const _STYLE_TDB4_ENUM: Tdb4Row = [0x0001, null, 0x04, 0x04, 0x04, null, null, false];
-export const _STYLE_TDB4_SCALAR: Tdb4Row = [0xffff, null, null, null, null, null, null, false];
-export const _STYLE_TDB4_ANGLE: Tdb4Row = [0xffff, 0xff, 0xff, 0x04, 0x06, null, null, false];
-export const _STYLE_TDB4_TOGGLE: Tdb4Row = [0xffff, null, 0x04, 0x04, 0x04, null, null, false];
-export const _STYLE_TDB4_POINT: Tdb4Row = [0xffff, 0xff, 0xff, 0x04, 0x06, 3, false, true];
+const _STYLE_TDB4_ENUM: Tdb4Row = [0x0001, null, 0x04, 0x04, 0x04, null, null, false];
+const _STYLE_TDB4_SCALAR: Tdb4Row = [0xffff, null, null, null, null, null, null, false];
+const _STYLE_TDB4_ANGLE: Tdb4Row = [0xffff, 0xff, 0xff, 0x04, 0x06, null, null, false];
+const _STYLE_TDB4_TOGGLE: Tdb4Row = [0xffff, null, 0x04, 0x04, 0x04, null, null, false];
+const _STYLE_TDB4_POINT: Tdb4Row = [0xffff, 0xff, 0xff, 0x04, 0x06, 3, false, true];
 
-export const _STYLE_TDB4_CANON = new Map<string, Tdb4Row>();
+const _STYLE_TDB4_CANON = new Map<string, Tdb4Row>();
 for (const k of _STYLE_ENUM_SUFFIXES) _STYLE_TDB4_CANON.set(k, _STYLE_TDB4_ENUM);
 for (const k of _STYLE_ANGLE_SUFFIXES) _STYLE_TDB4_CANON.set(k, _STYLE_TDB4_ANGLE);
 for (const k of _STYLE_HINT_BOUNDS.keys()) _STYLE_TDB4_CANON.set(k, _STYLE_TDB4_SCALAR);
@@ -2496,7 +2599,7 @@ _STYLE_TDB4_CANON.set("ADBE B Channel Blend", _STYLE_TDB4_TOGGLE);
 _STYLE_TDB4_CANON.set("ADBE Blend Interior", _STYLE_TDB4_TOGGLE);
 
 /** Apply the AE tdb4 canon to a just-written Layer Styles leaf. */
-export function _stampStyleTdb4(leaf: Property, matchName: string, timebase: number, pointAspect: number): void {
+function _stampStyleTdb4(leaf: Property, matchName: string, timebase: number, pointAspect: number): void {
   const tdb4 = leaf._tdb4;
   if (tdb4 == null) return;
   const canon = truthyOr(
@@ -2530,7 +2633,7 @@ export function _stampStyleTdb4(leaf: Property, matchName: string, timebase: num
 // write a parameter leaf only when its value differs from these (AE 2026);
 // the synthesis tables are the byte-verified source, and only the Layer
 // Styles + Blend Options tables can carry keys the resolver emits.
-export const _STYLE_SPEC_DEFAULTS = new Map<string, number | number[]>();
+const _STYLE_SPEC_DEFAULTS = new Map<string, number | number[]>();
 for (const specList of _LAYER_STYLE_CHILD_SPECS.values()) {
   for (const spec of specList) {
     if (spec.value != null) _STYLE_SPEC_DEFAULTS.set(spec.matchName, spec.value);
@@ -2541,7 +2644,7 @@ for (const spec of [..._BLEND_OPTIONS_SPECS, ..._ADV_BLEND_SPECS]) {
 }
 
 /** Map of match name -\> leaf under `group`, first-in-tree-order. */
-export function _styleLeafMap(group: PropertyGroup): Map<string, Property> {
+function _styleLeafMap(group: PropertyGroup): Map<string, Property> {
   const leaves = new Map<string, Property>();
   for (const child of group.properties) {
     if (child instanceof PropertyGroup) {
@@ -2567,7 +2670,7 @@ export function _styleLeafMap(group: PropertyGroup): Map<string, Property> {
  * 0x01, enabled style 0x01, absent style 0x02; plain skeleton: 0x03 and
  * 0x02 - functional bits, fixture-pinned).
  */
-export function _serializeImportLayerStyles(layer: AVLayer, styles: PsdLayerStyles | null, sourceName: string): void {
+function _serializeImportLayerStyles(layer: AVLayer, styles: PsdLayerStyles | null, sourceName: string): void {
   const container = layer.property("ADBE Layer Styles");
   // AE enables the container + Blend Options chain when any style is
   // enabled OR the layer carries blend-options data (a Photoshop Fill

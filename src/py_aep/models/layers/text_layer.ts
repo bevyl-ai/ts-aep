@@ -46,16 +46,7 @@ export class TextLayer extends AVLayer {
   static _new(kw: TextLayerNewKw): TextLayer;
   static _new(...args: never[]): never;
   static _new(kw: TextLayerNewKw): TextLayer {
-    const {
-      name,
-      layerId,
-      duration,
-      containingComp,
-      btds,
-      btgu,
-      tdmn,
-      effectParamDefs = null,
-    } = kw;
+    const { name, layerId, duration, containingComp, btds, btgu, tdmn, effectParamDefs = null } = kw;
     const textPropsTdmn = new TdmnChunk({ value: "ADBE Text Properties" });
     const textPropsTdgp = new ListChunk({
       listType: "tdgp",
@@ -81,17 +72,10 @@ export class TextLayer extends AVLayer {
     });
     layer._ldta.layerType = LayerType.TEXT;
     // The base factory named the layer from the AV type it started with.
-    layer._matchName = getOrThrow(
-      layer.constructor._LAYER_MATCH_NAMES,
-      LayerType.TEXT,
-    );
+    layer._matchName = getOrThrow(layer.constructor._LAYER_MATCH_NAMES, LayerType.TEXT);
     // AE labels scripted text layers with the "Text Label Index"
     // preference (factory value 1, probed in AE 2026).
-    layer._ldta.label = labelIndex(
-      containingComp._project._preferences,
-      "Text Label Index",
-      1,
-    );
+    layer._ldta.label = labelIndex(containingComp._project._preferences, "Text Label Index", 1);
     return layer;
   }
 }

@@ -2,7 +2,17 @@
 
 import { describe, expect, test } from "bun:test";
 
-import { Path, StopIteration, ValueError, contains, getOr, getOrThrow, len, truthy, valueEquals } from "../../src/pyrt/index.ts";
+import {
+  Path,
+  StopIteration,
+  ValueError,
+  contains,
+  getOr,
+  getOrThrow,
+  len,
+  truthy,
+  valueEquals,
+} from "../../src/pyrt/index.ts";
 
 import { parse as parseAep, type Application } from "../../src/py_aep/index.ts";
 import "../../src/py_aep/binary/_register.ts";
@@ -497,7 +507,12 @@ describe("TestParentFolderSetter", () => {
     level2.parentFolder = root;
     expect(contains(root.items, level2)).toBe(true);
     expect(contains(level1.items, level2)).toBe(false);
-    expect(valueEquals(level2.folders.map((f) => f.name), childNames)).toBe(true);
+    expect(
+      valueEquals(
+        level2.folders.map((f) => f.name),
+        childNames,
+      ),
+    ).toBe(true);
   });
 
   test("test_same_parent_noop", () => {
@@ -516,9 +531,13 @@ describe("TestParentFolderSetter", () => {
     const root = app.project.rootFolder;
     const empty = root.folders.find((f) => f.name === "EmptyFolder");
     if (empty === undefined) throw new StopIteration();
-    raises(ValueError, () => {
-      empty.parentFolder = empty;
-    }, "cannot be moved inside itself");
+    raises(
+      ValueError,
+      () => {
+        empty.parentFolder = empty;
+      },
+      "cannot be moved inside itself",
+    );
   });
 
   test("test_move_into_descendant_raises", () => {
@@ -527,9 +546,13 @@ describe("TestParentFolderSetter", () => {
     const rootFolder = root.folders.find((f) => f.name === "RootFolder");
     if (rootFolder === undefined) throw new StopIteration();
     const level2 = rootFolder.folders[0].folders[0];
-    raises(ValueError, () => {
-      rootFolder.parentFolder = level2;
-    }, "cannot be moved inside itself");
+    raises(
+      ValueError,
+      () => {
+        rootFolder.parentFolder = level2;
+      },
+      "cannot be moved inside itself",
+    );
   });
 
   test("test_move_root_raises", () => {
@@ -537,9 +560,13 @@ describe("TestParentFolderSetter", () => {
     const root = app.project.rootFolder;
     const empty = root.folders.find((f) => f.name === "EmptyFolder");
     if (empty === undefined) throw new StopIteration();
-    raises(ValueError, () => {
-      root.parentFolder = empty;
-    }, "Cannot move the root folder");
+    raises(
+      ValueError,
+      () => {
+        root.parentFolder = empty;
+      },
+      "Cannot move the root folder",
+    );
   });
 
   test("test_non_folder_target_raises", () => {
@@ -549,10 +576,14 @@ describe("TestParentFolderSetter", () => {
     if (fwi === undefined) throw new StopIteration();
     const comp1 = fwi.items.find((i) => i.name === "Comp1");
     if (comp1 === undefined) throw new StopIteration();
-    raises(TypeError, () => {
-      // @ts-expect-error deliberately assigns an item id instead of a FolderItem
-      comp1.parentFolder = comp1.id;
-    }, "must be a FolderItem");
+    raises(
+      TypeError,
+      () => {
+        // @ts-expect-error deliberately assigns an item id instead of a FolderItem
+        comp1.parentFolder = comp1.id;
+      },
+      "must be a FolderItem",
+    );
   });
 
   /** An item's open-panel viewer moves with it between folders. */

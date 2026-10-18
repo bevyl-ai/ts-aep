@@ -1,15 +1,20 @@
 import { ValueError } from "../../pyrt/index.ts";
-import type { ListChunk } from "../binary/chunk.ts";
+import type { ListChunk, Chunk } from "../binary/chunk.ts";
 import type { CmtaChunk, IdtaChunk } from "../binary/item_chunks.ts";
 import type { Utf8Chunk } from "../binary/scalar_chunks.ts";
-import { filterByListType, findByListType, findByListTypeOrNull, findByType, findByTypeOrNull } from "../binary/utils.ts";
+import {
+  filterByListType,
+  findByListType,
+  findByListTypeOrNull,
+  findByType,
+  findByTypeOrNull,
+} from "../binary/utils.ts";
 import { ItemType } from "../enums/index.ts";
 import { Guide } from "../models/guide.ts";
 import { FolderItem } from "../models/items/folder.ts";
 import { parseComposition } from "./composition.ts";
 import { parseFootage } from "./footage.ts";
 import { parseViewers } from "./view.ts";
-import type { Chunk } from "../binary/chunk.ts";
 import type { CompItem } from "../models/items/composition.ts";
 import type { FootageItem } from "../models/items/footage.ts";
 import type { Project } from "../models/project.ts";
@@ -38,28 +43,9 @@ export function parseItem(
 
   let item: FolderItem | FootageItem | CompItem;
   if (itemType === ItemType.FOLDER) {
-    item = parseFolder(
-      false,
-      childChunks,
-      project,
-      idta,
-      nameUtf8,
-      cmta,
-      itemChunk,
-      gide,
-      parentFolder,
-    );
+    item = parseFolder(false, childChunks, project, idta, nameUtf8, cmta, itemChunk, gide, parentFolder);
   } else if (itemType === ItemType.FOOTAGE) {
-    item = parseFootage(
-      childChunks,
-      idta,
-      nameUtf8,
-      cmta,
-      itemChunk,
-      gide,
-      project,
-      parentFolder,
-    );
+    item = parseFootage(childChunks, idta, nameUtf8, cmta, itemChunk, gide, project, parentFolder);
   } else if (itemType === ItemType.COMPOSITION) {
     item = parseComposition(
       childChunks,
@@ -155,7 +141,7 @@ export function parseFolder(
  * @param childChunks - child chunks of the item LIST chunk.
  * @returns List of Guide objects, empty if no guides are defined.
  */
-export function _parseGuides(childChunks: Chunk[]): Guide[] {
+function _parseGuides(childChunks: Chunk[]): Guide[] {
   const gideList = findByListTypeOrNull(childChunks, "Gide");
   if (gideList === null) return [];
 

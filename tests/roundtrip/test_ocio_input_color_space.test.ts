@@ -88,10 +88,7 @@ test.each(IMPORT_ROWS)("test_import_records_the_ocio_input_space[%#]", (tag, nam
   if (resolveOcioConfig(config) == null) {
     return skip(`OCIO config ${repr(config)} is not installed`);
   }
-  const ae = next_(
-    parseAep(IMPORT_DIR.div(`ocio_input_${tag}.aep`)).project.footages,
-    (item) => item.name === name,
-  );
+  const ae = next_(parseAep(IMPORT_DIR.div(`ocio_input_${tag}.aep`)).project.footages, (item) => item.name === name);
   const project = newProject().project;
   project.colorManagementSystem = ColorManagementSystem.OCIO;
   project.ocioConfigurationFile = config;
@@ -114,10 +111,7 @@ test.each([
     if (resolveOcioConfig(str(SERGB)) == null) {
       return skip("sergb.ocio is not resolvable");
     }
-    const ae = next_(
-      parseAep(IMPORT_DIR.div("ocio_replace_sergb.aep")).project.footages,
-      (item) => item.name === name,
-    );
+    const ae = next_(parseAep(IMPORT_DIR.div("ocio_replace_sergb.aep")).project.footages, (item) => item.name === name);
     const project = newProject().project;
     project.colorManagementSystem = ColorManagementSystem.OCIO;
     project.ocioConfigurationFile = str(SERGB);

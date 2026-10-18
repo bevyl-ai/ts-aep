@@ -31,7 +31,7 @@ export const FrameRateSetting = defineEnum(
 );
 export type FrameRateSetting = EnumValue<typeof FrameRateSetting>;
 
-export const _FRAME_RATE_SETTING_LABELS: Readonly<Record<FrameRateSetting, string>> = {
+const _FRAME_RATE_SETTING_LABELS: Readonly<Record<FrameRateSetting, string>> = {
   0: "Use comp's frame rate",
   1: "Use this frame rate",
 };
@@ -70,7 +70,7 @@ export const RenderQuality = defineEnum(
 );
 export type RenderQuality = EnumValue<typeof RenderQuality>;
 
-export const _RENDER_QUALITY_LABELS: Readonly<Record<RenderQuality, string>> = {
+const _RENDER_QUALITY_LABELS: Readonly<Record<RenderQuality, string>> = {
   "-1": "Current Settings",
   0: "Wireframe",
   1: "Draft",
@@ -100,7 +100,7 @@ export const FieldRender = defineEnum(
 );
 export type FieldRender = EnumValue<typeof FieldRender>;
 
-export const _FIELD_RENDER_LABELS: Readonly<Record<FieldRender, string>> = {
+const _FIELD_RENDER_LABELS: Readonly<Record<FieldRender, string>> = {
   0: "Off",
   1: "Upper Field First",
   2: "Lower Field First",
@@ -132,7 +132,7 @@ export const PulldownSetting = defineEnum(
 );
 export type PulldownSetting = EnumValue<typeof PulldownSetting>;
 
-export const _PULLDOWN_SETTING_LABELS: Readonly<Record<PulldownSetting, string>> = {
+const _PULLDOWN_SETTING_LABELS: Readonly<Record<PulldownSetting, string>> = {
   0: "Off",
   1: "WSSWW",
   2: "SSWWW",
@@ -169,7 +169,7 @@ export const MotionBlurSetting = defineEnum(
 );
 export type MotionBlurSetting = EnumValue<typeof MotionBlurSetting>;
 
-export const _MOTION_BLUR_SETTING_LABELS: Readonly<Record<MotionBlurSetting, string>> = {
+const _MOTION_BLUR_SETTING_LABELS: Readonly<Record<MotionBlurSetting, string>> = {
   0: "Off for All Layers",
   1: "On for Checked Layers",
   2: "Current Settings",
@@ -203,7 +203,7 @@ export const FrameBlendingSetting = defineEnum(
 );
 export type FrameBlendingSetting = EnumValue<typeof FrameBlendingSetting>;
 
-export const _FRAME_BLENDING_SETTING_LABELS: Readonly<Record<FrameBlendingSetting, string>> = {
+const _FRAME_BLENDING_SETTING_LABELS: Readonly<Record<FrameBlendingSetting, string>> = {
   0: "Off for All Layers",
   1: "On for Checked Layers",
   2: "Current Settings",
@@ -237,7 +237,7 @@ export const EffectsSetting = defineEnum(
 );
 export type EffectsSetting = EnumValue<typeof EffectsSetting>;
 
-export const _EFFECTS_SETTING_LABELS: Readonly<Record<EffectsSetting, string>> = {
+const _EFFECTS_SETTING_LABELS: Readonly<Record<EffectsSetting, string>> = {
   0: "All Off",
   1: "All On",
   2: "Current Settings",
@@ -272,7 +272,7 @@ export const ProxyUseSetting = defineEnum(
 );
 export type ProxyUseSetting = EnumValue<typeof ProxyUseSetting>;
 
-export const _PROXY_USE_SETTING_LABELS: Readonly<Record<ProxyUseSetting, string>> = {
+const _PROXY_USE_SETTING_LABELS: Readonly<Record<ProxyUseSetting, string>> = {
   0: "Use No Proxies",
   1: "Use All Proxies",
   2: "Current Settings",
@@ -306,7 +306,7 @@ export const SoloSwitchesSetting = defineEnum(
 );
 export type SoloSwitchesSetting = EnumValue<typeof SoloSwitchesSetting>;
 
-export const _SOLO_SWITCHES_SETTING_LABELS: Readonly<Record<SoloSwitchesSetting, string>> = {
+const _SOLO_SWITCHES_SETTING_LABELS: Readonly<Record<SoloSwitchesSetting, string>> = {
   0: "All Off",
   2: "Current Settings",
 };
@@ -338,7 +338,7 @@ export const GuideLayers = defineEnum(
 );
 export type GuideLayers = EnumValue<typeof GuideLayers>;
 
-export const _GUIDE_LAYERS_LABELS: Readonly<Record<GuideLayers, string>> = {
+const _GUIDE_LAYERS_LABELS: Readonly<Record<GuideLayers, string>> = {
   0: "All Off",
   2: "Current Settings",
 };
@@ -370,7 +370,7 @@ export const DiskCacheSetting = defineEnum(
 );
 export type DiskCacheSetting = EnumValue<typeof DiskCacheSetting>;
 
-export const _DISK_CACHE_SETTING_LABELS: Readonly<Record<DiskCacheSetting, string>> = {
+const _DISK_CACHE_SETTING_LABELS: Readonly<Record<DiskCacheSetting, string>> = {
   0: "Read Only",
   2: "Current Settings",
 };
@@ -409,7 +409,7 @@ export const ColorDepthSetting = defineEnum(
 );
 export type ColorDepthSetting = EnumValue<typeof ColorDepthSetting>;
 
-export const _COLOR_DEPTH_SETTING_LABELS: Readonly<Record<ColorDepthSetting, string>> = {
+const _COLOR_DEPTH_SETTING_LABELS: Readonly<Record<ColorDepthSetting, string>> = {
   "-1": "Current Settings",
   0: "8 bits per channel",
   1: "16 bits per channel",
@@ -444,7 +444,7 @@ export const TimeSpanSource = defineEnum(
 );
 export type TimeSpanSource = EnumValue<typeof TimeSpanSource>;
 
-export const _TIME_SPAN_SOURCE_LABELS: Readonly<Record<TimeSpanSource, string>> = {
+const _TIME_SPAN_SOURCE_LABELS: Readonly<Record<TimeSpanSource, string>> = {
   0: "Length of Comp",
   1: "Work Area Only",
   2: "Custom",
@@ -474,7 +474,7 @@ export const PostRenderActionSetting = defineEnum(
 );
 export type PostRenderActionSetting = EnumValue<typeof PostRenderActionSetting>;
 
-export const _POST_RENDER_ACTION_SETTING_LABELS: Readonly<Record<PostRenderActionSetting, string>> = {
+const _POST_RENDER_ACTION_SETTING_LABELS: Readonly<Record<PostRenderActionSetting, string>> = {
   0: "None",
   1: "Import",
   2: "Import & Replace Usage",

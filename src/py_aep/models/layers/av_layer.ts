@@ -1,8 +1,5 @@
-import { descriptor } from "../../../pyrt/index.ts";
-// Port of py_aep/models/layers/av_layer.py
-
-import { BlendingMode, FrameBlendingType, LayerQuality, LayerSamplingQuality, LayerType, TrackMatteType } from "../../enums/index.ts";
 import {
+  descriptor,
   AttributeError,
   typeName,
   NotImplementedError,
@@ -12,6 +9,16 @@ import {
   truthyOr,
   literal,
 } from "../../../pyrt/index.ts";
+// Port of py_aep/models/layers/av_layer.py
+
+import {
+  BlendingMode,
+  FrameBlendingType,
+  LayerQuality,
+  LayerSamplingQuality,
+  LayerType,
+  TrackMatteType,
+} from "../../enums/index.ts";
 import { requiresVersion } from "../../ae_version.ts";
 import { LdtaChunk } from "../../binary/layer_chunks.ts";
 import { findByListType, findByType } from "../../binary/utils.ts";
@@ -21,12 +28,26 @@ import { resolveEssentialPropertyControllers } from "../../resolvers/essential_p
 import { canAddLayer } from "../../resolvers/motion_graphics.ts";
 import { shapeLayerRect } from "../../resolvers/shape_bounds.ts";
 import { textInkRect } from "../../resolvers/text_ink.ts";
-import { type Mat4, buildWorldMatrix, cameraRay, intersectLayerPlane, projectToComp, transformFromPoints } from "../../resolvers/transform.ts";
+import {
+  type Mat4,
+  buildWorldMatrix,
+  cameraRay,
+  intersectLayerPlane,
+  projectToComp,
+  transformFromPoints,
+} from "../../resolvers/transform.ts";
 import { ChunkField, type EffectParamDefs } from "../descriptors.ts";
 import type { Chunk } from "../../binary/chunk.ts";
 import type { CompItem } from "../items/composition.ts";
 import { Property } from "../properties/property.ts";
-import { validateBool, validateEnum, validateName, validateNumber, validateVector2, validateVector3 } from "../validators.ts";
+import {
+  validateBool,
+  validateEnum,
+  validateName,
+  validateNumber,
+  validateVector2,
+  validateVector3,
+} from "../validators.ts";
 import { Layer } from "./layer.ts";
 import { AVItem } from "../items/av_item.ts";
 import { FootageItem } from "../items/footage.ts";
@@ -38,7 +59,7 @@ import { late } from "../late.ts";
  * `point`, or `ValueError` when a coordinate overflowed to inf / nan
  * (an input near the float limit).
  */
-export function _finite(point: number[]): number[] {
+function _finite(point: number[]): number[] {
   if (!point.every((v) => Number.isFinite(v))) {
     throw new ValueError(`the converted point overflows: [${point.map((v) => floatRepr(v)).join(", ")}]`);
   }
@@ -52,7 +73,7 @@ export function _finite(point: number[]): number[] {
  * `true` if `newSource` is found among the ancestors, meaning the
  * replacement would create a circular reference chain.
  */
-export function _wouldCreateCycle(targetComp: CompItem, newSource: AVItem): boolean {
+function _wouldCreateCycle(targetComp: CompItem, newSource: AVItem): boolean {
   if (!("layers" in newSource)) return false;
   // Python tracks visited comps by id(); object identity in a Set is the same check.
   const visited = new Set<CompItem>();
@@ -77,11 +98,7 @@ export function _wouldCreateCycle(targetComp: CompItem, newSource: AVItem): bool
  * - `exclude`: A layer to skip when scanning for other users (the caller itself, which is
  *     being removed or swapped out).
  */
-export function _unregisterSourceUsage(
-  source: AVItem,
-  comp: CompItem,
-  kw: { exclude?: Layer | null } = {},
-): void {
+export function _unregisterSourceUsage(source: AVItem, comp: CompItem, kw: { exclude?: Layer | null } = {}): void {
   const { exclude = null } = kw;
   for (const layer of comp.avLayers) {
     if (layer !== exclude && layer._sourceId === source.id) return;
@@ -89,12 +106,10 @@ export function _unregisterSourceUsage(
   source._usedIn.delete(comp);
 }
 
-export function _validateCollapseTransformation(value: boolean, obj: AVLayer): void {
+function _validateCollapseTransformation(value: boolean, obj: AVLayer): void {
   validateBool(value);
   if (!obj.canSetCollapseTransformation) {
-    throw new AttributeError(
-      "'collapseTransformation' is read-only when 'canSetCollapseTransformation' is false.",
-    );
+    throw new AttributeError("'collapseTransformation' is read-only when 'canSetCollapseTransformation' is false.");
   }
 }
 
@@ -590,9 +605,7 @@ export class AVLayer extends Layer {
       return false;
     }
 
-    const anySolo = this.containingComp.soloLayers.some(
-      (layer) => layer instanceof AVLayer && layer.hasAudio,
-    );
+    const anySolo = this.containingComp.soloLayers.some((layer) => layer instanceof AVLayer && layer.hasAudio);
     if (anySolo && !this.solo) {
       return false;
     }
@@ -747,13 +760,7 @@ export class AVLayer extends Layer {
     for (const pt of [pointTopLeft, pointTopRight, pointBottomLeft]) {
       validateVector3(pt);
     }
-    return transformFromPoints(
-      pointTopLeft,
-      pointTopRight,
-      pointBottomLeft,
-      this.width,
-      this.height,
-    );
+    return transformFromPoints(pointTopLeft, pointTopRight, pointBottomLeft, this.width, this.height);
   }
 
   /**
@@ -782,10 +789,7 @@ export class AVLayer extends Layer {
    *   animators, text on a path, faux styles, a font that is not installed, ...), or a 3D model
    *   layer (whose box is the model's bounds).
    */
-  sourceRectAtTime(
-    time: number,
-    extents: boolean,
-  ): { top: number; left: number; width: number; height: number } {
+  sourceRectAtTime(time: number, extents: boolean): { top: number; left: number; width: number; height: number } {
     validateNumber(time);
     validateBool(extents);
     const layerType = this._ldta.layerType;
@@ -885,9 +889,7 @@ export class AVLayer extends Layer {
   set timeRemapEnabled(value: boolean) {
     validateBool(value);
     if (!this.canSetTimeRemapEnabled) {
-      throw new AttributeError(
-        "'timeRemapEnabled' is read-only when 'canSetTimeRemapEnabled' is false.",
-      );
+      throw new AttributeError("'timeRemapEnabled' is read-only when 'canSetTimeRemapEnabled' is false.");
     }
     const prop = this.property("ADBE Time Remapping");
     if (!(prop instanceof Property)) {
@@ -965,11 +967,7 @@ export class AVLayer extends Layer {
     const idx = this.index;
     if (idx + 1 < layers.length) {
       const below = layers[idx + 1];
-      if (
-        below instanceof AVLayer &&
-        below._matteLayerId === 0 &&
-        below.hasTrackMatte
-      ) {
+      if (below instanceof AVLayer && below._matteLayerId === 0 && below.hasTrackMatte) {
         return true;
       }
     }
@@ -1051,10 +1049,7 @@ export class AVLayer extends Layer {
    * @throws {@link AttributeError} If the file predates AE 23.0.
    * @throws {@link ValueError} If `trackMatteLayer` belongs to a different composition.
    */
-  setTrackMatte(
-    trackMatteLayer: AVLayer | null,
-    trackMatteType: TrackMatteType | number,
-  ): void {
+  setTrackMatte(trackMatteLayer: AVLayer | null, trackMatteType: TrackMatteType | number): void {
     validateEnum(TrackMatteType)(trackMatteType);
     trackMatteType = TrackMatteType.of(trackMatteType);
     if (trackMatteLayer != null && !(trackMatteLayer instanceof AVLayer)) {
@@ -1201,21 +1196,37 @@ export class AVLayer extends Layer {
     // Class-body `ChunkField` assignments in Python, installed as descriptors.
     descriptor(this, "adjustmentLayer", ChunkField.bool("_ldta", "adjustmentLayer"));
     descriptor(this, "audioEnabled", ChunkField.bool("_ldta", "audioEnabled"));
-    descriptor(this, "collapseTransformation", ChunkField.bool("_ldta", "collapseTransformation", { validate: _validateCollapseTransformation }));
+    descriptor(
+      this,
+      "collapseTransformation",
+      ChunkField.bool("_ldta", "collapseTransformation", { validate: _validateCollapseTransformation }),
+    );
     descriptor(this, "effectsActive", ChunkField.bool("_ldta", "effectsActive"));
-    descriptor(this, "environmentLayer", ChunkField.bool("_ldta", "environmentLayer", { postSet: "_onEnvironmentLayerSet" }));
+    descriptor(
+      this,
+      "environmentLayer",
+      ChunkField.bool("_ldta", "environmentLayer", { postSet: "_onEnvironmentLayerSet" }),
+    );
     descriptor(this, "frameBlendingType", ChunkField.enum(FrameBlendingType, "_ldta", "frameBlendingType"));
     descriptor(this, "guideLayer", ChunkField.bool("_ldta", "guideLayer"));
     descriptor(this, "motionBlur", ChunkField.bool("_ldta", "motionBlurFlag"));
     descriptor(this, "preserveTransparency", ChunkField.bool("_ldta", "preserveTransparency"));
     descriptor(this, "quality", ChunkField.enum(LayerQuality, "_ldta", "quality"));
-    descriptor(this, "samplingQuality", ChunkField.enum(LayerSamplingQuality, "_ldta", "samplingQuality", { minVersion: 12 }));
-    descriptor(this, "threeDLayer", ChunkField.bool("_ldta", "threeDLayer", {
-      // Built at the dimensionality the file has, so the toggle sees the
-      // dead 2-D Scale Z it normalizes.
-      preSet: "_loadPropertyTree",
-      postSet: "_onThreeDLayerSet",
-    }));
+    descriptor(
+      this,
+      "samplingQuality",
+      ChunkField.enum(LayerSamplingQuality, "_ldta", "samplingQuality", { minVersion: 12 }),
+    );
+    descriptor(
+      this,
+      "threeDLayer",
+      ChunkField.bool("_ldta", "threeDLayer", {
+        // Built at the dimensionality the file has, so the toggle sees the
+        // dead 2-D Scale Z it normalizes.
+        preSet: "_loadPropertyTree",
+        postSet: "_onThreeDLayerSet",
+      }),
+    );
     descriptor(this, "threeDPerChar", ChunkField.bool("_ldta", "threeDPerChar"));
     descriptor(this, "_sourceId", new ChunkField("_ldta", "sourceId"));
   }

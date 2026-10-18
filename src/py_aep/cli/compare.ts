@@ -30,7 +30,9 @@ import {
   deepcopy,
   getOrThrow,
   valueEquals,
-  stringifyJson, compare } from "../../pyrt/index.ts";
+  stringifyJson,
+  compare,
+} from "../../pyrt/index.ts";
 import { intOption, parseCommandLine, runMain, usageError, type Command } from "./args.ts";
 
 export function print(...args: string[]): void {
@@ -49,14 +51,19 @@ export function bitLength(n: number): number {
 // NOTE(port): f"{x:08b}" including Python's sign-inside-width rule for negatives; pyrt format() lacks `b`.
 export function bin8(x: number): string {
   const sign = x < 0 ? "-" : "";
-  return sign + Math.abs(x).toString(2).padStart(8 - sign.length, "0");
+  return (
+    sign +
+    Math.abs(x)
+      .toString(2)
+      .padStart(8 - sign.length, "0")
+  );
 }
 
 // ── Dataclasses ─────────────────────────────────────────────────────────────
 
 /**
  * Sentinel used in {@link ByteDifference} when one chunk is shorter
- * than the other and a byte position doesn't exist. 
+ * than the other and a byte position doesn't exist.
  */
 export const MISSING_BYTE = -1;
 
@@ -219,7 +226,7 @@ export function _chunkFloats(chunk: Chunk): number[] | null {
   }
   if (ct === "ldat" && chunk instanceof LdatChunk) {
     const items = chunk.items;
-    if ((items.length > 0) && items.every((i: { x: number; y: number }) => "x" in i && "y" in i)) {
+    if (items.length > 0 && items.every((i: { x: number; y: number }) => "x" in i && "y" in i)) {
       return items.flatMap((i: { x: number; y: number }) => [i.x, i.y]);
     }
   }
@@ -255,7 +262,8 @@ export const _FLOAT_TAG_RE = /<float>([^<]*)<\/float>/g;
  */
 export function _gradientXmlOnlyFloatDiff(s1: string | String, s2: string | String): boolean {
   // `_NulTailStr` (a str subclass) arrives as a String object.
-  if (!(typeof s1 === "string" || s1 instanceof String) || !(typeof s2 === "string" || s2 instanceof String)) return false;
+  if (!(typeof s1 === "string" || s1 instanceof String) || !(typeof s2 === "string" || s2 instanceof String))
+    return false;
   s1 = String(s1);
   s2 = String(s2);
   if (!s1.includes("<prop.map") || !s1.includes("<float>")) return false;
@@ -349,9 +357,9 @@ export function _compareChunkDicts(
   const paths1 = new Set(data1.keys());
   const paths2 = new Set(data2.keys());
 
-  const onlyIn1 = [...[...paths1].filter((p) => !paths2.has(p))].sort(compare);
-  const onlyIn2 = [...[...paths2].filter((p) => !paths1.has(p))].sort(compare);
-  const commonPaths = [...[...paths1].filter((p) => paths2.has(p))].sort(compare);
+  const onlyIn1 = [...paths1].filter((p) => !paths2.has(p)).sort(compare);
+  const onlyIn2 = [...paths2].filter((p) => !paths1.has(p)).sort(compare);
+  const commonPaths = [...paths1].filter((p) => paths2.has(p)).sort(compare);
 
   const differences: ChunkDifference[] = [];
   const suppressed: string[] = [];
@@ -561,7 +569,10 @@ export function printResults(
   print(`${"=".repeat(80)}\n`);
 
   const hasAny =
-    differences?.length > 0 || onlyInFile1?.length > 0 || onlyInFile2?.length > 0 || structuralDiffs != null && structuralDiffs.length > 0;
+    differences?.length > 0 ||
+    onlyInFile1?.length > 0 ||
+    onlyInFile2?.length > 0 ||
+    (structuralDiffs != null && structuralDiffs.length > 0);
   if (!hasAny) {
     print("No differences found!");
     return;
@@ -816,8 +827,7 @@ export function _reportSuppressed(suppressed: number, exact: boolean): void {
   if (suppressed && !exact) {
     const plural = suppressed !== 1 ? "s" : "";
     eprint(
-      `Note: suppressed ${suppressed} float-precision-only chunk ` +
-        `difference${plural} (use --exact to show them).`,
+      `Note: suppressed ${suppressed} float-precision-only chunk ` + `difference${plural} (use --exact to show them).`,
     );
   }
 }
@@ -825,8 +835,7 @@ export function _reportSuppressed(suppressed: number, exact: boolean): void {
 export const PROG = "aep-compare";
 
 export const USAGE =
-  `usage: ${PROG} [-h] [--json] [--filter FILTER] [--context N] [--exact]\n` +
-  `                   files [files ...]`;
+  `usage: ${PROG} [-h] [--json] [--filter FILTER] [--context N] [--exact]\n` + `                   files [files ...]`;
 
 export const HELP = `${USAGE}
 
@@ -864,7 +873,12 @@ const COMPARE: Command = {
   prog: PROG,
   usage: USAGE,
   help: HELP,
-  options: { json: { type: "boolean" }, filter: { type: "string" }, context: { type: "string" }, exact: { type: "boolean" } },
+  options: {
+    json: { type: "boolean" },
+    filter: { type: "string" },
+    context: { type: "string" },
+    exact: { type: "boolean" },
+  },
 };
 
 export type Args = {

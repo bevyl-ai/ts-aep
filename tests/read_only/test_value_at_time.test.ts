@@ -153,7 +153,12 @@ describe("TestValueAtTimeSpatial", () => {
     const stored = prop.keyframes.map((kf) => kf._ldatItem.timeUnits);
     expect(valueEquals(stored, [0, 56852, 74884, 122880])).toBe(true);
     prop._redistributeRovingKeyframes();
-    expect(valueEquals(prop.keyframes.map((kf) => kf._ldatItem.timeUnits), stored)).toBe(true);
+    expect(
+      valueEquals(
+        prop.keyframes.map((kf) => kf._ldatItem.timeUnits),
+        stored,
+      ),
+    ).toBe(true);
   });
 });
 

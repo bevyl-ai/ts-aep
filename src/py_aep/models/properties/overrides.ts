@@ -450,10 +450,7 @@ export const _CAMERA_NO_EXPRESSION: ReadonlySet<string> = new Set<string>([
 ]);
 
 // Transform match names that are never expressionable on any light layer.
-export const _LIGHT_NO_EXPRESSION: ReadonlySet<string> = new Set<string>([
-  "ADBE Scale",
-  "ADBE Opacity",
-]);
+export const _LIGHT_NO_EXPRESSION: ReadonlySet<string> = new Set<string>(["ADBE Scale", "ADBE Opacity"]);
 
 // Additional match names not expressionable on ambient lights.
 // Ambient lights support Color, Intensity, and (oddly) Rotate X/Y.

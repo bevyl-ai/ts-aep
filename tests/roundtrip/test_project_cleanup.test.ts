@@ -131,7 +131,12 @@ describe("TestReduceProject", () => {
     project.save(out);
     const reparsed = parseAep(out).project;
 
-    expect(valueEquals(reparsed.compositions.map((c) => c.name), [keptName])).toBe(true);
+    expect(
+      valueEquals(
+        reparsed.compositions.map((c) => c.name),
+        [keptName],
+      ),
+    ).toBe(true);
   });
 });
 

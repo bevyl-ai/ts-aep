@@ -20,17 +20,12 @@ import { asInstance } from "../helpers.ts";
 // Python `Path(__file__).parent.parent.parent` is the repo root. A TS file's
 // `import.meta.dir` is already its directory, so two `.parent` steps reach it.
 const SAMPLES = new Path(import.meta.dir).parent.parent.div("samples", "models", "property");
-const SAMPLES_ROOT = new Path(import.meta.dir).parent.parent.div("samples");
 
 function _fresh(name: string): Application {
   return parseAep(str(SAMPLES.div(name)));
 }
 
-function _prop(
-  app: Application,
-  matchName: string,
-  kw: { comp?: number; layer?: number } = {},
-): Property {
+function _prop(app: Application, matchName: string, kw: { comp?: number; layer?: number } = {}): Property {
   const { comp = 0, layer = 0 } = kw;
   const lay = app.project.compositions[comp].layers[layer];
   // `next(gen)` without a default raises StopIteration when nothing matches.

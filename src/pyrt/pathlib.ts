@@ -133,7 +133,12 @@ export class Path {
     const recursive = pattern.startsWith("**/");
     const leaf = recursive ? pattern.slice(3) : pattern;
     const re = new RegExp(
-      "^" + leaf.replace(/[.+^${}()|[\]\\]/g, "\\$&").replace(/\*/g, "[^/]*").replace(/\?/g, "[^/]") + "$",
+      "^" +
+        leaf
+          .replace(/[.+^${}()|[\]\\]/g, "\\$&")
+          .replace(/\*/g, "[^/]*")
+          .replace(/\?/g, "[^/]") +
+        "$",
     );
     if (!this.isDir()) return [];
     // An unreadable directory (OSError) is skipped.
@@ -276,7 +281,8 @@ export class PurePath {
     const paths: string[] = [];
     for (const a of args) {
       if (a instanceof PurePath) {
-        if (a._flavour === WINDOWS && this._flavour === POSIX) paths.push(...a._rawPaths.map((p) => p.replace(/\\/g, "/")));
+        if (a._flavour === WINDOWS && this._flavour === POSIX)
+          paths.push(...a._rawPaths.map((p) => p.replace(/\\/g, "/")));
         else paths.push(...a._rawPaths);
       } else {
         paths.push(String(a));
@@ -355,7 +361,7 @@ export class PurePath {
   toString(): string {
     const f = this._flavour;
     if (this.drive || this.root) return this.drive + this.root + this._tail.join(f.sep);
-    if (this._tail.length && f.splitroot(this._tail[0])[0]) return ["." , ...this._tail].join(f.sep);
+    if (this._tail.length && f.splitroot(this._tail[0])[0]) return [".", ...this._tail].join(f.sep);
     return this._tail.join(f.sep) || ".";
   }
 

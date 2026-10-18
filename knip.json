@@ -1,0 +1,12 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "entry": [
+    "src/py_aep/browser.ts",
+    "src/py_aep/cli/*.ts",
+    "tools/**/*.ts",
+    "tools/browser-smoke/*.js",
+    "tests/**/*.test.ts"
+  ],
+  "project": ["src/**/*.ts", "tools/**/*.{ts,js}", "tests/**/*.ts"],
+  "ignore": ["src/py_aep/binary/chunk_types.ts", "src/pyrt/unicodedata_tables.ts"]
+}

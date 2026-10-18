@@ -31,6 +31,12 @@ jobs:
       - name: Typecheck
         run: bun run typecheck
 
+      - name: Lint, format and dead code
+        run: |
+          bun run lint
+          bun run format
+          bun run knip
+
       - name: Doc examples compile, TSDoc is clean, generated chunk types are current
         run: |
           bun tools/gen_chunk_types.ts --check

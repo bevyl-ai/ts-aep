@@ -73,7 +73,11 @@ export class OpenExrFormatOptions extends FormatOptionsBase {
   }
 
   static {
-    descriptor(this, "compression", ChunkField.enum(OpenExrCompression, "_body", "compression", { allowOutOfEnumValues: true }));
+    descriptor(
+      this,
+      "compression",
+      ChunkField.enum(OpenExrCompression, "_body", "compression", { allowOutOfEnumValues: true }),
+    );
     descriptor(this, "luminanceChroma", ChunkField.bool("_body", "luminanceChroma"));
     descriptor(this, "thirtyTwoBitFloat", ChunkField.bool("_body", "thirtyTwoBitFloat"));
   }

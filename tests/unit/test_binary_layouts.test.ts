@@ -76,12 +76,7 @@ describe("TestLdtaDoubles", () => {
     assert(chunk instanceof LdtaChunk);
     expect(chunk._reserved70).toBe(1.5);
     expect(chunk._reserved78).toBe(-2.25);
-    expect(
-      valueEquals(
-        [chunk._reserved8c, chunk._reserved90, chunk._reserved94],
-        [1, 0x01000000, 1],
-      ),
-    ).toBe(true);
+    expect(valueEquals([chunk._reserved8c, chunk._reserved90, chunk._reserved94], [1, 0x01000000, 1])).toBe(true);
     expect(chunk._reserved98).toBe(36.0);
   });
 });

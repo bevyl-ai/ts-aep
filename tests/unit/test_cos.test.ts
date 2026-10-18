@@ -2,7 +2,6 @@
 
 import { describe, expect, test } from "bun:test";
 
-
 import { ByteStream, b, Bytes, assert, valueEquals } from "../../src/pyrt/index.ts";
 // NOTE(port): SyntaxError is pyrt's shim for Python's builtin SyntaxError, re-exported by cos.ts
 import { CosParser, IndirectObject, IndirectReference, Stream, type CosNode } from "../../src/py_aep/cos/cos.ts";
@@ -125,7 +124,15 @@ describe("TestCosParserComposite", () => {
 
   test("test_parse_dict", () => {
     const result = _parse(b("<< /Key1 42 /Key2 (hello) >>"));
-    expect(valueEquals(result, new Map<string, CosNode>([["Key1", 42], ["Key2", "hello"]]))).toBe(true);
+    expect(
+      valueEquals(
+        result,
+        new Map<string, CosNode>([
+          ["Key1", 42],
+          ["Key2", "hello"],
+        ]),
+      ),
+    ).toBe(true);
   });
 
   test("test_parse_empty_dict", () => {
@@ -135,7 +142,9 @@ describe("TestCosParserComposite", () => {
 
   test("test_parse_nested_dict", () => {
     const result = _parse(b("<< /outer << /inner 1 >> >>"));
-    expect(valueEquals(result, new Map<string, CosNode>([["outer", new Map<string, CosNode>([["inner", 1]])]]))).toBe(true);
+    expect(valueEquals(result, new Map<string, CosNode>([["outer", new Map<string, CosNode>([["inner", 1]])]]))).toBe(
+      true,
+    );
   });
 
   test("test_parse_array", () => {
@@ -155,7 +164,12 @@ describe("TestCosParserComposite", () => {
 
   test("test_parse_nested_array", () => {
     const result = _parse(b("[[1 2] [3 4]]"));
-    expect(valueEquals(result, [[1, 2], [3, 4]])).toBe(true);
+    expect(
+      valueEquals(result, [
+        [1, 2],
+        [3, 4],
+      ]),
+    ).toBe(true);
   });
 
   test("test_parse_dict_in_array", () => {

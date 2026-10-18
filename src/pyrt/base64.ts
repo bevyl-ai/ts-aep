@@ -23,7 +23,7 @@ export function b64encode(data: Uint8Array): string {
 }
 
 /** binascii.Error (a ValueError subclass). */
-export class BinasciiError extends ValueError {}
+class BinasciiError extends ValueError {}
 
 /**
  * `base64.b64decode(s)` (validate=False): characters outside the alphabet

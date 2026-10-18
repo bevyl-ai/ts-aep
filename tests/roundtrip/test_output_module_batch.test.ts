@@ -5,7 +5,13 @@
 import { expect, test } from "bun:test";
 
 import { asInstance, parseProjectFresh } from "../helpers.ts";
-import { AudioChannels, AudioCodec, OutputChannels, OutputColorDepth, OutputColorMode } from "../../src/py_aep/enums/index.ts";
+import {
+  AudioChannels,
+  AudioCodec,
+  OutputChannels,
+  OutputColorDepth,
+  OutputColorMode,
+} from "../../src/py_aep/enums/index.ts";
 import type { Project } from "../../src/py_aep/models/project.ts";
 import type { OutputModule } from "../../src/py_aep/models/renderqueue/output_module.ts";
 import { XmlFormatOptions } from "../../src/py_aep/models/renderqueue/format_options/xml.ts";
@@ -13,7 +19,6 @@ import { RenderQueue } from "../../src/py_aep/models/renderqueue/render_queue.ts
 import type { SettingValue } from "../../src/py_aep/models/renderqueue/settings.ts";
 import { int, Path, valueEquals, RuntimeError, ValueError } from "../../src/pyrt/index.ts";
 import { makeTmpPath, raises } from "../support/pytest.ts";
-
 
 const FORMAT_DIR = new Path(import.meta.dir).parent.parent.div("samples").div("models").div("format_options");
 const RQ_DIR = new Path(import.meta.dir).parent.parent.div("samples").div("models").div("renderqueue");

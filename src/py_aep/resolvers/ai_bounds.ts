@@ -51,20 +51,22 @@ import {
   getOrInsert,
   warn,
   isReal,
-  ascii, hypot } from "../../pyrt/index.ts";
+  ascii,
+  hypot,
+} from "../../pyrt/index.ts";
 
 export type Box = [number, number, number, number];
-export type Matrix = number[];
-export type Pt = [number, number];
-export type Segment = [string, ...Pt[]];
+type Matrix = number[];
+type Pt = [number, number];
+type Segment = [string, ...Pt[]];
 /** `(widths, default width, y-min, y-max, two-byte)` in glyph space. */
-export type Metrics = [Map<number, number>, number, number, number, boolean];
+type Metrics = [Map<number, number>, number, number, number, boolean];
 
 /** Uniform expansion applied to a filled path or a shading, in points. */
-export const FILL_PAD = 0.25;
+const FILL_PAD = 0.25;
 
 /** Largest value the `opti` artwork box can store (signed big-endian 16.16). */
-export const FIXED_MAX = (2 ** 31 - 1) / 65536.0;
+const FIXED_MAX = (2 ** 31 - 1) / 65536.0;
 
 /**
  * The box After Effects stores for a layer with no artwork: a `1/65536`
@@ -72,56 +74,56 @@ export const FIXED_MAX = (2 ** 31 - 1) / 65536.0;
  */
 export const EMPTY_BOX: Box = [0.0, 0.0, 1 / 65536.0, 1 / 65536.0];
 
-export const _IDENTITY: Matrix = [1.0, 0.0, 0.0, 1.0, 0.0, 0.0];
+const _IDENTITY: Matrix = [1.0, 0.0, 0.0, 1.0, 0.0, 0.0];
 
 /** Advance assumed for a glyph with no width from any source. */
-export const _DEFAULT_WIDTH = 500.0;
+const _DEFAULT_WIDTH = 500.0;
 
 /** `_fontMetrics` for text shown with no `Tf`, i.e. with no font at all. */
-export const _NO_FONT_METRICS: Metrics = [new Map(), _DEFAULT_WIDTH, -250.0, 750.0, false];
+const _NO_FONT_METRICS: Metrics = [new Map(), _DEFAULT_WIDTH, -250.0, 750.0, false];
 
 /**
  * Filters the stream decoder understands. Anything else is a hard stop rather
  * than a silently wrong measurement.
  */
-export const _SUPPORTED_FILTERS: ReadonlySet<string> = new Set(["FlateDecode", "Fl"]);
+const _SUPPORTED_FILTERS: ReadonlySet<string> = new Set(["FlateDecode", "Fl"]);
 
-export const _PAINT_OPS: ReadonlySet<string> = new Set(["S", "s", "f", "F", "f*", "B", "B*", "b", "b*", "n"]);
-export const _STROKE_OPS: ReadonlySet<string> = new Set(["S", "s", "B", "B*", "b", "b*"]);
+const _PAINT_OPS: ReadonlySet<string> = new Set(["S", "s", "f", "F", "f*", "B", "B*", "b", "b*", "n"]);
+const _STROKE_OPS: ReadonlySet<string> = new Set(["S", "s", "B", "B*", "b", "b*"]);
 
 /**
  * Render modes that stroke the glyphs. Modes 3 and 7 are invisible but are
  * still measured - After Effects does not skip them.
  */
-export const _STROKING_TEXT_MODES: ReadonlySet<number> = new Set([1, 2, 5, 6]);
+const _STROKING_TEXT_MODES: ReadonlySet<number> = new Set([1, 2, 5, 6]);
 
 /**
  * Encodings that put `quotesingle` at 39 and `grave` at 96, where the
  * fonts' built-in StandardEncoding puts `quoteright` and `quoteleft`.
  */
-export const _ASCII_QUOTE_ENCODINGS: ReadonlySet<string> = new Set(["WinAnsiEncoding", "MacRomanEncoding"]);
+const _ASCII_QUOTE_ENCODINGS: ReadonlySet<string> = new Set(["WinAnsiEncoding", "MacRomanEncoding"]);
 
-export const _DELIMITERS = ascii("()<>[]{}/%");
-export const _WHITESPACE = ascii(" \t\r\n\f\x00");
-export const _NUMBER_START = ascii("+-.0123456789");
-export const NUMBER_CHARS = ascii("+-.0123456789eE");
-export const CLOSERS = ascii("]>}{");
-export const SLASH = ascii("/");
-export const PERCENT = ascii("%");
-export const LPAREN = ascii("(");
-export const RPAREN = ascii(")");
-export const LT = ascii("<");
-export const GT = ascii(">");
-export const LBRACKET = ascii("[");
-export const RBRACKET = ascii("]");
-export const BACKSLASH = ascii("\\");
-export const NEWLINE = Uint8Array.of(0x0a);
-export const CARRIAGE_RETURN = Uint8Array.of(0x0d);
-export const CRLF = Uint8Array.of(0x0d, 0x0a);
-export const DICT_END = ascii(">>");
+const _DELIMITERS = ascii("()<>[]{}/%");
+const _WHITESPACE = ascii(" \t\r\n\f\x00");
+const _NUMBER_START = ascii("+-.0123456789");
+const NUMBER_CHARS = ascii("+-.0123456789eE");
+const CLOSERS = ascii("]>}{");
+const SLASH = ascii("/");
+const PERCENT = ascii("%");
+const LPAREN = ascii("(");
+const RPAREN = ascii(")");
+const LT = ascii("<");
+const GT = ascii(">");
+const LBRACKET = ascii("[");
+const RBRACKET = ascii("]");
+const BACKSLASH = ascii("\\");
+const NEWLINE = Uint8Array.of(0x0a);
+const CARRIAGE_RETURN = Uint8Array.of(0x0d);
+const CRLF = Uint8Array.of(0x0d, 0x0a);
+const DICT_END = ascii(">>");
 
 /** Escape bytes after a backslash, keyed by the escape byte (`n`, `r`, `t`, `b`, `f`). */
-export const SIMPLE_ESCAPES = new Map<number, Uint8Array>([
+const SIMPLE_ESCAPES = new Map<number, Uint8Array>([
   [0x6e, Uint8Array.of(0x0a)],
   [0x72, Uint8Array.of(0x0d)],
   [0x74, Uint8Array.of(0x09)],
@@ -130,21 +132,21 @@ export const SIMPLE_ESCAPES = new Map<number, Uint8Array>([
 ]);
 
 /** An image's own space, which its CTM maps onto the page. */
-export const _UNIT_SQUARE: Pt[] = [
+const _UNIT_SQUARE: Pt[] = [
   [0.0, 0.0],
   [1.0, 0.0],
   [1.0, 1.0],
   [0.0, 1.0],
 ];
-export const _ROOT_RE = /\/Root[ \t\r\n]+(\d+)[ \t\r\n]+\d+[ \t\r\n]+R/g;
+const _ROOT_RE = /\/Root[ \t\r\n]+(\d+)[ \t\r\n]+\d+[ \t\r\n]+R/g;
 // `\s` here is bytes-`\s` ([ \t\n\r\f\v]), not JS `\s`, so a 0xA0 byte is not whitespace.
-export const _INLINE_IMAGE_END = /[ \t\n\r\f\v\x00]EI[ \t\n\r\f\v\x00]|[ \t\n\r\f\v\x00]EI$/g;
+const _INLINE_IMAGE_END = /[ \t\n\r\f\v\x00]EI[ \t\n\r\f\v\x00]|[ \t\n\r\f\v\x00]EI$/g;
 
 // --------------------------------------------------------------------------
 // geometry
 
 /** `str(x)` for a content-stream operand: every number there is a Python float (`1.0`). */
-export function _operandStr(x: CosNode): string {
+function _operandStr(x: CosNode): string {
   return isReal(x) ? numStr(x, true) : String(x);
 }
 
@@ -154,16 +156,16 @@ export function _operandStr(x: CosNode): string {
  * instead, which Python never does here.
  */
 // NOTE(port): local two-operand form of Python's min(a, b)/max(a, b); same first-wins tie and NaN behavior as CPython's comparison loop.
-export function _min2(a: number, b_: number): number {
+function _min2(a: number, b_: number): number {
   return b_ < a ? b_ : a;
 }
 
-export function _max2(a: number, b_: number): number {
+function _max2(a: number, b_: number): number {
   return b_ > a ? b_ : a;
 }
 
 /** `sep.join(parts)` for bytes. */
-export function joinBytes(sep: Uint8Array, parts: Uint8Array[]): Uint8Array {
+function joinBytes(sep: Uint8Array, parts: Uint8Array[]): Uint8Array {
   const out: Uint8Array[] = [];
   parts.forEach((part, i) => {
     if (i > 0) out.push(sep);
@@ -173,12 +175,12 @@ export function joinBytes(sep: Uint8Array, parts: Uint8Array[]): Uint8Array {
 }
 
 /** `bytes.isdigit()`: non-empty and every byte an ASCII digit. */
-export function _isdigitBytes(data: Uint8Array): boolean {
+function _isdigitBytes(data: Uint8Array): boolean {
   return data.length > 0 && Array.from(data).every((c) => c >= 0x30 && c <= 0x39);
 }
 
 /** Concatenate two PDF matrices: the result applies `a` then `b`. */
-export function _matMul(a: Matrix, b_: Matrix): Matrix {
+function _matMul(a: Matrix, b_: Matrix): Matrix {
   return [
     a[0] * b_[0] + a[1] * b_[2],
     a[0] * b_[1] + a[1] * b_[3],
@@ -189,12 +191,12 @@ export function _matMul(a: Matrix, b_: Matrix): Matrix {
   ];
 }
 
-export function _apply(m: Matrix, x: number, y: number): Pt {
+function _apply(m: Matrix, x: number, y: number): Pt {
   return [m[0] * x + m[2] * y + m[4], m[1] * x + m[3] * y + m[5]];
 }
 
 /** A growing axis-aligned bounding box. */
-export class _Acc {
+class _Acc {
   x0: number;
   y0: number;
   x1: number;
@@ -229,7 +231,7 @@ export class _Acc {
 }
 
 /** The dictionary of a plain dict or of a `Stream` object. */
-export function _asDict(value: CosNode): CosDict | null {
+function _asDict(value: CosNode): CosDict | null {
   if (value instanceof Map) return value;
   // `getattr(value, "dictionary", None)`: of the COS kinds only a `Stream` has one.
   const dictionary = value instanceof Stream ? value.dictionary : null;
@@ -237,7 +239,7 @@ export function _asDict(value: CosNode): CosDict | null {
 }
 
 /** Clamp a box to the range the `opti` fixed-point field can store. */
-export function _clamp(box: Box): Box {
+function _clamp(box: Box): Box {
   return [
     _max2(-FIXED_MAX, _min2(FIXED_MAX, box[0])),
     _max2(-FIXED_MAX, _min2(FIXED_MAX, box[1])),
@@ -246,7 +248,7 @@ export function _clamp(box: Box): Box {
   ];
 }
 
-export function _grow(box: Box, dx: number, dy: number): Box {
+function _grow(box: Box, dx: number, dy: number): Box {
   return [box[0] - dx, box[1] - dy, box[2] + dx, box[3] + dy];
 }
 
@@ -258,7 +260,7 @@ export function _grow(box: Box, dx: number, dy: number): Box {
  * paints nothing, which is what a missing clip yields at the one place the
  * clip is read (`sh`).
  */
-export function _intersect(current: Box | null, added: Box | null): Box | null {
+function _intersect(current: Box | null, added: Box | null): Box | null {
   if (current == null) return added;
   if (added == null) return current;
   const box: Box = [
@@ -274,7 +276,7 @@ export function _intersect(current: Box | null, added: Box | null): Box | null {
 // document access
 
 /** Indirect-object and stream access for a PDF-compatible file. */
-export class _Document {
+class _Document {
   private _data: Uint8Array;
   private _name: string;
   private _offsets: Map<number, number>;
@@ -365,18 +367,14 @@ export class _Document {
     const names: CosNode[] = !Array.isArray(filters) ? [filters] : filters;
     if (this.get(info, "DecodeParms") != null) {
       throw this._reject(
-        "the content stream uses a decode-parameter filter " +
-          "(predictors), which py_aep cannot decode",
+        "the content stream uses a decode-parameter filter " + "(predictors), which py_aep cannot decode",
       );
     }
     for (const entry of names) {
       if (entry == null) continue;
       const filterName = String(this.resolve(entry));
       if (!_SUPPORTED_FILTERS.has(filterName)) {
-        throw this._reject(
-          `the content stream uses the ${filterName} filter, which ` +
-            "py_aep cannot decode",
-        );
+        throw this._reject(`the content stream uses the ${filterName} filter, which ` + "py_aep cannot decode");
       }
       try {
         body = zlib.decompress(body);
@@ -480,7 +478,7 @@ export class _Document {
  * unknown barewords and only accepts alphabetic ones, so content-stream
  * operators (`re`, `f*`, `W*`, `'`) would all raise.
  */
-export function* _tokenize(
+function* _tokenize(
   data: Uint8Array,
 ): Generator<
   ["num", number] | ["name", string] | ["str", Uint8Array] | ["array", CosNode[]] | ["dict", CosDict] | ["op", string]
@@ -572,7 +570,7 @@ export function* _tokenize(
   }
 }
 
-export function _readLiteralString(data: Uint8Array, pos: number): [Uint8Array, number] {
+function _readLiteralString(data: Uint8Array, pos: number): [Uint8Array, number] {
   pos += 1;
   let depth = 1;
   const out: number[] = [];
@@ -630,7 +628,7 @@ export function _readLiteralString(data: Uint8Array, pos: number): [Uint8Array, 
  * string inside a `TJ` array has to decode to the same bytes a bare `Tj`
  * operand does, or its glyph codes come out as their own hex digits.
  */
-export function _readHexString(data: Uint8Array, pos: number): [Uint8Array, number] | null {
+function _readHexString(data: Uint8Array, pos: number): [Uint8Array, number] | null {
   const end = Bytes.indexOf(data, GT, pos);
   if (end < 0) return null;
   let digits = decode(data.subarray(pos + 1, end), "latin-1").replace(/[^0-9A-Fa-f]/g, "");
@@ -638,7 +636,7 @@ export function _readHexString(data: Uint8Array, pos: number): [Uint8Array, numb
   return [Bytes.fromHex(digits), end + 1];
 }
 
-export function _readArray(data: Uint8Array, pos: number): [CosNode[], number] {
+function _readArray(data: Uint8Array, pos: number): [CosNode[], number] {
   pos += 1;
   const out: CosNode[] = [];
   const size = data.length;
@@ -657,7 +655,7 @@ export function _readArray(data: Uint8Array, pos: number): [CosNode[], number] {
   return [out, pos];
 }
 
-export function _readDict(data: Uint8Array, pos: number): [CosDict, number] {
+function _readDict(data: Uint8Array, pos: number): [CosDict, number] {
   pos += 2;
   const out: CosDict = new Map();
   const size = data.length;
@@ -683,7 +681,7 @@ export function _readDict(data: Uint8Array, pos: number): [CosDict, number] {
 }
 
 /** Read one array/dictionary element starting at `pos`. */
-export function _nextSimple(data: Uint8Array, pos: number): [CosNode, number] | null {
+function _nextSimple(data: Uint8Array, pos: number): [CosNode, number] | null {
   const char = data.subarray(pos, pos + 1);
   const size = data.length;
   if (bytesEqual(char, SLASH)) {
@@ -724,7 +722,7 @@ export function _nextSimple(data: Uint8Array, pos: number): [CosNode, number] | 
 // graphics state
 
 /** The subset of the PDF graphics and text state the box depends on. */
-export class _GState {
+class _GState {
   ctm: Matrix = _IDENTITY;
   clip: Box | null = null;
   lineWidth = 1.0;
@@ -753,15 +751,12 @@ export class _GState {
    */
   strokeHalfWidth(): [number, number] {
     const half = this.lineWidth / 2.0;
-    return [
-      half * hypot(this.ctm[0], this.ctm[1]),
-      half * hypot(this.ctm[2], this.ctm[3]),
-    ];
+    return [half * hypot(this.ctm[0], this.ctm[1]), half * hypot(this.ctm[2], this.ctm[3])];
   }
 }
 
 /** The font's base encoding name, empty when it uses its built-in one. */
-export function _baseEncoding(doc: _Document, font: CosDict): string {
+function _baseEncoding(doc: _Document, font: CosDict): string {
   const encoding = doc.get(font, "Encoding");
   const table = _asDict(doc.resolve(encoding));
   if (table != null) return String(doc.get(table, "BaseEncoding", ""));
@@ -769,7 +764,7 @@ export function _baseEncoding(doc: _Document, font: CosDict): string {
 }
 
 /** The advances After Effects supplies for a font with no `/Widths`. */
-export function _builtinWidths(doc: _Document, font: CosDict, base: string): Map<number, number> {
+function _builtinWidths(doc: _Document, font: CosDict, base: string): Map<number, number> {
   const table = STD14_WIDTHS.get(base);
   if (table == null) return new Map();
   const widths = new Map<number, number>();
@@ -790,7 +785,7 @@ export function _builtinWidths(doc: _Document, font: CosDict, base: string): Map
  * the same values, but a font where they disagree measures by the
  * `/FontBBox`.
  */
-export function _fontMetrics(doc: _Document, font: CosDict | null): Metrics {
+function _fontMetrics(doc: _Document, font: CosDict | null): Metrics {
   if (!(font instanceof Map)) return _NO_FONT_METRICS;
   const subtype = String(doc.get(font, "Subtype", ""));
   if (subtype === "Type0") return _type0Metrics(doc, font);
@@ -810,12 +805,10 @@ export function _fontMetrics(doc: _Document, font: CosDict | null): Metrics {
   return [widths, default_ !== 0 ? default_ : _DEFAULT_WIDTH, yMin, yMax, false];
 }
 
-export function _type0Metrics(doc: _Document, font: CosDict): Metrics {
+function _type0Metrics(doc: _Document, font: CosDict): Metrics {
   const descendants = doc.get(font, "DescendantFonts");
   const child: CosNode =
-    Array.isArray(descendants) && descendants.length > 0
-      ? doc.resolve(descendants[0])
-      : new Map<string, CosNode>();
+    Array.isArray(descendants) && descendants.length > 0 ? doc.resolve(descendants[0]) : new Map<string, CosNode>();
   const dw = doc.number(doc.get(child, "DW"), 1000.0);
   const default_ = dw !== 0 ? dw : 1000.0;
   const widths = new Map<number, number>();
@@ -844,27 +837,20 @@ export function _type0Metrics(doc: _Document, font: CosDict): Metrics {
   return [widths, default_, yMin, yMax, true];
 }
 
-export function _verticalExtent(
-  doc: _Document,
-  descriptor: CosNode,
-  std: [number, number] | null,
-): [number, number] {
+function _verticalExtent(doc: _Document, descriptor: CosNode, std: [number, number] | null): [number, number] {
   const bbox = doc.get(descriptor, "FontBBox");
   if (Array.isArray(bbox) && bbox.length === 4) {
     return [doc.number(bbox[1]), doc.number(bbox[3])];
   }
   if (doc.resolve(descriptor) instanceof Map) {
-    return [
-      doc.number(doc.get(descriptor, "Descent"), -250.0),
-      doc.number(doc.get(descriptor, "Ascent"), 750.0),
-    ];
+    return [doc.number(doc.get(descriptor, "Descent"), -250.0), doc.number(doc.get(descriptor, "Ascent"), 750.0)];
   }
   if (std != null) return std;
   return [-250.0, 750.0];
 }
 
 /** Strip a subset tag and a style suffix from a `/BaseFont` name. */
-export function _baseFont(name: string): string {
+function _baseFont(name: string): string {
   const parts = name.split("+");
   return parts[parts.length - 1].split(",")[0];
 }
@@ -873,7 +859,7 @@ export function _baseFont(name: string): string {
 // the measuring pass
 
 /** Accumulates each optional content group's artwork box. */
-export class _Measurer {
+class _Measurer {
   private _doc: _Document;
   boxes: Map<number, _Acc>;
   private _stack: number[];
@@ -1121,7 +1107,10 @@ export class _Measurer {
     if (subtype === "Form") {
       const matrix = doc.get(xobject, "Matrix");
       if (Array.isArray(matrix) && matrix.length === 6) {
-        ctm = _matMul(matrix.map((v) => doc.number(v)), ctm);
+        ctm = _matMul(
+          matrix.map((v) => doc.number(v)),
+          ctm,
+        );
       }
     }
     const bbox = doc.get(xobject, "BBox");
@@ -1159,7 +1148,7 @@ export class _Measurer {
     const scale = gs.hScale / 100.0;
     for (const item of items) {
       if (isReal(item)) {
-        const shift = -Number(item) / 1000.0 * gs.size * scale;
+        const shift = (-Number(item) / 1000.0) * gs.size * scale;
         textMatrix = _matMul([1.0, 0.0, 0.0, 1.0, shift, 0.0], textMatrix);
         continue;
       }
@@ -1277,7 +1266,7 @@ export function readAiLayerBounds(file: PathLike, data: Uint8Array | null = null
  * A content-stream colour-space operator: `/CS0 cs` (fill) or `/CS0 CS`
  * (stroke).
  */
-export const _COLOR_SPACE_OP_RE = /\/([^ \t\n\r\f\v\/\[\]()<>{}%]+)[ \t\n\r\f\v]+(?:cs|CS)\b/g;
+const _COLOR_SPACE_OP_RE = /\/([^ \t\n\r\f\v/[\]()<>{}%]+)[ \t\n\r\f\v]+(?:cs|CS)\b/g;
 
 /**
  * Return the ICC profile After Effects records for an Illustrator/PDF
@@ -1331,8 +1320,5 @@ export function readAiIccProfile(file: PathLike, data: Uint8Array | null = null)
  */
 export function footageSize(box: Box | null): [number, number] {
   const [x0, y0, x1, y1] = (box == null ? EMPTY_BOX : box).map((v) => Math.round(v * 65536) + 0);
-  return [
-    Math.max(1, Math.ceil((x1 - x0) / 65536.0)),
-    Math.max(1, Math.ceil((y1 - y0) / 65536.0)),
-  ];
+  return [Math.max(1, Math.ceil((x1 - x0) / 65536.0)), Math.max(1, Math.ceil((y1 - y0) / 65536.0))];
 }

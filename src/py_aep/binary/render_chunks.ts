@@ -6,12 +6,37 @@
  * RoutChunk uses `itemsField()` for repeating render-flag entries.
  */
 
-import { Bytes, decode, define, descriptor, fields, getMember, assert, truthy, setMember, ascii } from "../../pyrt/index.ts";
+import {
+  Bytes,
+  decode,
+  define,
+  descriptor,
+  fields,
+  getMember,
+  assert,
+  truthy,
+  setMember,
+  ascii,
+} from "../../pyrt/index.ts";
 import type { ClassAttributes, ByteStream } from "../../pyrt/index.ts";
 import { readBytes, toDividendDivisor, toFixed1616 } from "./bin_utils.ts";
 import { BitField } from "./bitfield.ts";
 import { Chunk, type ChunkReadKwargs } from "./chunk.ts";
-import { FmtItem, asciiField, boolField, bytesField, f4Field, f8Field, itemsField, s2Field, s4Field, strField, u1Field, u2Field, u4Field } from "./fmt_field.ts";
+import {
+  FmtItem,
+  asciiField,
+  boolField,
+  bytesField,
+  f4Field,
+  f8Field,
+  itemsField,
+  s2Field,
+  s4Field,
+  strField,
+  u1Field,
+  u2Field,
+  u4Field,
+} from "./fmt_field.ts";
 import { register } from "./registry.ts";
 
 // ---------------------------------------------------------------------------
@@ -203,11 +228,10 @@ register("Ropt")(RoptChunk);
 // Pad defaults reproducing AE's real `Ropt` bytes per format (oEXR/png! from
 // AE preferences, others from sample projects). Long blocks are module-level
 // constants so the field declarations stay readable.
-export const _JPEG_PAD = Bytes.fromHex(
-  "002e0000003a01000000000000000000001c00000000000000004a503634" +
-    "000000000000000000000000000000000000",
+const _JPEG_PAD = Bytes.fromHex(
+  "002e0000003a01000000000000000000001c00000000000000004a503634" + "000000000000000000000000000000000000",
 );
-export const _TARGA_PAD = Bytes.concat(
+const _TARGA_PAD = Bytes.concat(
   Bytes.fromHex("002e000000540400"),
   Bytes.repeat(new Uint8Array(1), 9),
   ascii("\x36"),
@@ -395,7 +419,7 @@ define(PngRoptChunk, {
   _padEnd: bytesField(272, { repr: false }),
 });
 
-export const _ROPT_VARIANTS: Map<string, typeof RoptChunk> = new Map<string, typeof RoptChunk>([
+const _ROPT_VARIANTS: Map<string, typeof RoptChunk> = new Map<string, typeof RoptChunk>([
   ["sDPX", CineonRoptChunk],
   ["JPEG", JpegRoptChunk],
   ["oEXR", OpenExrRoptChunk],
@@ -846,9 +870,6 @@ define(OutputModuleSettingsItem, {
   preserveRgb: boolField(),
   _reserved5f: bytesField(33, { repr: false }),
 });
-
-/** `_ROUT_ITEM_SIZE` */
-export const _ROUT_ITEM_SIZE = 4;
 
 // AE writes a fixed block of 5 Rout items per render queue item (1 render-flag
 // entry followed by 4 position-dependent slot entries), independent of the

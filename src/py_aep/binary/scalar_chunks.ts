@@ -27,22 +27,14 @@ export class _StringChunkBase extends Chunk {
 
   declare value: string;
 
-  static read(
-    fp: ByteStream,
-    size: number,
-    kwargs: ChunkReadKwargs = {},
-  ): _StringChunkBase {
+  static read(fp: ByteStream, size: number, kwargs: ChunkReadKwargs = {}): _StringChunkBase {
     const { chunkType = "" } = kwargs;
-    const cls = this;
     const raw = readBytes(fp, size);
-    return new cls({ chunkType, value: decode(raw, cls._ENCODING) });
+    return new this({ chunkType, value: decode(raw, this._ENCODING) });
   }
 
   write(fp: ByteStream): number {
-    return writeBytes(
-      fp,
-      encode(this.value, this.constructor._ENCODING),
-    );
+    return writeBytes(fp, encode(this.value, this.constructor._ENCODING));
   }
 }
 define(_StringChunkBase, {
@@ -60,20 +52,7 @@ export class U1Chunk extends Chunk {
 define(U1Chunk, {
   value: u1Field(),
 });
-register(
-  "efdc",
-  "acer",
-  "cdrp",
-  "foac",
-  "fiac",
-  "fiop",
-  "lnrb",
-  "lnrp",
-  "qtlg",
-  "pcms",
-  "PwCs",
-  "pdvc",
-)(U1Chunk);
+register("efdc", "acer", "cdrp", "foac", "fiac", "fiop", "lnrb", "lnrp", "qtlg", "pcms", "PwCs", "pdvc")(U1Chunk);
 
 /** Unsigned 2-byte integer chunk. */
 export class U2Chunk extends Chunk {

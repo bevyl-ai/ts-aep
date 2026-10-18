@@ -10,7 +10,7 @@ import { validateInt, validateMarkerDuration, validateString, validateU4 } from 
 import type { ListChunk } from "../../binary/chunk.ts";
 import type { Keyframe } from "./keyframe.ts";
 
-export function _validateParams(value: Map<string, string>): void {
+function _validateParams(value: Map<string, string>): void {
   if (!(value instanceof Map)) {
     throw new ValueError("params must be a dictionary of string key-value pairs");
   }
@@ -197,7 +197,7 @@ export class MarkerValue {
       }
       if (added.length > 0) {
         const kept = new_.slice(0, new_.length - added.length);
-        const anchor = kept.length > 0 ? kept[kept.length - 1] :this._cuePointNameUtf8;
+        const anchor = kept.length > 0 ? kept[kept.length - 1] : this._cuePointNameUtf8;
         let pos: number;
         try {
           pos = indexByIdentity(chunks, anchor);
@@ -247,8 +247,7 @@ export class MarkerValue {
   private _frameRate(): number {
     if (this._keyframe == null) {
       throw new ValueError(
-        "frameDuration needs the composition frame rate: set the " +
-          "MarkerValue on a marker property first",
+        "frameDuration needs the composition frame rate: set the " + "MarkerValue on a marker property first",
       );
     }
     return this._keyframe._frameRate;

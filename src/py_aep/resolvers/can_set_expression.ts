@@ -21,25 +21,40 @@
 import { AttributeError } from "../../pyrt/index.ts";
 import { getAeVersionMajor } from "../ae_version.ts";
 import { LayerType, PropertyControlType, PropertyValueType } from "../enums/index.ts";
-import { _CAMERA_NO_EXPRESSION, _CANSETEXPR_2D_ONLY, _CANSETEXPR_3D_ONLY, _CANSETEXPR_EXTRUSION_DEPTHS, _CANSETEXPR_FALSE_OVERRIDES, _CANSETEXPR_RENDERER_3D_ONLY, _LIGHT_AMBIENT_NO_EXPRESSION, _LIGHT_ENVIRONMENT_NO_EXPRESSION, _LIGHT_NO_EXPRESSION, _LIGHT_PARALLEL_NO_EXPRESSION, _LIGHT_POINT_NO_EXPRESSION, _LIGHT_SPOT_NO_EXPRESSION, _MATERIAL_COEFFICIENTS, _MODEL_LAYER_HIDDEN_MATERIALS, _PARAMETRIC_MESH_CHECKBOX_STREAMS, _PARAMETRIC_MESH_GROUP_TYPE, _PARAMETRIC_MESH_NO_EXPRESSION } from "../models/properties/overrides.ts";
+import {
+  _CAMERA_NO_EXPRESSION,
+  _CANSETEXPR_2D_ONLY,
+  _CANSETEXPR_3D_ONLY,
+  _CANSETEXPR_EXTRUSION_DEPTHS,
+  _CANSETEXPR_FALSE_OVERRIDES,
+  _CANSETEXPR_RENDERER_3D_ONLY,
+  _LIGHT_AMBIENT_NO_EXPRESSION,
+  _LIGHT_ENVIRONMENT_NO_EXPRESSION,
+  _LIGHT_NO_EXPRESSION,
+  _LIGHT_PARALLEL_NO_EXPRESSION,
+  _LIGHT_POINT_NO_EXPRESSION,
+  _LIGHT_SPOT_NO_EXPRESSION,
+  _MATERIAL_COEFFICIENTS,
+  _MODEL_LAYER_HIDDEN_MATERIALS,
+  _PARAMETRIC_MESH_CHECKBOX_STREAMS,
+  _PARAMETRIC_MESH_GROUP_TYPE,
+  _PARAMETRIC_MESH_NO_EXPRESSION,
+} from "../models/properties/overrides.ts";
 import type { Property } from "../models/properties/property.ts";
 import type { Layer } from "../models/layers/layer.ts";
 import * as _avLayer from "../models/layers/av_layer.ts";
 
 // PVT sets where can_set_expression is always True / False regardless
 // of other signals.
-export const _PVT_ALWAYS_TRUE: ReadonlySet<number> = new Set<number>([
+const _PVT_ALWAYS_TRUE: ReadonlySet<number> = new Set<number>([
   PropertyValueType.TEXT_DOCUMENT,
   PropertyValueType.SHAPE,
 ]);
-export const _PVT_ALWAYS_FALSE: ReadonlySet<number> = new Set<number>([
-  PropertyValueType.NO_VALUE,
-  PropertyValueType.MARKER,
-]);
+const _PVT_ALWAYS_FALSE: ReadonlySet<number> = new Set<number>([PropertyValueType.NO_VALUE, PropertyValueType.MARKER]);
 
 // Effect parameter types that never take an expression: a layer or mask
 // reference, and group markers.
-export const _NON_EXPRESSION_PARAM_TYPES: ReadonlySet<number> = new Set<number>([
+const _NON_EXPRESSION_PARAM_TYPES: ReadonlySet<number> = new Set<number>([
   PropertyControlType.LAYER,
   PropertyControlType.PAINT_GROUP,
   PropertyControlType.MASK,
@@ -48,16 +63,16 @@ export const _NON_EXPRESSION_PARAM_TYPES: ReadonlySet<number> = new Set<number>(
 ]);
 
 // Hidden, but still expressionable: AE exempts these paint streams.
-export const _HIDDEN_BUT_EXPRESSIONABLE: ReadonlySet<string> = new Set<string>([
+const _HIDDEN_BUT_EXPRESSIONABLE: ReadonlySet<string> = new Set<string>([
   "ADBE Paint Transfer Mode",
   "ADBE Paint Duration",
 ]);
 
 // `CompItem.renderer` of Classic 3D, which draws a 3D layer as a flat plane.
-export const _CLASSIC_3D = "ADBE Advanced 3d";
+const _CLASSIC_3D = "ADBE Advanced 3d";
 
 // Shape stroke Line Join value for a miter join.
-export const _MITER_JOIN = 1;
+const _MITER_JOIN = 1;
 
 /**
  * Compute `canSetExpression` for a property.
@@ -89,11 +104,7 @@ export function resolveCanSetExpression(prop: Property): boolean {
   // An UNAPPLIED text-animator pool property cannot have an expression;
   // once applied (materialized in binary) it can, like any property.
   const parent = prop.parentProperty;
-  if (
-    parent != null &&
-    parent.matchName === "ADBE Text Animator Properties" &&
-    !prop._isLive()
-  ) {
+  if (parent != null && parent.matchName === "ADBE Text Animator Properties" && !prop._isLive()) {
     return false;
   }
 
@@ -199,11 +210,7 @@ export function resolveCanSetExpression(prop: Property): boolean {
 
   // A mesh or model layer's own Shadow Color, under Compositing Options,
   // shows under every renderer (probed on AE 2026).
-  if (
-    mn === "ADBE Shadow Color" &&
-    parent != null &&
-    parent.matchName === "ADBE Compositing Options Group"
-  ) {
+  if (mn === "ADBE Shadow Color" && parent != null && parent.matchName === "ADBE Compositing Options Group") {
     return true;
   }
 
@@ -215,10 +222,7 @@ export function resolveCanSetExpression(prop: Property): boolean {
   const classic3d = threeD && renderer === _CLASSIC_3D;
   if (_CANSETEXPR_2D_ONLY.has(mn)) {
     return (
-      layer.nullLayer ||
-      layerType === LayerType.THREE_D_MODEL ||
-      layerType === LayerType.PARAMETRIC_MESH ||
-      !classic3d
+      layer.nullLayer || layerType === LayerType.THREE_D_MODEL || layerType === LayerType.PARAMETRIC_MESH || !classic3d
     );
   }
 
@@ -236,7 +240,7 @@ export function resolveCanSetExpression(prop: Property): boolean {
 }
 
 /** Determine can_set_expression for a property on a light layer. */
-export function _canSetExpressionLight(layer: Layer, mn: string): boolean {
+function _canSetExpressionLight(layer: Layer, mn: string): boolean {
   if (_LIGHT_NO_EXPRESSION.has(mn)) {
     return false;
   }
@@ -272,11 +276,7 @@ export function _canSetExpressionLight(layer: Layer, mn: string): boolean {
  *   to the layer's ACTIVE mesh type; checkbox toggles (caps / invert
  *   slice) are expressionable regardless of active type.
  */
-export function _canSetExpressionParametricMesh(
-  prop: Property,
-  layer: Layer,
-  mn: string,
-): boolean | null {
+function _canSetExpressionParametricMesh(prop: Property, layer: Layer, mn: string): boolean | null {
   if (_PARAMETRIC_MESH_NO_EXPRESSION.has(mn)) {
     return false;
   }

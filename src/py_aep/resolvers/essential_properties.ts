@@ -18,7 +18,7 @@ import * as _avLayer from "../models/layers/av_layer.ts";
 import * as _propertyGroup from "../models/properties/property_group.ts";
 
 /** Essential Graphics controller type for a Media Replacement slot. */
-export const _MEDIA_REPLACEMENT_CONTROLLER_TYPE = 14;
+const _MEDIA_REPLACEMENT_CONTROLLER_TYPE = 14;
 
 /**
  * Return the source-comp controllers a precomp layer's Essential
@@ -46,7 +46,10 @@ export function resolveEssentialPropertyControllers(layer: AVLayer): EssentialGr
  * Returns `null` when the controller stores no source comp/layer, the comp
  * is missing, or no layer matches the stored `layerId`.
  */
-export function _resolveControllerSourceLayer(project: Project, controller: EssentialGraphicsController): AVLayer | null {
+export function _resolveControllerSourceLayer(
+  project: Project,
+  controller: EssentialGraphicsController,
+): AVLayer | null {
   if (controller.sourceCompId == null || controller.sourceLayerId == null) return null;
   const comp = project.items.get(controller.sourceCompId) ?? null;
   if (!(comp instanceof _composition.CompItem)) return null;
@@ -67,7 +70,11 @@ export function _resolveControllerSourceLayer(project: Project, controller: Esse
  * name - a disagreement (stale index) returns `null` so the caller falls
  * back to by-name resolution.
  */
-export function _resolveIndexedChild(group: PropertyGroup, ref: SourcePropertyRef, project: Project): Property | PropertyGroup | null {
+function _resolveIndexedChild(
+  group: PropertyGroup,
+  ref: SourcePropertyRef,
+  project: Project,
+): Property | PropertyGroup | null {
   if (ref.propIndex == null) return null;
   if (group.isEffect) {
     const defs = project._effectParamDefs.get(group.matchName);
@@ -122,7 +129,7 @@ export function _walkSourceProperty(sourceLayer: AVLayer, path: SourcePropertyRe
  * Pre-order position of `target` among all descendants (groups + leaves)
  * of `root`, or `null` if not found. Matches the flat OvG2 UUID ordering.
  */
-export function _preorderIndex(root: PropertyGroup, target: Property): number | null {
+function _preorderIndex(root: PropertyGroup, target: Property): number | null {
   const counter = [0];
 
   function rec(group: PropertyGroup): number | null {

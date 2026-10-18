@@ -17,7 +17,6 @@ import type { SettingValue } from "../../src/py_aep/models/renderqueue/settings.
 import { Path, assert, valueEquals, ValueError } from "../../src/pyrt/index.ts";
 import { makeTmpPath, raises } from "../support/pytest.ts";
 
-
 const RQ_DIR = new Path(import.meta.dir).parent.parent.div("samples").div("models").div("renderqueue");
 
 function _om(project: Project): OutputModule {
@@ -87,8 +86,8 @@ const ACCEPTS: [string, string, SettingValue][] = [
 test("test_quicktime_supports_alpha", () => {
   const tmpPath = makeTmpPath();
   const project = parseProjectFresh(
-    new Path(import.meta.dir)
-      .parent.parent.div("samples")
+    new Path(import.meta.dir).parent.parent
+      .div("samples")
       .div("models")
       .div("format_options")
       .div("quicktime")

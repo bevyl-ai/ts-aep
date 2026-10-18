@@ -3,7 +3,16 @@
 import { describe, expect, test } from "bun:test";
 import { isclose, Path, assert, valueEquals, StopIteration, ValueError } from "../../src/pyrt/index.ts";
 
-import { AlphaMode, AVLayer, FieldSeparationType, FootageItem, LinearLightMode, PulldownPhase, SolidSource, parse as parseAep } from "../../src/py_aep/index.ts";
+import {
+  AlphaMode,
+  AVLayer,
+  FieldSeparationType,
+  FootageItem,
+  LinearLightMode,
+  PulldownPhase,
+  SolidSource,
+  parse as parseAep,
+} from "../../src/py_aep/index.ts";
 import type { Project } from "../../src/py_aep/index.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { ListChunk } from "../../src/py_aep/binary/chunk.ts";
@@ -40,23 +49,25 @@ describe("TestRoundtripLoop", () => {
   });
 
   test("test_loop_validation_rejects_zero", () => {
-    const source = getFootage(
-      parseProjectFresh(SAMPLES_DIR.div("footage_misc.aep")),
-      "loop_3",
-    ).mainSource;
-    raises(ValueError, () => {
-      source.loop = 0;
-    }, "must be >= 1");
+    const source = getFootage(parseProjectFresh(SAMPLES_DIR.div("footage_misc.aep")), "loop_3").mainSource;
+    raises(
+      ValueError,
+      () => {
+        source.loop = 0;
+      },
+      "must be >= 1",
+    );
   });
 
   test("test_loop_validation_rejects_too_high", () => {
-    const source = getFootage(
-      parseProjectFresh(SAMPLES_DIR.div("footage_misc.aep")),
-      "loop_3",
-    ).mainSource;
-    raises(ValueError, () => {
-      source.loop = 10000;
-    }, "must be <= 9999");
+    const source = getFootage(parseProjectFresh(SAMPLES_DIR.div("footage_misc.aep")), "loop_3").mainSource;
+    raises(
+      ValueError,
+      () => {
+        source.loop = 10000;
+      },
+      "must be <= 9999",
+    );
   });
 });
 
@@ -91,10 +102,7 @@ describe("TestRoundtripHighQualityFieldSeparation", () => {
     source.highQualityFieldSeparation = false;
     const out = tmpPath.div("modified.aep");
     project.save(out);
-    const source2 = getFootage(
-      parseAep(out).project,
-      "highQualityFieldSeparation_true",
-    ).mainSource;
+    const source2 = getFootage(parseAep(out).project, "highQualityFieldSeparation_true").mainSource;
     expect(source2.highQualityFieldSeparation).toBe(false);
   });
 });
@@ -130,14 +138,15 @@ describe("TestRoundtripAlphaMode", () => {
   });
 
   test("test_alpha_mode_validation_rejects_invalid", () => {
-    const source = getFootage(
-      parseProjectFresh(SAMPLES_DIR.div("alphaMode.aep")),
-      "alphaMode_STRAIGHT",
-    ).mainSource;
-    raises(ValueError, () => {
-      // @ts-expect-error deliberately invalid: Python's type-ignored assignment
-      source.alphaMode = 999;
-    }, "Invalid value.*alphaMode");
+    const source = getFootage(parseProjectFresh(SAMPLES_DIR.div("alphaMode.aep")), "alphaMode_STRAIGHT").mainSource;
+    raises(
+      ValueError,
+      () => {
+        // @ts-expect-error deliberately invalid: Python's type-ignored assignment
+        source.alphaMode = 999;
+      },
+      "Invalid value.*alphaMode",
+    );
   });
 });
 
@@ -154,10 +163,7 @@ describe("TestRoundtripFieldSeparationType", () => {
     source.fieldSeparationType = FieldSeparationType.LOWER_FIELD_FIRST;
     const out = tmpPath.div("modified.aep");
     project.save(out);
-    const source2 = getFootage(
-      parseAep(out).project,
-      "fieldSeparationType_UPPER",
-    ).mainSource;
+    const source2 = getFootage(parseAep(out).project, "fieldSeparationType_UPPER").mainSource;
     expect(source2.fieldSeparationType).toBe(FieldSeparationType.LOWER_FIELD_FIRST);
   });
 
@@ -170,10 +176,7 @@ describe("TestRoundtripFieldSeparationType", () => {
     source.fieldSeparationType = FieldSeparationType.OFF;
     const out = tmpPath.div("modified.aep");
     project.save(out);
-    const source2 = getFootage(
-      parseAep(out).project,
-      "fieldSeparationType_UPPER",
-    ).mainSource;
+    const source2 = getFootage(parseAep(out).project, "fieldSeparationType_UPPER").mainSource;
     expect(source2.fieldSeparationType).toBe(FieldSeparationType.OFF);
   });
 
@@ -182,10 +185,14 @@ describe("TestRoundtripFieldSeparationType", () => {
       parseProjectFresh(SAMPLES_DIR.div("fieldSeparationType.aep")),
       "fieldSeparationType_UPPER",
     ).mainSource;
-    raises(ValueError, () => {
-      // @ts-expect-error deliberately invalid: Python's type-ignored assignment
-      source.fieldSeparationType = "invalid";
-    }, "is not a valid FieldSeparationType");
+    raises(
+      ValueError,
+      () => {
+        // @ts-expect-error deliberately invalid: Python's type-ignored assignment
+        source.fieldSeparationType = "invalid";
+      },
+      "is not a valid FieldSeparationType",
+    );
   });
 });
 
@@ -208,23 +215,25 @@ describe("TestRoundtripPremulColor", () => {
   });
 
   test("test_premul_color_validation_rejects_bad_length", () => {
-    const source = getFootage(
-      parseProjectFresh(SAMPLES_DIR.div("premulColor.aep")),
-      "premulColor_red",
-    ).mainSource;
-    raises(ValueError, () => {
-      source.premulColor = [0.1, 0.2];
-    }, "expected 3 elements");
+    const source = getFootage(parseProjectFresh(SAMPLES_DIR.div("premulColor.aep")), "premulColor_red").mainSource;
+    raises(
+      ValueError,
+      () => {
+        source.premulColor = [0.1, 0.2];
+      },
+      "expected 3 elements",
+    );
   });
 
   test("test_premul_color_validation_rejects_out_of_range", () => {
-    const source = getFootage(
-      parseProjectFresh(SAMPLES_DIR.div("premulColor.aep")),
-      "premulColor_red",
-    ).mainSource;
-    raises(ValueError, () => {
-      source.premulColor = [1.5, 0.0, 0.0];
-    }, "must be <= 1(\\.0)?");
+    const source = getFootage(parseProjectFresh(SAMPLES_DIR.div("premulColor.aep")), "premulColor_red").mainSource;
+    raises(
+      ValueError,
+      () => {
+        source.premulColor = [1.5, 0.0, 0.0];
+      },
+      "must be <= 1(\\.0)?",
+    );
   });
 });
 
@@ -277,9 +286,13 @@ describe("TestRoundtripConformFrameRate", () => {
       parseProjectFresh(SAMPLES_DIR.div("conformFrameRate.aep")),
       "conformFrameRate_30",
     ).mainSource;
-    raises(ValueError, () => {
-      source.conformFrameRate = -1.0;
-    }, "must be >= 0");
+    raises(
+      ValueError,
+      () => {
+        source.conformFrameRate = -1.0;
+      },
+      "must be >= 0",
+    );
   });
 
   test("test_conform_frame_rate_validation_rejects_too_high", () => {
@@ -287,9 +300,13 @@ describe("TestRoundtripConformFrameRate", () => {
       parseProjectFresh(SAMPLES_DIR.div("conformFrameRate.aep")),
       "conformFrameRate_30",
     ).mainSource;
-    raises(ValueError, () => {
-      source.conformFrameRate = 1000.0;
-    }, "must be <= 999");
+    raises(
+      ValueError,
+      () => {
+        source.conformFrameRate = 1000.0;
+      },
+      "must be <= 999",
+    );
   });
 
   test.each([
@@ -313,9 +330,7 @@ describe("TestRoundtripConformFrameRate", () => {
 
   test("test_conformed_duration_loops", () => {
     // AE 2026: conformed to 24 fps and looped twice, the movie lasts 4 s.
-    const footage = parseProjectFresh(
-      SAMPLES_DIR.div("conform_frame_rate_2.5.aep"),
-    ).footages[0];
+    const footage = parseProjectFresh(SAMPLES_DIR.div("conform_frame_rate_2.5.aep")).footages[0];
     footage.mainSource.conformFrameRate = 24.0;
     footage.mainSource.loop = 2;
     expect(footage.duration).toBe(4.0);
@@ -324,9 +339,7 @@ describe("TestRoundtripConformFrameRate", () => {
   test("test_frame_duration_counts_every_frame", () => {
     // The 48-frame 23.976 movie: its 16.16 stored rate puts duration x
     // rate at 47.99995, which truncation would make 47 frames.
-    const footage = parseProjectFresh(
-      SAMPLES_DIR.div("conform_frame_rate_2.5.aep"),
-    ).footages[0];
+    const footage = parseProjectFresh(SAMPLES_DIR.div("conform_frame_rate_2.5.aep")).footages[0];
     footage.mainSource.conformFrameRate = 0.0;
     expect(footage.frameDuration).toBe(48);
   });
@@ -384,30 +397,34 @@ describe("TestRemovePulldown", () => {
   /** Roundtrip tests for FootageSource.removePulldown. */
 
   test("test_read_off", () => {
-    const source = asInstance(getFirstFootage(
-      parseProjectFresh(SAMPLES_DIR.div("conform_frame_rate_2.5_uff_off.aep")),
-    ), FootageItem).mainSource;
+    const source = asInstance(
+      getFirstFootage(parseProjectFresh(SAMPLES_DIR.div("conform_frame_rate_2.5_uff_off.aep"))),
+      FootageItem,
+    ).mainSource;
     expect(source.removePulldown).toBe(PulldownPhase.OFF);
   });
 
   test("test_read_wssww", () => {
-    const source = asInstance(getFirstFootage(
-      parseProjectFresh(SAMPLES_DIR.div("conform_frame_rate_2.5_uff_wssww.aep")),
-    ), FootageItem).mainSource;
+    const source = asInstance(
+      getFirstFootage(parseProjectFresh(SAMPLES_DIR.div("conform_frame_rate_2.5_uff_wssww.aep"))),
+      FootageItem,
+    ).mainSource;
     expect(source.removePulldown).toBe(PulldownPhase.WSSWW);
   });
 
   test("test_read_sswww", () => {
-    const source = asInstance(getFirstFootage(
-      parseProjectFresh(SAMPLES_DIR.div("conform_frame_rate_2.5_uff_sswww.aep")),
-    ), FootageItem).mainSource;
+    const source = asInstance(
+      getFirstFootage(parseProjectFresh(SAMPLES_DIR.div("conform_frame_rate_2.5_uff_sswww.aep"))),
+      FootageItem,
+    ).mainSource;
     expect(source.removePulldown).toBe(PulldownPhase.SSWWW);
   });
 
   test("test_read_wwwsw_24p", () => {
-    const source = asInstance(getFirstFootage(
-      parseProjectFresh(SAMPLES_DIR.div("conform_frame_rate_2.5_uff_wwwsw.aep")),
-    ), FootageItem).mainSource;
+    const source = asInstance(
+      getFirstFootage(parseProjectFresh(SAMPLES_DIR.div("conform_frame_rate_2.5_uff_wwwsw.aep"))),
+      FootageItem,
+    ).mainSource;
     expect(source.removePulldown).toBe(PulldownPhase.WWWSW_24P_ADVANCE);
   });
 
@@ -425,9 +442,10 @@ describe("TestRemovePulldown", () => {
   });
 
   test("test_modify_pulldown_updates_display_frame_rate", () => {
-    const source = asInstance(getFirstFootage(
-      parseProjectFresh(SAMPLES_DIR.div("conform_frame_rate_2.5_uff_off.aep")),
-    ), FootageItem).mainSource;
+    const source = asInstance(
+      getFirstFootage(parseProjectFresh(SAMPLES_DIR.div("conform_frame_rate_2.5_uff_off.aep"))),
+      FootageItem,
+    ).mainSource;
     expect(source.displayFrameRate).toBe(2.5);
     source.removePulldown = PulldownPhase.WSSWW;
     expect(source.displayFrameRate).toBe(2.0);
@@ -438,30 +456,34 @@ describe("TestInterpretAsLinearLight", () => {
   /** Tests for FootageSource.interpretAsLinearLight. */
 
   test("test_off", () => {
-    const source = asInstance(getFirstFootage(
-      parseProjectFresh(SAMPLES_DIR.div("interpret_as_linear_light_off.aep")),
-    ), FootageItem).mainSource;
+    const source = asInstance(
+      getFirstFootage(parseProjectFresh(SAMPLES_DIR.div("interpret_as_linear_light_off.aep"))),
+      FootageItem,
+    ).mainSource;
     expect(source.interpretAsLinearLight).toBe(LinearLightMode.OFF);
   });
 
   test("test_on", () => {
-    const source = asInstance(getFirstFootage(
-      parseProjectFresh(SAMPLES_DIR.div("interpret_as_linear_light_on.aep")),
-    ), FootageItem).mainSource;
+    const source = asInstance(
+      getFirstFootage(parseProjectFresh(SAMPLES_DIR.div("interpret_as_linear_light_on.aep"))),
+      FootageItem,
+    ).mainSource;
     expect(source.interpretAsLinearLight).toBe(LinearLightMode.ON);
   });
 
   test("test_on_for_32_bpc", () => {
-    const source = asInstance(getFirstFootage(
-      parseProjectFresh(SAMPLES_DIR.div("interpret_as_linear_light_on_for_32_bpc.aep")),
-    ), FootageItem).mainSource;
+    const source = asInstance(
+      getFirstFootage(parseProjectFresh(SAMPLES_DIR.div("interpret_as_linear_light_on_for_32_bpc.aep"))),
+      FootageItem,
+    ).mainSource;
     expect(source.interpretAsLinearLight).toBe(LinearLightMode.ON_FOR_32BPC);
   });
 
   test("test_is_writable", () => {
-    const source = asInstance(getFirstFootage(
-      parseProjectFresh(SAMPLES_DIR.div("interpret_as_linear_light_off.aep")),
-    ), FootageItem).mainSource;
+    const source = asInstance(
+      getFirstFootage(parseProjectFresh(SAMPLES_DIR.div("interpret_as_linear_light_off.aep"))),
+      FootageItem,
+    ).mainSource;
     source.interpretAsLinearLight = LinearLightMode.ON;
     expect(source.interpretAsLinearLight).toBe(LinearLightMode.ON);
   });
@@ -484,23 +506,26 @@ describe("TestPreserveRgb", () => {
   /** Tests for FootageSource.preserveRgb. */
 
   test("test_on", () => {
-    const source = asInstance(getFirstFootage(
-      parseProjectFresh(SAMPLES_DIR.div("preserve_rgb_on.aep")),
-    ), FootageItem).mainSource;
+    const source = asInstance(
+      getFirstFootage(parseProjectFresh(SAMPLES_DIR.div("preserve_rgb_on.aep"))),
+      FootageItem,
+    ).mainSource;
     expect(source.preserveRgb).toBe(true);
   });
 
   test("test_off", () => {
-    const source = asInstance(getFirstFootage(
-      parseProjectFresh(SAMPLES_DIR.div("preserve_rgb_off.aep")),
-    ), FootageItem).mainSource;
+    const source = asInstance(
+      getFirstFootage(parseProjectFresh(SAMPLES_DIR.div("preserve_rgb_off.aep"))),
+      FootageItem,
+    ).mainSource;
     expect(source.preserveRgb).toBe(false);
   });
 
   test("test_is_writable", () => {
-    const source = asInstance(getFirstFootage(
-      parseProjectFresh(SAMPLES_DIR.div("preserve_rgb_on.aep")),
-    ), FootageItem).mainSource;
+    const source = asInstance(
+      getFirstFootage(parseProjectFresh(SAMPLES_DIR.div("preserve_rgb_on.aep"))),
+      FootageItem,
+    ).mainSource;
     source.preserveRgb = false;
     expect(source.preserveRgb).toBe(false);
   });
@@ -513,7 +538,10 @@ describe("TestRoundtripSolidColor", () => {
     const tmpPath = makeTmpPath();
     const project = parseAep(SAMPLES_DIR.div("solid_colors.aep")).project;
     const comp = getComp(project, "solid_color_red");
-    const source = asInstance(asInstance(asInstance(comp.layers[0], AVLayer).source, FootageItem).mainSource, SolidSource);
+    const source = asInstance(
+      asInstance(asInstance(comp.layers[0], AVLayer).source, FootageItem).mainSource,
+      SolidSource,
+    );
 
     // Modify
     source.color = [0.1, 0.2, 0.3];
@@ -538,9 +566,13 @@ describe("TestRoundtripSolidColor", () => {
       asInstance(asInstance(getComp(project, "solid_color_red").layers[0], AVLayer).source, FootageItem).mainSource,
       SolidSource,
     );
-    raises(ValueError, () => {
-      source.color = [0.1, 0.2];
-    }, "expected 3 elements");
+    raises(
+      ValueError,
+      () => {
+        source.color = [0.1, 0.2];
+      },
+      "expected 3 elements",
+    );
   });
 
   test("test_validation_rejects_out_of_range", () => {
@@ -549,9 +581,13 @@ describe("TestRoundtripSolidColor", () => {
       asInstance(asInstance(getComp(project, "solid_color_red").layers[0], AVLayer).source, FootageItem).mainSource,
       SolidSource,
     );
-    raises(ValueError, () => {
-      source.color = [1.5, 0.0, 0.0];
-    }, "must be <= 1(\\.0)?");
+    raises(
+      ValueError,
+      () => {
+        source.color = [1.5, 0.0, 0.0];
+      },
+      "must be <= 1(\\.0)?",
+    );
   });
 });
 
@@ -588,9 +624,13 @@ describe("TestRoundtripMediaColorSpace", () => {
     // "ACEScg" is not in ACES 1.2 (it is "ACES - ACEScg"). py used to
     // fabricate an envelope for it; the config is authoritative.
     const project = parseAep(SAMPLES_DIR.div("override_media_colorspace_embedded.aep")).project;
-    raises(ValueError, () => {
-      _firstSource(project).mediaColorSpace = "ACEScg";
-    }, "not a color space");
+    raises(
+      ValueError,
+      () => {
+        _firstSource(project).mediaColorSpace = "ACEScg";
+      },
+      "not a color space",
+    );
   });
 
   test("test_set_working_color_space", () => {
@@ -671,9 +711,13 @@ describe("TestRoundtripMediaColorSpace", () => {
   test("test_unresolvable_config_raises", () => {
     const project = parseAep(SAMPLES_DIR.div("cms_acescg_colorspace.aep")).project;
     project.ocioConfigurationFile = String.raw`\\nope\missing\nowhere.ocio`;
-    raises(ValueError, () => {
-      _firstSource(project).mediaColorSpace = "ACES - ACEScg";
-    }, "Cannot resolve");
+    raises(
+      ValueError,
+      () => {
+        _firstSource(project).mediaColorSpace = "ACES - ACEScg";
+      },
+      "Cannot resolve",
+    );
   });
 
   test.skipIf(!_ICC_AVAILABLE)("test_set_adobe_profile", () => {
@@ -784,18 +828,26 @@ describe("TestRoundtripFootageItemName", () => {
 
   test("test_rename_solid_rejects_oversized_name", () => {
     const solid = _firstSolid(parseProjectFresh(SAMPLES_DIR.div("solid_colors.aep")));
-    raises(ValueError, () => {
-      solid.name = "A".repeat(256);
-    }, "at most 255 UTF-8 bytes");
+    raises(
+      ValueError,
+      () => {
+        solid.name = "A".repeat(256);
+      },
+      "at most 255 UTF-8 bytes",
+    );
   });
 
   test("test_rename_solid_rejects_oversized_multibyte_name", () => {
     // 86 three-byte characters = 258 bytes: rejected rather than
     // truncated mid-character by the fixed-width struct field.
     const solid = _firstSolid(parseProjectFresh(SAMPLES_DIR.div("solid_colors.aep")));
-    raises(ValueError, () => {
-      solid.name = "中".repeat(86);
-    }, "at most 255 UTF-8 bytes");
+    raises(
+      ValueError,
+      () => {
+        solid.name = "中".repeat(86);
+      },
+      "at most 255 UTF-8 bytes",
+    );
   });
 
   test("test_rename_file_footage_keeps_a_name_holding_a_separator", () => {
@@ -815,12 +867,13 @@ describe("TestRoundtripFootageItemName", () => {
   });
 
   test("test_rename_placeholder_rejects_oversized_name", () => {
-    const placeholder = getFootage(
-      parseProjectFresh(SAMPLES_DIR.div("placeholder.aep")),
-      "placeholder_720p",
+    const placeholder = getFootage(parseProjectFresh(SAMPLES_DIR.div("placeholder.aep")), "placeholder_720p");
+    raises(
+      ValueError,
+      () => {
+        placeholder.name = "B".repeat(256);
+      },
+      "at most 255 UTF-8 bytes",
     );
-    raises(ValueError, () => {
-      placeholder.name = "B".repeat(256);
-    }, "at most 255 UTF-8 bytes");
   });
 });

@@ -4,18 +4,37 @@ import { describe, expect, test } from "bun:test";
 
 import "../../src/py_aep/binary/_register.ts";
 import type { Path } from "../../src/pyrt/index.ts";
-import { ByteStream, KeyError, ValueError, getOrThrow, assert, truthy, valueEquals, compositeKey } from "../../src/pyrt/index.ts";
+import {
+  ByteStream,
+  KeyError,
+  ValueError,
+  getOrThrow,
+  assert,
+  truthy,
+  valueEquals,
+  compositeKey,
+} from "../../src/pyrt/index.ts";
 
 import * as py_aep from "../../src/py_aep/index.ts";
 import { BitsPerChannel, PREFType } from "../../src/py_aep/enums/index.ts";
-import { psdCompLayerStyles, psdFootageDimensions, psdFootageLayerStyles } from "../../src/py_aep/models/preferences.ts";
+import {
+  psdCompLayerStyles,
+  psdFootageDimensions,
+  psdFootageLayerStyles,
+} from "../../src/py_aep/models/preferences.ts";
 import { recursiveFind } from "../../src/py_aep/binary/utils.ts";
 import { IdtaChunk } from "../../src/py_aep/binary/item_chunks.ts";
 import { AVItem } from "../../src/py_aep/models/items/av_item.ts";
 import type { Layer } from "../../src/py_aep/models/layers/layer.ts";
 import { asInstance } from "../helpers.ts";
 import { _RESIZE_TO_STRINGS, buildResizeToStrings } from "../../src/py_aep/models/renderqueue/settings.ts";
-import { PrefsFile, decodePrefBool, decodePrefNumber, decodePrefString, findPrefsFile } from "../../src/py_aep/parsers/prefs.ts";
+import {
+  PrefsFile,
+  decodePrefBool,
+  decodePrefNumber,
+  decodePrefString,
+  findPrefsFile,
+} from "../../src/py_aep/parsers/prefs.ts";
 import { approx, makeTmpPath, raises } from "../support/pytest.ts";
 
 const MACHINE = PREFType.PREF_Type_MACHINE_SPECIFIC;
@@ -202,19 +221,11 @@ describe("TestPreferences", () => {
     // The key exists in the composition file only.
     expect(
       truthy(
-        prefs.getPrefAsBool(
-          "Composition Pref Section",
-          "Composition Settings - Constrain Proportions",
-          INDEP_COMP,
-        ),
+        prefs.getPrefAsBool("Composition Pref Section", "Composition Settings - Constrain Proportions", INDEP_COMP),
       ),
     ).toBe(true);
     raises(KeyError, () =>
-      prefs.getPrefAsBool(
-        "Composition Pref Section",
-        "Composition Settings - Constrain Proportions",
-        MACHINE,
-      ),
+      prefs.getPrefAsBool("Composition Pref Section", "Composition Settings - Constrain Proportions", MACHINE),
     );
   });
 
@@ -364,7 +375,12 @@ describe("TestCreationWiring", () => {
     expect(app.project._solidsFolderName).toBe("Solides");
     const comp = app.project.rootFolder.addComp("C", 100, 100, 1.0, 1.0, 25.0);
     comp.addSolid([1.0, 0.0, 0.0]);
-    expect(valueEquals(app.project.rootFolder.folders.map((f) => f.name), ["Solides"])).toBe(true);
+    expect(
+      valueEquals(
+        app.project.rootFolder.folders.map((f) => f.name),
+        ["Solides"],
+      ),
+    ).toBe(true);
   });
 
   test("test_solids_folder_name_stamped_in_saved_file", () => {
@@ -779,7 +795,8 @@ describe("TestTextStyleSheet", () => {
     // stroke flags) must not be rewritten. Font/Fill are excluded here
     // only to keep the assertion clear of the fill's sub-1e-6
     // serialization boundary; they are exercised elsewhere.
-    const sheet = _FACTORY_TEXT_STYLE.replace(/\n$/, "")
+    const sheet = _FACTORY_TEXT_STYLE
+      .replace(/\n$/, "")
       .split("\n")
       .filter((line) => !line.includes("Font") && !line.includes("Fill"))
       .join("\n");

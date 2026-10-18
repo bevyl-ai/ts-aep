@@ -78,9 +78,13 @@ export class Viewer {
   }
 
   static {
-    descriptor(this, "type", ChunkField.enum(ViewerType, "_fitt", "value", {
-      transform: (v: string) => ViewerType.fromString(v),
-      readOnly: true,
-    }));
+    descriptor(
+      this,
+      "type",
+      ChunkField.enum(ViewerType, "_fitt", "value", {
+        transform: (v: string) => ViewerType.fromString(v),
+        readOnly: true,
+      }),
+    );
   }
 }

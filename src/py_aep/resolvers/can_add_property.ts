@@ -30,25 +30,25 @@ export const AddableKind = defineEnum("AddableKind", {
 export type AddableKind = EnumValue<typeof AddableKind>;
 
 // Match names that can be added to specific indexed groups via add_property().
-export const _ADDABLE_MASK_MATCH_NAMES: ReadonlySet<string> = new Set(["ADBE Mask Atom"]);
+const _ADDABLE_MASK_MATCH_NAMES: ReadonlySet<string> = new Set(["ADBE Mask Atom"]);
 
 // Effects creatable via add_property(). The Dropdown Menu Control
 // registers as a pseudo effect with a per-instance generated match name
 // (`Pseudo/@@` + base64(uuid4)); add_property generates one on demand.
-export const _ADDABLE_EFFECT_MATCH_NAMES: ReadonlySet<string> = new Set([
+const _ADDABLE_EFFECT_MATCH_NAMES: ReadonlySet<string> = new Set([
   ...EXPRESSION_CONTROLS.keys(),
   "ADBE Dropdown Control",
 ]);
 
-export const _EFFECT_DISPLAY_TO_MATCH: Map<string, string> = new Map(
+const _EFFECT_DISPLAY_TO_MATCH: Map<string, string> = new Map(
   [...EXPRESSION_CONTROLS].map(([mn, entry]): [string, string] => [entry.name, mn]),
 );
 _EFFECT_DISPLAY_TO_MATCH.set("Dropdown Menu Control", "ADBE Dropdown Control");
 
-export const _ADDABLE_TEXT_ANIMATOR_MATCH_NAMES: ReadonlySet<string> = new Set(["ADBE Text Animator"]);
+const _ADDABLE_TEXT_ANIMATOR_MATCH_NAMES: ReadonlySet<string> = new Set(["ADBE Text Animator"]);
 
 // Selectors addable to a text animator's Selectors group.
-export const _ADDABLE_TEXT_SELECTOR_MATCH_NAMES: ReadonlySet<string> = new Set([
+const _ADDABLE_TEXT_SELECTOR_MATCH_NAMES: ReadonlySet<string> = new Set([
   "ADBE Text Selector",
   "ADBE Text Wiggly Selector",
   "ADBE Text Expressible Selector",
@@ -56,17 +56,18 @@ export const _ADDABLE_TEXT_SELECTOR_MATCH_NAMES: ReadonlySet<string> = new Set([
 
 // Animator properties applicable to a text animator's (NAMED) Properties
 // group - the full pool minus the 8 variable-font axes (not addable).
-export const _ADDABLE_ANIMATOR_PROPERTY_MATCH_NAMES: ReadonlySet<string> = new Set(
+const _ADDABLE_ANIMATOR_PROPERTY_MATCH_NAMES: ReadonlySet<string> = new Set(
   TEXT_ANIMATOR_POOL.filter((e) => !e.mn.startsWith("ADBE Text VF Axis")).map((e) => e.mn),
 );
-export const _ANIMATOR_PROPERTY_DISPLAY_TO_MATCH: Map<string, string> = new Map(
-  TEXT_ANIMATOR_POOL.filter(
-    (e) => e.name && !e.mn.startsWith("ADBE Text VF Axis"),
-  ).map((e): [string, string] => [e.name, e.mn]),
+const _ANIMATOR_PROPERTY_DISPLAY_TO_MATCH: Map<string, string> = new Map(
+  TEXT_ANIMATOR_POOL.filter((e) => e.name && !e.mn.startsWith("ADBE Text VF Axis")).map((e): [string, string] => [
+    e.name,
+    e.mn,
+  ]),
 );
 
 // Shape elements that can be added to a Root Vectors Group (Contents).
-export const _ADDABLE_SHAPE_MATCH_NAMES: ReadonlySet<string> = new Set([
+const _ADDABLE_SHAPE_MATCH_NAMES: ReadonlySet<string> = new Set([
   "ADBE Vector Group",
   "ADBE Vector Shape - Rect",
   "ADBE Vector Shape - Ellipse",
@@ -89,7 +90,7 @@ export const _ADDABLE_SHAPE_MATCH_NAMES: ReadonlySet<string> = new Set([
 ]);
 
 // Reverse lookup: display name -> match name for addable items.
-export const _ADDABLE_DISPLAY_TO_MATCH: Map<string, string> = new Map();
+const _ADDABLE_DISPLAY_TO_MATCH: Map<string, string> = new Map();
 // Python `del _mn, _auto` at the end of this loop is module-namespace
 // cleanup only; TS loop bindings are already block-scoped.
 for (const _mn of new Set([
@@ -104,23 +105,20 @@ for (const _mn of new Set([
 
 // Per-group addable sets + builder kind, keyed by parent match name.
 // "ADBE Vectors Group" is a nested shape group's own contents.
-export const _ADDABLE_BY_GROUP = new Map<string, readonly [ReadonlySet<string>, AddableKind]>([
+const _ADDABLE_BY_GROUP = new Map<string, readonly [ReadonlySet<string>, AddableKind]>([
   ["ADBE Mask Parade", [_ADDABLE_MASK_MATCH_NAMES, AddableKind.MASK]],
   ["ADBE Effect Mask Parade", [_ADDABLE_MASK_MATCH_NAMES, AddableKind.MASK]],
   ["ADBE Text Animators", [_ADDABLE_TEXT_ANIMATOR_MATCH_NAMES, AddableKind.TEXT_ANIMATOR]],
   ["ADBE Text Selectors", [_ADDABLE_TEXT_SELECTOR_MATCH_NAMES, AddableKind.TEXT_SELECTOR]],
   ["ADBE Root Vectors Group", [_ADDABLE_SHAPE_MATCH_NAMES, AddableKind.SHAPE]],
   ["ADBE Vectors Group", [_ADDABLE_SHAPE_MATCH_NAMES, AddableKind.SHAPE]],
-  [
-    "ADBE Text Animator Properties",
-    [_ADDABLE_ANIMATOR_PROPERTY_MATCH_NAMES, AddableKind.ANIMATOR_PROPERTY],
-  ],
+  ["ADBE Text Animator Properties", [_ADDABLE_ANIMATOR_PROPERTY_MATCH_NAMES, AddableKind.ANIMATOR_PROPERTY]],
 ]);
 
 // Addable groups that are NAMED (not indexed) - the ExtendScript
 // "named-group exception". Adding to them materializes a fixed-pool
 // member in place rather than appending a new indexed child.
-export const _NAMED_ADDABLE_GROUPS: ReadonlySet<string> = new Set(["ADBE Text Animator Properties"]);
+const _NAMED_ADDABLE_GROUPS: ReadonlySet<string> = new Set(["ADBE Text Animator Properties"]);
 
 /**
  * Resolve `name` to `(match_name, kind)` for an addable property.
@@ -150,12 +148,9 @@ export function resolveAddable(
   }
 
   if (matchName === "ADBE Effect Parade") {
-    const resolved = _ADDABLE_EFFECT_MATCH_NAMES.has(name)
-      ? name
-      : _EFFECT_DISPLAY_TO_MATCH.get(name) ?? null;
+    const resolved = _ADDABLE_EFFECT_MATCH_NAMES.has(name) ? name : (_EFFECT_DISPLAY_TO_MATCH.get(name) ?? null);
     if (resolved == null) return null;
-    const kind =
-      resolved === "ADBE Dropdown Control" ? AddableKind.DROPDOWN : AddableKind.EXPRESSION_CONTROL;
+    const kind = resolved === "ADBE Dropdown Control" ? AddableKind.DROPDOWN : AddableKind.EXPRESSION_CONTROL;
     return [resolved, kind];
   }
 
@@ -167,8 +162,8 @@ export function resolveAddable(
   // animator Properties group, since their registry names diverge).
   const resolved =
     kind === AddableKind.ANIMATOR_PROPERTY
-      ? _ANIMATOR_PROPERTY_DISPLAY_TO_MATCH.get(name) ?? null
-      : _ADDABLE_DISPLAY_TO_MATCH.get(name) ?? null;
+      ? (_ANIMATOR_PROPERTY_DISPLAY_TO_MATCH.get(name) ?? null)
+      : (_ADDABLE_DISPLAY_TO_MATCH.get(name) ?? null);
   if (resolved != null && allowed.has(resolved)) return [resolved, kind];
   return null;
 }
@@ -185,10 +180,6 @@ export function resolveAddable(
  * @param propertyType - The property type of the parent group.
  * @param name - A match name or display name to check.
  */
-export function canAddProperty(
-  matchName: string,
-  propertyType: PropertyType,
-  name: string,
-): boolean {
+export function canAddProperty(matchName: string, propertyType: PropertyType, name: string): boolean {
   return resolveAddable(matchName, propertyType, name) !== null;
 }

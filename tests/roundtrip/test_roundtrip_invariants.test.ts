@@ -8,7 +8,16 @@
  */
 
 import { describe, expect, test } from "bun:test";
-import { AttributeError, AssertionError, Path, assert, valueEquals, repr, RuntimeError, instanceDict } from "../../src/pyrt/index.ts";
+import {
+  AttributeError,
+  AssertionError,
+  Path,
+  assert,
+  valueEquals,
+  repr,
+  RuntimeError,
+  instanceDict,
+} from "../../src/pyrt/index.ts";
 
 import "../../src/py_aep/binary/_register.ts";
 import { parse as parseAep } from "../../src/py_aep/index.ts";
@@ -21,7 +30,6 @@ import { makeTmpPath, raises } from "../support/pytest.ts";
 
 const SAMPLES_DIR = new Path(import.meta.path).parent.parent.parent.div("samples");
 const PROPERTY_DIR = SAMPLES_DIR.div("models", "property");
-const LAYER_DIR = SAMPLES_DIR.div("models", "layer");
 const COMPOSITION_DIR = SAMPLES_DIR.div("models", "composition");
 const EG_DIR = SAMPLES_DIR.div("models", "essential_graphics");
 const VERSIONS_DIR = SAMPLES_DIR.div("versions");
@@ -106,20 +114,17 @@ function _findSynthesizedEffectProp(layer: Layer, effectIndex: number, matchName
 
 describe("TestByteIdentityRoundtrip", () => {
   /** Parse > save > compare bytes for diverse sample files. */
-  test.each(ROUNDTRIP_SAMPLES.map((p) => [_sampleId(p), p] as [string, Path]))(
-    "test_roundtrip[%s]",
-    (_id, aepPath) => {
-      const tmpPath = makeTmpPath();
-      const originalBytes = aepPath.readBytes();
+  test.each(ROUNDTRIP_SAMPLES.map((p) => [_sampleId(p), p] as [string, Path]))("test_roundtrip[%s]", (_id, aepPath) => {
+    const tmpPath = makeTmpPath();
+    const originalBytes = aepPath.readBytes();
 
-      const app = parseAep(aepPath);
-      const out = tmpPath.div("roundtrip.aep");
-      app.project.save(out);
-      const roundtripBytes = out.readBytes();
+    const app = parseAep(aepPath);
+    const out = tmpPath.div("roundtrip.aep");
+    app.project.save(out);
+    const roundtripBytes = out.readBytes();
 
-      expect(valueEquals(roundtripBytes, originalBytes)).toBe(true);
-    },
-  );
+    expect(valueEquals(roundtripBytes, originalBytes)).toBe(true);
+  });
 });
 
 describe("TestMaterializationLifecycle", () => {
@@ -208,9 +213,13 @@ describe("TestParseTimeWriteGuard", () => {
 
     // Python `with _suppress_materialization():` is `.run(() => body)`.
     _suppressMaterialization().run(() => {
-      raises(RuntimeError, () => {
-        opacity.enabled = false;
-      }, "Cannot write");
+      raises(
+        RuntimeError,
+        () => {
+          opacity.enabled = false;
+        },
+        "Cannot write",
+      );
     });
   });
 

@@ -46,15 +46,15 @@ through the same rules.
 string/array/bytes/Map/Set, `__bool__`, `__len__`. Rewrite by the type `x`
 provably has:
 
-| `x` is | `py_bool(x)` becomes |
-|---|---|
-| `boolean` | `x` |
-| `boolean \| null` | `!!x` |
-| `number` (never null) | `x !== 0` (not `!!x`: `NaN` is truthy in Python) |
-| `string` or `string \| null` (a primitive, see below) | `!!x` |
-| array, `Uint8Array` | `x.length > 0` (nullable: `x != null && x.length > 0`) |
-| `Map` / `Set` | `x.size > 0` (nullable likewise) |
-| class instance with no `__len__` / `__bool__`, or null | `x != null` |
+| `x` is                                                 | `py_bool(x)` becomes                                   |
+| ------------------------------------------------------ | ------------------------------------------------------ |
+| `boolean`                                              | `x`                                                    |
+| `boolean \| null`                                      | `!!x`                                                  |
+| `number` (never null)                                  | `x !== 0` (not `!!x`: `NaN` is truthy in Python)       |
+| `string` or `string \| null` (a primitive, see below)  | `!!x`                                                  |
+| array, `Uint8Array`                                    | `x.length > 0` (nullable: `x != null && x.length > 0`) |
+| `Map` / `Set`                                          | `x.size > 0` (nullable likewise)                       |
+| class instance with no `__len__` / `__bool__`, or null | `x != null`                                            |
 
 Keep `py_bool` when `x` is or may be:
 
@@ -183,7 +183,7 @@ after):
   `@throws {@link Error} …`; `Example(s):` → `@example`; `See:` → `@see`;
   `Note:` / `Warning:` → bold-led paragraphs in the description.
 - mkdocs cross-references: `[Name][]` → `{@link Name}`, `[text][Name]` →
-  `{@link Name | text}`; RST ``` ``x`` ``` → `` `x` ``.
+  `{@link Name | text}`; RST ` ``x`` ` → `` `x` ``.
 - Hygiene on every doc comment: `@param x - …` hyphen, `<`, `>`, `{`, `}` and
   non-tag `@` escaped outside code, code spans never wrapped across lines.
 

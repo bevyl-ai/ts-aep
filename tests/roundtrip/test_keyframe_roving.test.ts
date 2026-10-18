@@ -48,7 +48,12 @@ describe("TestRoundtripRovingRetimesToAEValues", () => {
 
   test("test_recompute_is_idempotent", () => {
     const prop = _position("keyframe_roving.aep");
-    expect(valueEquals(prop.keyframes.map((kf) => kf.roving), [false, true, true, false])).toBe(true);
+    expect(
+      valueEquals(
+        prop.keyframes.map((kf) => kf.roving),
+        [false, true, true, false],
+      ),
+    ).toBe(true);
     const expected = _times(prop);
     prop._redistributeRovingKeyframes();
     expect(valueEquals(_times(prop), expected)).toBe(true);
@@ -106,7 +111,7 @@ describe("TestRoundtripRovingFollowsBoundingEase", () => {
     expect(eased[1] > floordiv(span, 3)).toBe(true);
     expect(eased[2] < floordiv(span * 2, 3)).toBe(true);
     // Symmetric ease on a symmetric path stays symmetric.
-    expect(Math.abs((eased[1] - 0) - (span - eased[2])) <= 1).toBe(true);
+    expect(Math.abs(eased[1] - 0 - (span - eased[2])) <= 1).toBe(true);
   });
 });
 
@@ -115,9 +120,13 @@ describe("TestRoundtripRovingBoundaryGuard", () => {
 
   test.each([0, -1])("test_first_and_last_cannot_rove[%#]", (index: number) => {
     const prop = _position("keyframe_roving.aep");
-    raises(ValueError, () => {
-      at(prop.keyframes, index).roving = true;
-    }, "cannot rove");
+    raises(
+      ValueError,
+      () => {
+        at(prop.keyframes, index).roving = true;
+      },
+      "cannot rove",
+    );
   });
 
   test("test_middle_keyframe_is_allowed", () => {
@@ -148,7 +157,9 @@ describe("TestRoundtripRovingTriggers", () => {
     const unitsPerFrame = frameGrid(prop.keyframes[0]._frameRate)[1];
     // A whole-frame-only implementation could not produce a remainder.
     assert(
-      _times(prop).slice(1, 3).some((time) => mod(time, unitsPerFrame) !== 0),
+      _times(prop)
+        .slice(1, 3)
+        .some((time) => mod(time, unitsPerFrame) !== 0),
       "roved times should not all land on frame boundaries",
     );
   });
@@ -194,9 +205,13 @@ describe("TestRoundtripRovingNonSpatial", () => {
     const prop = project.compositions[0].layers[0].transform.property("ADBE Scale");
     assert(prop != null);
     expect(prop.isSpatial).toBe(false);
-    raises(ValueError, () => {
-      prop.keyframes[1].roving = true;
-    }, "spatial");
+    raises(
+      ValueError,
+      () => {
+        prop.keyframes[1].roving = true;
+      },
+      "spatial",
+    );
   });
 
   test("test_opacity_rejects_roving", () => {
@@ -204,9 +219,13 @@ describe("TestRoundtripRovingNonSpatial", () => {
     const prop = project.compositions[0].layers[0].transform.property("ADBE Opacity");
     assert(prop != null);
     expect(prop.isSpatial).toBe(false);
-    raises(ValueError, () => {
-      prop.keyframes[3].roving = true;
-    }, "spatial");
+    raises(
+      ValueError,
+      () => {
+        prop.keyframes[3].roving = true;
+      },
+      "spatial",
+    );
   });
 });
 
@@ -263,7 +282,12 @@ describe("TestRoundtripRovingPersistence", () => {
     const reparsedProp = reparsed.compositions[0].layers[0].transform.property("ADBE Opacity");
     assert(reparsedProp != null);
     expect(reparsedProp.keyframes[3].roving).toBe(true);
-    expect(valueEquals(reparsedProp.keyframes.map((kf) => kf._ldatItem.timeUnits), beforeTimes)).toBe(true);
+    expect(
+      valueEquals(
+        reparsedProp.keyframes.map((kf) => kf._ldatItem.timeUnits),
+        beforeTimes,
+      ),
+    ).toBe(true);
   });
 });
 
@@ -286,14 +310,23 @@ describe("TestOrientationInert", () => {
       }
     }
     assert(prop != null);
-    for (const [time, z] of [[0.0, 0.0], [0.5, 10.0], [1.0, 40.0]]) {
+    for (const [time, z] of [
+      [0.0, 0.0],
+      [0.5, 10.0],
+      [1.0, 40.0],
+    ]) {
       prop.setValueAtTime(time, [0.0, 0.0, z]);
     }
     const keyframes = prop.keyframes;
     keyframes[1]._ldatItem.roving = true;
     const before = keyframes.map((k) => k._ldatItem.timeUnits);
     prop._redistributeRovingKeyframes();
-    expect(valueEquals(keyframes.map((k) => k._ldatItem.timeUnits), before)).toBe(true);
+    expect(
+      valueEquals(
+        keyframes.map((k) => k._ldatItem.timeUnits),
+        before,
+      ),
+    ).toBe(true);
     expect(keyframes[1].roving).toBe(true);
   });
 });
@@ -309,18 +342,26 @@ describe("TestRoundtripRovingTimeIsDerived", () => {
   test("test_setting_time_on_a_roving_keyframe_raises", () => {
     const prop = _position("keyframe_roving.aep");
     const before = _times(prop);
-    raises(ValueError, () => {
-      prop.keyframes[1].time = 0.25;
-    }, "derived from the spatial path");
+    raises(
+      ValueError,
+      () => {
+        prop.keyframes[1].time = 0.25;
+      },
+      "derived from the spatial path",
+    );
     expect(valueEquals(_times(prop), before)).toBe(true);
   });
 
   test("test_setting_frame_time_on_a_roving_keyframe_raises", () => {
     const prop = _position("keyframe_roving.aep");
     const before = _times(prop);
-    raises(ValueError, () => {
-      prop.keyframes[1].frameTime = 6;
-    }, "derived from the spatial path");
+    raises(
+      ValueError,
+      () => {
+        prop.keyframes[1].frameTime = 6;
+      },
+      "derived from the spatial path",
+    );
     expect(valueEquals(_times(prop), before)).toBe(true);
   });
 
@@ -364,7 +405,10 @@ describe("TestRoundtripRovingEarlyOut", () => {
 
   test("test_roving_run_still_retimes_after_the_early_out", () => {
     const prop = _position("keyframe_roving.aep");
-    assert(prop.keyframes.some((kf) => kf.roving), "sample must carry a run");
+    assert(
+      prop.keyframes.some((kf) => kf.roving),
+      "sample must carry a run",
+    );
     const before = _times(prop);
     prop.keyframes[0].value = [-400.0, 150.0, 0.0];
     expect(!valueEquals(_times(prop), before)).toBe(true);

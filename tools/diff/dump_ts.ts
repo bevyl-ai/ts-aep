@@ -46,7 +46,9 @@ function pyOrder(a: string, b: string): number {
 
 // The TS API is camelCase; py-aep's is snake_case. Names whose digits keep their
 // underscore in Python (`reserved_8c` -> `reserved8c`) don't invert by rule: py_names.json.
-const PY_EXCEPTIONS: Record<string, string> = JSON.parse(fs.readFileSync(new URL("./py_names.json", import.meta.url), "utf8"));
+const PY_EXCEPTIONS: Record<string, string> = JSON.parse(
+  fs.readFileSync(new URL("./py_names.json", import.meta.url), "utf8"),
+);
 const TS_EXCEPTIONS = Object.fromEntries(Object.entries(PY_EXCEPTIONS).map(([t, p]) => [p, t]));
 
 /** py-aep's name for a TS member (`frameRate` -> `frame_rate`). */
@@ -56,11 +58,15 @@ export function pyName(ts: string): string {
 
 /** The TS member for a py-aep name (`frame_rate` -> `frameRate`). */
 export function tsName(py: string): string {
-  return Object.hasOwn(TS_EXCEPTIONS, py) ? TS_EXCEPTIONS[py] : py.replace(/_([a-z0-9])/g, (_m, c: string) => c.toUpperCase());
+  return Object.hasOwn(TS_EXCEPTIONS, py)
+    ? TS_EXCEPTIONS[py]
+    : py.replace(/_([a-z0-9])/g, (_m, c: string) => c.toUpperCase());
 }
 
 function isContainer(obj: any): boolean {
-  return typeof obj?.[Symbol.iterator] === "function" && (typeof obj.length === "number" || typeof obj.size === "number");
+  return (
+    typeof obj?.[Symbol.iterator] === "function" && (typeof obj.length === "number" || typeof obj.size === "number")
+  );
 }
 
 export function errName(e: any): string {
@@ -101,7 +107,12 @@ export class Dumper {
     if (value instanceof Set) return this.emit(path, { $set: [...value].map((v) => JSON.stringify(v)).sort() });
     if (typeof value === "function") return this.emit(path, { $callable: true });
     if (value instanceof Element) {
-      this.emit(path, { $el: value.tag, attrib: Object.fromEntries(value.attrib instanceof Map ? value.attrib : Object.entries(value.attrib ?? {})), text: value.text ?? null, tail: value.tail ?? null });
+      this.emit(path, {
+        $el: value.tag,
+        attrib: Object.fromEntries(value.attrib instanceof Map ? value.attrib : Object.entries(value.attrib ?? {})),
+        text: value.text ?? null,
+        tail: value.tail ?? null,
+      });
       [...value].forEach((c: any, i: number) => this.walk(`${path}[${i}]`, c, depth + 1));
       return;
     }

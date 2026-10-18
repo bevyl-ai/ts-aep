@@ -8,7 +8,7 @@ import { EssentialGraphicsController, SourcePropertyRef } from "../models/essent
 import { jsonGet, jsonRequire, parseJson, typeName } from "../../pyrt/index.ts";
 
 // AE stores 0xFFFFFFFF in a CPrp path node's `index` to mean "match by name".
-export const _BY_NAME_INDEX = 0xffffffff;
+const _BY_NAME_INDEX = 0xffffffff;
 
 /**
  * Parse a controller's `CPrp` path JSON into root-to-leaf refs.
@@ -17,7 +17,7 @@ export const _BY_NAME_INDEX = 0xffffffff;
  * `{"index", "matchName"}` nodes describing the path from the layer root to
  * the source property the controller exposes.
  */
-export function _parseSourcePropertyPath(raw: string): SourcePropertyRef[] {
+function _parseSourcePropertyPath(raw: string): SourcePropertyRef[] {
   const nodes = parseJson(raw);
   if (!(nodes instanceof Map)) throw new TypeError(`'${typeName(nodes)}' object is not a path node map`);
   const path: SourcePropertyRef[] = [];
@@ -38,7 +38,7 @@ export function _parseSourcePropertyPath(raw: string): SourcePropertyRef[] {
  *
  * @param cctlChunk - A LIST:CCtl chunk.
  */
-export function _parseController(cctlChunk: ListChunk): EssentialGraphicsController {
+function _parseController(cctlChunk: ListChunk): EssentialGraphicsController {
   const cps2 = findByListType(cctlChunk.chunks, "CpS2");
   const nameUtf8 = filterByType(cps2.chunks, "Utf8")[0];
 
@@ -97,26 +97,24 @@ export function _parseController(cctlChunk: ListChunk): EssentialGraphicsControl
  * @returns A tuple of (template_name_utf8_chunk, controllers) if an Essential Graphics container is
  *   found, otherwise `null`.
  */
-export const parseEssentialGraphics = _suppressMaterialization().decorate(
-  function parse_essential_graphics(
-    childChunks: Chunk[],
-  ): [Utf8Chunk, EssentialGraphicsController[]] | null {
-    let cif: ListChunk | null = null;
-    for (const listType of ["CIF3", "CIF2", "CIFO"]) {
-      cif = findByListTypeOrNull(childChunks, listType);
-      if (cif !== null) break;
-    }
-    if (cif == null) return null;
+export const parseEssentialGraphics = _suppressMaterialization().decorate(function parse_essential_graphics(
+  childChunks: Chunk[],
+): [Utf8Chunk, EssentialGraphicsController[]] | null {
+  let cif: ListChunk | null = null;
+  for (const listType of ["CIF3", "CIF2", "CIFO"]) {
+    cif = findByListTypeOrNull(childChunks, listType);
+    if (cif !== null) break;
+  }
+  if (cif == null) return null;
 
-    const cifChunks = cif.chunks;
+  const cifChunks = cif.chunks;
 
-    // Template name from the first LIST:CpS2
-    const cps2 = findByListType(cifChunks, "CpS2");
-    const templateNameUtf8 = filterByType(cps2.chunks, "Utf8")[0];
+  // Template name from the first LIST:CpS2
+  const cps2 = findByListType(cifChunks, "CpS2");
+  const templateNameUtf8 = filterByType(cps2.chunks, "Utf8")[0];
 
-    const cctlChunks = filterByListType(cifChunks, "CCtl");
-    const controllers = cctlChunks.map((cctl) => _parseController(cctl));
+  const cctlChunks = filterByListType(cifChunks, "CCtl");
+  const controllers = cctlChunks.map((cctl) => _parseController(cctl));
 
-    return [templateNameUtf8, controllers];
-  },
-);
+  return [templateNameUtf8, controllers];
+});

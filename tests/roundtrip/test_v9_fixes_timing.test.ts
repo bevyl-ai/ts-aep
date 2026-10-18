@@ -5,7 +5,18 @@ the same writes) unless a comment says otherwise.
 */
 
 import { describe, expect, test } from "bun:test";
-import { at, getMember, getOrThrow, len, Path, truthy, valueEquals, setMember, StopIteration, ValueError } from "../../src/pyrt/index.ts";
+import {
+  at,
+  getMember,
+  getOrThrow,
+  len,
+  Path,
+  truthy,
+  valueEquals,
+  setMember,
+  StopIteration,
+  ValueError,
+} from "../../src/pyrt/index.ts";
 
 import * as py_aep from "../../src/py_aep/index.ts";
 import { MarkerValue } from "../../src/py_aep/index.ts";
@@ -51,9 +62,7 @@ describe("TestFrameNumbers", () => {
   test("test_negative_times_match_extendscript_json", () => {
     // frameTime from the ExtendScript export of this AE-saved sample.
     const project = parseProjectFresh(SAMPLES.div("bugs", "29.97_fps_time_scale_3.125.aep"));
-    const frameTimes = new Map<number, number>(
-      project.compositions.map((c): [number, number] => [c.id, c.frameTime]),
-    );
+    const frameTimes = new Map<number, number>(project.compositions.map((c): [number, number] => [c.id, c.frameTime]));
     expect(getOrThrow(frameTimes, 11516)).toBe(-1244);
     expect(getOrThrow(frameTimes, 155)).toBe(-1221);
   });
@@ -70,7 +79,12 @@ describe("TestFrameRateChangeRetimesCompMarkers", () => {
     const again = at(_reparse(fresh._project, tmpPath, "b.aep").compositions, 0);
     for (const c of [fresh, again]) {
       if (c.markerProperty == null) throw new Error("comp has no marker property");
-      expect(valueEquals(c.markerProperty.keyframes.map((k) => k.time), [3.0])).toBe(true);
+      expect(
+        valueEquals(
+          c.markerProperty.keyframes.map((k) => k.time),
+          [3.0],
+        ),
+      ).toBe(true);
       expect(c.markerProperty._tdb4._timeBase).toBe(25600);
     }
   });
@@ -82,7 +96,12 @@ describe("TestFrameRateChangeRetimesCompMarkers", () => {
     const dup = comp.duplicate();
     dup.frameRate = 25;
     if (dup.markerProperty == null) throw new Error("duplicate has no marker property");
-    expect(valueEquals(dup.markerProperty.keyframes.map((k) => k.time), [3.0])).toBe(true);
+    expect(
+      valueEquals(
+        dup.markerProperty.keyframes.map((k) => k.time),
+        [3.0],
+      ),
+    ).toBe(true);
   });
 });
 
@@ -251,26 +270,58 @@ describe("TestTimeSpanWrites", () => {
 
   test.each<[[number, number] | null, [string, number][], [number, number]]>([
     [null, [["start", 1.03]], [1.03, 8.97]],
-    [null, [["duration", 2.51], ["start", 1.03]], [1.03, 2.51]],
-    [null, [["start", 1], ["duration", 5], ["start", 3]], [3.0, 5.0]],
+    [
+      null,
+      [
+        ["duration", 2.51],
+        ["start", 1.03],
+      ],
+      [1.03, 2.51],
+    ],
+    [
+      null,
+      [
+        ["start", 1],
+        ["duration", 5],
+        ["start", 3],
+      ],
+      [3.0, 5.0],
+    ],
     [[2, 3], [["start", 2.5]], [2.5, 2.5]],
     [null, [["start", 9]], [9.0, 1.0]],
-    [null, [["duration", 2.51], ["start", 9]], [9.0, 2.51]],
-    [null, [["start", 2], ["start", 1]], [1.0, 8.0]],
-  ])("test_start_keeps_end_then_duration[%#]", (workArea: [number, number] | null, steps: [string, number][], expected: [number, number]) => {
-    // AE 2026: the first start write from the work area / comp keeps the
-    // end, a start write on a CUSTOM span keeps the duration.
-    const [project, comp] = _newComp();
-    if (workArea != null) {
-      [comp.workAreaStart, comp.workAreaDuration] = workArea;
-    }
-    const rqi = asInstance(project.renderQueue, RenderQueue).add(comp);
-    for (const [field, value] of steps) {
-      setMember(rqi, field === "start" ? "timeSpanStart" : "timeSpanDuration", value);
-    }
-    expect(rqi.settings.get("Time Span")).toBe(TimeSpanSource.CUSTOM);
-    expect(approx([rqi.timeSpanStart, rqi.timeSpanDuration], expected)).toBe(true);
-  });
+    [
+      null,
+      [
+        ["duration", 2.51],
+        ["start", 9],
+      ],
+      [9.0, 2.51],
+    ],
+    [
+      null,
+      [
+        ["start", 2],
+        ["start", 1],
+      ],
+      [1.0, 8.0],
+    ],
+  ])(
+    "test_start_keeps_end_then_duration[%#]",
+    (workArea: [number, number] | null, steps: [string, number][], expected: [number, number]) => {
+      // AE 2026: the first start write from the work area / comp keeps the
+      // end, a start write on a CUSTOM span keeps the duration.
+      const [project, comp] = _newComp();
+      if (workArea != null) {
+        [comp.workAreaStart, comp.workAreaDuration] = workArea;
+      }
+      const rqi = asInstance(project.renderQueue, RenderQueue).add(comp);
+      for (const [field, value] of steps) {
+        setMember(rqi, field === "start" ? "timeSpanStart" : "timeSpanDuration", value);
+      }
+      expect(rqi.settings.get("Time Span")).toBe(TimeSpanSource.CUSTOM);
+      expect(approx([rqi.timeSpanStart, rqi.timeSpanDuration], expected)).toBe(true);
+    },
+  );
 });
 
 describe("TestBounds", () => {
@@ -443,7 +494,6 @@ function _ticks(layer: Layer): number[] {
 function _startRatio(layer: Layer): [number, number] {
   return [layer._ldta.startTimeDividend, layer._ldta.startTimeDivisor];
 }
-
 
 describe("TestStretchedLayerKeyTimes", () => {
   // Key times and stored ticks AE 2026 reported / saved for the same
@@ -642,13 +692,9 @@ describe("TestStretchStorage", () => {
     expect(valueEquals(_ticks(layer), [-62221, 0, 54443, 209996, 462768])).toBe(true);
     const got = sorted(layer.transform.property("ADBE Opacity").keyframes.map((kf: Keyframe) => kf.time));
     expect(
-      approx(
-        got,
-        [
-          0.50000232458115, 1.30000289298836, 1.99999856948853, 4.00000667572021, 7.24999856948853,
-        ],
-        { abs: 1e-6 },
-      ),
+      approx(got, [0.50000232458115, 1.30000289298836, 1.99999856948853, 4.00000667572021, 7.24999856948853], {
+        abs: 1e-6,
+      }),
     ).toBe(true);
   });
 
@@ -752,37 +798,40 @@ describe("TestFrameGridPastTheCap", () => {
         ["keys", [0.24999599596393, 0.50409212486186]],
       ]),
     ],
-  ])("test_comp_times_match_ae[%#]", (rate: number, grid: [number, number], expected: Map<string, number | number[]>) => {
-    const tmpPath = makeTmpPath();
-    const [project, comp] = _newComp(rate, 3.3);
-    const cdta = comp._cdta;
-    expect(valueEquals([cdta.internalTimebase, round(cdta.timeScale * 256)], grid)).toBe(true);
-    const got = new Map<string, number | number[]>([["dur0", comp.duration]]);
-    comp.duration = 1.0001;
-    got.set("dur", comp.duration);
-    comp.time = 0.5041;
-    got.set("time", comp.time);
-    comp.workAreaStart = 0.2004;
-    got.set("was", comp.workAreaStart);
-    comp.workAreaDuration = 0.5;
-    got.set("wad", comp.workAreaDuration);
-    comp.displayStartTime = 0.1234;
-    got.set("dsf", comp.displayStartFrame);
-    const layer = comp.addSolid([0.5, 0.5, 0.5], "k", 10, 10, 1.0, 1.0);
-    layer.transform.property("ADBE Opacity").setValueAtTime(0.5041, 10.0);
-    layer.transform.property("ADBE Opacity").setValueAtTime(0.25, 20.0);
-    got.set(
-      "keys",
-      layer.transform.property("ADBE Opacity").keyframes.map((kf) => kf.time),
-    );
-    for (const [key, value] of expected.entries()) {
-      // The Python assertion message names the key; bun's expect takes no message.
-      expect(approx(getOrThrow(got, key), value, { abs: 1e-11 })).toBe(true);
-    }
-    const again = at(_reparse(project, tmpPath).compositions, 0);
-    expect(again.time).toBe(comp.time);
-    expect(again.workAreaStart).toBe(comp.workAreaStart);
-  });
+  ])(
+    "test_comp_times_match_ae[%#]",
+    (rate: number, grid: [number, number], expected: Map<string, number | number[]>) => {
+      const tmpPath = makeTmpPath();
+      const [project, comp] = _newComp(rate, 3.3);
+      const cdta = comp._cdta;
+      expect(valueEquals([cdta.internalTimebase, round(cdta.timeScale * 256)], grid)).toBe(true);
+      const got = new Map<string, number | number[]>([["dur0", comp.duration]]);
+      comp.duration = 1.0001;
+      got.set("dur", comp.duration);
+      comp.time = 0.5041;
+      got.set("time", comp.time);
+      comp.workAreaStart = 0.2004;
+      got.set("was", comp.workAreaStart);
+      comp.workAreaDuration = 0.5;
+      got.set("wad", comp.workAreaDuration);
+      comp.displayStartTime = 0.1234;
+      got.set("dsf", comp.displayStartFrame);
+      const layer = comp.addSolid([0.5, 0.5, 0.5], "k", 10, 10, 1.0, 1.0);
+      layer.transform.property("ADBE Opacity").setValueAtTime(0.5041, 10.0);
+      layer.transform.property("ADBE Opacity").setValueAtTime(0.25, 20.0);
+      got.set(
+        "keys",
+        layer.transform.property("ADBE Opacity").keyframes.map((kf) => kf.time),
+      );
+      for (const [key, value] of expected.entries()) {
+        // The Python assertion message names the key; bun's expect takes no message.
+        expect(approx(getOrThrow(got, key), value, { abs: 1e-11 })).toBe(true);
+      }
+      const again = at(_reparse(project, tmpPath).compositions, 0);
+      expect(again.time).toBe(comp.time);
+      expect(again.workAreaStart).toBe(comp.workAreaStart);
+    },
+  );
 });
 
 describe("TestReversedInOutPoints", () => {
@@ -794,21 +843,18 @@ describe("TestReversedInOutPoints", () => {
     [-50.0, -0.7, -0.70015852864583, -5.70015852864583],
     [-200.0, 1.3, 1.29934147135417, -18.7006585286458],
     [150.0, 1.3, 1.29999457465278, 16.2999945746528],
-  ])(
-    "test_defaults_match_ae[%#]",
-    (stretch: number, start: number, inPoint: number, outPoint: number) => {
-      const tmpPath = makeTmpPath();
-      const [project, comp] = _newComp(24.0, 30.0);
-      const layer = comp.addNull(10.0);
-      layer.stretch = stretch;
-      layer.startTime = start;
-      const again = at(at(_reparse(project, tmpPath).compositions, 0).layers, 0);
-      for (const lyr of [layer, again]) {
-        expect(approx(lyr.inPoint, inPoint, { abs: 1e-11 })).toBe(true);
-        expect(approx(lyr.outPoint, outPoint, { abs: 1e-11 })).toBe(true);
-      }
-    },
-  );
+  ])("test_defaults_match_ae[%#]", (stretch: number, start: number, inPoint: number, outPoint: number) => {
+    const tmpPath = makeTmpPath();
+    const [project, comp] = _newComp(24.0, 30.0);
+    const layer = comp.addNull(10.0);
+    layer.stretch = stretch;
+    layer.startTime = start;
+    const again = at(at(_reparse(project, tmpPath).compositions, 0).layers, 0);
+    for (const lyr of [layer, again]) {
+      expect(approx(lyr.inPoint, inPoint, { abs: 1e-11 })).toBe(true);
+      expect(approx(lyr.outPoint, outPoint, { abs: 1e-11 })).toBe(true);
+    }
+  });
 
   test("test_writes_read_back", () => {
     // AE 2026, -150 % from 1.3 s: inPoint = 1 then outPoint = -3 read
@@ -844,9 +890,7 @@ describe("TestReversedInOutPoints", () => {
     // layer_timing.json: the -100 % layer reads in -0.000333333333,
     // out -60.000333333333.
     const project = py_aep.parse(SAMPLES.div("models", "layer", "layer_timing.aep")).project;
-    const reversedLayers = project.compositions
-      .flatMap((c) => c.layers)
-      .filter((lyr) => lyr.stretch < 0);
+    const reversedLayers = project.compositions.flatMap((c) => c.layers).filter((lyr) => lyr.stretch < 0);
     expect(truthy(reversedLayers)).toBe(true);
     for (const lyr of reversedLayers) {
       expect(approx(lyr.inPoint, -1 / 3000, { abs: 1e-12 })).toBe(true);

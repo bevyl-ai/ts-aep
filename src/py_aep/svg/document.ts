@@ -8,14 +8,14 @@ import type { Element } from "../../pyrt/etree.ts";
 export type { Element };
 
 // TYPE_CHECKING-only alias in Python.
-export type ViewBox = readonly [number, number, number, number];
+type ViewBox = readonly [number, number, number, number];
 
 /**
  * The `(min_x, min_y, width, height)` of a viewBox attribute, or `null`
  * when it is absent or invalid (not four finite numbers, or a size that is
  * not positive: SVG treats those as an error / no viewBox).
  */
-export function _viewBox(value: string | null): ViewBox | null {
+function _viewBox(value: string | null): ViewBox | null {
   if (!value) return null;
   const nums = Array.from(value.matchAll(NUMBER_RE), (n) => Number(n[0]));
   if (nums.length !== 4 || !nums.every((n) => Number.isFinite(n))) return null;
@@ -73,13 +73,26 @@ export function viewportTransform(
   const [minX, minY, vbW, vbH] = vb;
   let sx = width / vbW;
   let sy = height / vbH;
-  const tokens = (preserveAspectRatio || "").split(/\s+/).filter(Boolean).filter((t) => t !== "defer");
+  const tokens = (preserveAspectRatio || "")
+    .split(/\s+/)
+    .filter(Boolean)
+    .filter((t) => t !== "defer");
   const align = tokens.length > 0 ? tokens[0] : "xMidYMid";
   if (align !== "none") {
     const s = valueEquals(tokens.slice(1, 2), ["slice"]) ? Math.max(sx, sy) : Math.min(sx, sy);
     sx = sy = s;
-    const ax = (new Map<string, number>([["xMin", 0.0], ["xMid", 0.5], ["xMax", 1.0]])).get(align.slice(0, 4)) ?? 0.5;
-    const ay = (new Map<string, number>([["YMin", 0.0], ["YMid", 0.5], ["YMax", 1.0]])).get(align.slice(4)) ?? 0.5;
+    const ax =
+      new Map<string, number>([
+        ["xMin", 0.0],
+        ["xMid", 0.5],
+        ["xMax", 1.0],
+      ]).get(align.slice(0, 4)) ?? 0.5;
+    const ay =
+      new Map<string, number>([
+        ["YMin", 0.0],
+        ["YMid", 0.5],
+        ["YMax", 1.0],
+      ]).get(align.slice(4)) ?? 0.5;
     x += (width - vbW * s) * ax;
     y += (height - vbH * s) * ay;
   }

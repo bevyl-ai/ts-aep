@@ -48,7 +48,7 @@ export function join(parts: Iterable<Uint8Array>): Uint8Array {
 
 /** `a == b` */
 export function equals(a: Uint8Array | null | undefined, b: Uint8Array | null | undefined): boolean {
-  if (a == null || b == null) return a == b;
+  if (a == null || b == null) return a == null && b == null;
   if (a.length !== b.length) return false;
   for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
   return true;
@@ -206,7 +206,12 @@ export function intFromBytes(data: Uint8Array, byteorder: "big" | "little", sign
 }
 
 /** `value.to_bytes(length, byteorder, signed=...)` */
-export function intToBytes(value: number | bigint, length: number, byteorder: "big" | "little", signed = false): Uint8Array {
+export function intToBytes(
+  value: number | bigint,
+  length: number,
+  byteorder: "big" | "little",
+  signed = false,
+): Uint8Array {
   let v = BigInt(value);
   if (signed && v < 0n) v += 1n << BigInt(8 * length);
   if (v < 0n || v >= 1n << BigInt(8 * length)) throw new ValueError("int too big to convert");

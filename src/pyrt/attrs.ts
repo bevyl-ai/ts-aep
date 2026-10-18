@@ -11,7 +11,6 @@
 //
 // Construction is keyword-only: `new U1Chunk({ chunkType: "efdc", value: 1 })`.
 
-
 export type Factory<T = unknown> = { readonly factory: () => T };
 
 export function Factory<T>(fn: () => T): Factory<T> {
@@ -24,6 +23,7 @@ const NOTHING: unique symbol = Symbol("NOTHING");
  * `attrs` field metadata, read back by key. Each module that stores
  * metadata declares its keys by augmenting this interface (`fmtField`'s
  * struct format, encoding, item class, ...).
+ * @public (augmented from other modules)
  */
 export interface Metadata {}
 
@@ -61,7 +61,7 @@ export function field<V>(spec: FieldSpec<V> = {}): FieldSpec<V> {
 const FIELDS = new WeakMap<Function, readonly Attribute[]>();
 
 /** attrs strips one leading underscore for the `__init__` parameter: `_trailing` -> `trailing`. */
-export function initName(name: string): string {
+function initName(name: string): string {
   return name.startsWith("_") ? name.replace(/^_+/, "") : name;
 }
 
@@ -80,7 +80,7 @@ export function define<C extends abstract new (...args: never) => object>(
     name,
     default: "default" in spec ? spec.default : NOTHING,
     converter: spec.converter ?? null,
-    metadata: Object.freeze({ ...(spec.metadata ?? {}) }),
+    metadata: Object.freeze({ ...spec.metadata }),
     init: spec.init ?? true,
     eq: spec.eq ?? true,
     repr: spec.repr ?? true,
@@ -179,7 +179,7 @@ function compileInit(cls: Function): Init | null {
  * count shows an unexpected one (or codegen is blocked), `attrsInitSlow`
  * runs to raise attrs' error.
  */
-export function attrsInit(self: object, cls: Function, kw: Kw): void {
+function attrsInit(self: object, cls: Function, kw: Kw): void {
   let init = INITS.get(cls);
   if (init === undefined) INITS.set(cls, (init = compileInit(cls)));
   let n = 0;

@@ -41,39 +41,14 @@ test.each([
 
 test.each<[string, string, boolean, [number, number]]>([
   // AE 2026 Windows saves of samples/models/import/*.aep.
-  [
-    "C:\\repo\\samples\\models\\import\\x.aep",
-    "C:\\repo\\samples\\assets\\aif.aif",
-    false,
-    [3, 2],
-  ],
+  ["C:\\repo\\samples\\models\\import\\x.aep", "C:\\repo\\samples\\assets\\aif.aif", false, [3, 2]],
   // A sequence folder counts one level inside it.
-  [
-    "C:\\repo\\samples\\models\\import\\x.aep",
-    "C:\\repo\\samples\\assets",
-    true,
-    [3, 2],
-  ],
+  ["C:\\repo\\samples\\models\\import\\x.aep", "C:\\repo\\samples\\assets", true, [3, 2]],
   // A render output folder too (samples/models/output_module).
-  [
-    "C:\\Users\\a\\git\\py-aep\\samples\\models\\output_module\\o.aep",
-    "C:\\Users\\a\\Downloads",
-    true,
-    [6, 2],
-  ],
+  ["C:\\Users\\a\\git\\py-aep\\samples\\models\\output_module\\o.aep", "C:\\Users\\a\\Downloads", true, [6, 2]],
   // Production projects saved on a UNC share.
-  [
-    SHOT + "\\work\\p.aep",
-    SHOT + "\\preview\\interne\\20230313\\x.mov",
-    false,
-    [2, 4],
-  ],
-  [
-    SHOT + "\\work\\p.aep",
-    "\\\\serge\\as_serie\\lab\\compo\\SEQ_SPE\\BANK\\TEXTURES\\PAPER",
-    true,
-    [7, 7],
-  ],
+  [SHOT + "\\work\\p.aep", SHOT + "\\preview\\interne\\20230313\\x.mov", false, [2, 4]],
+  [SHOT + "\\work\\p.aep", "\\\\serge\\as_serie\\lab\\compo\\SEQ_SPE\\BANK\\TEXTURES\\PAPER", true, [7, 7]],
   // Same folder; Windows paths compare case-insensitively.
   ["C:\\Repo\\a.aep", "c:\\repo\\b.png", false, [1, 1]],
   // A macOS save (media_gap_formats.aep).
@@ -84,14 +59,9 @@ test.each<[string, string, boolean, [number, number]]>([
     [3, 2],
   ],
   ["/Users/a/proj/p.aep", "/Users/a/media/b.png", false, [2, 2]],
-])(
-  "test_counts[%#]",
-  (project: string, target: string, isFolder: boolean, expected: [number, number]) => {
-    expect(
-      valueEquals(relativePathCounts(project, target, { targetIsFolder: isFolder }), expected),
-    ).toBe(true);
-  },
-);
+])("test_counts[%#]", (project: string, target: string, isFolder: boolean, expected: [number, number]) => {
+  expect(valueEquals(relativePathCounts(project, target, { targetIsFolder: isFolder }), expected)).toBe(true);
+});
 
 test.each([
   ["C:\\p\\a.aep", "D:\\p\\b.png"], // another drive
@@ -102,9 +72,7 @@ test.each([
   ["/Users/a/a.aep", "C:\\p\\b.png"], // another path style
   ["C:\\p\\a.aep", "relative\\b.png"],
 ])("test_no_relative_path[%#]", (project: string, target: string) => {
-  expect(
-    valueEquals(relativePathCounts(project, target, { targetIsFolder: false }), [0, 0]),
-  ).toBe(true);
+  expect(valueEquals(relativePathCounts(project, target, { targetIsFolder: false }), [0, 0])).toBe(true);
 });
 
 test("test_counts_survive_the_platform_mapping", () => {

@@ -19,7 +19,11 @@ import { valueEquals } from "../../src/pyrt/builtins.ts";
 import { setWarningHandler } from "../../src/pyrt/errors.ts";
 import { Path } from "../../src/pyrt/pathlib.ts";
 
-export function raises<E extends Error>(cls: abstract new (...a: never[]) => E, fn: () => void, match?: string | RegExp): E {
+export function raises<E extends Error>(
+  cls: abstract new (...a: never[]) => E,
+  fn: () => void,
+  match?: string | RegExp,
+): E {
   try {
     fn();
   } catch (e) {
@@ -51,7 +55,11 @@ export function warns(fn: () => void, match?: string | RegExp): string[] {
 export type ApproxOperand = number | ArrayLike<ApproxOperand> | object | string | boolean | null | undefined;
 
 /** `actual == pytest.approx(expected, rel=1e-6, abs=1e-12)` over numbers or (nested) sequences. */
-export function approx(actual: ApproxOperand, expected: ApproxOperand, opts: { rel?: number; abs?: number } = {}): boolean {
+export function approx(
+  actual: ApproxOperand,
+  expected: ApproxOperand,
+  opts: { rel?: number; abs?: number } = {},
+): boolean {
   if (Array.isArray(expected) || ArrayBuffer.isView(expected)) {
     const a = Array.from(actual as ArrayLike<ApproxOperand>);
     const e = Array.from(expected as ArrayLike<ApproxOperand>);
@@ -71,7 +79,7 @@ export function skip(reason = ""): void {
 }
 
 /** `pytest.fail.Exception` */
-export class Failed extends Error {
+class Failed extends Error {
   constructor(message = "") {
     super(message);
     this.name = "Failed";

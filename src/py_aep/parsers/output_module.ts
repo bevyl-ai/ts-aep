@@ -31,41 +31,39 @@ import type { OutputModuleSettingsItem } from "../binary/render_chunks.ts";
  * @param render_queue_item - The parent render queue item.
  * @returns OutputModule with parsed attributes.
  */
-export const parseOutputModule = _suppressMaterialization().decorate(
-  function parse_output_module(
-    chunks: Chunk[],
-    omLdatData: OutputModuleSettingsItem,
-    renderQueueItem: RenderQueueItem,
-  ): OutputModule {
-    const roouChunk = findByType(chunks, "Roou");
+export const parseOutputModule = _suppressMaterialization().decorate(function parse_output_module(
+  chunks: Chunk[],
+  omLdatData: OutputModuleSettingsItem,
+  renderQueueItem: RenderQueueItem,
+): OutputModule {
+  const roouChunk = findByType(chunks, "Roou");
 
-    // The alas (output file path) is present only once a file is set.
-    const als2Chunk = findByListTypeOrNull(chunks, "Als2");
-    const alasUtf8 = als2Chunk === null ? null : findByTypeOrNull(als2Chunk.chunks, "alas");
+  // The alas (output file path) is present only once a file is set.
+  const als2Chunk = findByListTypeOrNull(chunks, "Als2");
+  const alasUtf8 = als2Chunk === null ? null : findByTypeOrNull(als2Chunk.chunks, "alas");
 
-    // Format name + file-name template are the last two top-level Utf8 chunks.
-    const omUtf8 = filterByType(chunks, "Utf8");
-    let nameUtf8: Utf8Chunk | null;
-    let fileNameUtf8: Utf8Chunk | null;
-    if (omUtf8.length >= 2) {
-      nameUtf8 = omUtf8[omUtf8.length - 2];
-      fileNameUtf8 = omUtf8[omUtf8.length - 1];
-    } else {
-      nameUtf8 = null;
-      fileNameUtf8 = null;
-    }
+  // Format name + file-name template are the last two top-level Utf8 chunks.
+  const omUtf8 = filterByType(chunks, "Utf8");
+  let nameUtf8: Utf8Chunk | null;
+  let fileNameUtf8: Utf8Chunk | null;
+  if (omUtf8.length >= 2) {
+    nameUtf8 = omUtf8[omUtf8.length - 2];
+    fileNameUtf8 = omUtf8[omUtf8.length - 1];
+  } else {
+    nameUtf8 = null;
+    fileNameUtf8 = null;
+  }
 
-    const formatOptions = parseFormatOptions(chunks);
+  const formatOptions = parseFormatOptions(chunks);
 
-    return new OutputModule({
-      _omLdat: omLdatData,
-      _roou: roouChunk,
-      _alasUtf8: alasUtf8,
-      _fileNameUtf8: fileNameUtf8,
-      _nameUtf8: nameUtf8,
-      _renderSettingsLdat: renderQueueItem._ldat,
-      parent: renderQueueItem,
-      formatOptions: formatOptions,
-    });
-  },
-);
+  return new OutputModule({
+    _omLdat: omLdatData,
+    _roou: roouChunk,
+    _alasUtf8: alasUtf8,
+    _fileNameUtf8: fileNameUtf8,
+    _nameUtf8: nameUtf8,
+    _renderSettingsLdat: renderQueueItem._ldat,
+    parent: renderQueueItem,
+    formatOptions: formatOptions,
+  });
+});

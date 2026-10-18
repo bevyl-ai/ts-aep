@@ -4,7 +4,13 @@ import { describe, expect, test } from "bun:test";
 
 import { AttributeError, KeyError, Path, len, assert, valueEquals } from "../../src/pyrt/index.ts";
 import "../../src/py_aep/binary/_register.ts";
-import { AdvancedRendererOptions, Cinema4DRendererOptions, ClassicRendererOptions, RayTracedRendererOptions, parse as parseAep } from "../../src/py_aep/index.ts";
+import {
+  AdvancedRendererOptions,
+  Cinema4DRendererOptions,
+  ClassicRendererOptions,
+  RayTracedRendererOptions,
+  parse as parseAep,
+} from "../../src/py_aep/index.ts";
 import { asInstance } from "../helpers.ts";
 import { EnvironmentLightShadowResolution, ShadowMapResolution } from "../../src/py_aep/enums/index.ts";
 import { approx, raises } from "../support/pytest.ts";
@@ -101,7 +107,9 @@ describe("TestRendererOptionsNonDefaults", () => {
   test("test_classic_non_default", () => {
     const comp = parseAep(COMPOSITION_DIR.div("renderer_options_classic_3d.aep")).project.compositions[0];
 
-    expect(asInstance(comp.rendererOptions, ClassicRendererOptions).shadowMapResolution).toBe(ShadowMapResolution.RES_750);
+    expect(asInstance(comp.rendererOptions, ClassicRendererOptions).shadowMapResolution).toBe(
+      ShadowMapResolution.RES_750,
+    );
   });
 
   test("test_cinema_4d_non_default", () => {
@@ -114,9 +122,13 @@ describe("TestRendererOptionsNonDefaults", () => {
     const comp = parseAep(COMPOSITION_DIR.div("renderer_options_advanced_3d.aep")).project.compositions[0];
 
     expect(asInstance(comp.rendererOptions, AdvancedRendererOptions).quality).toBe(61);
-    expect(asInstance(comp.rendererOptions, AdvancedRendererOptions).resolution).toBe(EnvironmentLightShadowResolution.DOUBLE);
+    expect(asInstance(comp.rendererOptions, AdvancedRendererOptions).resolution).toBe(
+      EnvironmentLightShadowResolution.DOUBLE,
+    );
     expect(asInstance(comp.rendererOptions, AdvancedRendererOptions).smoothness).toBe(6);
     expect(approx(asInstance(comp.rendererOptions, AdvancedRendererOptions).castingBoxSize, 600.0)).toBe(true);
-    expect(approx(asInstance(comp.rendererOptions, AdvancedRendererOptions).castingBoxCenter, [400.0, 600.0, -100.0])).toBe(true);
+    expect(
+      approx(asInstance(comp.rendererOptions, AdvancedRendererOptions).castingBoxCenter, [400.0, 600.0, -100.0]),
+    ).toBe(true);
   });
 });

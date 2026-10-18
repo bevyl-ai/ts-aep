@@ -30,9 +30,12 @@ for (const file of files) {
       if (end < 0) break;
       if (fence[1] === "python" || fence[1] === "py") python++;
       if (fence[1] === "ts" || fence[1] === "typescript") {
-        const code = lines.slice(i + 1, end).join("\n").replace(/\\([<>{}@])/g, "$1");
+        const code = lines
+          .slice(i + 1, end)
+          .join("\n")
+          .replace(/\\([<>{}@])/g, "$1");
         const line = text.slice(0, c.index).split("\n").length + i;
-        const name = `${path.relative(ROOT, file).replace(/[\/.]/g, "_")}_${n++}.ts`;
+        const name = `${path.relative(ROOT, file).replace(/[/.]/g, "_")}_${n++}.ts`;
         fs.writeFileSync(path.join(OUT, name), `export {};\n${code}\n`);
         origin.set(path.join(OUT, name), `${path.relative(ROOT, file)}:${line}`);
       }
@@ -56,7 +59,9 @@ const program = ts.createProgram([...origin.keys()], {
 const errors = ts.getPreEmitDiagnostics(program).filter((d) => d.file && origin.has(d.file.fileName));
 for (const d of errors) {
   const { line } = d.file!.getLineAndCharacterOfPosition(d.start!);
-  console.log(`${origin.get(d.file!.fileName)} (example line ${line}): ${ts.flattenDiagnosticMessageText(d.messageText, " ")}`);
+  console.log(
+    `${origin.get(d.file!.fileName)} (example line ${line}): ${ts.flattenDiagnosticMessageText(d.messageText, " ")}`,
+  );
 }
 console.log(JSON.stringify({ ts_examples: origin.size, python_examples: python, errors: errors.length }));
 process.exit(errors.length ? 1 : 0);

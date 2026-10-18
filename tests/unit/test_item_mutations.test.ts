@@ -6,9 +6,7 @@ import { describe, expect, test } from "bun:test";
 import "../../src/py_aep/binary/_register.ts";
 import * as py_aep from "../../src/py_aep/index.ts";
 import { autoName } from "../../src/py_aep/models/naming.ts";
-import { Path, getOrThrow, valueEquals } from "../../src/pyrt/index.ts";
-
-const SAMPLES_DIR = new Path(import.meta.path).parent.parent.parent.div("samples", "models");
+import { getOrThrow, valueEquals } from "../../src/pyrt/index.ts";
 
 /** Tests for the auto_name naming helper. */
 describe("TestAutoName", () => {
@@ -58,7 +56,12 @@ describe("TestSortChildrenByName", () => {
     folder._sortChildrenByName();
 
     const expected = ["alpha", "beta", "Mango", "zebra"];
-    expect(valueEquals(folder.items.map((item) => item.name), expected)).toBe(true);
+    expect(
+      valueEquals(
+        folder.items.map((item) => item.name),
+        expected,
+      ),
+    ).toBe(true);
     // The backing Sfdr item_list chunks are reordered to match.
     // id() keys are object identity, so the Map is keyed by the chunk objects.
     const idToName = new Map<object, string>(folder.items.map((item): [object, string] => [item._itemList, item.name]));

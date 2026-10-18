@@ -64,18 +64,15 @@ test.each([
   [b("\xfe\xff\x00g\x00_\x00o\x00k"), "g_ok"],
   [b("\xef\xbb\xbfh_\xc3\xa9"), "h_" + String.fromCodePoint(0x00e9)],
   [b("Layer 1"), "Layer 1"],
-])(
-  "test_decodes_lexer_output_like_after_effects[%#]",
-  (literal: Uint8Array, expected: string) => {
-    /** The whole path: a COS string literal as it sits in the file.
+])("test_decodes_lexer_output_like_after_effects[%#]", (literal: Uint8Array, expected: string) => {
+  /** The whole path: a COS string literal as it sits in the file.
 
     Feeding raw bytes straight in cannot catch a regression here - the
     lexer decodes anything that is valid UTF-8 before this function ever
     sees it, so only a literal exercises the case that matters.
     */
-    const token = new CosParser(new ByteStream(concat(literal, b(")")))).lexString();
-    const value = token.value;
-    assert(value instanceof Uint8Array || value instanceof CosString);
-    expect(valueEquals(decodePdfTextString(value), expected)).toBe(true);
-  },
-);
+  const token = new CosParser(new ByteStream(concat(literal, b(")")))).lexString();
+  const value = token.value;
+  assert(value instanceof Uint8Array || value instanceof CosString);
+  expect(valueEquals(decodePdfTextString(value), expected)).toBe(true);
+});

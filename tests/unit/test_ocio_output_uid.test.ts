@@ -15,8 +15,9 @@ import { ocioColorSpaceForProfileId, ocioOutputProfileId } from "../../src/py_ae
 import { raises } from "../support/pytest.ts";
 
 // `Path(__file__).parent.parent.parent`: tests/unit/<file> -> repo root.
-const CONFIG = new Path(import.meta.dir)
-  .parent.parent.div("samples/models/output_module/output_color_space_ocio/sergb.ocio");
+const CONFIG = new Path(import.meta.dir).parent.parent.div(
+  "samples/models/output_module/output_color_space_ocio/sergb.ocio",
+);
 
 test("test_murmurhash3_empty_is_zero", () => {
   // Standard MurmurHash3_x64_128 of an empty input with seed 0 is all zeros.

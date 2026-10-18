@@ -1,15 +1,63 @@
-import { KeyframeInterpolationType, LayerType, PropertyControlType, PropertyType, PropertyValueType } from "../../enums/index.ts";
+import {
+  KeyframeInterpolationType,
+  LayerType,
+  PropertyControlType,
+  PropertyType,
+  PropertyValueType,
+} from "../../enums/index.ts";
 import { cosGet } from "../../cos/index.ts";
 import type { CosNode } from "../../cos/cos.ts";
 import { cosAt, cosInsert, cosLen, cosPopAt } from "../../cos/kinds.ts";
 import { resolveCanSetExpression } from "../../resolvers/can_set_expression.ts";
-import { _DEFAULT_INFLUENCE, NORMALIZED_ARC_ACCURACY, ArcMetric, _tangentsAreZero, colorDistance, interpolateKeyframes, motionPathDirection, motionPathLength, rovingKeyframeTimes, segmentValueSlope, spatialLocation, splitSegmentInfluences, splitSpatialPath } from "../../resolvers/interpolation.ts";
+import {
+  _DEFAULT_INFLUENCE,
+  NORMALIZED_ARC_ACCURACY,
+  ArcMetric,
+  _tangentsAreZero,
+  colorDistance,
+  interpolateKeyframes,
+  motionPathDirection,
+  motionPathLength,
+  rovingKeyframeTimes,
+  segmentValueSlope,
+  spatialLocation,
+  splitSegmentInfluences,
+  splitSpatialPath,
+} from "../../resolvers/interpolation.ts";
 import { Chunk, ContainerChunk, ListChunk } from "../../binary/chunk.ts";
 import { layerTimebase } from "../../binary/composition_chunks.ts";
-import { LHD3_BLOCK_KEYFRAMES, KfPosition, LdatItemType, ShapePoint, setLhd3Count, LdatChunk, LdatItem, Lhd3Chunk } from "../../binary/ldat_chunks.ts";
+import {
+  LHD3_BLOCK_KEYFRAMES,
+  KfPosition,
+  LdatItemType,
+  ShapePoint,
+  setLhd3Count,
+  LdatChunk,
+  LdatItem,
+  Lhd3Chunk,
+} from "../../binary/ldat_chunks.ts";
 import { EnumPardChunk } from "../../binary/misc_chunks.ts";
-import { ITEM_SIZE_BY_TYPE, buildKeyframeList, buildKfData, buildLdatItem, buildParallelLdatItem, buildShap } from "../../binary/mutations.ts";
-import { TDSN_SENTINEL, CdatChunk, CurvesArbpChunk, Tdb4Chunk, TdmnChunk, TdsbChunk, TdsnChunk, TdumChunk, tdb4ApplyAnimatedTemplate, tdb4ApplyStaticTemplate, tdb4ClearKeyframeRecord } from "../../binary/property_chunks.ts";
+import {
+  ITEM_SIZE_BY_TYPE,
+  buildKeyframeList,
+  buildKfData,
+  buildLdatItem,
+  buildParallelLdatItem,
+  buildShap,
+} from "../../binary/mutations.ts";
+import {
+  TDSN_SENTINEL,
+  CdatChunk,
+  CurvesArbpChunk,
+  Tdb4Chunk,
+  TdmnChunk,
+  TdsbChunk,
+  TdsnChunk,
+  TdumChunk,
+  tdb4ApplyAnimatedTemplate,
+  tdb4ApplyStaticTemplate,
+  tdb4ClearKeyframeRecord,
+} from "../../binary/property_chunks.ts";
 import type { VfdnChunk } from "../../binary/property_chunks.ts";
 import { S4Chunk, Utf8Chunk, U4Chunk } from "../../binary/scalar_chunks.ts";
 import { ChunkNotFoundError, findByListTypeOrNull, findByType, indexByIdentity } from "../../binary/utils.ts";
@@ -19,7 +67,16 @@ import { canAddProperty } from "../../resolvers/motion_graphics.ts";
 import { _USE_VALUE, PropSpec } from "../../synthesis/property.ts";
 import { ChunkField } from "../descriptors.ts";
 import { TextDocument } from "../text/text_document.ts";
-import { _validateNumber, validateBool, validateEnum, validateF8, validateName, validateNumber, validateSequence, validateText } from "../validators.ts";
+import {
+  _validateNumber,
+  validateBool,
+  validateEnum,
+  validateF8,
+  validateName,
+  validateNumber,
+  validateSequence,
+  validateText,
+} from "../validators.ts";
 import type { FolderItem } from "../items/folder.ts";
 import type { CompItem } from "../items/composition.ts";
 import type { AVLayer } from "../layers/av_layer.ts";
@@ -30,20 +87,56 @@ import { Keyframe, _checkTimeUnits, _timebaseUnits } from "./keyframe.ts";
 import type { KeyframeValue, PropertyValue, _ValueType } from "./keyframe.ts";
 import { KeyframeEase } from "./keyframe_ease.ts";
 import type { MarkerValue } from "./marker.ts";
-import { _ALWAYS_MODIFIED, _CANVARY_OVERRIDES, _ISSPATIAL_OVERRIDES, _NAME_OVERRIDES, _PLACEHOLDER_UNBOUNDED, _UNBOUNDED_MATCH_NAMES } from "./overrides.ts";
-import { _EMPTY_CDAT_PAD, GRADIENT_KIND, MARKER_KIND, ORIENTATION_KIND, SHAPE_KIND, TEXT_KIND, type ParallelKind } from "./parallel.ts";
+import {
+  _ALWAYS_MODIFIED,
+  _CANVARY_OVERRIDES,
+  _ISSPATIAL_OVERRIDES,
+  _NAME_OVERRIDES,
+  _PLACEHOLDER_UNBOUNDED,
+  _UNBOUNDED_MATCH_NAMES,
+} from "./overrides.ts";
+import {
+  _EMPTY_CDAT_PAD,
+  GRADIENT_KIND,
+  MARKER_KIND,
+  ORIENTATION_KIND,
+  SHAPE_KIND,
+  TEXT_KIND,
+  type ParallelKind,
+} from "./parallel.ts";
 import { PropertyBase } from "./property_base.ts";
 import { Shape } from "./shape.ts";
 import type { PropertyGroup } from "./property_group.ts";
-import { deepcopy, getOrThrow, isclose, valueEquals, warn, ValueError, IndexError, AttributeError, NotImplementedError, StopIteration, assert, literal, zip, ord, descriptor, typeName, type ClassAttributes } from "../../../pyrt/index.ts";
+import {
+  deepcopy,
+  getOrThrow,
+  isclose,
+  valueEquals,
+  warn,
+  ValueError,
+  IndexError,
+  AttributeError,
+  NotImplementedError,
+  StopIteration,
+  assert,
+  literal,
+  zip,
+  ord,
+  descriptor,
+  typeName,
+  type ClassAttributes,
+} from "../../../pyrt/index.ts";
 import { AVItem } from "../items/av_item.ts";
 import { FootageItem } from "../items/footage.ts";
-import { resolveEssentialPropertyController, resolveEssentialPropertySource } from "../../resolvers/essential_properties.ts";
+import {
+  resolveEssentialPropertyController,
+  resolveEssentialPropertySource,
+} from "../../resolvers/essential_properties.ts";
 import * as _propertyGroup from "./property_group.ts";
 import * as _folder from "../items/folder.ts";
 import * as _avLayer from "../layers/av_layer.ts";
 
-export const logger = {
+const logger = {
   debug(_m: string) {},
   info(_m: string) {},
   warning: (m: string) => warn(m),
@@ -53,8 +146,10 @@ export const logger = {
 // specialized parsers record on it - structure, not a decoded value type.
 // Measured over every sample (1.98M properties): no parsed complex
 // property lacks a wrapper, and no wrapper ever disagrees with the kind.
-export const _WRAPPER_KINDS: Map<string, ParallelKind> = new Map(
-  [ORIENTATION_KIND, MARKER_KIND, SHAPE_KIND, GRADIENT_KIND, TEXT_KIND].map((kind) => [kind.wrapperType, kind] as const),
+const _WRAPPER_KINDS: Map<string, ParallelKind> = new Map(
+  [ORIENTATION_KIND, MARKER_KIND, SHAPE_KIND, GRADIENT_KIND, TEXT_KIND].map(
+    (kind) => [kind.wrapperType, kind] as const,
+  ),
 );
 
 // A SYNTHESIZED one has no wrapper yet (AE omits it for pristine state)
@@ -62,7 +157,7 @@ export const _WRAPPER_KINDS: Map<string, ParallelKind> = new Map(
 // seeded CUSTOM_VALUE, a Layer Styles gradient NO_VALUE. Only the match
 // name is left. Every entry here is reachable only before the property is
 // materialized; afterwards the wrapper above answers first.
-export const _SYNTHESIZED_KINDS: Map<string, ParallelKind> = new Map<string, ParallelKind>([
+const _SYNTHESIZED_KINDS: Map<string, ParallelKind> = new Map<string, ParallelKind>([
   ["ADBE Orientation", ORIENTATION_KIND],
   ["ADBE Marker", MARKER_KIND],
   ["ADBE Mask Shape", SHAPE_KIND],
@@ -78,16 +173,16 @@ export const _UNSET: unique symbol = Symbol("_UNSET"); // sentinel for unset min
 
 // Match names whose binary values are stored as 0-1 fractions but
 // ExtendScript reports as 0-100 percentages.
-export const _PERCENT_MATCH_NAMES: Set<string> = new Set(["ADBE Opacity", "ADBE Scale", "ADBE Mask Opacity"]);
+const _PERCENT_MATCH_NAMES: Set<string> = new Set(["ADBE Opacity", "ADBE Scale", "ADBE Mask Opacity"]);
 
-export const _SEPARATION_LEADER = "ADBE Position";
-export const _SEPARATION_FOLLOWERS: readonly string[] & readonly ["ADBE Position_0", "ADBE Position_1", "ADBE Position_2"] = [
+const _SEPARATION_LEADER = "ADBE Position";
+const _SEPARATION_FOLLOWERS: readonly string[] & readonly ["ADBE Position_0", "ADBE Position_1", "ADBE Position_2"] = [
   "ADBE Position_0",
   "ADBE Position_1",
   "ADBE Position_2",
 ];
 
-export function _getMax(prop: Property): number | null {
+function _getMax(prop: Property): number | null {
   const v = prop.maxValue;
   if (typeof v !== "number") return null;
   // A max of exactly 0.0 is, across the whole sample corpus, always AE's
@@ -99,12 +194,12 @@ export function _getMax(prop: Property): number | null {
   return v;
 }
 
-export function _getMin(prop: Property): number | null {
+function _getMin(prop: Property): number | null {
   const v = prop.minValue;
   return typeof v === "number" ? v : null;
 }
 
-export const _NUMERIC_VALUE_TYPES: Set<PropertyValueType> = new Set<PropertyValueType>([
+const _NUMERIC_VALUE_TYPES: Set<PropertyValueType> = new Set<PropertyValueType>([
   PropertyValueType.OneD,
   PropertyValueType.TwoD,
   PropertyValueType.TwoD_SPATIAL,
@@ -117,28 +212,28 @@ export const _NUMERIC_VALUE_TYPES: Set<PropertyValueType> = new Set<PropertyValu
 // against the control type the effect declares (`_propertyControlType`):
 // the type inferred for other properties reads BOOLEAN for plain scalars,
 // and a shape's Star Points of 5.5 reports 5.5 (AE 2026).
-export const _ROUNDED_CONTROL_TYPES: ReadonlySet<PropertyControlType> = new Set<PropertyControlType>([
+const _ROUNDED_CONTROL_TYPES: ReadonlySet<PropertyControlType> = new Set<PropertyControlType>([
   PropertyControlType.BOOLEAN,
   PropertyControlType.ENUM,
 ]);
 
-export function _getDimensions(prop: Property): number {
+function _getDimensions(prop: Property): number {
   const d: number = prop.dimensions;
   // Color properties use dimensions=1 but store 4-element lists.
   if (prop._color) return 4;
   return d;
 }
 
-export const _validateScalar = _validateNumber({ min: _getMin, max: _getMax });
-export const _validateList = validateSequence({ length: _getDimensions, min: _getMin, max: _getMax });
+const _validateScalar = _validateNumber({ min: _getMin, max: _getMax });
+const _validateList = validateSequence({ length: _getDimensions, min: _getMin, max: _getMax });
 
-export function _samePath(a: Shape, b: PropertyValue): boolean {
+function _samePath(a: Shape, b: PropertyValue): boolean {
   // Whether two path values draw the same featherless path (vertices,
   // stored handles and closed flag; a path with feather points never
   // matches).
   return (
     b instanceof Shape &&
-    a.closed == b.closed &&
+    a.closed === b.closed &&
     valueEquals(a.vertices, b.vertices) &&
     valueEquals(a._storedTangents(-1), b._storedTangents(-1)) &&
     valueEquals(a._storedTangents(1), b._storedTangents(1)) &&
@@ -147,7 +242,7 @@ export function _samePath(a: Shape, b: PropertyValue): boolean {
   );
 }
 
-export function _validateValue(prop: Property, value: PropertyValue): void {
+function _validateValue(prop: Property, value: PropertyValue): void {
   // Validate type, length and bounds of a property value.
   // A mask or shape-layer path only holds a Shape: AE 2026 refuses any other
   // value ("Array is not of the correct type"), and the numeric write path
@@ -196,7 +291,7 @@ export function _validateValue(prop: Property, value: PropertyValue): void {
  * The ids of the masks a mask-index value picks from, in order, or `null`
  * for a property with no layer (an effect definition).
  */
-export function _maskIds(prop: Property): number[] | null {
+function _maskIds(prop: Property): number[] | null {
   let masks: PropertyGroup | null;
   try {
     masks = prop._containingLayer.masks;
@@ -205,9 +300,7 @@ export function _maskIds(prop: Property): number[] | null {
     return null;
   }
   if (masks == null) return [];
-  return masks.properties
-    .filter((m) => m._isMaskGroup())
-    .map((m) => m._mkif.maskId);
+  return masks.properties.filter((m) => m._isMaskGroup()).map((m) => m._mkif.maskId);
 }
 
 export function _validateKeyValue(prop: Property, value: PropertyValue): void {
@@ -223,7 +316,7 @@ export function _validateKeyValue(prop: Property, value: PropertyValue): void {
 // Standard OpenType design-axis display names (AE shows the axis name from
 // the font itself; these cover the registered tags, custom tags fall back
 // to the raw tag).
-export const _VF_AXIS_STANDARD_NAMES = new Map<string, string>([
+const _VF_AXIS_STANDARD_NAMES = new Map<string, string>([
   ["wght", "Weight"],
   ["wdth", "Width"],
   ["slnt", "Slant"],
@@ -231,7 +324,7 @@ export const _VF_AXIS_STANDARD_NAMES = new Map<string, string>([
   ["opsz", "Optical Size"],
 ]);
 
-export function _vfTagToStr(raw: number): string | null {
+function _vfTagToStr(raw: number): string | null {
   // Decode a variable-font axis tag stored as a 4CC number.
   //
   // The axis property's second dimension holds the tag packed big-endian
@@ -256,7 +349,7 @@ export function _valuesEqual(a: PropertyValue, b: PropertyValue): boolean {
   //
   // Handles scalars, arrays, booleans, and null.
   // Uses [math.isclose][] for numeric comparisons.
-  if (a == null || b == null) return a == b;
+  if (a == null || b == null) return a == null && b == null;
   if (typeof a === "boolean" || typeof b === "boolean") return valueEquals(a, b);
   if (Array.isArray(a) && Array.isArray(b)) {
     if (a.length !== b.length) return false;
@@ -275,7 +368,7 @@ export function _valuesEqual(a: PropertyValue, b: PropertyValue): boolean {
  * Repeat Edge Pixels, a Checkbox Control and Blur Dimensions; static
  * values, keyframes and `valueAtTime` alike).
  */
-export function _roundHalfUp<T>(value: T): T | number {
+function _roundHalfUp<T>(value: T): T | number {
   return typeof value === "number" ? Math.floor(value + 0.5) : value;
 }
 
@@ -287,7 +380,7 @@ export function _roundHalfUp<T>(value: T): T | number {
  * must not stay linked to the property either. Complex values (Shape,
  * TextDocument, ...) write through to their chunks and are kept as is.
  */
-export function _ownList(value: PropertyValue): PropertyValue {
+function _ownList(value: PropertyValue): PropertyValue {
   return Array.isArray(value) ? [...value] : value;
 }
 
@@ -306,7 +399,7 @@ export function _ownList(value: PropertyValue): PropertyValue {
  * over a plain copy whose `set` trap is Python's `__setitem__`; methods
  * run on the plain copy, as the list methods py-aep does not override.
  */
-export class _PropertyValueList {
+class _PropertyValueList {
   static bind<T>(value: readonly T[], prop: Property): T[] {
     const _prop = new WeakRef(prop);
     const list: T[] = [...value];
@@ -378,7 +471,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * specified, or if the last expression string evaluated without error,
    * contains the empty string (`""`).
    *
-   * **Warning:** 
+   * **Warning:**
    * The parser cannot evaluate expressions, so this attribute is
    * always an empty string. After Effects computes expression errors
    * at runtime when it evaluates the expression engine; this
@@ -573,7 +666,10 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     // Pre-create cdat for numeric values so _ensure_materialized
     // only needs to flip synthetic flags.
     let _cdat: CdatChunk | null = null;
-    if (finalValue != null && (typeof finalValue === "number" || typeof finalValue === "boolean" || Array.isArray(finalValue))) {
+    if (
+      finalValue != null &&
+      (typeof finalValue === "number" || typeof finalValue === "boolean" || Array.isArray(finalValue))
+    ) {
       let rawVals: number[];
       if (Array.isArray(finalValue)) {
         rawVals = finalValue;
@@ -876,7 +972,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * this `ADBE Text VF Axis` property. `null` for non-axis properties
    * and for unused axis slots. Read-only.
    *
-   * **Warning:** 
+   * **Warning:**
    * `axisTag` does not exist in the ExtendScript API. It has
    * been added for convenience (ExtendScript surfaces the tag
    * only through the property's display name).
@@ -1380,12 +1476,9 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
       this._tdb4._propertyCategory = 0x09;
       this._tdb4._spatialMarker = true;
     } else if (
-      [
-        "ADBE Vector Position",
-        "ADBE Vector Anchor",
-        "ADBE Vector Grad Start Pt",
-        "ADBE Vector Grad End Pt",
-      ].includes(this.matchName)
+      ["ADBE Vector Position", "ADBE Vector Anchor", "ADBE Vector Grad Start Pt", "ADBE Vector Grad End Pt"].includes(
+        this.matchName,
+      )
     ) {
       // Static shape spatials (measured on an AE 2026 SVG-cropped
       // import: group transform Position/Anchor + gradient-fill
@@ -1445,7 +1538,10 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
       this._tdbs.chunks.splice(indexByIdentity(this._tdbs.chunks, this._tdb4) + 1, 0, cdat);
       this._cdat = cdat;
     } else if (this._cdat.values.length < target) {
-      this._cdat.values = [...this._cdat.values, ...Array.from({ length: target - this._cdat.values.length }, () => 0.0)];
+      this._cdat.values = [
+        ...this._cdat.values,
+        ...Array.from({ length: target - this._cdat.values.length }, () => 0.0),
+      ];
     }
     if (!keepCdat) this._writeCdat(value);
   }
@@ -1591,7 +1687,8 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
   _unresolveValue(value: _ValueType | boolean): _ValueType | boolean {
     if (value == null) return null;
     if (!(typeof value === "number" || typeof value === "boolean" || Array.isArray(value))) return value;
-    if (Array.isArray(value) && value?.length > 0 && !(typeof value[0] === "number" || typeof value[0] === "boolean")) return value;
+    if (Array.isArray(value) && value?.length > 0 && !(typeof value[0] === "number" || typeof value[0] === "boolean"))
+      return value;
     // 0. Variable-font axis: re-attach the tag dimension to a scalar
     //    ExtendScript-style value (raw 2-dim lists pass through).
     if (this._isVfAxis && (typeof value === "number" || typeof value === "boolean")) {
@@ -1630,7 +1727,8 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
   private _writeCdat(value: PropertyValue): void {
     if (this._cdat == null) return;
     if (!(typeof value === "number" || typeof value === "boolean" || Array.isArray(value))) return;
-    if (Array.isArray(value) && value?.length > 0 && !(typeof value[0] === "number" || typeof value[0] === "boolean")) return;
+    if (Array.isArray(value) && value?.length > 0 && !(typeof value[0] === "number" || typeof value[0] === "boolean"))
+      return;
     const rawValue = this._unresolveValue(value);
     const raw = [...this._cdat.values];
     if (Array.isArray(rawValue)) {
@@ -1727,7 +1825,11 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
       this.keyframes.length = 0;
       tdb4ApplyStaticTemplate(this._tdb4, { inInterpolation: 0, outInterpolation: 0, spatialFlags: 0 });
     }
-    this._arbs.chunks.splice(0, this._arbs.chunks.length, new Chunk({ chunkType: "aRbp", data: this._defaultArbp.data }));
+    this._arbs.chunks.splice(
+      0,
+      this._arbs.chunks.length,
+      new Chunk({ chunkType: "aRbp", data: this._defaultArbp.data }),
+    );
     this._curves = null;
   }
 
@@ -1923,7 +2025,8 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
       // would swallow `None` instead of rejecting it.
       _validateValue(this, value);
     }
-    if (value === this._value && !(typeof value === "number" || typeof value === "boolean" || Array.isArray(value))) return;
+    if (value === this._value && !(typeof value === "number" || typeof value === "boolean" || Array.isArray(value)))
+      return;
     if (this.keyframes?.length > 0) {
       // ExtendScript: "Can not call setValue() on a property with
       // keyframes." Writing a static value alongside keyframe data
@@ -1937,7 +2040,12 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
       // bare mask atom), so the default stays implicit here too.
       return;
     }
-    const complexValue = !(typeof value === "number" || typeof value === "boolean" || Array.isArray(value) || value == null);
+    const complexValue = !(
+      typeof value === "number" ||
+      typeof value === "boolean" ||
+      Array.isArray(value) ||
+      value == null
+    );
     // Arbitrary-data params (CUSTOM_VALUE, e.g. an effect's Curves /
     // ARBITRARY_DATA leaf) store their data in a separate blob, not the
     // numeric cdat. Writing a scalar/list into the cdat overflows it
@@ -2133,7 +2241,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * item strings are application resources absent from the file.
    * Read-only.
    *
-   * **Note:** 
+   * **Note:**
    * This functionality was added in After Effects 26.0.
    */
   get valueText(): string | null {
@@ -2167,9 +2275,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
   set propertyParameters(items: string[]) {
     const effect = this._parentProperty;
     if (!(this.isDropdownEffect && effect != null && effect.matchName.startsWith("Pseudo/"))) {
-      throw new ValueError(
-        "propertyParameters can only be set on the Menu property " + "of a Dropdown Menu Control.",
-      );
+      throw new ValueError("propertyParameters can only be set on the Menu property " + "of a Dropdown Menu Control.");
     }
     if (!Array.isArray(items) || !items?.length) {
       throw new ValueError("items must be a non-empty list of strings.");
@@ -2287,7 +2393,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * When `true`, the named property can vary over time - that is, keyframe
    * values or expressions can be written to this property.
    *
-   * **Note:** 
+   * **Note:**
    * A small subset of effect dropdown / menu parameters may report
    * `canVaryOverTime` as `false` in the binary even though After
    * Effects allows keyframing them.
@@ -2932,11 +3038,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     // default as "always modified". LAYER_INDEX is excluded because
     // its binary default (0 = "None" layer) is not stored in pard;
     // layer references should report False when unset.
-    if (
-      this.value != null &&
-      this._isInEffect() &&
-      this.propertyValueType !== PropertyValueType.LAYER_INDEX
-    ) {
+    if (this.value != null && this._isInEffect() && this.propertyValueType !== PropertyValueType.LAYER_INDEX) {
       return true;
     }
     return false;
@@ -2986,9 +3088,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    */
   set alternateSource(source: AVItem) {
     if (!this.canSetAlternateSource || this._blsi == null) {
-      throw new ValueError(
-        "This property does not support media replacement " + "(canSetAlternateSource is false).",
-      );
+      throw new ValueError("This property does not support media replacement " + "(canSetAlternateSource is false).");
     }
     if (!(source instanceof AVItem)) {
       throw new TypeError(`alternate source must be an AVItem, not ${typeName(source)}`);
@@ -3023,14 +3123,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     const project = host._project;
     const folder = _findOrCreateWrapperFolder(project);
     const name = `${this.name}_${_uniqueWrapperSuffix(footage, project)}`;
-    const wrapper = folder.addComp(
-      name,
-      host.width,
-      host.height,
-      host.pixelAspect,
-      host.duration,
-      host.frameRate,
-    );
+    const wrapper = folder.addComp(name, host.width, host.height, host.pixelAspect, host.duration, host.frameRate);
     // AE's wrapper comp shares the host comp's cdta exactly (timebase,
     // shutter phase, work area) - `addComp`'s fresh skeleton diverges on
     // time_divisor/work_area_start_divisor/shutter_phase, so clone the host
@@ -3067,10 +3160,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     // A Dropdown Menu Control is a `Pseudo/@@<id>` effect (its Essential
     // Graphics override leaf keeps that match name). AE 2026 reports
     // false on every other popup, named pseudo effects' ones included.
-    return (
-      this._propertyControlType === PropertyControlType.ENUM &&
-      this.matchName.startsWith("Pseudo/@@")
-    );
+    return this._propertyControlType === PropertyControlType.ENUM && this.matchName.startsWith("Pseudo/@@");
   }
 
   /** `true` if the named property has keyframes or an enabled expression. */
@@ -3758,8 +3848,12 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     const v1 = nextKf._storedValue;
     if (!Array.isArray(v0) || !Array.isArray(v1)) return 0.0;
     const ndim = v0.length;
-    const outTangent = prevKf.outSpatialTangent?.length ? prevKf.outSpatialTangent : Array.from({ length: ndim }, () => 0.0);
-    const inTangent = nextKf.inSpatialTangent?.length ? nextKf.inSpatialTangent : Array.from({ length: ndim }, () => 0.0);
+    const outTangent = prevKf.outSpatialTangent?.length
+      ? prevKf.outSpatialTangent
+      : Array.from({ length: ndim }, () => 0.0);
+    const inTangent = nextKf.inSpatialTangent?.length
+      ? nextKf.inSpatialTangent
+      : Array.from({ length: ndim }, () => 0.0);
     return motionPathLength(v0, v1, outTangent, inTangent, this._arcMetric);
   }
 
@@ -3794,8 +3888,12 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     const v1 = nextKf._storedValue;
     if (!Array.isArray(v0) || !Array.isArray(v1)) return;
     const ndim = v0.length;
-    const outTangent = prevKf.outSpatialTangent?.length ? prevKf.outSpatialTangent : Array.from({ length: ndim }, () => 0.0);
-    const inTangent = nextKf.inSpatialTangent?.length ? nextKf.inSpatialTangent : Array.from({ length: ndim }, () => 0.0);
+    const outTangent = prevKf.outSpatialTangent?.length
+      ? prevKf.outSpatialTangent
+      : Array.from({ length: ndim }, () => 0.0);
+    const inTangent = nextKf.inSpatialTangent?.length
+      ? nextKf.inSpatialTangent
+      : Array.from({ length: ndim }, () => 0.0);
     if (_tangentsAreZero(outTangent) && _tangentsAreZero(inTangent)) return;
     const [leftOut, newIn, _split, newOut, rightIn] = splitSpatialPath(v0, v1, outTangent, inTangent, u);
     prevKf.outSpatialTangent = leftOut;
@@ -3894,7 +3992,9 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     const chunks = this._tdbs.chunks;
     this._staticTdb4(lastKey);
     const raw =
-      typeof value === "number" || typeof value === "boolean" || Array.isArray(value) ? this._unresolveValue(value) : null;
+      typeof value === "number" || typeof value === "boolean" || Array.isArray(value)
+        ? this._unresolveValue(value)
+        : null;
     let rawVals: number[];
     if (typeof raw === "number" || typeof raw === "boolean") {
       rawVals = [raw];
@@ -3988,12 +4088,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     if (srcW !== dstW || srcH !== dstH) {
       // Scale then divide: a pixel-space value divided by the layer size
       // stays bit-identical to the plain division.
-      bbox = [
-        (bbox[0] * srcW) / dstW,
-        (bbox[1] * srcH) / dstH,
-        (bbox[2] * srcW) / dstW,
-        (bbox[3] * srcH) / dstH,
-      ];
+      bbox = [(bbox[0] * srcW) / dstW, (bbox[1] * srcH) / dstH, (bbox[2] * srcW) / dstW, (bbox[3] * srcH) / dstH];
     }
     let tensions: number[] | null = null;
     const mask = this._parentProperty;
@@ -4214,7 +4309,11 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * When `value` is omitted, the value is taken from the kind's
    * `heldValue` (interpolated for orientation, held otherwise).
    */
-  private _addParallelKey(time: number, kind: ParallelKind, value: _ValueType | typeof _USE_VALUE = _USE_VALUE): number {
+  private _addParallelKey(
+    time: number,
+    kind: ParallelKind,
+    value: _ValueType | typeof _USE_VALUE = _USE_VALUE,
+  ): number {
     if (kind === TEXT_KIND) return this._addTextKey(time, value);
     // Check the time and a given value before building the container:
     // that build materializes a fresh mask's default path, and a
@@ -4712,7 +4811,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
 }
 
 /** Revert a separation follower to its dead, unserialized state. */
-export function _deactivateFollower(follower: Property): void {
+function _deactivateFollower(follower: Property): void {
   // Its chunks stop being written and its value goes back to the 0 AE reports
   // for an inactive follower (measured: AE's own export of a never-separated
   // layer gives X / Y / Z = 0 even for a position of [960, 540, 0]). Without
@@ -4724,7 +4823,7 @@ export function _deactivateFollower(follower: Property): void {
 }
 
 /** Per-dimension `(v0, v1)` pairs for the segment, or `null` if not numeric. */
-export function _segmentComponents(prevKf: Keyframe, nextKf: Keyframe): [number[][], number] | null {
+function _segmentComponents(prevKf: Keyframe, nextKf: Keyframe): [number[][], number] | null {
   const v0 = prevKf._storedValue;
   const v1 = nextKf._storedValue;
   if ((typeof v0 === "number" || typeof v0 === "boolean") && (typeof v1 === "number" || typeof v1 === "boolean")) {
@@ -4877,7 +4976,7 @@ Object.defineProperty(_EssentialOverrideProperty.prototype, "enabled", {
  * The root-level `Media Replacement Comps` folder, reused if present
  * (matching AE) or created at the project root.
  */
-export function _findOrCreateWrapperFolder(project: Project): FolderItem {
+function _findOrCreateWrapperFolder(project: Project): FolderItem {
   const root = project.rootFolder;
   for (const item of project.items.values()) {
     if (item instanceof _folder.FolderItem && item.name === "Media Replacement Comps" && item.parentFolder === root) {
@@ -4891,7 +4990,7 @@ export function _findOrCreateWrapperFolder(project: Project): FolderItem {
  * The placed footage's basename, made unique against existing item names
  * with AE's ` N` scheme (bare if free, else the first free integer \>= 2).
  */
-export function _uniqueWrapperSuffix(footage: FootageItem, project: Project): string {
+function _uniqueWrapperSuffix(footage: FootageItem, project: Project): string {
   const base = _stripSequenceBasename(footage.name);
   const names = new Set([...project.items.values()].map((item) => item.name));
   if (!names.has(base)) return base;
@@ -4904,7 +5003,7 @@ export function _uniqueWrapperSuffix(footage: FootageItem, project: Project): st
  * Footage display name -\> AE wrapper basename: drop the extension and any
  * trailing image-sequence frame range (`foo_[001-003].gif` -\> `foo`).
  */
-export function _stripSequenceBasename(name: string): string {
+function _stripSequenceBasename(name: string): string {
   const stem = name.includes(".") ? name.slice(0, name.lastIndexOf(".")) : name;
   return stem.replace(/[ _]?\[\p{Nd}+-\p{Nd}+\](?=\n?$)/u, "");
 }

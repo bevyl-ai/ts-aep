@@ -13,8 +13,10 @@
  * float32 evaluation lands on the other side of the tie).
  */
 
-import { INSPECT, describe, compare } from "../../../pyrt/index.ts";
 import {
+  INSPECT,
+  describe,
+  compare,
   ValueError,
   bytesEqual,
   getOrThrow,
@@ -49,16 +51,16 @@ export class _NaturalSpline {
     this.ys = pts.map((p) => p[1]);
     const n = pts.length;
     // Second derivatives, 0 at both ends.
-    this.m = new Array<number>(n).fill(0.0);
+    this.m = Array.from({ length: n }, () => 0.0);
     if (n < 3) return;
     const xs = this.xs;
     const ys = this.ys;
     const h: number[] = [];
     for (let i = 0; i < n - 1; i++) h.push(xs[i + 1] - xs[i]);
-    const a = new Array<number>(n).fill(0.0);
-    const b = new Array<number>(n).fill(1.0);
-    const c = new Array<number>(n).fill(0.0);
-    const d = new Array<number>(n).fill(0.0);
+    const a = Array.from({ length: n }, () => 0.0);
+    const b = Array.from({ length: n }, () => 1.0);
+    const c = Array.from({ length: n }, () => 0.0);
+    const d = Array.from({ length: n }, () => 0.0);
     for (let i = 1; i < n - 1; i++) {
       a[i] = h[i - 1];
       b[i] = 2.0 * (h[i - 1] + h[i]);
@@ -119,13 +121,7 @@ export class CurvesChannel {
   declare _usesPoints: boolean;
   declare _spline: _NaturalSpline;
 
-  constructor(
-    name: string,
-    points: Array<[number, number]>,
-    lut: Uint8Array,
-    selected: number,
-    usesPoints = true,
-  ) {
+  constructor(name: string, points: Array<[number, number]>, lut: Uint8Array, selected: number, usesPoints = true) {
     this._name = name;
     this._points = points;
     this._map = lut;
@@ -222,10 +218,7 @@ export class Curves {
           [255, lut[255]],
         ];
       }
-      obj._channels.set(
-        name,
-        new CurvesChannel(name, points, lut, record.selected, obj.usesPoints),
-      );
+      obj._channels.set(name, new CurvesChannel(name, points, lut, record.selected, obj.usesPoints));
     }
     return obj;
   }
@@ -235,9 +228,7 @@ export class Curves {
    * bytes differ by the stale points and junk AE leaves).
    */
   _sameCurves(other: Curves): boolean {
-    return Array.from(this._channels).every(([name, ch]) =>
-      ch._sameCurve(getOrThrow(other._channels, name)),
-    );
+    return Array.from(this._channels).every(([name, ch]) => ch._sameCurve(getOrThrow(other._channels, name)));
   }
 
   /**
@@ -288,9 +279,7 @@ export class Curves {
    */
   evaluate(channel: string, x: number, clamp = true): number {
     if (!CURVES_CHANNELS.includes(channel)) {
-      throw new ValueError(
-        `channel must be one of ${CURVES_CHANNELS.join(", ")}, not ${literal(channel)}`,
-      );
+      throw new ValueError(`channel must be one of ${CURVES_CHANNELS.join(", ")}, not ${literal(channel)}`);
     }
     validateNumber(x);
     const ch = getOrThrow(this._channels, channel);

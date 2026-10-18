@@ -1,13 +1,26 @@
 /** Import options for importing files into an After Effects project. */
 
-import { INSPECT, describe } from "../../pyrt/index.ts";
-import { AI_COMP_EXTENSIONS, COMP_CONVERSION_EXTENSIONS, PSD_COMP_EXTENSIONS, getFileFormat, getImportAsTypes, type FileFormat } from "../data/file_formats.ts";
+import { INSPECT, describe, Path, ValueError, type PathLike, pyRe } from "../../pyrt/index.ts";
+import {
+  AI_COMP_EXTENSIONS,
+  COMP_CONVERSION_EXTENSIONS,
+  PSD_COMP_EXTENSIONS,
+  getFileFormat,
+  getImportAsTypes,
+  type FileFormat,
+} from "../data/file_formats.ts";
 import { ImportAsType } from "../enums/index.ts";
-import { validateBool, validateEnum, validateOneOf, validatePath, validatePositiveInt, validateU4 } from "./validators.ts";
-import { Path, ValueError, type PathLike, pyRe } from "../../pyrt/index.ts";
+import {
+  validateBool,
+  validateEnum,
+  validateOneOf,
+  validatePath,
+  validatePositiveInt,
+  validateU4,
+} from "./validators.ts";
 
 // Pattern to match trailing digits in a filename stem (e.g. "frame001").
-export const _NUMBERED_RE = pyRe(String.raw`(\d+)$`);
+const _NUMBERED_RE = pyRe(String.raw`(\d+)$`);
 
 /** Type of the `CURRENT_VALUE` sentinel. */
 export class _CurrentValue {
@@ -96,8 +109,7 @@ export class ImportOptions {
   set layerIndex(value: number | null | _CurrentValue) {
     if (value instanceof _CurrentValue) {
       throw new ValueError(
-        "CURRENT_VALUE is only valid for FootageItem.replace; an " +
-          "import has no current binding to keep",
+        "CURRENT_VALUE is only valid for FootageItem.replace; an " + "import has no current binding to keep",
       );
     }
     if (value != null) validatePositiveInt(value);
@@ -168,8 +180,7 @@ export class ImportOptions {
   set layerStyles(value: string | null | _CurrentValue) {
     if (value instanceof _CurrentValue) {
       throw new ValueError(
-        "CURRENT_VALUE is only valid for FootageItem.replace; an " +
-          "import has no current binding to keep",
+        "CURRENT_VALUE is only valid for FootageItem.replace; an " + "import has no current binding to keep",
       );
     }
     if (value != null) validateOneOf(["editable", "merge", "ignore"])(value);

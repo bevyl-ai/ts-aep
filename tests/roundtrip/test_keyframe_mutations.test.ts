@@ -7,7 +7,22 @@
  */
 
 import { describe, expect, test } from "bun:test";
-import { AssertionError, ByteStream, at, contains, getMember, getOrThrow, len, Path, truthy, valueEquals, assert, pySlice, StopIteration, ValueError } from "../../src/pyrt/index.ts";
+import {
+  AssertionError,
+  ByteStream,
+  at,
+  contains,
+  getMember,
+  getOrThrow,
+  len,
+  Path,
+  truthy,
+  valueEquals,
+  assert,
+  pySlice,
+  StopIteration,
+  ValueError,
+} from "../../src/pyrt/index.ts";
 
 import { parse as parseAep } from "../../src/py_aep/index.ts";
 import type { Application } from "../../src/py_aep/index.ts";
@@ -177,9 +192,13 @@ describe("TestAddKey", () => {
     expect(truthy(op.keyframes)).toBe(false);
     const before = op.value;
 
-    raises(ValueError, () => {
-      op.addKey(1e9);
-    }, "32-bit keyframe time field");
+    raises(
+      ValueError,
+      () => {
+        op.addKey(1e9);
+      },
+      "32-bit keyframe time field",
+    );
 
     expect(truthy(op.keyframes)).toBe(false);
     expect(valueEquals(op.value, before)).toBe(true);
@@ -211,7 +230,10 @@ describe("TestAddKey", () => {
     expect(prop._animated).toBe(true);
     expect(prop.keyframes.length).toBe(2);
     const app2 = _roundtrip(app, tmpPath);
-    const prop2 = asInstance([...app2.project.compositions[0].layers[li].transform].find((p) => p.matchName === "ADBE Rotate Z"), Property);
+    const prop2 = asInstance(
+      [...app2.project.compositions[0].layers[li].transform].find((p) => p.matchName === "ADBE Rotate Z"),
+      Property,
+    );
     expect(prop2.keyframes.length).toBe(2);
     expect(approx(prop2.keyframes[1].value, 25.0)).toBe(true);
   });
@@ -236,7 +258,10 @@ describe("TestAddKey", () => {
     const kinds = scale._tdbs.chunks.map((c) => getMember(c, "chunkType", null));
     expect(kinds.includes("tdum") && kinds.includes("tduM")).toBe(true);
     const app2 = _roundtrip(app, tmpPath);
-    const scale2 = asInstance([...app2.project.compositions[0].layers[li].transform].find((p) => p.matchName === "ADBE Scale"), Property);
+    const scale2 = asInstance(
+      [...app2.project.compositions[0].layers[li].transform].find((p) => p.matchName === "ADBE Scale"),
+      Property,
+    );
     expect(scale2.keyframes.length).toBe(2);
   });
 
@@ -404,9 +429,7 @@ describe("TestRemoveAllKeys", () => {
   test("test_layer_remove_all_keys_recursive", () => {
     const tmpPath = makeTmpPath();
     const app = parseAep(SAMPLES_ROOT.div("models", "property", "all_animated.aep"));
-    expect(
-      app.project.compositions.some((comp) => comp.layers.some((lay) => truthy(_keyframedProps(lay)))),
-    ).toBe(true);
+    expect(app.project.compositions.some((comp) => comp.layers.some((lay) => truthy(_keyframedProps(lay))))).toBe(true);
     for (const comp of app.project.compositions) {
       for (const lay of comp.layers) {
         lay.removeAllKeys();
@@ -476,7 +499,12 @@ describe("TestComplexTypeKeyframes", () => {
     expect(o.keyframes.length).toBe(n0 + 1);
     const app2 = _roundtrip(app, tmpPath);
     const o2 = _prop(app2, "ADBE Orientation");
-    expect(contains(o2.keyframes.map((k) => k.value), [12.0, 34.0, 56.0])).toBe(true);
+    expect(
+      contains(
+        o2.keyframes.map((k) => k.value),
+        [12.0, 34.0, 56.0],
+      ),
+    ).toBe(true);
     o2.removeKey(0);
     expect(o2.keyframes.length).toBe(n0);
   });
@@ -662,7 +690,12 @@ describe("TestComplexTypeKeyframes", () => {
     const comp3 = app3.project.compositions.find((c) => c.name === "layer_multiple_markers");
     if (comp3 === undefined) throw new StopIteration();
     const mp3 = comp3.layers[0].property("ADBE Marker");
-    expect(valueEquals(mp3.keyframes.map((k) => k.value.comment), ["back"])).toBe(true);
+    expect(
+      valueEquals(
+        mp3.keyframes.map((k) => k.value.comment),
+        ["back"],
+      ),
+    ).toBe(true);
   });
 
   test("test_remove_last_text_key_reverts_to_static", () => {
@@ -830,7 +863,12 @@ describe("TestComplexTypeKeyframes", () => {
     const app3 = _roundtrip(app2, tmpPath);
     const t3 = getText(app3);
     assert(t3 != null);
-    expect(valueEquals(t3.keyframes.map((k) => k.value.text), [original, "Second"])).toBe(true);
+    expect(
+      valueEquals(
+        t3.keyframes.map((k) => k.value.text),
+        [original, "Second"],
+      ),
+    ).toBe(true);
   });
 
   test("test_animate_static_mask_shape", () => {
@@ -926,7 +964,12 @@ describe("TestComplexTypeKeyframes", () => {
     mp.setValueAtTime(1.0, new MarkerValue("first"));
     const app2 = _roundtrip(app, tmpPath);
     const mp2 = app2.project.compositions[0].layers[0].property("ADBE Marker");
-    expect(valueEquals(mp2.keyframes.map((k) => k.value.comment), ["first"])).toBe(true);
+    expect(
+      valueEquals(
+        mp2.keyframes.map((k) => k.value.comment),
+        ["first"],
+      ),
+    ).toBe(true);
     expect(approx(mp2.keyframes[0].time, 1.0)).toBe(true);
     mp2.removeKey(0);
     const app3 = _roundtrip(app2, tmpPath);
@@ -1670,8 +1713,8 @@ describe("TestRoundtripAutoBezierWrites", () => {
       const out = tmpPath.div("modified.aep");
       project.save(out);
       const prop2 = asInstance(
-        parseAep(out).project.compositions[0].layers
-          .flatMap((layer) => layer.transform.properties)
+        parseAep(out)
+          .project.compositions[0].layers.flatMap((layer) => layer.transform.properties)
           .find((g) => truthy(asInstance(g, Property).keyframes)),
         Property,
       );

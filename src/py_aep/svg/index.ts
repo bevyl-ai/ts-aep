@@ -11,12 +11,4 @@
 
 export { UnsupportedSVGError } from "./errors.ts";
 export { readSvg } from "./reader.ts";
-export {
-  GradientPaint,
-  GradientStop,
-  SolidPaint,
-  StrokeStyle,
-  Subpath,
-  SvgDocument,
-  SvgDrawable,
-} from "./types.ts";
+export { GradientPaint, GradientStop, SolidPaint, Subpath, SvgDocument } from "./types.ts";

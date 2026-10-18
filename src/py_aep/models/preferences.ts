@@ -3,7 +3,15 @@
 import { PREFType } from "../enums/general.ts";
 import { AutoKernType, ParagraphJustification } from "../enums/text_document.ts";
 import { parseCompPresets, type CompPreset } from "../parsers/comp_presets.ts";
-import { PrefsFile, decodePrefBool, decodePrefNumber, decodePrefString, findPrefsFile, parseHexValue, parseNumberText } from "../parsers/prefs.ts";
+import {
+  PrefsFile,
+  decodePrefBool,
+  decodePrefNumber,
+  decodePrefString,
+  findPrefsFile,
+  parseHexValue,
+  parseNumberText,
+} from "../parsers/prefs.ts";
 import { validateBool, validateEnum, validateName, validateNumber } from "./validators.ts";
 import type { TextDocument } from "./text/text_document.ts";
 import {
@@ -17,9 +25,10 @@ import {
   compositeKey,
   zip,
   typeName,
-  compare } from "../../pyrt/index.ts";
+  compare,
+} from "../../pyrt/index.ts";
 
-export const _validatePrefType = validateEnum(PREFType);
+const _validatePrefType = validateEnum(PREFType);
 
 // Tombstone marking a key removed by delete_pref (masks the file value).
 export const _DELETED: unique symbol = Symbol("_DELETED");
@@ -27,7 +36,7 @@ export const _DELETED: unique symbol = Symbol("_DELETED");
 /** A preference value as a setter stores it. */
 export type PrefValue = number | boolean | string;
 
-export const _LABEL_INDICES_SECTION = "Label Preference Indices Section 5";
+const _LABEL_INDICES_SECTION = "Label Preference Indices Section 5";
 
 /**
  * Resolve a default label color index from the label preferences.
@@ -38,12 +47,9 @@ export const _LABEL_INDICES_SECTION = "Label Preference Indices Section 5";
  *   is absent.
  */
 export function labelIndex(preferences: Preferences, key: string, default_: number): number {
-  const value = preferences.getPrefAsNumber(
-    _LABEL_INDICES_SECTION,
-    key,
-    PREFType.PREF_Type_MACHINE_INDEPENDENT,
-    { default: default_ },
-  );
+  const value = preferences.getPrefAsNumber(_LABEL_INDICES_SECTION, key, PREFType.PREF_Type_MACHINE_INDEPENDENT, {
+    default: default_,
+  });
   return Math.trunc(value);
 }
 
@@ -63,7 +69,7 @@ export function defaultSequenceFps(preferences: Preferences): number {
   return value;
 }
 
-export const _CHOOSE_LAYER_SECTION = "Choose Layer Dialog";
+const _CHOOSE_LAYER_SECTION = "Choose Layer Dialog";
 
 // AE's PSD/PSB import-dialog popup indices, probed in AE 2026 by toggling
 // each dropdown and re-reading the machine-specific prefs. These are dialog
@@ -71,15 +77,15 @@ export const _CHOOSE_LAYER_SECTION = "Choose Layer Dialog";
 // there ({merge:0, ignore:1} here vs the c9 {ignore:0, merge:1}). AE's own
 // importFile follows the last sticky choice, so py_aep uses them to fill an
 // unset ImportOptions field.
-export const _PSD_COMP_LAYER_STYLES: Map<number, string> = new Map<number, string>([
+const _PSD_COMP_LAYER_STYLES: Map<number, string> = new Map<number, string>([
   [0, "editable"],
   [1, "merge"],
 ]);
-export const _PSD_FOOTAGE_LAYER_STYLES: Map<number, string> = new Map<number, string>([
+const _PSD_FOOTAGE_LAYER_STYLES: Map<number, string> = new Map<number, string>([
   [0, "merge"],
   [1, "ignore"],
 ]);
-export const _PSD_FOOTAGE_DIMENSIONS: Map<number, string> = new Map<number, string>([
+const _PSD_FOOTAGE_DIMENSIONS: Map<number, string> = new Map<number, string>([
   [0, "layer"],
   [1, "document"],
 ]);
@@ -88,7 +94,7 @@ export const _PSD_FOOTAGE_DIMENSIONS: Map<number, string> = new Map<number, stri
  * Resolve a `Choose Layer Dialog` popup index to its string value, or
  * `null` when the preference is unset (or holds an unknown index).
  */
-export function _chooseLayerPref(preferences: Preferences, key: string, mapping: Map<number, string>): string | null {
+function _chooseLayerPref(preferences: Preferences, key: string, mapping: Map<number, string>): string | null {
   if (!preferences.havePref(_CHOOSE_LAYER_SECTION, key, PREFType.PREF_Type_MACHINE_SPECIFIC)) {
     return null;
   }
@@ -127,17 +133,17 @@ export function psdFootageDimensions(preferences: Preferences): string | null {
   return _chooseLayerPref(preferences, "PSD Dimensions Popup", _PSD_FOOTAGE_DIMENSIONS);
 }
 
-export const _TEXT_STYLE_SECTION = "Text Style Sheet";
-export const _PARA_SHEET_SECTION = "Text Paragraph Sheet";
-export const _TXT = PREFType.PREF_Type_MACHINE_SPECIFIC_TEXT;
+const _TEXT_STYLE_SECTION = "Text Style Sheet";
+const _PARA_SHEET_SECTION = "Text Paragraph Sheet";
+const _TXT = PREFType.PREF_Type_MACHINE_SPECIFIC_TEXT;
 
 // The horizontal/vertical scale preferences are percentages, while the
 // document stores (and ExtendScript reports) a fraction.
-export const _SCALE_PERCENT = 100.0;
+const _SCALE_PERCENT = 100.0;
 
 // AE's factory Character/Paragraph panel values, used when the preference
 // file is unavailable (a project parsed without an `aePreferencesDir`).
-export const _FACTORY_CHAR_STYLE = {
+const _FACTORY_CHAR_STYLE = {
   font: "MyriadPro-Regular",
   font_size: 36.0,
   faux_bold: false,
@@ -160,12 +166,12 @@ export const _FACTORY_CHAR_STYLE = {
 } as const;
 
 // AE names the Character panel's kerning modes in prose.
-export const _AUTO_KERN_BY_PREF: Map<string, AutoKernType> = new Map<string, AutoKernType>([
+const _AUTO_KERN_BY_PREF: Map<string, AutoKernType> = new Map<string, AutoKernType>([
   ["No Auto Kerning", AutoKernType.NO_AUTO_KERN],
   ["Metric Auto Kerning", AutoKernType.METRIC_KERN],
   ["Optical Auto Kerning", AutoKernType.OPTICAL_KERN],
 ]);
-export const _FACTORY_PARA_STYLE = {
+const _FACTORY_PARA_STYLE = {
   justification: ParagraphJustification.LEFT_JUSTIFY,
   first_line_indent: 0.0,
   start_indent: 0.0,
@@ -177,14 +183,14 @@ export const _FACTORY_PARA_STYLE = {
 } as const;
 
 // AE writes the horizontal half of "Justification" before a `|`.
-export const _JUSTIFICATION_BY_PREF: Map<string, ParagraphJustification> = new Map<string, ParagraphJustification>([
+const _JUSTIFICATION_BY_PREF: Map<string, ParagraphJustification> = new Map<string, ParagraphJustification>([
   ["Left", ParagraphJustification.LEFT_JUSTIFY],
   ["Center", ParagraphJustification.CENTER_JUSTIFY],
   ["Right", ParagraphJustification.RIGHT_JUSTIFY],
 ]);
 
 /** Build `(number, flag)` readers over one machine-specific text sheet. */
-export function _sheetReaders(
+function _sheetReaders(
   preferences: Preferences,
   section: string,
 ): [(key: string, fallback: number) => number, (key: string, fallback: boolean) => boolean] {
@@ -222,9 +228,14 @@ export function defaultCharacterStyle(preferences: Preferences) {
     number("Stroke Blue", factory.stroke_color[2]),
   ];
   return {
-    font: preferences.getPrefAsString(_TEXT_STYLE_SECTION, "Font PostScript Name", PREFType.PREF_Type_MACHINE_SPECIFIC_TEXT, {
-      default: factory.font,
-    }),
+    font: preferences.getPrefAsString(
+      _TEXT_STYLE_SECTION,
+      "Font PostScript Name",
+      PREFType.PREF_Type_MACHINE_SPECIFIC_TEXT,
+      {
+        default: factory.font,
+      },
+    ),
     font_size: number("Size", factory.font_size),
     faux_bold: flag("Synthetic Bold", factory.faux_bold),
     faux_italic: flag("Synthetic Italic", factory.faux_italic),
@@ -240,9 +251,14 @@ export function defaultCharacterStyle(preferences: Preferences) {
     vertical_scale: number("Vertical Scale", factory.vertical_scale * _SCALE_PERCENT) / _SCALE_PERCENT,
     baseline_shift: number("Baseline Shift", factory.baseline_shift),
     auto_leading: flag("Auto Leading", factory.auto_leading),
-    auto_kern_type: _AUTO_KERN_BY_PREF.get(preferences.getPrefAsString(_TEXT_STYLE_SECTION, "Auto Kerning Type", PREFType.PREF_Type_MACHINE_SPECIFIC_TEXT, {
-          default: "Metric Auto Kerning",
-        }).trim()) ?? factory.auto_kern_type,
+    auto_kern_type:
+      _AUTO_KERN_BY_PREF.get(
+        preferences
+          .getPrefAsString(_TEXT_STYLE_SECTION, "Auto Kerning Type", PREFType.PREF_Type_MACHINE_SPECIFIC_TEXT, {
+            default: "Metric Auto Kerning",
+          })
+          .trim(),
+      ) ?? factory.auto_kern_type,
   };
 }
 
@@ -257,9 +273,14 @@ export function defaultCharacterStyle(preferences: Preferences) {
 export function defaultParagraphStyle(preferences: Preferences) {
   const [number, flag] = _sheetReaders(preferences, _PARA_SHEET_SECTION);
   const factory = _FACTORY_PARA_STYLE;
-  const rawJustification = preferences.getPrefAsString(_PARA_SHEET_SECTION, "Justification", PREFType.PREF_Type_MACHINE_SPECIFIC_TEXT, {
-    default: "Left",
-  });
+  const rawJustification = preferences.getPrefAsString(
+    _PARA_SHEET_SECTION,
+    "Justification",
+    PREFType.PREF_Type_MACHINE_SPECIFIC_TEXT,
+    {
+      default: "Left",
+    },
+  );
   const justification = _JUSTIFICATION_BY_PREF.get(rawJustification.split("|")[0].trim()) ?? factory.justification;
   return {
     justification,
@@ -280,7 +301,7 @@ export function defaultParagraphStyle(preferences: Preferences) {
  * value), meaning "composition duration". Semantics probed in AE 2026:
  * `75/25` gives new layers a 3-second span.
  */
-export function _defaultOutPoint(preferences: Preferences, key: string): number | null {
+function _defaultOutPoint(preferences: Preferences, key: string): number | null {
   const raw = preferences.getPrefAsString("Main Pref Section v2", key, PREFType.PREF_Type_MACHINE_INDEPENDENT, {
     default: "0/0",
   });
@@ -346,7 +367,7 @@ export function applyTextStylePrefs(document: TextDocument, preferences: Prefere
   const tracking = number("Tracking");
   if (tracking != null && differs(document.tracking, tracking)) {
     // tracking is an integer field, unlike the float Size/Baseline Shift.
-    document.tracking = (Math.round(tracking) + 0);
+    document.tracking = Math.round(tracking) + 0;
   }
 
   const baselineShift = number("Baseline Shift");
@@ -469,7 +490,11 @@ export class Preferences {
    * `value` is a typed value when `isOverride` is `true`,
    * otherwise the raw pref-file text (AE's mixed hex/ASCII encoding).
    */
-  private _resolve(sectionName: string, keyName: string, prefType: PREFType): [false, null, false] | [true, PrefValue, true] | [true, string, false] {
+  private _resolve(
+    sectionName: string,
+    keyName: string,
+    prefType: PREFType,
+  ): [false, null, false] | [true, PrefValue, true] | [true, string, false] {
     validateName(sectionName);
     validateName(keyName);
     _validatePrefType(prefType);
@@ -661,11 +686,7 @@ export class Preferences {
    * @param keyName - The key name of the preference.
    * @param prefType - The preference file the preference is read from.
    */
-  havePref(
-    sectionName: string,
-    keyName: string,
-    prefType: PREFType = PREFType.PREF_Type_MACHINE_SPECIFIC,
-  ): boolean {
+  havePref(sectionName: string, keyName: string, prefType: PREFType = PREFType.PREF_Type_MACHINE_SPECIFIC): boolean {
     const [found] = this._resolve(sectionName, keyName, prefType);
     return found;
   }
@@ -681,11 +702,7 @@ export class Preferences {
    * @param keyName - The key name of the preference.
    * @param prefType - The preference file the preference belongs to.
    */
-  deletePref(
-    sectionName: string,
-    keyName: string,
-    prefType: PREFType = PREFType.PREF_Type_MACHINE_SPECIFIC,
-  ): void {
+  deletePref(sectionName: string, keyName: string, prefType: PREFType = PREFType.PREF_Type_MACHINE_SPECIFIC): void {
     validateName(sectionName);
     validateName(keyName);
     _validatePrefType(prefType);
@@ -742,7 +759,9 @@ export class Preferences {
     for (const key of [...section.keys()].sort(compare)) {
       // Each entry is `<name> NUL <template> NUL` in AE's mixed
       // hex/ASCII encoding.
-      const parts = Bytes.split(parseHexValue(getOrThrow(section, key)), new Uint8Array(1)).filter((p) => p?.length > 0);
+      const parts = Bytes.split(parseHexValue(getOrThrow(section, key)), new Uint8Array(1)).filter(
+        (p) => p?.length > 0,
+      );
       if (parts.length >= 2) {
         const name = decode(parts[0], "utf-8", "replace");
         presets.set(name, decode(parts[1], "utf-8", "replace"));

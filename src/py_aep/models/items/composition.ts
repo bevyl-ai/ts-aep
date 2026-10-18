@@ -2,18 +2,65 @@ import { uuid4 } from "../../../pyrt/uuid.ts";
 
 import { aeWrites, getAeVersionMajor, requiresVersion } from "../../ae_version.ts";
 import { DeferredListChunk, ListChunk, type Chunk } from "../../binary/chunk.ts";
-import { _durationUnits, _frameUnits, buildCps2, buildItemViewChunks, buildLayerViewBlock, buildNewCompItem } from "../../binary/comp_skeleton.ts";
-import { WORK_AREA_TO_END, type CdtaChunk, frameGrid, layerTimebase, rescaleTicks } from "../../binary/composition_chunks.ts";
+import {
+  _durationUnits,
+  _frameUnits,
+  buildCps2,
+  buildItemViewChunks,
+  buildLayerViewBlock,
+  buildNewCompItem,
+} from "../../binary/comp_skeleton.ts";
+import {
+  WORK_AREA_TO_END,
+  type CdtaChunk,
+  frameGrid,
+  layerTimebase,
+  rescaleTicks,
+} from "../../binary/composition_chunks.ts";
 import type { CmtaChunk, IdtaChunk } from "../../binary/item_chunks.ts";
 import { _LDTA_SOURCE_ID_END, _LDTA_SOURCE_ID_OFFSET } from "../../binary/layer_chunks.ts";
 import { _PRDA_VARIANTS, PguiChunk, type PrdaChunk, type PrinChunk } from "../../binary/misc_chunks.ts";
-import { buildCheckboxCctl, buildColorCctl, buildMediaCctl, buildOvg2, buildSliderCctl, buildSourceAlternateExtras, buildTextCctl, cloneChunkTree, collectLayerRefTdpiIds, remapLayerRefTdpi, rewriteOwnerTdpi, stripSynthetic } from "../../binary/mutations.ts";
+import {
+  buildCheckboxCctl,
+  buildColorCctl,
+  buildMediaCctl,
+  buildOvg2,
+  buildSliderCctl,
+  buildSourceAlternateExtras,
+  buildTextCctl,
+  cloneChunkTree,
+  collectLayerRefTdpiIds,
+  remapLayerRefTdpi,
+  rewriteOwnerTdpi,
+  stripSynthetic,
+} from "../../binary/mutations.ts";
 import { TDSN_SENTINEL, CdatChunk, Tdb4Chunk, TdmnChunk, TdsbChunk, TdsnChunk } from "../../binary/property_chunks.ts";
 import { F8Chunk, S4Chunk, type U1Chunk, type U4Chunk, type Utf8Chunk } from "../../binary/scalar_chunks.ts";
-import { blockSlice, filterByListType, filterByType, findByListType, findByListTypeOrNull, findByType, findByTypeOrNull, indexByIdentity, listTypeOf, recursiveFind } from "../../binary/utils.ts";
+import {
+  blockSlice,
+  filterByListType,
+  filterByType,
+  findByListType,
+  findByListTypeOrNull,
+  findByType,
+  findByTypeOrNull,
+  indexByIdentity,
+  listTypeOf,
+  recursiveFind,
+} from "../../binary/utils.ts";
 import { Label, LayerType, LineOrientation, ParametricMeshType, PREFType } from "../../enums/index.ts";
 import { parseEssentialGraphics } from "../../parsers/essential_graphics.ts";
-import { CONTROLLER_CHECKBOX, CONTROLLER_COLOR, CONTROLLER_SLIDER, canAddLayer, fontCapsJson, mediaControllerPath, propertyControllerPlan, type PathNode, type PropertyControllerPlan } from "../../resolvers/motion_graphics.ts";
+import {
+  CONTROLLER_CHECKBOX,
+  CONTROLLER_COLOR,
+  CONTROLLER_SLIDER,
+  canAddLayer,
+  fontCapsJson,
+  mediaControllerPath,
+  propertyControllerPlan,
+  type PathNode,
+  type PropertyControllerPlan,
+} from "../../resolvers/motion_graphics.ts";
 import { _CAMERA_LIGHT_TRANSFORM_SKIP, _OMITTED_EMPTY_GROUPS } from "../../synthesis/property.ts";
 import {
   at,
@@ -28,7 +75,9 @@ import {
   ValueError,
   type ClassAttributes,
   AttributeError,
-  typeName, ascii } from "../../../pyrt/index.ts";
+  typeName,
+  ascii,
+} from "../../../pyrt/index.ts";
 import { ChunkField, type EffectParamDefs } from "../descriptors.ts";
 import { EssentialGraphicsController, SourcePropertyRef } from "../essential_graphics.ts";
 import { AVLayer, _unregisterSourceUsage } from "../layers/av_layer.ts";
@@ -47,7 +96,22 @@ import { FileSource } from "../sources/file.ts";
 import { PlaceholderSource } from "../sources/placeholder.ts";
 import { SolidSource } from "../sources/solid.ts";
 import { TextDocument } from "../text/text_document.ts";
-import { _validateNumber, validateBoxSize, validateCompDuration, validateCompFrameRate, validateDuration, validateFootageDimension, validateName, validateOneOf, validatePixelAspect, validateRgbColor, validateSequence, validateString, validateText, validateVector2 } from "../validators.ts";
+import {
+  _validateNumber,
+  validateBoxSize,
+  validateCompDuration,
+  validateCompFrameRate,
+  validateDuration,
+  validateFootageDimension,
+  validateName,
+  validateOneOf,
+  validatePixelAspect,
+  validateRgbColor,
+  validateSequence,
+  validateString,
+  validateText,
+  validateVector2,
+} from "../validators.ts";
 import { AVItem } from "./av_item.ts";
 import { FootageItem } from "./footage.ts";
 import type { FolderItem } from "./folder.ts";
@@ -62,44 +126,37 @@ import * as _composition from "../../parsers/composition.ts";
 
 // The binary prin chunk stores internal plugin match_names (e.g. ADBE Escher)
 // but ExtendScript exposes different module names (e.g. ADBE Advanced 3d).
-export const _RENDERER_BINARY_TO_EXTENDSCRIPT: Map<string, string> = new Map([
+const _RENDERER_BINARY_TO_EXTENDSCRIPT: Map<string, string> = new Map([
   ["ADBE Escher", "ADBE Advanced 3d"],
   ["ADBE Calder", "ADBE Calder"],
   ["ADBE Ernst", "ADBE Ernst"],
   ["ADBE Picasso", "ADBE Picasso"],
 ]);
 
-export const _RENDERER_EXTENDSCRIPT_TO_BINARY: Map<string, string> = new Map(
+const _RENDERER_EXTENDSCRIPT_TO_BINARY: Map<string, string> = new Map(
   [..._RENDERER_BINARY_TO_EXTENDSCRIPT].map(([k, v]) => [v, k] as const),
 );
 
-export const _RENDERER_DISPLAY_NAMES: Map<string, string> = new Map([
+const _RENDERER_DISPLAY_NAMES: Map<string, string> = new Map([
   ["ADBE Escher", "Classic 3D"],
   ["ADBE Calder", "Advanced 3D"],
   ["ADBE Ernst", "Cinema 4D"],
   ["ADBE Picasso", "Ray-traced 3D"],
 ]);
 
-export const _LAYER_BOUNDARY_TYPES: ReadonlySet<string> = new Set([
-  "Layr",
-  "DLay",
-  "SLay",
-  "CLay",
-  "SecL",
-  "CIFO",
-]);
+const _LAYER_BOUNDARY_TYPES: ReadonlySet<string> = new Set(["Layr", "DLay", "SLay", "CLay", "SecL", "CIFO"]);
 
-export const _validateRenderer = validateOneOf([..._RENDERER_EXTENDSCRIPT_TO_BINARY.keys()]);
+const _validateRenderer = validateOneOf([..._RENDERER_EXTENDSCRIPT_TO_BINARY.keys()]);
 
 // The NTSC internal timebase (23.976, 29.97, 59.94 fps and their multiples).
-export const _NTSC_TIMEBASE = 23976;
+const _NTSC_TIMEBASE = 23976;
 
 // On the NTSC timebase AE keeps a display start stored as a float32 time
 // (`displayStartTime = 52 / 29.97`) on the frame it is a hair past: 1/10000
 // of a frame is the best fit to 490 such starts per rate measured on AE 2026
 // (472 match; AE's own rounding of the rest is not reproduced). On every other
 // timebase the same measurement is exact with no tolerance.
-export const _NTSC_FRAME_TOLERANCE = new Fraction(1, 10000);
+const _NTSC_FRAME_TOLERANCE = new Fraction(1, 10000);
 
 /**
  * The composition's frame grid: `(timebase, units per frame)` from its
@@ -107,12 +164,12 @@ export const _NTSC_FRAME_TOLERANCE = new Fraction(1, 10000);
  * rate only approximates the grid's rate (29.970001220703125 for 23976 /
  * 800), so comp times snap to the grid, never to the 16.16 value.
  */
-export function _grid(cdta: CdtaChunk): [number, number] {
+function _grid(cdta: CdtaChunk): [number, number] {
   return frameGrid(cdta.frameRate);
 }
 
 /** Frames per second of the composition's frame grid. */
-export function _gridRate(cdta: CdtaChunk): number {
+function _gridRate(cdta: CdtaChunk): number {
   const [timebase, unitsPerFrame] = _grid(cdta);
   return timebase / unitsPerFrame;
 }
@@ -120,30 +177,30 @@ export function _gridRate(cdta: CdtaChunk): number {
 // NOTE(port): exact bigint arithmetic, identical to Python's Fraction. These two helpers are the
 // exact rational `math.ceil` / `math.floor` over `num / den` (den > 0) that the
 // Python code takes of `Fraction` expressions.
-export function _ceilRatio(num: bigint, den: bigint): number {
+function _ceilRatio(num: bigint, den: bigint): number {
   const q = num / den;
   return Number(num % den !== 0n && num > 0n ? q + 1n : q);
 }
 
-export function _floorRatio(num: bigint, den: bigint): number {
+function _floorRatio(num: bigint, den: bigint): number {
   const q = num / den;
   return Number(num % den !== 0n && num < 0n ? q - 1n : q);
 }
 
 /** `math.ceil(k * Fraction(*_grid(cdta)))` */
-export function _ceilKGrid(k: number, cdta: CdtaChunk): number {
+function _ceilKGrid(k: number, cdta: CdtaChunk): number {
   const [timebase, unitsPerFrame] = _grid(cdta);
   return _ceilRatio(BigInt(k) * BigInt(timebase), BigInt(unitsPerFrame));
 }
 
 /** `math.floor(k * Fraction(*_grid(cdta)))` */
-export function _floorKGrid(k: number, cdta: CdtaChunk): number {
+function _floorKGrid(k: number, cdta: CdtaChunk): number {
   const [timebase, unitsPerFrame] = _grid(cdta);
   return _floorRatio(BigInt(k) * BigInt(timebase), BigInt(unitsPerFrame));
 }
 
 // NOTE(port): exact bigint arithmetic, identical to Python's Fraction; exact `Fraction(n, d) * k >= rhs` for d > 0.
-export function _ratioScaledGe(n: number, d: number, k: number, rhs: number): boolean {
+function _ratioScaledGe(n: number, d: number, k: number, rhs: number): boolean {
   return BigInt(n) * BigInt(k) >= BigInt(rhs) * BigInt(d);
 }
 
@@ -181,7 +238,7 @@ export function _frameNumber(cdta: CdtaChunk, dividend: number, divisor: number)
 }
 
 // Top-level layer groups not every release writes: (match name, part).
-export const _VERSION_GATED_GROUPS = [
+const _VERSION_GATED_GROUPS = [
   ["ADBE Layer Sets", "layer sets"],
   ["ADBE Source Options Group", "source options"],
 ] as const;
@@ -204,7 +261,7 @@ export const _VERSION_GATED_GROUPS = [
  * Group end markers are already present in each tdgp (added during
  * synthesis) and get flipped to non-synthetic by _ensure_materialized().
  */
-export function _materializeLayer(layer: Layer): void {
+function _materializeLayer(layer: Layer): void {
   const camLight = ["ADBE Camera Layer", "ADBE Light Layer"].includes(layer.matchName);
 
   function _materializeProp(prop: Property, inTransform: boolean): void {
@@ -240,9 +297,7 @@ export function _materializeLayer(layer: Layer): void {
   // Groups the project's release does not write for a new layer (they
   // stay synthesized, as when reading that release's own files).
   const unwritten = new Set<string>(
-    _VERSION_GATED_GROUPS.filter(([, part]) => !aeWrites(part, aeMajor)).map(
-      ([matchName]) => matchName,
-    ),
+    _VERSION_GATED_GROUPS.filter(([, part]) => !aeWrites(part, aeMajor)).map(([matchName]) => matchName),
   );
 
   for (const top of layer.properties) {
@@ -297,7 +352,7 @@ export function _materializeLayer(layer: Layer): void {
  * with zero), which is what this reproduces: the `LIST:OvG2` is replaced
  * by the empty one AE writes for a layer that has never had an override.
  */
-export function _dropEssentialOverrides(layer: Layer): void {
+function _dropEssentialOverrides(layer: Layer): void {
   const root = layer._tdgp;
   if (root == null) {
     return;
@@ -325,7 +380,8 @@ export function _dropEssentialOverrides(layer: Layer): void {
   layer.essentialPropertyUuids.length = 0;
   for (const child of layer.properties) {
     if (child.matchName === "ADBE Layer Overrides") {
-      if (!(child instanceof PropertyGroup)) throw new AttributeError(`'${typeName(child)}' object has no attribute 'properties'`);
+      if (!(child instanceof PropertyGroup))
+        throw new AttributeError(`'${typeName(child)}' object has no attribute 'properties'`);
       child._properties.length = 0;
       break;
     }
@@ -337,7 +393,7 @@ export function _dropEssentialOverrides(layer: Layer): void {
  * `LIST:OvG2(CprC)` after the Layer Overrides tdmn and `blsv`/`blsi`
  * after the Layer Source Alternate tdmn.
  */
-export function _insertLayerSkeletonExtras(layer: Layer): void {
+function _insertLayerSkeletonExtras(layer: Layer): void {
   const root = layer._tdgp;
   if (root == null) {
     return;
@@ -345,16 +401,12 @@ export function _insertLayerSkeletonExtras(layer: Layer): void {
 
   function hasFollowing(chunks: Chunk[], i: number, kind: string): boolean {
     const nxt = i + 1 < chunks.length ? chunks[i + 1] : null;
-    return (nxt instanceof ListChunk ? nxt.listType : nxt?.chunkType ?? null) === kind;
+    return (nxt instanceof ListChunk ? nxt.listType : (nxt?.chunkType ?? null)) === kind;
   }
 
   const chunks = root.chunks;
   for (const [i, ch] of chunks.entries()) {
-    if (
-      ch instanceof TdmnChunk &&
-      ch.value === "ADBE Layer Overrides" &&
-      !hasFollowing(chunks, i, "OvG2")
-    ) {
+    if (ch instanceof TdmnChunk && ch.value === "ADBE Layer Overrides" && !hasFollowing(chunks, i, "OvG2")) {
       chunks.splice(i + 1, 0, buildOvg2());
       break;
     }
@@ -369,11 +421,7 @@ export function _insertLayerSkeletonExtras(layer: Layer): void {
     ) {
       const inner = next.chunks;
       for (const [j, c] of inner.entries()) {
-        if (
-          c instanceof TdmnChunk &&
-          c.value === "ADBE Layer Source Alternate" &&
-          !hasFollowing(inner, j, "blsv")
-        ) {
+        if (c instanceof TdmnChunk && c.value === "ADBE Layer Source Alternate" && !hasFollowing(inner, j, "blsv")) {
           inner.splice(j + 1, 0, ...buildSourceAlternateExtras());
           break;
         }
@@ -392,7 +440,7 @@ export function _insertLayerSkeletonExtras(layer: Layer): void {
  * `CLId` at the duplicate. Layer-side OvG2 override uuids are NOT
  * touched: they reference controllers of other (source) comps.
  */
-export function _rewriteEgIdentity(
+function _rewriteEgIdentity(
   clonedItem: ListChunk,
   oldCompId: number,
   newCompId: number,
@@ -400,10 +448,7 @@ export function _rewriteEgIdentity(
 ): void {
   const uuidMap: Map<string, string> = new Map();
   for (const cif of clonedItem.chunks) {
-    if (
-      !(cif instanceof ListChunk) ||
-      !["CIFO", "CIF2", "CIF3"].includes(cif.listType)
-    ) {
+    if (!(cif instanceof ListChunk) || !["CIFO", "CIF2", "CIF3"].includes(cif.listType)) {
       continue;
     }
     for (const cctl of filterByListType(cif.chunks, "CCtl")) {
@@ -550,7 +595,7 @@ export class CompItem extends AVItem {
    * The maximum number of motion blur samples of 2D layer motion. This
    * corresponds to the Adaptive Sample Limit setting in the Advanced tab of
    * the Composition Settings dialog box. Must be \>= `samples_per_frame`.
-   * Read / Write. 
+   * Read / Write.
    */
   declare motionBlurAdaptiveSampleLimit: number;
 
@@ -707,12 +752,7 @@ export class CompItem extends AVItem {
       cdta.workAreaEndDividend = WORK_AREA_TO_END;
     } else if (
       cdta.workAreaEndDividend !== WORK_AREA_TO_END &&
-      _ratioScaledGe(
-        cdta.workAreaEndDividend,
-        cdta.workAreaEndDivisor,
-        timebase,
-        endOfComp,
-      )
+      _ratioScaledGe(cdta.workAreaEndDividend, cdta.workAreaEndDivisor, timebase, endOfComp)
     ) {
       cdta.workAreaEndDividend = WORK_AREA_TO_END;
       cdta.workAreaEndDivisor = timebase;
@@ -768,11 +808,7 @@ export class CompItem extends AVItem {
   /** The frame value of the beginning of the composition. Read / Write. */
   get displayStartFrame(): number {
     const cdta = this._cdta;
-    return _frameNumber(
-      cdta,
-      cdta.displayStartTimeDividend,
-      cdta.displayStartTimeDivisor,
-    );
+    return _frameNumber(cdta, cdta.displayStartTimeDividend, cdta.displayStartTimeDivisor);
   }
 
   set displayStartFrame(value: number) {
@@ -893,9 +929,8 @@ export class CompItem extends AVItem {
     const [timebase, unitsPerFrame] = _grid(cdta);
     cdta.workAreaStartDividend = _frameUnits(start, timebase, unitsPerFrame);
     cdta.workAreaStartDivisor = timebase;
-    let endUnits: number | null =
-      end == null ? null : _frameUnits(end, timebase, unitsPerFrame);
-    if (endUnits == null || endUnits >= (Math.round(cdta.duration * timebase) + 0)) {
+    let endUnits: number | null = end == null ? null : _frameUnits(end, timebase, unitsPerFrame);
+    if (endUnits == null || endUnits >= Math.round(cdta.duration * timebase) + 0) {
       endUnits = WORK_AREA_TO_END;
     }
     cdta.workAreaEndDividend = endUnits;
@@ -1153,11 +1188,7 @@ export class CompItem extends AVItem {
     const container = parent._childrenContainer;
 
     // Clone the comp's whole block: LIST:Item + trailing view chunks.
-    const [start, end] = blockSlice(
-      container,
-      this._itemList,
-      this.constructor._ITEM_BOUNDARY_LIST_TYPES,
-    );
+    const [start, end] = blockSlice(container, this._itemList, this.constructor._ITEM_BOUNDARY_LIST_TYPES);
     // The block starts at this comp's own LIST:Item.
     const clonedItem = cloneChunkTree(this._itemList);
     const clonedBlock = [clonedItem, ...container.slice(start + 1, end).map((c) => cloneChunkTree(c))];
@@ -1243,14 +1274,8 @@ export class CompItem extends AVItem {
       for (const lc of deferred[0]) {
         if (lc instanceof DeferredListChunk && lc._parsedChunks == null) {
           const raw = lc._rawBody;
-          if (
-            raw.length >= _LDTA_SOURCE_ID_END &&
-            bytesEqual(raw.slice(0, 4), ascii("ldta"))
-          ) {
-            const sid = Bytes.intFromBytes(
-              raw.slice(_LDTA_SOURCE_ID_OFFSET, _LDTA_SOURCE_ID_END),
-              "big",
-            );
+          if (raw.length >= _LDTA_SOURCE_ID_END && bytesEqual(raw.slice(0, 4), ascii("ldta"))) {
+            const sid = Bytes.intFromBytes(raw.slice(_LDTA_SOURCE_ID_OFFSET, _LDTA_SOURCE_ID_END), "big");
             if (sid !== 0) {
               sourceIds.add(sid);
             }
@@ -1402,10 +1427,7 @@ export class CompItem extends AVItem {
   /** Find the insertion point for the first layer in the chunk list. */
   _findFirstLayerPosition(): number {
     for (const [i, chunk] of this._itemList.chunks.entries()) {
-      if (
-        chunk instanceof ListChunk &&
-        ["DLay", "SLay", "CLay", "SecL", "CIFO"].includes(chunk.listType)
-      ) {
+      if (chunk instanceof ListChunk && ["DLay", "SLay", "CLay", "SecL", "CIFO"].includes(chunk.listType)) {
         return i;
       }
     }
@@ -1422,7 +1444,7 @@ export class CompItem extends AVItem {
 
   /**
    * All the {@link Layer} objects for layers in this composition.
-   * Read-only. 
+   * Read-only.
    */
   get layers(): Layer[] {
     this._ensureLayersLoaded();
@@ -1440,9 +1462,7 @@ export class CompItem extends AVItem {
   /** Map of layer ID to 0-based index. */
   get _layerIdToIndex(): Map<number, number> {
     if (this._layerIndexById == null) {
-      this._layerIndexById = new Map(
-        [...this.layers.entries()].map(([idx, layer]) => [layer.id, idx] as const),
-      );
+      this._layerIndexById = new Map([...this.layers.entries()].map(([idx, layer]) => [layer.id, idx] as const));
     }
     return this._layerIndexById;
   }
@@ -1523,8 +1543,7 @@ export class CompItem extends AVItem {
    */
   private _cifContainers(): ListChunk[] {
     return this._itemList.chunks.filter(
-      (c): c is ListChunk =>
-        c instanceof ListChunk && ["CIFO", "CIF2", "CIF3"].includes(c.listType),
+      (c): c is ListChunk => c instanceof ListChunk && ["CIFO", "CIF2", "CIF3"].includes(c.listType),
     );
   }
 
@@ -1565,14 +1584,7 @@ export class CompItem extends AVItem {
       );
     }
     if (plan.controllerType === CONTROLLER_CHECKBOX) {
-      return buildCheckboxCctl(
-        name,
-        uuidStr,
-        truthy(prop.value),
-        compId,
-        layerId,
-        plan.pathJson,
-      );
+      return buildCheckboxCctl(name, uuidStr, truthy(prop.value), compId, layerId, plan.pathJson);
     }
     if (plan.controllerType === CONTROLLER_COLOR) {
       let rgba: number[] = prop.value;
@@ -1580,15 +1592,7 @@ export class CompItem extends AVItem {
       return buildColorCctl(name, uuidStr, rgba, compId, layerId, plan.pathJson);
     }
     const text = prop.value instanceof TextDocument ? prop.value.text : "";
-    return buildTextCctl(
-      name,
-      uuidStr,
-      text,
-      fontCapsJson(prop),
-      compId,
-      layerId,
-      plan.pathJson,
-    );
+    return buildTextCctl(name, uuidStr, text, fontCapsJson(prop), compId, layerId, plan.pathJson);
   }
 
   /**
@@ -1599,9 +1603,7 @@ export class CompItem extends AVItem {
    * controller model - the parser's preferred container - or `null` when
    * the comp has no CIF containers (not produced by AE or py_aep).
    */
-  private _appendController(
-    build: () => [ListChunk, Utf8Chunk, U4Chunk],
-  ): [Utf8Chunk, U4Chunk] | null {
+  private _appendController(build: () => [ListChunk, Utf8Chunk, U4Chunk]): [Utf8Chunk, U4Chunk] | null {
     const containers = this._cifContainers();
     if (!containers?.length) {
       return null;
@@ -1620,21 +1622,14 @@ export class CompItem extends AVItem {
   }
 
   /** Append the model for a controller just written to the containers. */
-  private _registerController(
-    bound: [Utf8Chunk, U4Chunk],
-    uuidStr: string,
-    nodes: PathNode[],
-    layer: Layer,
-  ): void {
+  private _registerController(bound: [Utf8Chunk, U4Chunk], uuidStr: string, nodes: PathNode[], layer: Layer): void {
     const [nameUtf8, ctyp] = bound;
     this._egControllers.push(
       new EssentialGraphicsController({
         _nameUtf8: nameUtf8,
         _ctyp: ctyp,
         uuid: uuidStr,
-        sourcePropertyPath: nodes.map(
-          (node) => new SourcePropertyRef(node.matchName, node.propIndex),
-        ),
+        sourcePropertyPath: nodes.map((node) => new SourcePropertyRef(node.matchName, node.propIndex)),
         sourceCompId: this.id,
         sourceLayerId: layer._ldta.layerId,
       }),
@@ -1656,9 +1651,7 @@ export class CompItem extends AVItem {
     const display = name != null ? name : prop.name;
     validateName(display);
     const uuidStr = uuid4();
-    const bound = this._appendController(() =>
-      this._buildPropertyCctl(plan, prop, display, uuidStr),
-    );
+    const bound = this._appendController(() => this._buildPropertyCctl(plan, prop, display, uuidStr));
     if (bound == null) {
       return false;
     }
@@ -1915,27 +1908,21 @@ export class CompItem extends AVItem {
   /** An array of the layers whose source are file footages. */
   get fileLayers(): AVLayer[] {
     return this.footageLayers.filter(
-      (layer) =>
-        layer.source instanceof FootageItem &&
-        layer.source.mainSource instanceof FileSource,
+      (layer) => layer.source instanceof FootageItem && layer.source.mainSource instanceof FileSource,
     );
   }
 
   /** An array of the layers whose source are solids. */
   get solidLayers(): AVLayer[] {
     return this.footageLayers.filter(
-      (layer) =>
-        layer.source instanceof FootageItem &&
-        layer.source.mainSource instanceof SolidSource,
+      (layer) => layer.source instanceof FootageItem && layer.source.mainSource instanceof SolidSource,
     );
   }
 
   /** An array of the layers whose source are placeholders. */
   get placeholderLayers(): AVLayer[] {
     return this.footageLayers.filter(
-      (layer) =>
-        layer.source instanceof FootageItem &&
-        layer.source.mainSource instanceof PlaceholderSource,
+      (layer) => layer.source instanceof FootageItem && layer.source.mainSource instanceof PlaceholderSource,
     );
   }
 
@@ -2230,10 +2217,7 @@ export class CompItem extends AVItem {
    * - `meshType`: The type of parametric mesh (required, keyword-only).
    * @returns The newly created {@link ParametricMeshLayer}.
    */
-  addParametricMesh(
-    name: string | null = null,
-    kw: { meshType: ParametricMeshType },
-  ): ParametricMeshLayer {
+  addParametricMesh(name: string | null = null, kw: { meshType: ParametricMeshType }): ParametricMeshLayer {
     const { meshType } = kw;
     const explicitName = name != null;
     if (name == null) {
@@ -2362,14 +2346,8 @@ export class CompItem extends AVItem {
       const layer = this.layers[indices[0]];
       // 3D model layers cannot swap sources (replace_source raises);
       // check before mutating so a failure leaves the project intact.
-      if (
-        !(layer instanceof AVLayer) ||
-        layer.source == null ||
-        layer._ldta.layerType === LayerType.THREE_D_MODEL
-      ) {
-        throw new ValueError(
-          "moveAllAttributes=false requires a layer with a " + "replaceable source.",
-        );
+      if (!(layer instanceof AVLayer) || layer.source == null || layer._ldta.layerType === LayerType.THREE_D_MODEL) {
+        throw new ValueError("moveAllAttributes=false requires a layer with a " + "replaceable source.");
       }
       return this._precomposeLeaveAttributes(layer, name);
     }
@@ -2388,14 +2366,7 @@ export class CompItem extends AVItem {
   private _createPrecompItem(name: string, width: number, height: number): CompItem {
     const folder = this.parentFolder;
     assert(folder != null);
-    const newComp = folder.addComp(
-      name,
-      width,
-      height,
-      this.pixelAspect,
-      this.duration,
-      this.frameRate,
-    );
+    const newComp = folder.addComp(name, width, height, this.pixelAspect, this.duration, this.frameRate);
     const cloned = cloneChunkTree(this._cdta);
     cloned.width = width;
     cloned.height = height;
@@ -2786,12 +2757,7 @@ export class CompItem extends AVItem {
    */
   // @requires_version(24): wrapped after the class body.
   addVerticalBoxText(boxSize: number[] | null = null, text = ""): TextLayer {
-    return this._addTextLayer(
-      text,
-      true,
-      boxSize,
-      LineOrientation.VERTICAL_RIGHT_TO_LEFT,
-    );
+    return this._addTextLayer(text, true, boxSize, LineOrientation.VERTICAL_RIGHT_TO_LEFT);
   }
 
   static {
@@ -2803,49 +2769,89 @@ export class CompItem extends AVItem {
     descriptor(this, "motionBlur", ChunkField.bool("_cdta", "motionBlur"));
     descriptor(this, "preserveNestedFrameRate", ChunkField.bool("_cdta", "preserveNestedFrameRate"));
     descriptor(this, "preserveNestedResolution", ChunkField.bool("_cdta", "preserveNestedResolution"));
-    descriptor(this, "width", new ChunkField("_cdta", "width", {
-    validate: validateFootageDimension,
-    preSet: "_buildLiveDefaults",
-  }));
-    descriptor(this, "height", new ChunkField("_cdta", "height", {
-    validate: validateFootageDimension,
-    preSet: "_buildLiveDefaults",
-  }));
-    descriptor(this, "shutterAngle", new ChunkField("_cdta", "shutterAngle", {
-    validate: _validateNumber({ min: 0, max: 720, integer: true }),
-  }));
-    descriptor(this, "shutterPhase", new ChunkField("_cdta", "shutterPhase", {
-    validate: _validateNumber({ min: -360, max: 360, integer: true }),
-  }));
-    descriptor(this, "resolutionFactor", new ChunkField("_cdta", "resolutionFactor", {
-    validate: validateSequence({ length: 2, min: 1, max: 99, integer: true }),
-  }));
-    descriptor(this, "motionBlurAdaptiveSampleLimit", new ChunkField("_cdta", "motionBlurAdaptiveSampleLimit", {
-    validate: _validateNumber({
-      min: (self: CompItem) => self.motionBlurSamplesPerFrame,
-      max: 256,
-      integer: true,
-    }),
-  }));
-    descriptor(this, "motionBlurSamplesPerFrame", new ChunkField("_cdta", "motionBlurSamplesPerFrame", {
-    validate: _validateNumber({ min: 2, max: 64, integer: true }),
-  }));
-    descriptor(this, "pixelAspect", new ChunkField("_cdta", "pixelAspect", {
-    validate: validatePixelAspect,
-    // See `width`.
-    preSet: "_buildLiveDefaults",
-  }));
+    descriptor(
+      this,
+      "width",
+      new ChunkField("_cdta", "width", {
+        validate: validateFootageDimension,
+        preSet: "_buildLiveDefaults",
+      }),
+    );
+    descriptor(
+      this,
+      "height",
+      new ChunkField("_cdta", "height", {
+        validate: validateFootageDimension,
+        preSet: "_buildLiveDefaults",
+      }),
+    );
+    descriptor(
+      this,
+      "shutterAngle",
+      new ChunkField("_cdta", "shutterAngle", {
+        validate: _validateNumber({ min: 0, max: 720, integer: true }),
+      }),
+    );
+    descriptor(
+      this,
+      "shutterPhase",
+      new ChunkField("_cdta", "shutterPhase", {
+        validate: _validateNumber({ min: -360, max: 360, integer: true }),
+      }),
+    );
+    descriptor(
+      this,
+      "resolutionFactor",
+      new ChunkField("_cdta", "resolutionFactor", {
+        validate: validateSequence({ length: 2, min: 1, max: 99, integer: true }),
+      }),
+    );
+    descriptor(
+      this,
+      "motionBlurAdaptiveSampleLimit",
+      new ChunkField("_cdta", "motionBlurAdaptiveSampleLimit", {
+        validate: _validateNumber({
+          min: (self: CompItem) => self.motionBlurSamplesPerFrame,
+          max: 256,
+          integer: true,
+        }),
+      }),
+    );
+    descriptor(
+      this,
+      "motionBlurSamplesPerFrame",
+      new ChunkField("_cdta", "motionBlurSamplesPerFrame", {
+        validate: _validateNumber({ min: 2, max: 64, integer: true }),
+      }),
+    );
+    descriptor(
+      this,
+      "pixelAspect",
+      new ChunkField("_cdta", "pixelAspect", {
+        validate: validatePixelAspect,
+        // See `width`.
+        preSet: "_buildLiveDefaults",
+      }),
+    );
     descriptor(this, "timeScale", new ChunkField("_cdta", "timeScale", { readOnly: true }));
-    descriptor(this, "displayStartTime", new ChunkField("_cdta", "displayStartTime", {
-    // AE 2026's own bounds ("out of range -10800 to 86400").
-    validate: _validateNumber({ min: -10800.0, max: 86400.0 }),
-    postSet: "_restoreTimesInTimebase",
-  }));
-    descriptor(this, "dropFrame", ChunkField.bool("_cdrp", "value", {
-    transform: (v: number) => v !== 0,
-    reverse: (v: boolean) => Number(v),
-    default: false,
-  }));
+    descriptor(
+      this,
+      "displayStartTime",
+      new ChunkField("_cdta", "displayStartTime", {
+        // AE 2026's own bounds ("out of range -10800 to 86400").
+        validate: _validateNumber({ min: -10800.0, max: 86400.0 }),
+        postSet: "_restoreTimesInTimebase",
+      }),
+    );
+    descriptor(
+      this,
+      "dropFrame",
+      ChunkField.bool("_cdrp", "value", {
+        transform: (v: number) => v !== 0,
+        reverse: (v: boolean) => Number(v),
+        default: false,
+      }),
+    );
   }
 }
 
@@ -2864,6 +2870,4 @@ export class CompItem extends AVItem {
   });
 }
 CompItem.prototype.addVerticalText = requiresVersion(24)(CompItem.prototype.addVerticalText);
-CompItem.prototype.addVerticalBoxText = requiresVersion(24)(
-  CompItem.prototype.addVerticalBoxText,
-);
+CompItem.prototype.addVerticalBoxText = requiresVersion(24)(CompItem.prototype.addVerticalBoxText);

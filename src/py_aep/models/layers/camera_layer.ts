@@ -4,8 +4,7 @@ import { defaultCameraZoom } from "../../resolvers/transform.ts";
 import { labelIndex } from "../preferences.ts";
 import { Layer, type LiveDefaultGroup, type LiveDefaultProperty } from "./layer.ts";
 import type { CompItem } from "../items/composition.ts";
-import type {EffectParamDefs} from "../descriptors.ts";
-
+import type { EffectParamDefs } from "../descriptors.ts";
 
 /**
  * The CameraLayer object represents a camera layer within a composition.
@@ -87,22 +86,12 @@ export class CameraLayer extends Layer {
     containingComp: CompItem;
     effectParamDefs?: EffectParamDefs | null;
   }): CameraLayer {
-    const {
-      name,
-      layerId,
-      duration,
-      containingComp,
-      effectParamDefs = null,
-    } = kw;
+    const { name, layerId, duration, containingComp, effectParamDefs = null } = kw;
     const nameCps = Array.from(name);
     const layerName = nameCps.length > 31 ? nameCps.slice(0, 31).join("") : name;
     const ldta = new LdtaChunk({
       layerId,
-      label: labelIndex(
-        containingComp._project._preferences,
-        "Camera Label Index 2",
-        4,
-      ),
+      label: labelIndex(containingComp._project._preferences, "Camera Label Index 2", 4),
       layerType: LayerType.CAMERA,
       layerFlags2: 0x01,
       layerName,

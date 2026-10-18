@@ -41,13 +41,7 @@ export class ShapeLayer extends AVLayer {
   static _new(kw: ShapeLayerNewKw): ShapeLayer;
   static _new(...args: never[]): never;
   static _new(kw: ShapeLayerNewKw): ShapeLayer {
-    const {
-      name,
-      layerId,
-      duration,
-      containingComp,
-      effectParamDefs = null,
-    } = kw;
+    const { name, layerId, duration, containingComp, effectParamDefs = null } = kw;
     const layer = super._new<ShapeLayer>({
       name,
       layerId,
@@ -57,15 +51,8 @@ export class ShapeLayer extends AVLayer {
     });
     layer._ldta.layerType = LayerType.SHAPE;
     // The base factory named the layer from the AV type it started with.
-    layer._matchName = getOrThrow(
-      layer.constructor._LAYER_MATCH_NAMES,
-      LayerType.SHAPE,
-    );
-    layer._ldta.label = labelIndex(
-      containingComp._project._preferences,
-      "Shape Label Index 2",
-      8,
-    );
+    layer._matchName = getOrThrow(layer.constructor._LAYER_MATCH_NAMES, LayerType.SHAPE);
+    layer._ldta.label = labelIndex(containingComp._project._preferences, "Shape Label Index 2", 8);
     layer._ldta.collapseTransformation = true;
     return layer;
   }

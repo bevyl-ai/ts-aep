@@ -18,11 +18,7 @@ import { type CubicSeg, RawSubpath } from "./path_data.ts";
 import { cubicsToSubpath } from "./shapes.ts";
 import { Affine } from "./transform.ts";
 import type { Subpath } from "./types.ts";
-import {
-  type Path,
-  fspath,
-  valueEquals,
-  zip, hypot } from "../../pyrt/index.ts";
+import { type Path, fspath, valueEquals, zip, hypot } from "../../pyrt/index.ts";
 
 /** The subset of a fontkit glyph this module reads. */
 export interface FontkitGlyph {
@@ -47,7 +43,7 @@ export interface FontkitCmap {
 export type TextGlyphs = [(number | null)[], number[], number, FontkitFont];
 
 /** Parsed-font cache keyed by file path (one parse per font per process). */
-export const _fontCache = new Map<string, FontkitFont>();
+const _fontCache = new Map<string, FontkitFont>();
 
 /**
  * One styled run of text within a `<text>` (the parent text or a `<tspan>`).
@@ -94,7 +90,7 @@ export class TextRun {
   }
 }
 
-export function _loadFont(path: Path, fontNumber = 0): FontkitFont {
+function _loadFont(path: Path, fontNumber = 0): FontkitFont {
   const key = `${fspath(path)}#${fontNumber}`;
   let font: FontkitFont | null = _fontCache.get(key) ?? null;
   if (font == null) {
@@ -113,7 +109,7 @@ export function _loadFont(path: Path, fontNumber = 0): FontkitFont {
  * to cubics for us and decomposes composite glyphs, so only straight and
  * cubic segments reach `_lineTo` / `_curveToOne`.
  */
-export class _CubicContourPen {
+class _CubicContourPen {
   // NOTE(port): fontTools BasePen base class dropped. `_drawGlyph` drives these
   // methods from fontkit path commands; fontkit already emits implied on-curve
   // points and decomposes composite glyphs.
@@ -122,7 +118,7 @@ export class _CubicContourPen {
   declare _cur: [number, number];
   declare _start: [number, number];
 
-  constructor(glyphSet: FontkitFont) {
+  constructor(_glyphSet: FontkitFont) {
     // `super().__init__(glyph_set)` is the BasePen call dropped above.
     this.contours = [];
     this._segs = [];
@@ -148,10 +144,10 @@ export class _CubicContourPen {
     const [x0, y0] = this._cur;
     const [x1, y1] = pt1;
     const [x2, y2] = pt2;
-    // fontTools BasePen._qCurveToOne uses the literal 0.66666666666666667 weight.
+    // fontTools BasePen._qCurveToOne uses the literal 0.66666666666666667 weight (the same double).
     this._curveToOne(
-      [x0 + 0.66666666666666667 * (x1 - x0), y0 + 0.66666666666666667 * (y1 - y0)],
-      [x2 + 0.66666666666666667 * (x1 - x2), y2 + 0.66666666666666667 * (y1 - y2)],
+      [x0 + 0.6666666666666666 * (x1 - x0), y0 + 0.6666666666666666 * (y1 - y0)],
+      [x2 + 0.6666666666666666 * (x1 - x2), y2 + 0.6666666666666666 * (y1 - y2)],
       pt2,
     );
   }
@@ -184,7 +180,7 @@ export class _CubicContourPen {
 }
 
 /** fontTools `glyph.draw(pen)` over fontkit's path commands. */
-export function _drawGlyph(glyph: FontkitGlyph, pen: _CubicContourPen): void {
+function _drawGlyph(glyph: FontkitGlyph, pen: _CubicContourPen): void {
   for (const { command, args } of glyph.path.commands) {
     if (command === "moveTo") {
       pen._moveTo([args[0], args[1]]);
@@ -200,14 +196,14 @@ export function _drawGlyph(glyph: FontkitGlyph, pen: _CubicContourPen): void {
   }
 }
 
-export function _glyphContours(glyphSet: FontkitFont, glyphName: number): RawSubpath[] {
+function _glyphContours(glyphSet: FontkitFont, glyphName: number): RawSubpath[] {
   const pen = new _CubicContourPen(glyphSet);
   _drawGlyph(glyphSet.getGlyph(glyphName), pen);
   return pen.contours;
 }
 
 /** `gname in glyph_set`: a mapped glyph id that exists in the font. */
-export function _inGlyphSet(glyphSet: FontkitFont, gname: number | null): gname is number {
+function _inGlyphSet(glyphSet: FontkitFont, gname: number | null): gname is number {
   return gname != null && gname < glyphSet.numGlyphs;
 }
 
@@ -240,23 +236,14 @@ export function _glyphs(font: FontkitFont, text: string): TextGlyphs {
 }
 
 /** Advance width of a run's text in user units (incl. letter-spacing). */
-export function _advanceWidth(
-  run: TextRun,
-  glyphs: TextGlyphs,
-): number {
+function _advanceWidth(run: TextRun, glyphs: TextGlyphs): number {
   const [, advances, unitsPerEm] = glyphs;
   const scale = run.fontSize / unitsPerEm;
   return advances.reduce((total, x) => total + x, 0) * scale + run.letterSpacing * Array.from(run.text).length;
 }
 
 /** Outline one run starting at `(pen_x, pen_y)`; return (subpaths, end_x). */
-export function _outlineRun(
-  run: TextRun,
-  penX: number,
-  penY: number,
-  ctm: Affine,
-  glyphs: TextGlyphs,
-): [Subpath[], number] {
+function _outlineRun(run: TextRun, penX: number, penY: number, ctm: Affine, glyphs: TextGlyphs): [Subpath[], number] {
   const [names, advances, unitsPerEm, glyphSet] = glyphs;
   const scale = run.fontSize / unitsPerEm;
   const subpaths: Subpath[] = [];
@@ -292,9 +279,7 @@ export function outlineRuns(
   ctm: Affine,
   anchor = "start",
 ): Subpath[][] {
-  const glyphData = runs.map((run) =>
-    _glyphs(_loadFont(run.fontPath, run.fontNumber), run.text),
-  );
+  const glyphData = runs.map((run) => _glyphs(_loadFont(run.fontPath, run.fontNumber), run.text));
   const widths = runs.map((run, k) => _advanceWidth(run, glyphData[k]));
   const result: Subpath[][] = runs.map(() => []);
   let penX = originX;
@@ -306,14 +291,12 @@ export function outlineRuns(
     let j = i + 1;
     while (j < n && runs[j].absX == null) j += 1;
     const first = runs[i];
-    const chunkAdvance = Array.from({ length: j - i }, (_, k) => widths[i + k] + runs[i + k].dx).reduce((total, x) => total + x, 0);
+    const chunkAdvance = Array.from({ length: j - i }, (_, k) => widths[i + k] + runs[i + k].dx).reduce(
+      (total, x) => total + x,
+      0,
+    );
     const chunkAnchor = first.anchor || anchor;
-    const shift =
-      chunkAnchor === "middle"
-        ? chunkAdvance / 2.0
-        : chunkAnchor === "end"
-          ? chunkAdvance
-          : 0.0;
+    const shift = chunkAnchor === "middle" ? chunkAdvance / 2.0 : chunkAnchor === "end" ? chunkAdvance : 0.0;
     // An absolute x resets the cursor; otherwise the (first) chunk continues
     // from the running pen. The anchor shifts the whole chunk left.
     const baseX = first.absX != null ? first.absX : penX;
@@ -332,23 +315,20 @@ export function outlineRuns(
 }
 
 /** Sample a cubic bezier into points (excluding the start point). */
-export function _flattenCubic(seg: CubicSeg, steps = 16): [number, number][] {
+function _flattenCubic(seg: CubicSeg, steps = 16): [number, number][] {
   const [x0, y0, c1x, c1y, c2x, c2y, x3, y3] = seg;
   const pts: [number, number][] = [];
   for (let i = 1; i <= steps; i++) {
     const t = i / steps;
     const mt = 1.0 - t;
     const [a, b, c, d] = [mt * mt * mt, 3 * mt * mt * t, 3 * mt * t * t, t * t * t];
-    pts.push([
-      a * x0 + b * c1x + c * c2x + d * x3,
-      a * y0 + b * c1y + c * c2y + d * y3,
-    ]);
+    pts.push([a * x0 + b * c1x + c * c2x + d * x3, a * y0 + b * c1y + c * c2y + d * y3]);
   }
   return pts;
 }
 
 /** Flatten a raw subpath's cubics into a polyline (path-local coords). */
-export function _polyline(raw: RawSubpath): [number, number][] {
+function _polyline(raw: RawSubpath): [number, number][] {
   const segs = raw.segments;
   if (!segs?.length) return [];
   const pts: [number, number][] = [[segs[0][0], segs[0][1]]];
@@ -358,22 +338,16 @@ export function _polyline(raw: RawSubpath): [number, number][] {
   return pts;
 }
 
-export function _arcLengths(pts: [number, number][]): number[] {
+function _arcLengths(pts: [number, number][]): number[] {
   const cum = [0.0];
   for (let i = 1; i < pts.length; i++) {
-    cum.push(
-      cum[cum.length - 1] + hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]),
-    );
+    cum.push(cum[cum.length - 1] + hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]));
   }
   return cum;
 }
 
 /** Point and tangent angle at arc-length `dist` along the polyline. */
-export function _pointAt(
-  pts: [number, number][],
-  cum: number[],
-  dist: number,
-): [number, number, number] {
+function _pointAt(pts: [number, number][], cum: number[], dist: number): [number, number, number] {
   dist = Math.max(0.0, Math.min(dist, cum[cum.length - 1]));
   let i = 1;
   while (i < cum.length - 1 && cum[i] < dist) i += 1;
@@ -407,21 +381,13 @@ export function outlineTextPath(
     letterSpacing?: number;
   } = {},
 ): Subpath[] {
-  const {
-    fontNumber = 0,
-    startOffset = 0.0,
-    startOffsetFrac = null,
-    letterSpacing = 0.0,
-  } = kw;
+  const { fontNumber = 0, startOffset = 0.0, startOffsetFrac = null, letterSpacing = 0.0 } = kw;
   if (!path?.length) return [];
   const pts = _polyline(path[0]);
   if (pts.length < 2) return [];
   const cum = _arcLengths(pts);
   const total = cum[cum.length - 1];
-  const [names, advances, unitsPerEm, glyphSet] = _glyphs(
-    _loadFont(fontPath, fontNumber),
-    text,
-  );
+  const [names, advances, unitsPerEm, glyphSet] = _glyphs(_loadFont(fontPath, fontNumber), text);
   const scale = fontSize / unitsPerEm;
 
   let dist = startOffsetFrac != null ? startOffsetFrac * total : startOffset;

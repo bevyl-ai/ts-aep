@@ -73,9 +73,7 @@ describe("TestRenderSettings", () => {
 
   test("test_resolution_custom", () => {
     /** Test custom resolution setting. */
-    const project = parseProject(
-      SAMPLES_DIR.div("custom_resolution_custom_7_horizontal_3_vertical.aep"),
-    );
+    const project = parseProject(SAMPLES_DIR.div("custom_resolution_custom_7_horizontal_3_vertical.aep"));
     const rs = asInstance(project.renderQueue, RenderQueue).items[0].settings;
 
     expect(valueEquals(rs.get("Resolution"), [7, 3])).toBe(true); // Custom 7x3
@@ -123,9 +121,7 @@ describe("TestRenderSettings", () => {
 
   test("test_pulldown_wssww", () => {
     /** Test 3:2 pulldown WSSWW setting. */
-    const project = parseProject(
-      SAMPLES_DIR.div("field_render_upper_field_first_pulldown_wssww.aep"),
-    );
+    const project = parseProject(SAMPLES_DIR.div("field_render_upper_field_first_pulldown_wssww.aep"));
     const rs = asInstance(project.renderQueue, RenderQueue).items[0].settings;
 
     expect(rs.get("3:2 Pulldown")).toBe(1); // WSSWW
@@ -133,9 +129,7 @@ describe("TestRenderSettings", () => {
 
   test("test_pulldown_sswww", () => {
     /** Test 3:2 pulldown SSWWW setting. */
-    const project = parseProject(
-      SAMPLES_DIR.div("field_render_upper_field_first_pulldown_sswww.aep"),
-    );
+    const project = parseProject(SAMPLES_DIR.div("field_render_upper_field_first_pulldown_sswww.aep"));
     const rs = asInstance(project.renderQueue, RenderQueue).items[0].settings;
 
     expect(rs.get("3:2 Pulldown")).toBe(2); // SSWWW
@@ -143,9 +137,7 @@ describe("TestRenderSettings", () => {
 
   test("test_pulldown_swwws", () => {
     /** Test 3:2 pulldown SWWWS setting. */
-    const project = parseProject(
-      SAMPLES_DIR.div("field_render_upper_field_first_pulldown_swwws.aep"),
-    );
+    const project = parseProject(SAMPLES_DIR.div("field_render_upper_field_first_pulldown_swwws.aep"));
     const rs = asInstance(project.renderQueue, RenderQueue).items[0].settings;
 
     expect(rs.get("3:2 Pulldown")).toBe(3); // SWWWS
@@ -153,9 +145,7 @@ describe("TestRenderSettings", () => {
 
   test("test_pulldown_wwwss", () => {
     /** Test 3:2 pulldown WWWSS setting. */
-    const project = parseProject(
-      SAMPLES_DIR.div("field_render_upper_field_first_pulldown_wwwss.aep"),
-    );
+    const project = parseProject(SAMPLES_DIR.div("field_render_upper_field_first_pulldown_wwwss.aep"));
     const rs = asInstance(project.renderQueue, RenderQueue).items[0].settings;
 
     expect(rs.get("3:2 Pulldown")).toBe(4); // WWWSS
@@ -163,9 +153,7 @@ describe("TestRenderSettings", () => {
 
   test("test_pulldown_wwssw", () => {
     /** Test 3:2 pulldown WWSSW setting. */
-    const project = parseProject(
-      SAMPLES_DIR.div("field_render_upper_field_first_pulldown_wwssw.aep"),
-    );
+    const project = parseProject(SAMPLES_DIR.div("field_render_upper_field_first_pulldown_wwssw.aep"));
     const rs = asInstance(project.renderQueue, RenderQueue).items[0].settings;
 
     expect(rs.get("3:2 Pulldown")).toBe(5); // WWSSW
@@ -231,9 +219,7 @@ describe("TestRenderSettings", () => {
 
   test("test_proxy_use_comp_proxies_only", () => {
     /** Test use comp proxies only setting. */
-    const project = parseProject(
-      SAMPLES_DIR.div("custom_proxy_use_use_comp_proxies_only.aep"),
-    );
+    const project = parseProject(SAMPLES_DIR.div("custom_proxy_use_use_comp_proxies_only.aep"));
     const rs = asInstance(project.renderQueue, RenderQueue).items[0].settings;
 
     expect(rs.get("Proxy Use")).toBe(3); // Use Comp Proxies Only
@@ -297,9 +283,7 @@ describe("TestRenderSettings", () => {
 
   test("test_time_span_start_zero", () => {
     /** Test time span start of zero. */
-    const project = parseProject(
-      SAMPLES_DIR.div("time_span_custom_start_00_duration_24s13f.aep"),
-    );
+    const project = parseProject(SAMPLES_DIR.div("time_span_custom_start_00_duration_24s13f.aep"));
     const rs = asInstance(project.renderQueue, RenderQueue).items[0].settings;
 
     expect(rs.get("Time Span Start")).toBe(0.0);
@@ -307,9 +291,7 @@ describe("TestRenderSettings", () => {
 
   test("test_time_span_start_custom", () => {
     /** Test custom time span start (1s 23f at 24fps). */
-    const project = parseProject(
-      SAMPLES_DIR.div("time_span_custom_start_01s_23f_duration_24s13f.aep"),
-    );
+    const project = parseProject(SAMPLES_DIR.div("time_span_custom_start_01s_23f_duration_24s13f.aep"));
     const rs = asInstance(project.renderQueue, RenderQueue).items[0].settings;
 
     // 1s + 23 frames at 24fps = 1 + 23/24 = 1.9583... seconds
@@ -318,9 +300,7 @@ describe("TestRenderSettings", () => {
 
   test("test_time_span_duration", () => {
     /** Test time span duration (24s 13f at 24fps). */
-    const project = parseProject(
-      SAMPLES_DIR.div("time_span_custom_start_00_duration_24s13f.aep"),
-    );
+    const project = parseProject(SAMPLES_DIR.div("time_span_custom_start_00_duration_24s13f.aep"));
     const rs = asInstance(project.renderQueue, RenderQueue).items[0].settings;
 
     // 24s + 13 frames at 24fps = 24 + 13/24 = 24.5416... seconds
@@ -329,9 +309,7 @@ describe("TestRenderSettings", () => {
 
   test("test_time_span_duration_30s", () => {
     /** Test time span duration of 719 frames at 24fps. */
-    const project = parseProject(
-      SAMPLES_DIR.div("time_span_custom_start_01_duration_29.9583s.aep"),
-    );
+    const project = parseProject(SAMPLES_DIR.div("time_span_custom_start_01_duration_29.9583s.aep"));
     const rs = asInstance(project.renderQueue, RenderQueue).items[0].settings;
 
     expect(Math.abs(rs.get("Time Span Duration") - 29.9583333333333) < 0.0001).toBe(true);
@@ -581,9 +559,7 @@ describe("TestOutputModuleSettings", () => {
 
   test("test_resize_to_dvcpro_hd", () => {
     /** Test Resize to DVCPRO HD 960x720. */
-    const project = parseProject(
-      OM_SAMPLES_DIR.div("resize_dvcpro_hd_960x720_1.33_23.976_fps.aep"),
-    );
+    const project = parseProject(OM_SAMPLES_DIR.div("resize_dvcpro_hd_960x720_1.33_23.976_fps.aep"));
     const settings = asInstance(project.renderQueue, RenderQueue).items[0].outputModules[0].settings;
 
     expect(valueEquals(settings.get("Resize to"), [960, 720])).toBe(true);
@@ -600,7 +576,9 @@ describe("TestOutputModuleSettings", () => {
   test("test_output_file_info_default", () => {
     /** Test Output File Info with default [compName].[fileExtension]. */
     const project = parseProject(SAMPLES_DIR.div("output_to_comp_and_frame_range.aep"));
-    const info = asInstance(project.renderQueue, RenderQueue).items[0].outputModules[0].settings.get("Output File Info");
+    const info = asInstance(project.renderQueue, RenderQueue).items[0].outputModules[0].settings.get(
+      "Output File Info",
+    );
 
     expect(getOrThrow(info, "File Template")).toBe("[compName].[fileExtension]");
     expect(getOrThrow(info, "Subfolder Path")).toBe("");
@@ -612,7 +590,9 @@ describe("TestOutputModuleSettings", () => {
   test("test_output_file_info_comp_folder", () => {
     /** Test Output File Info with [compName] subfolder in base path. */
     const project = parseProject(SAMPLES_DIR.div("output_to_comp_folder_and_name.aep"));
-    const info = asInstance(project.renderQueue, RenderQueue).items[0].outputModules[0].settings.get("Output File Info");
+    const info = asInstance(project.renderQueue, RenderQueue).items[0].outputModules[0].settings.get(
+      "Output File Info",
+    );
 
     expect((getOrThrow(info, "Base Path") as string).includes("[compName]")).toBe(true);
     expect(getOrThrow(info, "File Template")).toBe("[compName].[fileExtension]");
@@ -623,7 +603,9 @@ describe("TestOutputModuleSettings", () => {
   test("test_output_file_info_custom_all_fields", () => {
     /** Test Output File Info with all available template tokens. */
     const project = parseProject(SAMPLES_DIR.div("output_to_custom_all_fields.aep"));
-    const info = asInstance(project.renderQueue, RenderQueue).items[0].outputModules[0].settings.get("Output File Info");
+    const info = asInstance(project.renderQueue, RenderQueue).items[0].outputModules[0].settings.get(
+      "Output File Info",
+    );
 
     const template = getOrThrow(info, "File Template") as string;
     expect(template.includes("[projectFolder]")).toBe(true);
@@ -639,7 +621,9 @@ describe("TestOutputModuleSettings", () => {
   test("test_output_file_info_project_and_comp", () => {
     /** Test Output File Info with project and comp name template. */
     const project = parseProject(SAMPLES_DIR.div("output_to_project_and_comp_name.aep"));
-    const info = asInstance(project.renderQueue, RenderQueue).items[0].outputModules[0].settings.get("Output File Info");
+    const info = asInstance(project.renderQueue, RenderQueue).items[0].outputModules[0].settings.get(
+      "Output File Info",
+    );
 
     expect(getOrThrow(info, "File Template")).toBe("[projectName]_[compName].[fileExtension]");
   });
@@ -697,9 +681,7 @@ describe("TestOutputModule", () => {
 
   test("test_post_render_action_import_and_replace", () => {
     /** Test post_render_action is IMPORT_AND_REPLACE_USAGE. */
-    const project = parseProject(
-      SAMPLES_DIR.div("post_render_import_and_replace_this_comp.aep"),
-    );
+    const project = parseProject(SAMPLES_DIR.div("post_render_import_and_replace_this_comp.aep"));
     const om = asInstance(project.renderQueue, RenderQueue).items[0].outputModules[0];
 
     expect(om.postRenderAction).toBe(PostRenderAction.IMPORT_AND_REPLACE_USAGE);
@@ -727,9 +709,7 @@ describe("TestRenderQueueItem", () => {
 
   test("test_item_time_span_start", () => {
     /** Test RenderQueueItem.timeSpanStart property. */
-    const project = parseProject(
-      SAMPLES_DIR.div("time_span_custom_start_01s_23f_duration_24s13f.aep"),
-    );
+    const project = parseProject(SAMPLES_DIR.div("time_span_custom_start_01s_23f_duration_24s13f.aep"));
     const item = asInstance(project.renderQueue, RenderQueue).items[0];
 
     expect(Math.abs(item.timeSpanStart - (1 + 23 / 24)) < 0.0001).toBe(true);
@@ -737,9 +717,7 @@ describe("TestRenderQueueItem", () => {
 
   test("test_item_time_span_duration", () => {
     /** Test RenderQueueItem.timeSpanDuration property. */
-    const project = parseProject(
-      SAMPLES_DIR.div("time_span_custom_start_01_duration_29.9583s.aep"),
-    );
+    const project = parseProject(SAMPLES_DIR.div("time_span_custom_start_01_duration_29.9583s.aep"));
     const item = asInstance(project.renderQueue, RenderQueue).items[0];
 
     expect(Math.abs(item.timeSpanDuration - 29.9583333333333) < 0.0001).toBe(true);

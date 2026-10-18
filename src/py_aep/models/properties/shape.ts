@@ -1,12 +1,6 @@
 /** Shape value model for mask and shape path properties. */
 
-import {
-  AttributeError,
-  ValueError,
-  assert,
-  descriptor,
-  truediv,
-} from "../../../pyrt/index.ts";
+import { AttributeError, ValueError, assert, descriptor, truediv } from "../../../pyrt/index.ts";
 import { ShapePoint } from "../../binary/ldat_chunks.ts";
 import { ShphChunk, TensionItem } from "../../binary/misc_chunks.ts";
 import type { FeatherPointItem, OmtnChunk } from "../../binary/misc_chunks.ts";
@@ -16,14 +10,13 @@ import { validateBool, validateF4Point, validateNormalizedFloat, validatePositiv
 import type { Layer } from "../layers/layer.ts";
 import type { Property } from "./property.ts";
 
-
 /** Map binary interpolation (0=non-Hold, 2=Hold) to ExtendScript (0/1). */
-export function _interpTransform(raw: number): number {
+function _interpTransform(raw: number): number {
   return raw === 2 ? 1 : 0;
 }
 
 /** Map ExtendScript interpolation (0/1) back to binary (0/2). */
-export function _interpReverse(value: number): number {
+function _interpReverse(value: number): number {
   return value === 1 ? 2 : 0;
 }
 
@@ -95,7 +88,11 @@ export class FeatherPoint {
     descriptor(this, "segLoc", new ChunkField("_fp", "segLoc", { validate: validatePositiveInt }));
     descriptor(this, "relSegLoc", new ChunkField("_fp", "relSegLoc", { validate: validateNormalizedFloat }));
     descriptor(this, "radius", new ChunkField("_fp", "radius"));
-    descriptor(this, "interp", new ChunkField("_fp", "interpRaw", { transform: _interpTransform, reverse: _interpReverse }));
+    descriptor(
+      this,
+      "interp",
+      new ChunkField("_fp", "interpRaw", { transform: _interpTransform, reverse: _interpReverse }),
+    );
     descriptor(this, "tension", new ChunkField("_fp", "tension", { validate: validateNormalizedFloat }));
     descriptor(this, "relCornerAngle", new ChunkField("_fp", "cornerAngle"));
   }
@@ -213,8 +210,8 @@ export class Shape {
 
     const verts = vertices ?? [];
     const n = verts.length;
-    const inT = inTangents ?? new Array<number[]>(n).fill([0.0, 0.0]);
-    const outT = outTangents ?? new Array<number[]>(n).fill([0.0, 0.0]);
+    const inT = inTangents ?? Array.from({ length: n }, () => [0.0, 0.0]);
+    const outT = outTangents ?? Array.from({ length: n }, () => [0.0, 0.0]);
     // Three points per vertex: vertex, out-tangent, in-tangent-of-next.
     this._points = [];
     this._writeGeometry(verts, inT, outT);
@@ -307,15 +304,7 @@ export class Shape {
     _maskPath?: Property | null;
     featherPoints?: FeatherPoint[] | null;
   }): Shape {
-    const {
-      _shph,
-      _points,
-      _isMask = false,
-      _layer = null,
-      _omtn = null,
-      _maskPath = null,
-      featherPoints = null,
-    } = kw;
+    const { _shph, _points, _isMask = false, _layer = null, _omtn = null, _maskPath = null, featherPoints = null } = kw;
     const obj: Shape = Object.create(this.prototype);
     obj._shph = _shph;
     obj._points = _points;
@@ -352,7 +341,7 @@ export class Shape {
     if (tensions == null || tensions.length !== vertices.length) {
       tensions = this._ownTensions();
       if (tensions.length !== vertices.length) {
-        tensions = new Array<number>(vertices.length).fill(DEFAULT_TENSION);
+        tensions = Array.from({ length: vertices.length }, () => DEFAULT_TENSION);
       }
     }
     return rotoBezierTangents(
@@ -453,7 +442,7 @@ export class Shape {
       outT = this._storedTangents(1);
     } else {
       // A new vertex count: the old tangents belonged to other vertices.
-      inT = outT = new Array<number[]>(value.length).fill([0.0, 0.0]);
+      inT = outT = Array.from({ length: value.length }, () => [0.0, 0.0]);
     }
     this._writeGeometry([...value], inT, outT);
   }

@@ -16,8 +16,6 @@ import { format, split } from "../support/python.ts";
 const SAMPLES_DIR = new Path(import.meta.dir).parent.parent.div("samples", "models", "project");
 const VIEW_SAMPLES_DIR = new Path(import.meta.dir).parent.parent.div("samples", "models", "view");
 const VERSIONS_DIR = new Path(import.meta.dir).parent.parent.div("samples", "versions");
-const LAYER_SAMPLES_DIR = new Path(import.meta.dir).parent.parent.div("samples", "models", "layer");
-const COMP_SAMPLES_DIR = new Path(import.meta.dir).parent.parent.div("samples", "models", "composition");
 
 describe("TestBitsPerChannel", () => {
   /** Tests for bitsPerChannel attribute. */
@@ -335,7 +333,12 @@ describe("TestDynamicLinkGUID", () => {
     if (first.done) throw new StopIteration();
     const guid = first.value.dynamicLinkGuid;
     const groups = split(guid, "-");
-    expect(valueEquals(groups.map((g) => len(g)), [8, 4, 4, 4, 12])).toBe(true);
+    expect(
+      valueEquals(
+        groups.map((g) => len(g)),
+        [8, 4, 4, 4, 12],
+      ),
+    ).toBe(true);
     expect(guid).toBe(guid.toLowerCase());
   });
 });

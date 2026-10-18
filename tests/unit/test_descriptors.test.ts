@@ -154,7 +154,7 @@ class _ValidateModel {
   declare _body: _FakeBody | null;
   declare count: number;
 
-  static _check_positive(value: number, obj: object): void {
+  static _check_positive(value: number, _obj: object): void {
     if (value < 0) {
       throw new ValueError("must be positive");
     }
@@ -206,12 +206,16 @@ class _SyntheticModel {
 }
 descriptor(_SyntheticModel, "value", new ChunkField<number>("_body", "value"));
 
-const _MyEnum = defineEnum("_MyEnum", { OFF: 0, ON: 1, AUTO: 2 }, {
-  // NOTE(port): _enum_class/getattr(enum, "fromBinary") binds the classmethod to the enum (covered by TestChunkFieldEnum below).
-  from_binary(value: number) {
-    return this.of(value);
+const _MyEnum = defineEnum(
+  "_MyEnum",
+  { OFF: 0, ON: 1, AUTO: 2 },
+  {
+    // NOTE(port): _enum_class/getattr(enum, "fromBinary") binds the classmethod to the enum (covered by TestChunkFieldEnum below).
+    from_binary(value: number) {
+      return this.of(value);
+    },
   },
-});
+);
 type _MyEnum = EnumValue<typeof _MyEnum>;
 
 /** Model with an enum ChunkField. */
@@ -302,9 +306,13 @@ describe("TestChunkFieldReadOnly", () => {
   test("test_read_only_rejects_writes", () => {
     const body = new _FakeBody({ width: 100 });
     const model = new _ReadOnlyModel(body);
-    raises(AttributeError, () => {
-      model.width = 200;
-    }, "read-only");
+    raises(
+      AttributeError,
+      () => {
+        model.width = 200;
+      },
+      "read-only",
+    );
   });
 
   test("test_read_only_reads_normally", () => {
@@ -320,9 +328,13 @@ describe("TestChunkFieldSuppressMaterialization", () => {
     new _FakeParent(body);
     const model = new _DirectModel(body);
     _suppressMaterialization().run(() => {
-      raises(RuntimeError, () => {
-        model.name = "new";
-      }, "during parsing");
+      raises(
+        RuntimeError,
+        () => {
+          model.name = "new";
+        },
+        "during parsing",
+      );
     });
     expect(body.name).toBe("old");
   });
@@ -382,9 +394,13 @@ describe("TestChunkFieldValidation", () => {
     const model = new _ValidateModel(body);
     const token = _materializationAllowed.set(true);
     try {
-      raises(ValueError, () => {
-        model.count = -1;
-      }, "must be positive");
+      raises(
+        ValueError,
+        () => {
+          model.count = -1;
+        },
+        "must be positive",
+      );
     } finally {
       _materializationAllowed.reset(token);
     }
@@ -411,9 +427,13 @@ describe("TestChunkFieldEnumValidation", () => {
     const model = new _EnumModel(body);
     const token = _materializationAllowed.set(true);
     try {
-      raises(ValueError, () => {
-        model.mode = 99;
-      }, "Invalid value 99");
+      raises(
+        ValueError,
+        () => {
+          model.mode = 99;
+        },
+        "Invalid value 99",
+      );
     } finally {
       _materializationAllowed.reset(token);
     }
@@ -495,7 +515,7 @@ describe("TestChunkFieldEnumAllowOutOfEnumValues", () => {
   test("test_caller_validate_is_not_overridden", () => {
     const calls: unknown[] = [];
 
-    function _record(value: unknown, obj: unknown): void {
+    function _record(value: unknown, _obj: unknown): void {
       calls.push(value);
     }
 
@@ -524,10 +544,14 @@ describe("TestChunkFieldBool", () => {
     const model = new _BoolModel(body);
     const token = _materializationAllowed.set(true);
     try {
-      raises(TypeError, () => {
-        // @ts-expect-error deliberately assigns a non-bool to check runtime validation
-        model.flag = bad;
-      }, "expected a bool");
+      raises(
+        TypeError,
+        () => {
+          // @ts-expect-error deliberately assigns a non-bool to check runtime validation
+          model.flag = bad;
+        },
+        "expected a bool",
+      );
     } finally {
       _materializationAllowed.reset(token);
     }
@@ -548,7 +572,7 @@ describe("TestChunkFieldBool", () => {
   });
 
   test("test_caller_validate_is_not_overridden", () => {
-    function _custom(value: unknown, obj: unknown): void {}
+    function _custom(_value: unknown, _obj: unknown): void {}
 
     const cf = ChunkField.bool("_body", "flag", { validate: _custom });
     expect(cf.validate).toBe(_custom);
@@ -589,7 +613,16 @@ class _CosModel {
     this._propagateCalled = true;
   }
 }
-descriptor(_CosModel, "fontSize", new CosField<number | null, "_style", _CosModel>("_style", "1", { transform: cosFloat, reverse: float, accepts: (v: unknown): v is number => typeof v === "number", default: null }));
+descriptor(
+  _CosModel,
+  "fontSize",
+  new CosField<number | null, "_style", _CosModel>("_style", "1", {
+    transform: cosFloat,
+    reverse: float,
+    accepts: (v: unknown): v is number => typeof v === "number",
+    default: null,
+  }),
+);
 
 describe("TestCosFieldScalarReverse", () => {
   test("test_scalar_reverse_writes_to_dict", () => {

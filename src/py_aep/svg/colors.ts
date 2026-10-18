@@ -16,7 +16,7 @@ export type Rgba = readonly [number, number, number, number];
 // SVG/CSS named colors (the full set), as 0-255 RGB.
 // A Map, not an object: the key is arbitrary user input, so "constructor" and
 // "__proto__" must miss rather than hit Object.prototype.
-export const _NAMED = new Map<string, readonly [number, number, number]>([
+const _NAMED = new Map<string, readonly [number, number, number]>([
   ["aliceblue", [240, 248, 255]],
   ["antiquewhite", [250, 235, 215]],
   ["aqua", [0, 255, 255]],
@@ -167,10 +167,10 @@ export const _NAMED = new Map<string, readonly [number, number, number]>([
   ["yellowgreen", [154, 205, 50]],
 ]);
 
-export const _RGB_RE = pyRe(String.raw`rgba?\(([^)]*)\)`, reFlags.IGNORECASE);
-export const _HSL_RE = pyRe(String.raw`hsla?\(([^)]*)\)`, reFlags.IGNORECASE);
+const _RGB_RE = pyRe(String.raw`rgba?\(([^)]*)\)`, reFlags.IGNORECASE);
+const _HSL_RE = pyRe(String.raw`hsla?\(([^)]*)\)`, reFlags.IGNORECASE);
 
-export function _component(token: string, scale: number = 255.0): number {
+function _component(token: string, scale: number = 255.0): number {
   token = token.trim();
   if (token.endsWith("%")) return Number(token.slice(0, -1)) / 100.0;
   return Number(token) / scale;
@@ -209,7 +209,7 @@ export function parseColor(value: string | null, current: Rgba = [0.0, 0.0, 0.0,
   return null;
 }
 
-export function _parseHex(h: string): Rgba | null {
+function _parseHex(h: string): Rgba | null {
   // Python `len` and `h[i:j]` count code points, so work on code points here.
   let cps = Array.from(h);
   if (cps.length === 3 || cps.length === 4) cps = cps.flatMap((c) => [c, c]);
@@ -223,7 +223,7 @@ export function _parseHex(h: string): Rgba | null {
   return [r, g, b, a];
 }
 
-export function _parseHsl(v: string): Rgba | null {
+function _parseHsl(v: string): Rgba | null {
   const m = patternMatch(_HSL_RE, v);
   if (!m) return null;
   const parts = Array.from(m[1].matchAll(NUMBER_PCT_RE), (n) => n[0]);

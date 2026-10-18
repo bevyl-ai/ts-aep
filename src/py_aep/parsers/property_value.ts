@@ -1,6 +1,5 @@
 /** Core single-property parsing and keyframe extraction. */
 
-import { warn } from "../../pyrt/index.ts";
 import type { Chunk, ListChunk } from "../binary/chunk.ts";
 import type { TdmnChunk } from "../binary/property_chunks.ts";
 import { findByListTypeOrNull, findByType, findByTypeOrNull } from "../binary/utils.ts";
@@ -9,12 +8,6 @@ import { _suppressMaterialization } from "../models/descriptors.ts";
 import { Keyframe } from "../models/properties/keyframe.ts";
 import { Property } from "../models/properties/property.ts";
 import type { CompItem } from "../models/items/composition.ts";
-
-export const logger = {
-  debug() {},
-  info() {},
-  warning: (m: string) => warn(m),
-};
 
 /**
  * Parse a property.
@@ -96,7 +89,7 @@ export const parseProperty = _suppressMaterialization().decorate(function parse_
  * @param tdbsChildChunks - The child chunks of the TDBS chunk.
  * @param frameRate - The frame rate of the parent composition.
  */
-export function _parseKeyframes(tdbsChildChunks: Chunk[], frameRate: number): Keyframe[] {
+function _parseKeyframes(tdbsChildChunks: Chunk[], frameRate: number): Keyframe[] {
   const listChunk = findByListTypeOrNull(tdbsChildChunks, "list");
   if (listChunk === null) return [];
 

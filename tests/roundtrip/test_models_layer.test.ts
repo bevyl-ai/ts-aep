@@ -1,11 +1,36 @@
 /** Tests for Layer model parsing. */
 
 import { describe, expect, test } from "bun:test";
-import { AttributeError, len, NotImplementedError, at, Path, assert, valueEquals, getOrThrow, getOrInsert, pySlice, isclose, RuntimeError, StopIteration, ValueError } from "../../src/pyrt/index.ts";
+import {
+  AttributeError,
+  len,
+  NotImplementedError,
+  at,
+  Path,
+  assert,
+  valueEquals,
+  getOrThrow,
+  getOrInsert,
+  pySlice,
+  isclose,
+  RuntimeError,
+  StopIteration,
+  ValueError,
+} from "../../src/pyrt/index.ts";
 
 import * as py_aep from "../../src/py_aep/index.ts";
 import { parse as parseAep } from "../../src/py_aep/index.ts";
-import { AutoOrientType, BlendingMode, FrameBlendingType, KeyframeInterpolationType, Label, LayerQuality, LayerSamplingQuality, LightType, TrackMatteType } from "../../src/py_aep/enums/index.ts";
+import {
+  AutoOrientType,
+  BlendingMode,
+  FrameBlendingType,
+  KeyframeInterpolationType,
+  Label,
+  LayerQuality,
+  LayerSamplingQuality,
+  LightType,
+  TrackMatteType,
+} from "../../src/py_aep/enums/index.ts";
 import { AVLayer, LightLayer, ShapeLayer, TextLayer } from "../../src/py_aep/models/layers/index.ts";
 import type { Layer } from "../../src/py_aep/models/layers/index.ts";
 import { ThreeDModelLayer } from "../../src/py_aep/models/layers/three_d_model_layer.ts";
@@ -41,7 +66,9 @@ function _tdpiByParamSuffix(layer: Layer): Map<string, number[]> {
         if (body instanceof ListChunk) {
           for (const inner of body.chunks) {
             if (inner.chunkType === "tdpi") {
-              getOrInsert(result, pySlice(asInstance(c, TdmnChunk).value, -5, null), []).push(asInstance(inner, S4Chunk).value);
+              getOrInsert(result, pySlice(asInstance(c, TdmnChunk).value, -5, null), []).push(
+                asInstance(inner, S4Chunk).value,
+              );
             }
           }
         }
@@ -100,9 +127,13 @@ describe("TestLightSource", () => {
     const source = asInstance(light.lightSource, AVLayer);
 
     source.threeDLayer = true;
-    raises(ValueError, () => {
-      light.lightSource = source;
-    }, "Invalid light source specified");
+    raises(
+      ValueError,
+      () => {
+        light.lightSource = source;
+      },
+      "Invalid light source specified",
+    );
   });
 });
 
@@ -152,10 +183,14 @@ describe("TestRoundtripLightType", () => {
     const project = parseProjectFresh(SAMPLES_DIR.div("lightType.aep"));
     const layer = getLayer(project, "lightType_AMBIENT");
     expect(layer instanceof LightLayer).toBe(true);
-    raises(ValueError, () => {
-      // @ts-expect-error type: ignore[assignment] in Python: the value is deliberately invalid.
-      asInstance(layer, LightLayer).lightType = 9999;
-    }, "Invalid value");
+    raises(
+      ValueError,
+      () => {
+        // @ts-expect-error type: ignore[assignment] in Python: the value is deliberately invalid.
+        asInstance(layer, LightLayer).lightType = 9999;
+      },
+      "Invalid value",
+    );
   });
 });
 
@@ -897,9 +932,13 @@ describe("TestSetTrackMatte", () => {
     const comp = app.project.compositions[0];
     const layer = asInstance(comp.layers[0], AVLayer);
 
-    raises(AttributeError, () => {
-      layer.setTrackMatte(layer, TrackMatteType.ALPHA);
-    }, "AE 23");
+    raises(
+      AttributeError,
+      () => {
+        layer.setTrackMatte(layer, TrackMatteType.ALPHA);
+      },
+      "AE 23",
+    );
   });
 
   test("test_wrong_comp_raises", () => {
@@ -910,9 +949,13 @@ describe("TestSetTrackMatte", () => {
     const matted = asInstance(compA.layers[0], AVLayer);
     const foreign = asInstance(compL.layers[1], AVLayer);
 
-    raises(ValueError, () => {
-      matted.setTrackMatte(foreign, TrackMatteType.ALPHA);
-    }, "same composition");
+    raises(
+      ValueError,
+      () => {
+        matted.setTrackMatte(foreign, TrackMatteType.ALPHA);
+      },
+      "same composition",
+    );
   });
 });
 
@@ -964,9 +1007,13 @@ describe("TestRemoveTrackMatte", () => {
     /** Files older than AE 23 raise AttributeError. */
     const app = parseAep(VERSIONS_DIR.div("ae2022", "complete.aep"));
     const comp = app.project.compositions[0];
-    raises(AttributeError, () => {
-      asInstance(comp.layers[0], AVLayer).removeTrackMatte();
-    }, "AE 23");
+    raises(
+      AttributeError,
+      () => {
+        asInstance(comp.layers[0], AVLayer).removeTrackMatte();
+      },
+      "AE 23",
+    );
   });
 });
 
@@ -980,7 +1027,10 @@ describe("TestReplaceSource", () => {
     const layer = asInstance(comp.layers[0], AVLayer); // first AVLayer
     const oldSource = layer.source;
     // Pick any other footage item as new source
-    const newSource = asInstance(app.project.footages.find((item) => item !== oldSource), FootageItem);
+    const newSource = asInstance(
+      app.project.footages.find((item) => item !== oldSource),
+      FootageItem,
+    );
 
     layer.replaceSource(newSource);
 
@@ -994,7 +1044,10 @@ describe("TestReplaceSource", () => {
     const app = parseAep(VERSIONS_DIR.div("ae2025", "complete.aep"));
     const comp = getComp(app.project, "Main_Comp");
     const layer = asInstance(comp.layers[0], AVLayer);
-    const newSource = asInstance(app.project.footages.find((item) => item !== layer.source), FootageItem);
+    const newSource = asInstance(
+      app.project.footages.find((item) => item !== layer.source),
+      FootageItem,
+    );
     const newId = newSource.id;
 
     layer.replaceSource(newSource);
@@ -1020,9 +1073,7 @@ describe("TestReplaceSource", () => {
 
     expect(newSource._usedIn.has(comp)).toBe(true);
     // old_source removed if no other layer in comp uses it
-    const stillUsed = comp.layers.some(
-      (ly) => "_sourceId" in ly && ly !== layer && ly._sourceId === oldSource.id,
-    );
+    const stillUsed = comp.layers.some((ly) => "_sourceId" in ly && ly !== layer && ly._sourceId === oldSource.id);
     if (!stillUsed) {
       expect(oldSource._usedIn.has(comp)).toBe(false);
     }
@@ -1035,9 +1086,13 @@ describe("TestReplaceSource", () => {
     const layer = asInstance(comp.layers[0], AVLayer);
     const source = app.project.footages[0];
 
-    raises(NotImplementedError, () => {
-      layer.replaceSource(source, true);
-    }, "fixExpressions");
+    raises(
+      NotImplementedError,
+      () => {
+        layer.replaceSource(source, true);
+      },
+      "fixExpressions",
+    );
   });
 
   test("test_not_in_project_raises", () => {
@@ -1051,10 +1106,14 @@ describe("TestReplaceSource", () => {
       name = "ghost";
     }
 
-    raises(ValueError, () => {
-      // @ts-expect-error a non-AVItem source is deliberately passed to the runtime check
-      layer.replaceSource(new _FakeItem());
-    }, "must be an AVItem");
+    raises(
+      ValueError,
+      () => {
+        // @ts-expect-error a non-AVItem source is deliberately passed to the runtime check
+        layer.replaceSource(new _FakeItem());
+      },
+      "must be an AVItem",
+    );
   });
 
   test("test_sourceless_layer_raises", () => {
@@ -1063,9 +1122,13 @@ describe("TestReplaceSource", () => {
     const layer = asInstance(getLayer(project, "type_shape"), ShapeLayer);
     expect(layer.source == null).toBe(true);
 
-    raises(ValueError, () => {
-      layer.replaceSource(project.footages[0]);
-    }, "does not have a source");
+    raises(
+      ValueError,
+      () => {
+        layer.replaceSource(project.footages[0]);
+      },
+      "does not have a source",
+    );
   });
 
   test("test_3d_model_layer_raises", () => {
@@ -1073,9 +1136,13 @@ describe("TestReplaceSource", () => {
     const project = parseProjectFresh(SAMPLES_DIR.div("three_d_model_layer.aep"));
     const layer = asInstance(getFirstLayer(project), ThreeDModelLayer);
 
-    raises(ValueError, () => {
-      layer.replaceSource(asInstance(layer.source, AVItem));
-    }, "3D model layers");
+    raises(
+      ValueError,
+      () => {
+        layer.replaceSource(asInstance(layer.source, AVItem));
+      },
+      "3D model layers",
+    );
   });
 
   test("test_direct_cycle_raises", () => {
@@ -1084,9 +1151,13 @@ describe("TestReplaceSource", () => {
     const comp = getComp(app.project, "Main_Comp");
     const layer = asInstance(comp.layers[0], AVLayer);
 
-    raises(ValueError, () => {
-      layer.replaceSource(comp);
-    }, "composition cycle");
+    raises(
+      ValueError,
+      () => {
+        layer.replaceSource(comp);
+      },
+      "composition cycle",
+    );
   });
 
   test("test_deep_cycle_raises", () => {
@@ -1118,9 +1189,13 @@ describe("TestReplaceSource", () => {
     }
     // sub_comp is used inside Main_Comp, so setting a layer
     // in sub_comp to point at Main_Comp would create A > B > A.
-    raises(ValueError, () => {
-      subLayer.replaceSource(comp);
-    }, "composition cycle");
+    raises(
+      ValueError,
+      () => {
+        subLayer.replaceSource(comp);
+      },
+      "composition cycle",
+    );
   });
 });
 
@@ -1384,7 +1459,12 @@ describe("TestLayerMove", () => {
     const comp = getComp(app.project, "crystal");
     const idsBefore = comp.layers.map((ly) => ly.id);
     comp.layers[1].moveBefore(comp.layers[1]);
-    expect(valueEquals(comp.layers.map((ly) => ly.id), idsBefore)).toBe(true);
+    expect(
+      valueEquals(
+        comp.layers.map((ly) => ly.id),
+        idsBefore,
+      ),
+    ).toBe(true);
   });
 
   test("test_move_wrong_comp_raises", () => {
@@ -1395,9 +1475,13 @@ describe("TestLayerMove", () => {
     }
     const layerA = comps[0].layers[0];
     const layerB = comps[1].layers[0];
-    raises(ValueError, () => {
-      layerA.moveAfter(layerB);
-    }, "same composition");
+    raises(
+      ValueError,
+      () => {
+        layerA.moveAfter(layerB);
+      },
+      "same composition",
+    );
   });
 
   test("test_move_roundtrip", () => {
@@ -1407,12 +1491,22 @@ describe("TestLayerMove", () => {
     const namesBefore = comp.layers.map((ly) => ly.name);
     comp.layers[0].moveToEnd();
     const expected = [...namesBefore.slice(1), namesBefore[0]];
-    expect(valueEquals(comp.layers.map((ly) => ly.name), expected)).toBe(true);
+    expect(
+      valueEquals(
+        comp.layers.map((ly) => ly.name),
+        expected,
+      ),
+    ).toBe(true);
 
     app.project.save(tmpPath.div("out.aep"));
     const app2 = parseAep(tmpPath.div("out.aep"));
     const comp2 = getComp(app2.project, "crystal");
-    expect(valueEquals(comp2.layers.map((ly) => ly.name), expected)).toBe(true);
+    expect(
+      valueEquals(
+        comp2.layers.map((ly) => ly.name),
+        expected,
+      ),
+    ).toBe(true);
   });
 
   test("test_move_updates_index", () => {
@@ -1820,9 +1914,13 @@ describe("TestGeometryAutoOrientGuard", () => {
     const layer = _probeLayer(project, "solid_keyed");
     layer.transform.property("ADBE Position").dimensionsSeparated = true;
     layer.autoOrient = AutoOrientType.ALONG_PATH;
-    raises(NotImplementedError, () => {
-      layer.sourcePointToComp([0.0, 0.0]);
-    }, "separated");
+    raises(
+      NotImplementedError,
+      () => {
+        layer.sourcePointToComp([0.0, 0.0]);
+      },
+      "separated",
+    );
   });
 
   test("test_parented_layer_towards_camera_raises", () => {
@@ -1830,18 +1928,26 @@ describe("TestGeometryAutoOrientGuard", () => {
     const child = _probeLayer(project, "solid_parented");
     child.threeDLayer = true;
     child.autoOrient = AutoOrientType.CAMERA_OR_POINT_OF_INTEREST;
-    raises(NotImplementedError, () => {
-      child.compPointToSource([0.0, 0.0]);
-    }, "towards the camera");
+    raises(
+      NotImplementedError,
+      () => {
+        child.compPointToSource([0.0, 0.0]);
+      },
+      "towards the camera",
+    );
   });
 
   test("test_characters_towards_camera_raises", () => {
     const project = parseProjectFresh(SAMPLES_DIR.div("geometry_probe.aep"));
     const layer = _probeLayer(project, "text_point");
     layer.autoOrient = AutoOrientType.CHARACTERS_TOWARD_CAMERA;
-    raises(NotImplementedError, () => {
-      layer.sourcePointToComp([0.0, 0.0]);
-    }, "characters");
+    raises(
+      NotImplementedError,
+      () => {
+        layer.sourcePointToComp([0.0, 0.0]);
+      },
+      "characters",
+    );
   });
 });
 
@@ -1873,9 +1979,13 @@ describe("TestForwardRayOnly", () => {
     const layer = _probe3dLayer();
     // Default comp camera sits at z = -zoom; push the layer behind it.
     layer.transform.property("ADBE Position").value = [960.0, 540.0, -20000.0];
-    raises(ValueError, () => {
-      layer.compPointToSource([100.0, 100.0]);
-    }, "not in front of the camera");
+    raises(
+      ValueError,
+      () => {
+        layer.compPointToSource([100.0, 100.0]);
+      },
+      "not in front of the camera",
+    );
   });
 });
 
@@ -1900,7 +2010,12 @@ describe("TestRoundtripTimeRemapRamp", () => {
     const comp = getComp(project, "outPoint_no_clamp_timeRemap");
     const layer = asInstance(comp.layers[0], AVLayer);
     const authored = layer.property("ADBE Time Remapping").keyframes.map((k) => [k.time, k.value]);
-    expect(valueEquals(authored, [[0.0, 0.0], [5.0, 5.0]])).toBe(true);
+    expect(
+      valueEquals(authored, [
+        [0.0, 0.0],
+        [5.0, 5.0],
+      ]),
+    ).toBe(true);
 
     layer.timeRemapEnabled = false;
     layer.timeRemapEnabled = true;
@@ -1909,7 +2024,12 @@ describe("TestRoundtripTimeRemapRamp", () => {
     project.save(out);
     const comp2 = getComp(parseAep(out).project, "outPoint_no_clamp_timeRemap");
     const remap = comp2.layers[0].property("ADBE Time Remapping");
-    expect(valueEquals(remap.keyframes.map((k) => [k.time, k.value]), authored)).toBe(true);
+    expect(
+      valueEquals(
+        remap.keyframes.map((k) => [k.time, k.value]),
+        authored,
+      ),
+    ).toBe(true);
   });
 
   test("test_ramp_is_linear", () => {
@@ -1988,18 +2108,26 @@ describe("TestTextSourceRectRefusals", () => {
     const layer = _hello(parseProjectFresh(SAMPLES_DIR.div("text_ink.aep")));
     assert(layer.text != null);
     layer.text.property("ADBE Text Document").value.fauxBold = true;
-    raises(NotImplementedError, () => {
-      layer.sourceRectAtTime(0.0, false);
-    }, "faux bold");
+    raises(
+      NotImplementedError,
+      () => {
+        layer.sourceRectAtTime(0.0, false);
+      },
+      "faux bold",
+    );
   });
 
   test("test_text_animator_raises", () => {
     const layer = _hello(parseProjectFresh(SAMPLES_DIR.div("text_ink.aep")));
     assert(layer.text != null);
     layer.text.property("ADBE Text Animators").addProperty("ADBE Text Animator");
-    raises(NotImplementedError, () => {
-      layer.sourceRectAtTime(0.0, false);
-    }, "animators");
+    raises(
+      NotImplementedError,
+      () => {
+        layer.sourceRectAtTime(0.0, false);
+      },
+      "animators",
+    );
   });
 });
 
@@ -2066,9 +2194,7 @@ describe("TestAnchorFollowsSource", () => {
     const comp = getComp(project, "AltSrc");
     const precomp = project.rootFolder.addComp("pc", 200, 100, 1.0, 10.0, 24.0);
     const layers = [0, 1].map((i) =>
-      change === "precomp_resize"
-        ? comp.add(precomp)
-        : comp.addSolid([1.0, 0.0, 0.0], `S${i}`, 200, 100, 1.0),
+      change === "precomp_resize" ? comp.add(precomp) : comp.addSolid([1.0, 0.0, 0.0], `S${i}`, 200, 100, 1.0),
     );
     layers[1].transform.property("ADBE Anchor Point").value = [30.0, 40.0, 0.0];
     if (change === "replace_source") {
@@ -2130,9 +2256,7 @@ describe("TestLazyPropertyTree", () => {
       expect(layer._treeParamDefs != null).toBe(true);
       // Times may decode the root tdgp (Time Remapping), not its groups.
       const root = asInstance(layer._tdgp, DeferredListChunk);
-      const groups = (root.isParsed ? root.chunks : []).filter(
-        (c) => c instanceof ListChunk && c.listType === "tdgp",
-      );
+      const groups = (root.isParsed ? root.chunks : []).filter((c) => c instanceof ListChunk && c.listType === "tdgp");
       expect(groups.every((g) => g instanceof DeferredListChunk && !g.isParsed)).toBe(true);
     }
   });
@@ -2256,9 +2380,13 @@ describe("TestLazyPropertyTree", () => {
       throw new RuntimeError("corrupt layer");
     };
     for (let i = 0; i < 2; i++) {
-      raises(RuntimeError, () => {
-        void layer.properties;
-      }, "corrupt layer");
+      raises(
+        RuntimeError,
+        () => {
+          void layer.properties;
+        },
+        "corrupt layer",
+      );
     }
     Reflect.deleteProperty(layer, "_buildPropertyTree");
     expect(layer.transform != null).toBe(true);
@@ -2300,7 +2428,12 @@ describe("TestLazyPropertyTree", () => {
 
   test("test_essential_property_uuids_leave_the_tree_unbuilt", () => {
     const project = parseProjectFresh(
-      new Path(import.meta.path).parent.parent.parent.div("samples", "models", "essential_graphics", "multiple_controllers.aep"),
+      new Path(import.meta.path).parent.parent.parent.div(
+        "samples",
+        "models",
+        "essential_graphics",
+        "multiple_controllers.aep",
+      ),
     );
     const main = getComp(project, "main");
     expect(main.layers.filter((la) => la.essentialPropertyUuids.length === 3).length).toBe(1);

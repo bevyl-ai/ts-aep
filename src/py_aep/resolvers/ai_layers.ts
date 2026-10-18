@@ -12,14 +12,7 @@
  */
 
 import * as zlib from "../../pyrt/zlib.ts";
-import {
-  ByteStream,
-  Path,
-  ValueError,
-  getOrThrow,
-  Bytes,
-  bytesEqual,
-  type PathLike, ascii } from "../../pyrt/index.ts";
+import { ByteStream, Path, ValueError, getOrThrow, Bytes, bytesEqual, type PathLike, ascii } from "../../pyrt/index.ts";
 import { CosParser, IndirectObject, IndirectReference, decodePdfTextString } from "../cos/index.ts";
 import { type CosDict, type CosNode, type CosString } from "../cos/cos.ts";
 import { is, pyStr } from "../cos/kinds.ts";
@@ -51,26 +44,23 @@ export class AiLayer {
 
 // The leading `\b` skips every `endobj`: a header needs whitespace before
 // the keyword anyway.
-export const _OBJ_KEYWORD_RE = /\bobj\b/g;
-export const _OBJ_HEADER_RE = /(\d+)[ \t\r\n]+(\d+)[ \t\r\n]+$/;
+const _OBJ_KEYWORD_RE = /\bobj\b/g;
+const _OBJ_HEADER_RE = /(\d+)[ \t\r\n]+(\d+)[ \t\r\n]+$/;
 // How far before an `obj` keyword its `N G` header may start: far longer
 // than any header a PDF writer emits.
-export const _OBJ_HEADER_WINDOW = 64;
+const _OBJ_HEADER_WINDOW = 64;
 
 /**
  * Latin-1 text with one character per byte, so regex match offsets are the
  * byte offsets of the Python `bytes` patterns (`rb"..."`).
  */
-export function latin1(data: Uint8Array): string {
+function latin1(data: Uint8Array): string {
   return Bytes.latin1Str(data);
 }
 
 // TODO(port): Python's RecursionError (CPython limit 1000 frames) maps to V8's stack-overflow RangeError, which fires at an engine/stack-size dependent depth; PDF objects nested between the two limits parse in one runtime and are reported malformed (or not) in the other. No pyrt RecursionError exists and V8 gives no fixed depth to emulate.
-export function isMalformed(exc: unknown): boolean {
-  return (
-    exc instanceof SyntaxError ||
-    (exc instanceof RangeError && /call stack/.test(exc.message))
-  );
+function isMalformed(exc: unknown): boolean {
+  return exc instanceof SyntaxError || (exc instanceof RangeError && /call stack/.test(exc.message));
 }
 
 /** Map each indirect object number to its byte offset (last definition wins).
@@ -107,15 +97,12 @@ export function _parseObjectAt(data: Uint8Array, offset: number): CosNode {
     return value instanceof IndirectObject ? value.data : value;
   } catch (exc) {
     if (!isMalformed(exc)) throw exc;
-    throw Object.assign(
-      new UnsupportedAiLayersError(`malformed PDF object at byte ${offset}`),
-      { cause: exc },
-    );
+    throw Object.assign(new UnsupportedAiLayersError(`malformed PDF object at byte ${offset}`), { cause: exc });
   }
 }
 
 /** Follow an indirect reference to its object; pass other values through. */
-export function _resolve(value: CosNode, data: Uint8Array, offsets: Map<number, number>): CosNode {
+function _resolve(value: CosNode, data: Uint8Array, offsets: Map<number, number>): CosNode {
   if (value instanceof IndirectReference) {
     const offset = offsets.get(value.objectNumber) ?? null;
     return offset == null ? null : _parseObjectAt(data, offset);
@@ -126,7 +113,7 @@ export function _resolve(value: CosNode, data: Uint8Array, offsets: Map<number, 
 /** Collect the OCG object numbers a `/D` `/Order` (or `/OFF`) tree
  * references, depth first, each once.
  */
-export function _orderObjectNumbers(value: CosNode, out: number[]): number[] {
+function _orderObjectNumbers(value: CosNode, out: number[]): number[] {
   if (Array.isArray(value)) {
     for (const entry of value) {
       _orderObjectNumbers(entry, out);
@@ -158,10 +145,7 @@ export function _orderObjectNumbers(value: CosNode, out: number[]): number[] {
  * @throws UnsupportedAiLayersError If the file is not a PDF-compatible document
  *     or has no Optional Content Groups (layers).
  */
-export function readAiLayerOcgs(
-  file: PathLike,
-  data: Uint8Array | null = null,
-): AiLayer[] {
+export function readAiLayerOcgs(file: PathLike, data: Uint8Array | null = null): AiLayer[] {
   const name = new Path(file).name;
   if (data == null) data = new Path(file).readBytes();
   if (!Bytes.startsWith(data, ascii("%PDF"))) {
@@ -172,9 +156,7 @@ export function readAiLayerOcgs(
   }
   const marker = Bytes.indexOf(data, ascii("/OCProperties"));
   if (marker < 0) {
-    throw new UnsupportedAiLayersError(
-      `${name}: no layers (the file has no PDF Optional Content Groups).`,
-    );
+    throw new UnsupportedAiLayersError(`${name}: no layers (the file has no PDF Optional Content Groups).`);
   }
   const offsets = _objectOffsets(data);
   const layers: AiLayer[] = [];
@@ -182,9 +164,7 @@ export function readAiLayerOcgs(
   // a pathologically nested one as RecursionError); either means the layers
   // cannot be read, which callers handle as this module's own error.
   try {
-    const parser = new CosParser(
-      new ByteStream(data.slice(marker + ascii("/OCProperties").length)),
-    );
+    const parser = new CosParser(new ByteStream(data.slice(marker + ascii("/OCProperties").length)));
     parser.lex();
     const ocProperties = _resolve(parser.parseValue(), data, offsets);
     if (!(ocProperties instanceof Map)) {
@@ -192,44 +172,31 @@ export function readAiLayerOcgs(
     }
     const configRef = _resolve(ocProperties.get("D") ?? null, data, offsets);
     const config: CosDict = configRef instanceof Map ? configRef : new Map();
-    const order = _orderObjectNumbers(
-      _resolve(config.get("Order") ?? null, data, offsets),
-      [],
-    );
-    const hidden = new Set(
-      _orderObjectNumbers(_resolve(config.get("OFF") ?? null, data, offsets), []),
-    );
+    const order = _orderObjectNumbers(_resolve(config.get("Order") ?? null, data, offsets), []);
+    const hidden = new Set(_orderObjectNumbers(_resolve(config.get("OFF") ?? null, data, offsets), []));
     const ocgs = _resolve(ocProperties.get("OCGs") ?? null, data, offsets);
     const listed = new Map<number, IndirectReference>();
     for (const ref of Array.isArray(ocgs) ? ocgs : []) {
       if (ref instanceof IndirectReference) listed.set(ref.objectNumber, ref);
     }
-    const refs: IndirectReference[] = order.length > 0
-      ? [...order]
-          .reverse()
-          .filter((n) => listed.has(n))
-          .map((n) => getOrThrow(listed, n))
-      : [...listed.values()];
+    const refs: IndirectReference[] =
+      order.length > 0
+        ? [...order]
+            .reverse()
+            .filter((n) => listed.has(n))
+            .map((n) => getOrThrow(listed, n))
+        : [...listed.values()];
     for (const ref of refs) {
       const ocg = _resolve(ref, data, offsets);
       if (!(ocg instanceof Map)) continue;
       const layerName = ocg.get("Name");
       if (isStrOrBytes(layerName)) {
-        layers.push(
-          new AiLayer(
-            ref.objectNumber,
-            decodePdfTextString(layerName),
-            !hidden.has(ref.objectNumber),
-          ),
-        );
+        layers.push(new AiLayer(ref.objectNumber, decodePdfTextString(layerName), !hidden.has(ref.objectNumber)));
       }
     }
   } catch (exc) {
     if (!isMalformed(exc)) throw exc;
-    throw Object.assign(
-      new UnsupportedAiLayersError(`${name}: malformed PDF objects.`),
-      { cause: exc },
-    );
+    throw Object.assign(new UnsupportedAiLayersError(`${name}: malformed PDF objects.`), { cause: exc });
   }
   if (layers.length === 0) {
     throw new UnsupportedAiLayersError(`${name}: no named layers found.`);
@@ -240,7 +207,7 @@ export function readAiLayerOcgs(
 /** `isinstance(x, (str, bytes))`. A `CosString` is a `str` subclass in Python,
  * so it is a `String` object here, not a primitive.
  */
-export function isStrOrBytes(x: CosNode | undefined): x is string | CosString | Uint8Array {
+function isStrOrBytes(x: CosNode | undefined): x is string | CosString | Uint8Array {
   return is(pyStr, x) || x instanceof Uint8Array;
 }
 
@@ -255,16 +222,13 @@ export function isStrOrBytes(x: CosNode | undefined): x is string | CosString | 
  * @throws UnsupportedAiLayersError If the file is not a PDF-compatible
  *     document or has no Optional Content Groups (layers).
  */
-export function readAiLayers(
-  file: PathLike,
-  data: Uint8Array | null = null,
-): string[] {
+export function readAiLayers(file: PathLike, data: Uint8Array | null = null): string[] {
   return readAiLayerOcgs(file, data).map((layer) => layer.name);
 }
 
-export const _STREAM_RE = /stream\r?\n([\s\S]*?)\r?\nendstream/g;
+const _STREAM_RE = /stream\r?\n([\s\S]*?)\r?\nendstream/g;
 
-export function inflateOrNull(body: string): Uint8Array | null {
+function inflateOrNull(body: string): Uint8Array | null {
   try {
     return zlib.decompress(Bytes.latin1Bytes(body));
   } catch (e) {

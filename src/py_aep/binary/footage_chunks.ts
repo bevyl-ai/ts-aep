@@ -18,12 +18,27 @@ import {
   encode,
   field,
   OverflowError,
-  struct, ascii } from "../../pyrt/index.ts";
+  struct,
+  ascii,
+} from "../../pyrt/index.ts";
 import type { ByteStream } from "../../pyrt/index.ts";
 import { MAC_EPOCH_OFFSET, readBytes, toDividendDivisor, toFixed1616, truncateUtf8 } from "./bin_utils.ts";
 import { BitField } from "./bitfield.ts";
 import { Chunk, type ChunkReadKwargs } from "./chunk.ts";
-import { asciiField, boolField, bytesField, f4Field, f8Field, s2Field, s4Field, strField, u1Field, u2Field, u4Field, u8Field } from "./fmt_field.ts";
+import {
+  asciiField,
+  boolField,
+  bytesField,
+  f4Field,
+  f8Field,
+  s2Field,
+  s4Field,
+  strField,
+  u1Field,
+  u2Field,
+  u4Field,
+  u8Field,
+} from "./fmt_field.ts";
 import { register } from "./registry.ts";
 import { CineonRoptChunk } from "./render_chunks.ts";
 
@@ -274,7 +289,11 @@ export class SspcChunk extends Chunk {
     // int.to_bytes raises OverflowError (not ValueError) when the value does not fit
     if (stamp < 0) throw new OverflowError("can't convert negative int to unsigned");
     if (stamp >= 2 ** 32) throw new OverflowError("int too big to convert");
-    this._sourceStamp = concat(new Uint8Array(2), Bytes.intToBytes(stamp, 4, "big"), Bytes.repeat(new Uint8Array(1), 3));
+    this._sourceStamp = concat(
+      new Uint8Array(2),
+      Bytes.intToBytes(stamp, 4, "big"),
+      Bytes.repeat(new Uint8Array(1), 3),
+    );
   }
 
   /** Duration in seconds (dividend / divisor). */
@@ -307,9 +326,9 @@ export class SspcChunk extends Chunk {
   }
 
   set premulColor(value: number[]) {
-    this.premulColorR = (Math.round(value[0] * 255) + 0);
-    this.premulColorG = (Math.round(value[1] * 255) + 0);
-    this.premulColorB = (Math.round(value[2] * 255) + 0);
+    this.premulColorR = Math.round(value[0] * 255) + 0;
+    this.premulColorG = Math.round(value[1] * 255) + 0;
+    this.premulColorB = Math.round(value[2] * 255) + 0;
   }
 
   /** Field separation type (0=off, 1=upper_first, 2=lower_first). */
@@ -484,7 +503,10 @@ define(SspcChunk, {
   _reservedC8: bytesField(2, { repr: false }),
   _reservedCa: bytesField(2, { repr: false }),
   dataSize: u8Field(),
-  _reservedD4: bytesField(10, { default: concat(Uint8Array.of(0x01), Bytes.repeat(new Uint8Array(1), 9)), repr: false }),
+  _reservedD4: bytesField(10, {
+    default: concat(Uint8Array.of(0x01), Bytes.repeat(new Uint8Array(1), 9)),
+    repr: false,
+  }),
 });
 
 register("sspc")(SspcChunk);
@@ -519,7 +541,12 @@ export function buildGenericOptiData(sourceFormat: string, kw: { sequence?: bool
   if (sequence && ["IMIO", "STIL"].includes(sourceFormat)) {
     block = Bytes.repeat(new Uint8Array(1), 16);
   } else {
-    block = concat(Uint8Array.from(code).reverse(), Uint8Array.of(0xff, 0xff, 0xff, 0xff), Bytes.repeat(new Uint8Array(1), 4), Uint8Array.of(0x01, 0x00, 0x00, 0x00));
+    block = concat(
+      Uint8Array.from(code).reverse(),
+      Uint8Array.of(0xff, 0xff, 0xff, 0xff),
+      Bytes.repeat(new Uint8Array(1), 4),
+      Uint8Array.of(0x01, 0x00, 0x00, 0x00),
+    );
   }
   return concat(
     code,
@@ -745,7 +772,7 @@ export function buildDpxOptiData(): Uint8Array {
 }
 
 /** Length of the `oEXR` opti body AE 2026 writes for every OpenEXR file. */
-export const _OEXR_OPTI_SIZE = 9750;
+const _OEXR_OPTI_SIZE = 9750;
 
 /**
  * Build the 9750-byte OpenEXR (`oEXR`) `opti` asset-info body.
@@ -1263,7 +1290,7 @@ define(PlaceholderOptiChunk, {
   placeholderName: strField(256, { default: "", encoding: "utf-8" }),
 });
 
-export const _OPTI_VARIANTS = new Map<string, typeof OptiChunk>([
+const _OPTI_VARIANTS = new Map<string, typeof OptiChunk>([
   ["Soli", SoliOptiChunk],
   ["8BPS", PsdOptiChunk],
   ["TEXT", TextOptiChunk],

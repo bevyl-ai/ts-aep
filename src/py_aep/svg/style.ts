@@ -11,7 +11,7 @@ import { contains, compare } from "../../pyrt/index.ts";
 
 // Presentation properties py_aep tracks (the paintable subset plus the text
 // properties needed to outline `<text>`/`<tspan>`).
-export const _TRACKED: readonly string[] = [
+const _TRACKED: readonly string[] = [
   "fill",
   "fill-opacity",
   "fill-rule",
@@ -35,9 +35,7 @@ export const _TRACKED: readonly string[] = [
 ];
 // Properties that inherit from parent to child (CSS-defined). Of the tracked
 // set, only `opacity` and `display` do NOT inherit (`visibility` does).
-export const INHERITABLE: ReadonlySet<string> = new Set(
-  _TRACKED.filter((k) => k !== "opacity" && k !== "display"),
-);
+const INHERITABLE: ReadonlySet<string> = new Set(_TRACKED.filter((k) => k !== "opacity" && k !== "display"));
 
 /**
  * A parsed CSS rule: one selector with its declarations (`important`:
@@ -75,7 +73,7 @@ export class CssRule {
 
 // NOTE(port): Python `re` calls are inline JS RegExp (`matchAll` for `finditer`, `exec` for
 // `search`); patterns use only classes/`\s`/`$` where Python and JS agree (trailing `\s*` eats any "\n" before `$`).
-export const _RULE_RE = /([^{}]+)\{([^{}]*)\}/g;
+const _RULE_RE = /([^{}]+)\{([^{}]*)\}/g;
 
 /** Parse a `<style>` block into rules (comma groups split out).
  *
@@ -100,7 +98,7 @@ export function parseCss(text: string): CssRule[] {
   return rules;
 }
 
-export const _IMPORTANT_RE = /\s*!\s*important\s*$/i;
+const _IMPORTANT_RE = /\s*!\s*important\s*$/i;
 
 /** `(declarations, the !important ones)` of a declaration block. */
 export function _splitDeclarations(
@@ -128,9 +126,9 @@ export function _splitDeclarations(
   return [out, important];
 }
 
-export const _SEL_TOKEN_RE = /([#.]?)([A-Za-z0-9_*-]+)/g;
+const _SEL_TOKEN_RE = /([#.]?)([A-Za-z0-9_*-]+)/g;
 
-export function _specificity(selector: string): [number, number, number] {
+function _specificity(selector: string): [number, number, number] {
   let ids = 0;
   let classes = 0;
   let types = 0;
@@ -151,18 +149,8 @@ export function _specificity(selector: string): [number, number, number] {
  * Only single compound selectors (no descendant combinators) match;
  * a selector containing whitespace never matches.
  */
-export function selectorMatches(
-  selector: string,
-  tag: string,
-  elemId: string,
-  classes: ReadonlySet<string>,
-): boolean {
-  if (
-    selector.trim().includes(" ") ||
-    selector.includes(">") ||
-    selector.includes("+") ||
-    selector.includes("~")
-  ) {
+function selectorMatches(selector: string, tag: string, elemId: string, classes: ReadonlySet<string>): boolean {
+  if (selector.trim().includes(" ") || selector.includes(">") || selector.includes("+") || selector.includes("~")) {
     return false;
   }
   if (selector.includes(":") || selector.includes("[")) return false;
@@ -194,9 +182,7 @@ export function resolveProperties(
   cssRules: CssRule[],
 ): Map<string, string> {
   // Start from inherited properties only.
-  const style = new Map<string, string>(
-    [...parent].filter(([k]) => INHERITABLE.has(k)),
-  );
+  const style = new Map<string, string>([...parent].filter(([k]) => INHERITABLE.has(k)));
 
   // Presentation attributes (weakest author level).
   for (const key of _TRACKED) {
@@ -208,9 +194,7 @@ export function resolveProperties(
   // strongest wins.
   const elemId = attrs.get("id") ?? "";
   const classes = new Set((attrs.get("class") ?? "").split(/\s+/).filter(Boolean));
-  const matched = cssRules.filter((r) =>
-    selectorMatches(r.selector, tag, elemId, classes),
-  );
+  const matched = cssRules.filter((r) => selectorMatches(r.selector, tag, elemId, classes));
   const ordered = [...matched].sort((a, b) => compare([a.specificity, a.order], [b.specificity, b.order]));
   for (const rule of ordered) {
     for (const [k, v] of rule.declarations) style.set(k, v);

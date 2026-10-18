@@ -12,7 +12,11 @@ import { describe, expect, test } from "bun:test";
 
 import { valueEquals } from "../../src/pyrt/index.ts";
 
-import { _DEFAULT_INFLUENCE, autoSpatialTangents, autoTemporalSpeeds } from "../../src/py_aep/resolvers/interpolation.ts";
+import {
+  _DEFAULT_INFLUENCE,
+  autoSpatialTangents,
+  autoTemporalSpeeds,
+} from "../../src/py_aep/resolvers/interpolation.ts";
 import { approx } from "../support/pytest.ts";
 
 /** Tangent is +/- one sixth of the chord between the neighbours. */
@@ -23,7 +27,11 @@ describe("TestAutoSpatialTangents", () => {
    * would give in=[-50] out=[150].
    */
   test("test_interior_uses_chord_not_time_weighting", () => {
-    const values = [[0.0, 0.0], [100.0, 0.0], [600.0, 0.0]];
+    const values = [
+      [0.0, 0.0],
+      [100.0, 0.0],
+      [600.0, 0.0],
+    ];
     const [outTangent, inTangent] = autoSpatialTangents(values, 1);
     expect(approx(outTangent, [100.0, 0.0])).toBe(true);
     expect(approx(inTangent, [-100.0, 0.0])).toBe(true);
@@ -34,7 +42,11 @@ describe("TestAutoSpatialTangents", () => {
    * neighbour: k0 gets +/-(100-0)/6, k2 gets +/-(600-100)/6.
    */
   test("test_endpoints_use_the_single_neighbour_chord", () => {
-    const values = [[0.0, 0.0], [100.0, 0.0], [600.0, 0.0]];
+    const values = [
+      [0.0, 0.0],
+      [100.0, 0.0],
+      [600.0, 0.0],
+    ];
     const [firstOut, firstIn] = autoSpatialTangents(values, 0);
     expect(approx(firstOut, [100.0 / 6.0, 0.0])).toBe(true);
     expect(approx(firstIn, [-100.0 / 6.0, 0.0])).toBe(true);
@@ -45,7 +57,10 @@ describe("TestAutoSpatialTangents", () => {
   });
 
   test("test_two_keyframes_share_the_same_chord", () => {
-    const values = [[0.0, 0.0], [300.0, 0.0]];
+    const values = [
+      [0.0, 0.0],
+      [300.0, 0.0],
+    ];
     for (const index of [0, 1]) {
       const [outTangent, inTangent] = autoSpatialTangents(values, index);
       expect(approx(outTangent, [50.0, 0.0])).toBe(true);
@@ -54,7 +69,11 @@ describe("TestAutoSpatialTangents", () => {
   });
 
   test("test_three_dimensional", () => {
-    const values = [[0.0, 0.0, 0.0], [100.0, 50.0, 20.0], [600.0, 300.0, 90.0]];
+    const values = [
+      [0.0, 0.0, 0.0],
+      [100.0, 50.0, 20.0],
+      [600.0, 300.0, 90.0],
+    ];
     const [outTangent, inTangent] = autoSpatialTangents(values, 1);
     expect(approx(outTangent, [100.0, 50.0, 15.0])).toBe(true);
     expect(approx(inTangent, [-100.0, -50.0, -15.0])).toBe(true);
@@ -88,7 +107,13 @@ describe("TestAutoSpatialTangents", () => {
     for (const [index, expected] of expectedOut.entries()) {
       const [outTangent, inTangent] = autoSpatialTangents(values, index);
       expect(approx(outTangent, expected, { abs: 0.001 })).toBe(true);
-      expect(approx(inTangent, expected.map((c) => -c), { abs: 0.001 })).toBe(true);
+      expect(
+        approx(
+          inTangent,
+          expected.map((c) => -c),
+          { abs: 0.001 },
+        ),
+      ).toBe(true);
     }
   });
 });
@@ -121,7 +146,11 @@ describe("TestAutoTemporalSpeeds", () => {
    * speeds 150 and 25, NOT one shared scalar.
    */
   test("test_per_dimension_slope", () => {
-    const values = [[100.0, 100.0], [200.0, 120.0], [400.0, 150.0]];
+    const values = [
+      [100.0, 100.0],
+      [200.0, 120.0],
+      [400.0, 150.0],
+    ];
     const times = [0.0, 1.0, 2.0];
     const [inSpeeds, outSpeeds] = autoTemporalSpeeds(values, times, 1);
     expect(approx(inSpeeds, [150.0, 25.0])).toBe(true);
@@ -129,7 +158,11 @@ describe("TestAutoTemporalSpeeds", () => {
   });
 
   test("test_three_dimensional_scale", () => {
-    const values = [[100.0, 100.0, 100.0], [200.0, 120.0, 110.0], [400.0, 150.0, 300.0]];
+    const values = [
+      [100.0, 100.0, 100.0],
+      [200.0, 120.0, 110.0],
+      [400.0, 150.0, 300.0],
+    ];
     const times = [0.0, 1.0, 2.0];
     const [inSpeeds, _] = autoTemporalSpeeds(values, times, 1);
     expect(approx(inSpeeds, [150.0, 25.0, 100.0])).toBe(true);

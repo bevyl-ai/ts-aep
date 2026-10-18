@@ -56,10 +56,7 @@ describe("TestMiterLimit", () => {
     // AE 2026 imports stroke-miterlimit="0.5" with Miter Limit 1.0.
     const comp = _import(
       tmpPath,
-      _svg(
-        "<path d='M10 10 L50 50 L90 10' stroke='red' fill='none' " +
-          `stroke-miterlimit='${value}'/>`,
-      ),
+      _svg("<path d='M10 10 L50 50 L90 10' stroke='red' fill='none' " + `stroke-miterlimit='${value}'/>`),
     );
     const contents = comp.layers[0].property("ADBE Root Vectors Group");
     const stroke = asInstance(contents.property(0), PropertyGroup)
@@ -134,9 +131,7 @@ describe("TestMalformedInput", () => {
     // AE 2026 imports a `matrix(1 0 0 1)` group untransformed.
     expect(valueEquals([...parseTransform("matrix(1 0 0 1)")], [...IDENTITY])).toBe(true);
     expect(valueEquals([...parseTransform("translate(5) skewX()")], [...IDENTITY])).toBe(true);
-    const bbox = _bbox(
-      _svg("<g transform='matrix(1 0 0 1)'><rect x='3' width='10' height='10'/></g>"),
-    );
+    const bbox = _bbox(_svg("<g transform='matrix(1 0 0 1)'><rect x='3' width='10' height='10'/></g>"));
     expect(valueEquals(bbox, [3.0, 0.0, 13.0, 10.0])).toBe(true);
   });
 
@@ -152,9 +147,7 @@ describe("TestMalformedInput", () => {
   test("test_tiny_arc_radius_scales_up", () => {
     // Radii too small to reach the end point grow to a half ellipse
     // (SVG F.6.6) instead of dividing by an underflowed square.
-    const vs = _vertices(
-      _svg("<path d='M10 10 A 1e-200 1e-200 0 0 1 80 40' stroke='red'/>"),
-    );
+    const vs = _vertices(_svg("<path d='M10 10 A 1e-200 1e-200 0 0 1 80 40' stroke='red'/>"));
     expect(_approx(vs[0], [10.0, 10.0])).toBe(true);
     expect(_approx(at(vs, -1), [80.0, 40.0], 1e-9)).toBe(true);
   });
@@ -179,11 +172,7 @@ describe("TestMalformedInput", () => {
     "test_unusable_canvas_raises_unsupported[%#]",
     (attrs) => {
       const tmpPath = makeTmpPath();
-      raises(
-        UnsupportedSVGError,
-        () => _import(tmpPath, _svg("<rect width='2' height='2'/>", attrs)),
-        "1 to 30000 px",
-      );
+      raises(UnsupportedSVGError, () => _import(tmpPath, _svg("<rect width='2' height='2'/>", attrs)), "1 to 30000 px");
     },
   );
 });
@@ -198,9 +187,7 @@ describe("TestLengths", () => {
 
   test("test_percentage_stroke_width_refers_to_the_diagonal", () => {
     // AE 2026: 5 % of a 200 x 100 viewBox is 7.906.
-    const stroke = readSvg(
-      _svg("<rect width='10' height='10' stroke='red' stroke-width='5%'/>"),
-    ).drawables[0].stroke;
+    const stroke = readSvg(_svg("<rect width='10' height='10' stroke='red' stroke-width='5%'/>")).drawables[0].stroke;
     assert(stroke != null);
     expect(approx(stroke.width, 0.05 * Math.sqrt((200 ** 2 + 100 ** 2) / 2))).toBe(true);
   });
@@ -235,20 +222,14 @@ describe("TestCascadeAndViewports", () => {
   test("test_important_rule_beats_inline_style", () => {
     // AE 2026: `rect{fill:red !important}` wins over style="fill:blue".
     const fill = readSvg(
-      _svg(
-        "<style>rect{fill:red !important}</style>" +
-          "<rect style='fill:blue' width='10' height='10'/>",
-      ),
+      _svg("<style>rect{fill:red !important}</style>" + "<rect style='fill:blue' width='10' height='10'/>"),
     ).drawables[0].fill;
     expect(valueEquals(asInstance(fill, SolidPaint).color, [1.0, 0.0, 0.0, 1.0])).toBe(true);
   });
 
   test("test_inline_important_beats_important_rule", () => {
     const fill = readSvg(
-      _svg(
-        "<style>rect{fill:red !important}</style>" +
-          "<rect style='fill:blue !important' width='10' height='10'/>",
-      ),
+      _svg("<style>rect{fill:red !important}</style>" + "<rect style='fill:blue !important' width='10' height='10'/>"),
     ).drawables[0].fill;
     expect(valueEquals(asInstance(fill, SolidPaint).color, [0.0, 0.0, 1.0, 1.0])).toBe(true);
   });
@@ -256,30 +237,21 @@ describe("TestCascadeAndViewports", () => {
   test("test_nested_svg_maps_its_viewbox", () => {
     // AE 2026: a 10 x 10 viewBox shown in a 50 x 50 box at (10, 10).
     const bbox = _bbox(
-      _svg(
-        "<svg x='10' y='10' width='50' height='50' viewBox='0 0 10 10'>" +
-          "<rect width='10' height='10'/></svg>",
-      ),
+      _svg("<svg x='10' y='10' width='50' height='50' viewBox='0 0 10 10'>" + "<rect width='10' height='10'/></svg>"),
     );
     expect(_approx(bbox, [10.0, 10.0, 60.0, 60.0])).toBe(true);
   });
 
   test("test_nested_svg_meets_and_centres", () => {
     const bbox = _bbox(
-      _svg(
-        "<svg width='100' height='50' viewBox='0 0 10 10'>" +
-          "<rect width='10' height='10'/></svg>",
-      ),
+      _svg("<svg width='100' height='50' viewBox='0 0 10 10'>" + "<rect width='10' height='10'/></svg>"),
     );
     expect(_approx(bbox, [25.0, 0.0, 75.0, 50.0])).toBe(true);
   });
 
   test("test_nested_svg_percentages_use_its_viewbox", () => {
     const bbox = _bbox(
-      _svg(
-        "<svg width='100' height='100' viewBox='0 0 10 10'>" +
-          "<rect width='50%' height='10'/></svg>",
-      ),
+      _svg("<svg width='100' height='100' viewBox='0 0 10 10'>" + "<rect width='50%' height='10'/></svg>"),
     );
     expect(_approx(bbox, [0.0, 0.0, 50.0, 100.0])).toBe(true);
   });

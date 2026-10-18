@@ -9,7 +9,14 @@ import { describe, expect, test } from "bun:test";
 import { AlphaMode, FieldSeparationType } from "../../src/py_aep/index.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { findByListType } from "../../src/py_aep/binary/utils.ts";
-import { getComp, getFirstFootage, getFootage, getFootageFromJsonByName, loadExpected, parseProject } from "../conftest.ts";
+import {
+  getComp,
+  getFirstFootage,
+  getFootage,
+  getFootageFromJsonByName,
+  loadExpected,
+  parseProject,
+} from "../conftest.ts";
 import { AssertionError, Path, StopIteration, isclose, valueEquals } from "../../src/pyrt/index.ts";
 import { asInstance } from "../helpers.ts";
 import { FootageItem } from "../../src/py_aep/models/items/footage.ts";
@@ -46,10 +53,7 @@ describe("TestPlaceholders", () => {
   test("test_placeholder_still", () => {
     const expected = loadExpected(SAMPLES_DIR, "placeholder");
     const footageJson = getFootageFromJsonByName(expected, "placeholder_still");
-    const footage = getFootage(
-      parseProject(SAMPLES_DIR.div("placeholder.aep")),
-      "placeholder_still",
-    );
+    const footage = getFootage(parseProject(SAMPLES_DIR.div("placeholder.aep")), "placeholder_still");
     expect(footageJson["mainSource"]["isStill"]).toBe(true);
     expect(footage.mainSource.isStill).toBe(footageJson["mainSource"]["isStill"]);
   });
@@ -57,10 +61,7 @@ describe("TestPlaceholders", () => {
   test("test_placeholder_movie", () => {
     const expected = loadExpected(SAMPLES_DIR, "placeholder");
     const footageJson = getFootageFromJsonByName(expected, "placeholder_movie");
-    const footage = getFootage(
-      parseProject(SAMPLES_DIR.div("placeholder.aep")),
-      "placeholder_movie",
-    );
+    const footage = getFootage(parseProject(SAMPLES_DIR.div("placeholder.aep")), "placeholder_movie");
     expect(footageJson["mainSource"]["isStill"]).toBe(false);
     expect(footage.mainSource.isStill).toBe(footageJson["mainSource"]["isStill"]);
   });
@@ -68,10 +69,7 @@ describe("TestPlaceholders", () => {
   test("test_placeholder_720p", () => {
     const expected = loadExpected(SAMPLES_DIR, "placeholder");
     const footageJson = getFootageFromJsonByName(expected, "placeholder_720p");
-    const footage = getFootage(
-      parseProject(SAMPLES_DIR.div("placeholder.aep")),
-      "placeholder_720p",
-    );
+    const footage = getFootage(parseProject(SAMPLES_DIR.div("placeholder.aep")), "placeholder_720p");
     expect(footage.width).toBe(footageJson["width"]);
     expect(footageJson["width"]).toBe(1280);
     expect(footage.height).toBe(footageJson["height"]);
@@ -81,10 +79,7 @@ describe("TestPlaceholders", () => {
   test("test_placeholder_4K", () => {
     const expected = loadExpected(SAMPLES_DIR, "placeholder");
     const footageJson = getFootageFromJsonByName(expected, "placeholder_4K");
-    const footage = getFootage(
-      parseProject(SAMPLES_DIR.div("placeholder.aep")),
-      "placeholder_4K",
-    );
+    const footage = getFootage(parseProject(SAMPLES_DIR.div("placeholder.aep")), "placeholder_4K");
     expect(footage.width).toBe(footageJson["width"]);
     expect(footageJson["width"]).toBe(3840);
     expect(footage.height).toBe(footageJson["height"]);
@@ -94,10 +89,7 @@ describe("TestPlaceholders", () => {
   test("test_placeholder_30fps", () => {
     const expected = loadExpected(SAMPLES_DIR, "placeholder");
     const footageJson = getFootageFromJsonByName(expected, "placeholder_30fps");
-    const footage = getFootage(
-      parseProject(SAMPLES_DIR.div("placeholder.aep")),
-      "placeholder_30fps",
-    );
+    const footage = getFootage(parseProject(SAMPLES_DIR.div("placeholder.aep")), "placeholder_30fps");
     expect(footageJson["frameRate"]).toBe(30);
     expect(isclose(footage.frameRate, footageJson["frameRate"])).toBe(true);
   });
@@ -105,10 +97,7 @@ describe("TestPlaceholders", () => {
   test("test_placeholder_60fps", () => {
     const expected = loadExpected(SAMPLES_DIR, "placeholder");
     const footageJson = getFootageFromJsonByName(expected, "placeholder_60fps");
-    const footage = getFootage(
-      parseProject(SAMPLES_DIR.div("placeholder.aep")),
-      "placeholder_60fps",
-    );
+    const footage = getFootage(parseProject(SAMPLES_DIR.div("placeholder.aep")), "placeholder_60fps");
     expect(footageJson["frameRate"]).toBe(60);
     expect(isclose(footage.frameRate, footageJson["frameRate"])).toBe(true);
   });
@@ -116,10 +105,7 @@ describe("TestPlaceholders", () => {
   test("test_frameRate_23976", () => {
     const expected = loadExpected(SAMPLES_DIR, "footage_misc");
     const footageJson = getFootageFromJsonByName(expected, "frameRate_23976");
-    const footage = getFootage(
-      parseProject(SAMPLES_DIR.div("footage_misc.aep")),
-      "frameRate_23976",
-    );
+    const footage = getFootage(parseProject(SAMPLES_DIR.div("footage_misc.aep")), "frameRate_23976");
     expect(isclose(footage.frameRate, footageJson["frameRate"], 0.001)).toBe(true);
   });
 });
@@ -136,7 +122,10 @@ describe("TestIsMediaReplacementCompatible", () => {
 
   test("test_solid_is_not_compatible", () => {
     const project = parseProject(SAMPLES_DIR.div("solid_sizes.aep"));
-    const solid = asInstance(asInstance(getComp(project, "solid_size_1920x1080").layers[0], AVLayer).source, FootageItem);
+    const solid = asInstance(
+      asInstance(getComp(project, "solid_size_1920x1080").layers[0], AVLayer).source,
+      FootageItem,
+    );
     expect(solid.isMediaReplacementCompatible).toBe(false);
   });
 
@@ -192,10 +181,7 @@ describe("TestAlphaMode", () => {
   test("test_alphaMode_IGNORE", () => {
     const expected = loadExpected(SAMPLES_DIR, "alphaMode");
     const footageJson = getFootageFromJsonByName(expected, "alphaMode_IGNORE");
-    const footage = getFootage(
-      parseProject(SAMPLES_DIR.div("alphaMode.aep")),
-      "alphaMode_IGNORE",
-    );
+    const footage = getFootage(parseProject(SAMPLES_DIR.div("alphaMode.aep")), "alphaMode_IGNORE");
     expect(footage.mainSource.alphaMode).toBe(footageJson["mainSource"]["alphaMode"]);
     expect(footageJson["mainSource"]["alphaMode"]).toBe(AlphaMode.IGNORE);
   });
@@ -203,24 +189,15 @@ describe("TestAlphaMode", () => {
   test("test_alphaMode_STRAIGHT", () => {
     const expected = loadExpected(SAMPLES_DIR, "alphaMode");
     const footageJson = getFootageFromJsonByName(expected, "alphaMode_STRAIGHT");
-    const footage = getFootage(
-      parseProject(SAMPLES_DIR.div("alphaMode.aep")),
-      "alphaMode_STRAIGHT",
-    );
+    const footage = getFootage(parseProject(SAMPLES_DIR.div("alphaMode.aep")), "alphaMode_STRAIGHT");
     expect(footage.mainSource.alphaMode).toBe(footageJson["mainSource"]["alphaMode"]);
     expect(footageJson["mainSource"]["alphaMode"]).toBe(AlphaMode.STRAIGHT);
   });
 
   test("test_alphaMode_PREMULTIPLIED", () => {
     const expected = loadExpected(SAMPLES_DIR, "alphaMode");
-    const footageJson = getFootageFromJsonByName(
-      expected,
-      "alphaMode_PREMULTIPLIED",
-    );
-    const footage = getFootage(
-      parseProject(SAMPLES_DIR.div("alphaMode.aep")),
-      "alphaMode_PREMULTIPLIED",
-    );
+    const footageJson = getFootageFromJsonByName(expected, "alphaMode_PREMULTIPLIED");
+    const footage = getFootage(parseProject(SAMPLES_DIR.div("alphaMode.aep")), "alphaMode_PREMULTIPLIED");
     expect(footage.mainSource.alphaMode).toBe(footageJson["mainSource"]["alphaMode"]);
     expect(footageJson["mainSource"]["alphaMode"]).toBe(AlphaMode.PREMULTIPLIED);
   });
@@ -230,69 +207,33 @@ describe("TestAlphaMode", () => {
 describe("TestFieldSeparation", () => {
   test("test_fieldSeparationType_OFF", () => {
     const expected = loadExpected(SAMPLES_DIR, "fieldSeparationType");
-    const footageJson = getFootageFromJsonByName(
-      expected,
-      "fieldSeparationType_OFF",
-    );
-    const footage = getFootage(
-      parseProject(SAMPLES_DIR.div("fieldSeparationType.aep")),
-      "fieldSeparationType_OFF",
-    );
-    expect(footage.mainSource.fieldSeparationType).toBe(
-      footageJson["mainSource"]["fieldSeparationType"],
-    );
+    const footageJson = getFootageFromJsonByName(expected, "fieldSeparationType_OFF");
+    const footage = getFootage(parseProject(SAMPLES_DIR.div("fieldSeparationType.aep")), "fieldSeparationType_OFF");
+    expect(footage.mainSource.fieldSeparationType).toBe(footageJson["mainSource"]["fieldSeparationType"]);
     expect(footageJson["mainSource"]["fieldSeparationType"]).toBe(FieldSeparationType.OFF);
   });
 
   test("test_fieldSeparationType_UPPER", () => {
     const expected = loadExpected(SAMPLES_DIR, "fieldSeparationType");
-    const footageJson = getFootageFromJsonByName(
-      expected,
-      "fieldSeparationType_UPPER",
-    );
-    const footage = getFootage(
-      parseProject(SAMPLES_DIR.div("fieldSeparationType.aep")),
-      "fieldSeparationType_UPPER",
-    );
-    expect(footage.mainSource.fieldSeparationType).toBe(
-      footageJson["mainSource"]["fieldSeparationType"],
-    );
-    expect(footageJson["mainSource"]["fieldSeparationType"]).toBe(
-      FieldSeparationType.UPPER_FIELD_FIRST,
-    );
+    const footageJson = getFootageFromJsonByName(expected, "fieldSeparationType_UPPER");
+    const footage = getFootage(parseProject(SAMPLES_DIR.div("fieldSeparationType.aep")), "fieldSeparationType_UPPER");
+    expect(footage.mainSource.fieldSeparationType).toBe(footageJson["mainSource"]["fieldSeparationType"]);
+    expect(footageJson["mainSource"]["fieldSeparationType"]).toBe(FieldSeparationType.UPPER_FIELD_FIRST);
   });
 
   test("test_fieldSeparationType_LOWER", () => {
     const expected = loadExpected(SAMPLES_DIR, "fieldSeparationType");
-    const footageJson = getFootageFromJsonByName(
-      expected,
-      "fieldSeparationType_LOWER",
-    );
-    const footage = getFootage(
-      parseProject(SAMPLES_DIR.div("fieldSeparationType.aep")),
-      "fieldSeparationType_LOWER",
-    );
-    expect(footage.mainSource.fieldSeparationType).toBe(
-      footageJson["mainSource"]["fieldSeparationType"],
-    );
-    expect(footageJson["mainSource"]["fieldSeparationType"]).toBe(
-      FieldSeparationType.LOWER_FIELD_FIRST,
-    );
+    const footageJson = getFootageFromJsonByName(expected, "fieldSeparationType_LOWER");
+    const footage = getFootage(parseProject(SAMPLES_DIR.div("fieldSeparationType.aep")), "fieldSeparationType_LOWER");
+    expect(footage.mainSource.fieldSeparationType).toBe(footageJson["mainSource"]["fieldSeparationType"]);
+    expect(footageJson["mainSource"]["fieldSeparationType"]).toBe(FieldSeparationType.LOWER_FIELD_FIRST);
   });
 
   test("test_highQualityFieldSeparation_true", () => {
     const expected = loadExpected(SAMPLES_DIR, "footage_misc");
-    const footageJson = getFootageFromJsonByName(
-      expected,
-      "highQualityFieldSeparation_true",
-    );
-    const footage = getFootage(
-      parseProject(SAMPLES_DIR.div("footage_misc.aep")),
-      "highQualityFieldSeparation_true",
-    );
-    expect(footage.mainSource.highQualityFieldSeparation).toBe(
-      footageJson["mainSource"]["highQualityFieldSeparation"],
-    );
+    const footageJson = getFootageFromJsonByName(expected, "highQualityFieldSeparation_true");
+    const footage = getFootage(parseProject(SAMPLES_DIR.div("footage_misc.aep")), "highQualityFieldSeparation_true");
+    expect(footage.mainSource.highQualityFieldSeparation).toBe(footageJson["mainSource"]["highQualityFieldSeparation"]);
     expect(footageJson["mainSource"]["highQualityFieldSeparation"]).toBe(true);
   });
 });
@@ -302,33 +243,21 @@ describe("TestFootageSettings", () => {
   test("test_conformFrameRate_24", () => {
     const expected = loadExpected(SAMPLES_DIR, "conformFrameRate");
     const footageJson = getFootageFromJsonByName(expected, "conformFrameRate_24");
-    const footage = getFootage(
-      parseProject(SAMPLES_DIR.div("conformFrameRate.aep")),
-      "conformFrameRate_24",
-    );
-    expect(footage.mainSource.conformFrameRate).toBe(
-      footageJson["mainSource"]["conformFrameRate"],
-    );
+    const footage = getFootage(parseProject(SAMPLES_DIR.div("conformFrameRate.aep")), "conformFrameRate_24");
+    expect(footage.mainSource.conformFrameRate).toBe(footageJson["mainSource"]["conformFrameRate"]);
     expect(footageJson["mainSource"]["conformFrameRate"]).toBe(24);
   });
 
   test("test_conformFrameRate_30", () => {
     const expected = loadExpected(SAMPLES_DIR, "conformFrameRate");
     const footageJson = getFootageFromJsonByName(expected, "conformFrameRate_30");
-    const footage = getFootage(
-      parseProject(SAMPLES_DIR.div("conformFrameRate.aep")),
-      "conformFrameRate_30",
-    );
-    expect(footage.mainSource.conformFrameRate).toBe(
-      footageJson["mainSource"]["conformFrameRate"],
-    );
+    const footage = getFootage(parseProject(SAMPLES_DIR.div("conformFrameRate.aep")), "conformFrameRate_30");
+    expect(footage.mainSource.conformFrameRate).toBe(footageJson["mainSource"]["conformFrameRate"]);
     expect(footageJson["mainSource"]["conformFrameRate"]).toBe(30);
   });
 
   test("test_conform_frame_rate_2_5", () => {
-    const footage = getFirstFootage(
-      parseProject(SAMPLES_DIR.div("conform_frame_rate_2.5.aep")),
-    );
+    const footage = getFirstFootage(parseProject(SAMPLES_DIR.div("conform_frame_rate_2.5.aep")));
     expect(footage != null).toBe(true);
     if (footage == null) throw new AssertionError("sample has no footage item");
     expect(footage.mainSource.conformFrameRate).toBe(2.5);
@@ -340,9 +269,7 @@ describe("TestFootageSettings", () => {
     // rate gives 19.1999983.
     const expected = loadExpected(SAMPLES_DIR, "conform_frame_rate_2.5");
     const footageJson = getFootageFromJsonByName(expected, "mov_23_976.mov");
-    const footage = getFirstFootage(
-      parseProject(SAMPLES_DIR.div("conform_frame_rate_2.5.aep")),
-    );
+    const footage = getFirstFootage(parseProject(SAMPLES_DIR.div("conform_frame_rate_2.5.aep")));
     expect(footage != null).toBe(true);
     if (footage == null) throw new AssertionError("sample has no footage item");
     expect(footage.duration).toBe(footageJson["duration"]);
@@ -367,10 +294,7 @@ describe("TestFootageSettings", () => {
   test("test_invertAlpha_true", () => {
     const expected = loadExpected(SAMPLES_DIR, "footage_misc");
     const footageJson = getFootageFromJsonByName(expected, "invertAlpha_true");
-    const footage = getFootage(
-      parseProject(SAMPLES_DIR.div("footage_misc.aep")),
-      "invertAlpha_true",
-    );
+    const footage = getFootage(parseProject(SAMPLES_DIR.div("footage_misc.aep")), "invertAlpha_true");
     expect(footage.mainSource.invertAlpha).toBe(footageJson["mainSource"]["invertAlpha"]);
     expect(footageJson["mainSource"]["invertAlpha"]).toBe(true);
   });
@@ -378,36 +302,23 @@ describe("TestFootageSettings", () => {
   test("test_premulColor_black", () => {
     const expected = loadExpected(SAMPLES_DIR, "premulColor");
     const footageJson = getFootageFromJsonByName(expected, "premulColor_black");
-    const footage = getFootage(
-      parseProject(SAMPLES_DIR.div("premulColor.aep")),
-      "premulColor_black",
-    );
-    expect(valueEquals(footage.mainSource.premulColor, footageJson["mainSource"]["premulColor"])).toBe(
-      true,
-    );
+    const footage = getFootage(parseProject(SAMPLES_DIR.div("premulColor.aep")), "premulColor_black");
+    expect(valueEquals(footage.mainSource.premulColor, footageJson["mainSource"]["premulColor"])).toBe(true);
     expect(valueEquals(footageJson["mainSource"]["premulColor"], [0, 0, 0])).toBe(true);
   });
 
   test("test_premulColor_red", () => {
     const expected = loadExpected(SAMPLES_DIR, "premulColor");
     const footageJson = getFootageFromJsonByName(expected, "premulColor_red");
-    const footage = getFootage(
-      parseProject(SAMPLES_DIR.div("premulColor.aep")),
-      "premulColor_red",
-    );
+    const footage = getFootage(parseProject(SAMPLES_DIR.div("premulColor.aep")), "premulColor_red");
     expect(valueEquals(footageJson["mainSource"]["premulColor"], [1, 0, 0])).toBe(true);
-    expect(
-      valueEquals(footage.mainSource.premulColor, footageJson["mainSource"]["premulColor"]),
-    ).toBe(true);
+    expect(valueEquals(footage.mainSource.premulColor, footageJson["mainSource"]["premulColor"])).toBe(true);
   });
 
   test("test_name_renamed", () => {
     const expected = loadExpected(SAMPLES_DIR, "footage_misc");
     const footageJson = getFootageFromJsonByName(expected, "RenamedFootage");
-    const footage = getFootage(
-      parseProject(SAMPLES_DIR.div("footage_misc.aep")),
-      "RenamedFootage",
-    );
+    const footage = getFootage(parseProject(SAMPLES_DIR.div("footage_misc.aep")), "RenamedFootage");
     expect(footage.name).toBe(footageJson["name"]);
     expect(footageJson["name"]).toBe("RenamedFootage");
   });
@@ -416,10 +327,7 @@ describe("TestFootageSettings", () => {
 /** Read-only tests for FootageSource.nativeFrameRate. */
 describe("TestNativeFrameRate", () => {
   test("test_native_frame_rate", () => {
-    const source = getFootage(
-      parseProject(SAMPLES_DIR.div("conformFrameRate.aep")),
-      "conformFrameRate_24",
-    ).mainSource;
+    const source = getFootage(parseProject(SAMPLES_DIR.div("conformFrameRate.aep")), "conformFrameRate_24").mainSource;
     expect(source.nativeFrameRate).toBe(30.0);
   });
 });
@@ -427,34 +335,30 @@ describe("TestNativeFrameRate", () => {
 /** Read-only tests for FootageSource.displayFrameRate. */
 describe("TestDisplayFrameRate", () => {
   test("test_display_frame_rate_with_conform", () => {
-    const source = getFootage(
-      parseProject(SAMPLES_DIR.div("conformFrameRate.aep")),
-      "conformFrameRate_24",
-    ).mainSource;
+    const source = getFootage(parseProject(SAMPLES_DIR.div("conformFrameRate.aep")), "conformFrameRate_24").mainSource;
     expect(source.displayFrameRate).toBe(24.0);
   });
 
   test("test_display_frame_rate_without_conform", () => {
-    const source = getFootage(
-      parseProject(SAMPLES_DIR.div("footage_misc.aep")),
-      "loop_3",
-    ).mainSource;
+    const source = getFootage(parseProject(SAMPLES_DIR.div("footage_misc.aep")), "loop_3").mainSource;
     expect(source.conformFrameRate).toBe(0.0);
     expect(source.displayFrameRate).toBe(30.0);
   });
 
   test("test_display_frame_rate_with_pulldown", () => {
-    const source = asInstance(getFirstFootage(
-      parseProject(SAMPLES_DIR.div("conform_frame_rate_2.5_uff_wssww.aep")),
-    ), FootageItem).mainSource;
+    const source = asInstance(
+      getFirstFootage(parseProject(SAMPLES_DIR.div("conform_frame_rate_2.5_uff_wssww.aep"))),
+      FootageItem,
+    ).mainSource;
     expect(source.conformFrameRate).toBe(2.5);
     expect(source.displayFrameRate).toBe(2.0);
   });
 
   test("test_display_frame_rate_without_pulldown", () => {
-    const source = asInstance(getFirstFootage(
-      parseProject(SAMPLES_DIR.div("conform_frame_rate_2.5_uff_off.aep")),
-    ), FootageItem).mainSource;
+    const source = asInstance(
+      getFirstFootage(parseProject(SAMPLES_DIR.div("conform_frame_rate_2.5_uff_off.aep"))),
+      FootageItem,
+    ).mainSource;
     expect(source.conformFrameRate).toBe(2.5);
     expect(source.displayFrameRate).toBe(2.5);
   });
@@ -463,34 +367,36 @@ describe("TestDisplayFrameRate", () => {
 /** Tests for FootageSource.mediaColorSpace. */
 describe("TestOverrideMediaColorSpace", () => {
   test("test_embedded", () => {
-    const source = asInstance(getFirstFootage(
-      parseProject(SAMPLES_DIR.div("override_media_colorspace_embedded.aep")),
-    ), FootageItem).mainSource;
+    const source = asInstance(
+      getFirstFootage(parseProject(SAMPLES_DIR.div("override_media_colorspace_embedded.aep"))),
+      FootageItem,
+    ).mainSource;
     expect(source.mediaColorSpace).toBe("Embedded");
   });
 
   test("test_custom_profile", () => {
-    const source = asInstance(getFirstFootage(
-      parseProject(SAMPLES_DIR.div("override_media_colorspace_apple_rgb.aep")),
-    ), FootageItem).mainSource;
+    const source = asInstance(
+      getFirstFootage(parseProject(SAMPLES_DIR.div("override_media_colorspace_apple_rgb.aep"))),
+      FootageItem,
+    ).mainSource;
     expect(source.mediaColorSpace).toBe("Apple RGB");
   });
 
   test("test_working_colorspace", () => {
-    const source = asInstance(getFirstFootage(
-      parseProject(
-        SAMPLES_DIR.div("override_media_colorspace_working_colorspace_-.aep"),
-      ),
-    ), FootageItem).mainSource;
+    const source = asInstance(
+      getFirstFootage(parseProject(SAMPLES_DIR.div("override_media_colorspace_working_colorspace_-.aep"))),
+      FootageItem,
+    ).mainSource;
     expect(source.mediaColorSpace).toBe("Working Color Space");
   });
 
   test("test_working_colorspace_aces", () => {
-    const source = asInstance(getFirstFootage(
-      parseProject(
-        SAMPLES_DIR.div("override_media_colorspace_working_colorspace_-aces_cg_or_cct.aep"),
+    const source = asInstance(
+      getFirstFootage(
+        parseProject(SAMPLES_DIR.div("override_media_colorspace_working_colorspace_-aces_cg_or_cct.aep")),
       ),
-    ), FootageItem).mainSource;
+      FootageItem,
+    ).mainSource;
     expect(source.mediaColorSpace).toBe("Working Color Space");
   });
 });
@@ -528,9 +434,7 @@ describe("TestImageSequenceSource", () => {
     const project = parseProject(EG_DIR.div("media_replacement.aep"));
     const footage = getFootage(project, "sequence_[001-003].gif");
     const expected = loadExpected(EG_DIR, "media_replacement");
-    const expSource = getFootageFromJsonByName(expected, "sequence_[001-003].gif")[
-      "mainSource"
-    ];
+    const expSource = getFootageFromJsonByName(expected, "sequence_[001-003].gif")["mainSource"];
     // Exact string match against AE's fsName, separators included.
     const mainSource = asInstance(footage.mainSource, FileSource);
     expect(mainSource.file).toBe(expSource["filePath"]);
@@ -560,13 +464,7 @@ describe("TestAlphabeticalSequence", () => {
 
   test("test_lists_its_files", () => {
     const source = asInstance(getFootage(parseProject(SAMPLE), "assets").mainSource, FileSource);
-    expect(
-      valueEquals(source.fileNames, [
-        "new_exr.0002.exr",
-        "new_exr.0003.exr",
-        "old_exr.00004.exr",
-      ]),
-    ).toBe(true);
+    expect(valueEquals(source.fileNames, ["new_exr.0002.exr", "new_exr.0003.exr", "old_exr.00004.exr"])).toBe(true);
     // The StVc list's little-endian file count.
     const stvc = findByListType(source._pin.chunks, "StVc");
     expect(asInstance(stvc.chunks[0], U4LeChunk).value).toBe(3);

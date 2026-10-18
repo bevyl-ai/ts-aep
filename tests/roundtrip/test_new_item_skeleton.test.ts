@@ -7,7 +7,17 @@
  */
 
 import { describe, expect, test } from "bun:test";
-import { at, ByteStream, Bytes, getMember, Path, valueEquals, repr, StopIteration, ValueError } from "../../src/pyrt/index.ts";
+import {
+  at,
+  ByteStream,
+  Bytes,
+  getMember,
+  Path,
+  valueEquals,
+  repr,
+  StopIteration,
+  ValueError,
+} from "../../src/pyrt/index.ts";
 
 import { parse as parseAep, type Application } from "../../src/py_aep/index.ts";
 import "../../src/py_aep/binary/_register.ts";
@@ -186,8 +196,14 @@ describe("TestNewLayerSkeleton", () => {
     const app = parseAep(SAMPLES_DIR.div("layer", "type.aep"));
     const comp = getComp(app.project, "type_null");
     const cam = comp.addCamera("Cam");
-    const pos = asInstance([...cam.transform].find((p) => p.matchName === "ADBE Position"), Property);
-    const anchor = asInstance([...cam.transform].find((p) => p.matchName === "ADBE Anchor Point"), Property);
+    const pos = asInstance(
+      [...cam.transform].find((p) => p.matchName === "ADBE Position"),
+      Property,
+    );
+    const anchor = asInstance(
+      [...cam.transform].find((p) => p.matchName === "ADBE Anchor Point"),
+      Property,
+    );
     const zoom = round(comp.width / 0.72, 8);
     expect(valueEquals(pos.value, [0.0, 0.0, -zoom])).toBe(true);
     expect(valueEquals(anchor.value, [comp.width / 2, comp.height / 2, 0.0])).toBe(true);
@@ -243,7 +259,12 @@ describe("TestNewCompSkeleton", () => {
     const comp2 = app2.project.compositions.find((c) => c.name === "RT");
     if (comp2 == null) throw new StopIteration();
     expect(approx(comp2.frameRate, 30.0)).toBe(true);
-    expect(valueEquals(comp2.layers.map((lyr) => lyr.name), ["S"])).toBe(true);
+    expect(
+      valueEquals(
+        comp2.layers.map((lyr) => lyr.name),
+        ["S"],
+      ),
+    ).toBe(true);
   });
 });
 

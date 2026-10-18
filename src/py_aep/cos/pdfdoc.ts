@@ -15,10 +15,10 @@
 import { decode } from "../../pyrt/index.ts";
 import { CosString } from "./cos.ts";
 
-export const _UNDEFINED = 0xfffd;
+const _UNDEFINED = 0xfffd;
 
 /** byte -\> unicode code point, for every byte Latin-1 does not already cover. */
-export const _OVERRIDES: Map<number, number> = new Map<number, number>([
+const _OVERRIDES: Map<number, number> = new Map<number, number>([
   [0x18, 0x02d8], // breve
   [0x19, 0x02c7], // caron
   [0x1a, 0x02c6], // circumflex
@@ -91,14 +91,14 @@ export function decodePdfTextString(raw: Uint8Array | string | CosString): strin
   return String(raw);
 }
 
-export function _fromBytes(raw: Uint8Array): string {
+function _fromBytes(raw: Uint8Array): string {
   // Latin-1 maps every byte to the same code point, and `str.translate`
   // leaves the ones absent from the table alone - which is exactly the
   // passthrough the other 215 bytes need.
   return _translate(decode(raw, "latin-1"), _OVERRIDES);
 }
 
-export function _translate(text: string, table: Map<number, number>): string {
+function _translate(text: string, table: Map<number, number>): string {
   let out = "";
   for (const ch of text) {
     const mapped = table.get(ch.codePointAt(0) ?? -1);

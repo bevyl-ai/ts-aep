@@ -1,7 +1,18 @@
 /** Tests for Project model parsing. */
 
 import { describe, expect, test } from "bun:test";
-import { b, Bytes, contains, len, Path, assert, valueEquals, StopIteration, str, ValueError } from "../../src/pyrt/index.ts";
+import {
+  b,
+  Bytes,
+  contains,
+  len,
+  Path,
+  assert,
+  valueEquals,
+  StopIteration,
+  str,
+  ValueError,
+} from "../../src/pyrt/index.ts";
 
 import { projectBytes } from "../helpers.ts";
 import * as py_aep from "../../src/py_aep/index.ts";
@@ -9,17 +20,24 @@ import { type Project, parse as parseAep } from "../../src/py_aep/index.ts";
 import { findByListType } from "../../src/py_aep/binary/utils.ts";
 import { parseEnvelope } from "../../src/py_aep/color/envelope.ts";
 import { ColorProfileNotFoundError, iccProfileId } from "../../src/py_aep/color/icc.ts";
-import { BitsPerChannel, ColorManagementSystem, FeetFramesFilmType, FootageTimecodeDisplayStartType, FramesCountType, GpuAccelType, LutInterpolationMethod, TimeDisplayType } from "../../src/py_aep/enums/index.ts";
+import {
+  BitsPerChannel,
+  ColorManagementSystem,
+  FeetFramesFilmType,
+  FootageTimecodeDisplayStartType,
+  FramesCountType,
+  GpuAccelType,
+  LutInterpolationMethod,
+  TimeDisplayType,
+} from "../../src/py_aep/enums/index.ts";
 import "../../src/py_aep/binary/_register.ts";
 import type { Chunk } from "../../src/py_aep/binary/chunk.ts";
 import { makeTmpPath, raises } from "../support/pytest.ts";
 import { lshift, split } from "../support/python.ts";
 
 const SAMPLES_DIR = new Path(import.meta.path).parent.parent.parent.div("samples", "models", "project");
-const VIEW_SAMPLES_DIR = new Path(import.meta.path).parent.parent.parent.div("samples", "models", "view");
 const VERSIONS_DIR = new Path(import.meta.path).parent.parent.parent.div("samples", "versions");
 const LAYER_SAMPLES_DIR = new Path(import.meta.path).parent.parent.parent.div("samples", "models", "layer");
-const COMP_SAMPLES_DIR = new Path(import.meta.path).parent.parent.parent.div("samples", "models", "composition");
 
 /** Roundtrip tests for Project.linearBlending. */
 describe("TestRoundtripLinearBlending", () => {
@@ -321,9 +339,7 @@ describe("TestRoundtripFootageTimecodeDisplayStartType", () => {
   test("test_set_start_0", () => {
     const tmpPath = makeTmpPath();
     const project = parseAep(SAMPLES_DIR.div("footageTimecodeDisplayStartType_source.aep")).project;
-    expect(project.footageTimecodeDisplayStartType).toBe(
-      FootageTimecodeDisplayStartType.FTCS_USE_SOURCE_MEDIA,
-    );
+    expect(project.footageTimecodeDisplayStartType).toBe(FootageTimecodeDisplayStartType.FTCS_USE_SOURCE_MEDIA);
 
     project.footageTimecodeDisplayStartType = FootageTimecodeDisplayStartType.FTCS_START_0;
 
@@ -348,9 +364,7 @@ describe("TestRoundtripFootageTimecodeDisplayStartType", () => {
     project2.save(out);
     const project3 = parseAep(out).project;
 
-    expect(project3.footageTimecodeDisplayStartType).toBe(
-      FootageTimecodeDisplayStartType.FTCS_USE_SOURCE_MEDIA,
-    );
+    expect(project3.footageTimecodeDisplayStartType).toBe(FootageTimecodeDisplayStartType.FTCS_USE_SOURCE_MEDIA);
   });
 });
 
@@ -711,7 +725,9 @@ describe("TestRoundtripWorkingSpaceProfileId", () => {
     project.save(out);
     const project2 = parseAep(out).project;
     expect(project2.workingSpace).toBe("ACEScct");
-    expect(valueEquals(TestRoundtripWorkingSpaceProfileId._cpid(project2), TestRoundtripWorkingSpaceProfileId._cpid(donor))).toBe(true);
+    expect(
+      valueEquals(TestRoundtripWorkingSpaceProfileId._cpid(project2), TestRoundtripWorkingSpaceProfileId._cpid(donor)),
+    ).toBe(true);
   });
 
   test("test_ocio_working_space_writes_no_profile_id", () => {
@@ -783,7 +799,12 @@ describe("TestRoundtripPre22WorkingSpace", () => {
     // AE 15.1's own template: the pool holds just the working space's
     // ICC, and `lnrp` sits between `cpid` and `dwga`.
     const donorIcc = _profilePool(parseAep(C.DONOR).project)[0].data;
-    expect(valueEquals(_profilePool(project2).map((c) => c.data), [donorIcc])).toBe(true);
+    expect(
+      valueEquals(
+        _profilePool(project2).map((c) => c.data),
+        [donorIcc],
+      ),
+    ).toBe(true);
     expect(valueEquals(project2._cpid.data, C.SRGB_ID)).toBe(true);
     const types = project2._rifx.chunks.map((c) => c.chunkType);
     const i = types.indexOf("cpid");
@@ -838,7 +859,12 @@ describe("TestRoundtripPre22WorkingSpace", () => {
 
     expect(project2.workingSpace).toBe("None");
     expect(valueEquals(project2._cpid.data, Bytes.repeat(b("\xff"), 16))).toBe(true);
-    expect(valueEquals(_profilePool(project2).map((c) => c.data), pool)).toBe(true);
+    expect(
+      valueEquals(
+        _profilePool(project2).map((c) => c.data),
+        pool,
+      ),
+    ).toBe(true);
   });
 
   test("test_unknown_profile_leaves_project_unchanged", () => {

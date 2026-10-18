@@ -4,7 +4,12 @@
  * One wrapper class per renderer, selected from the `prda` chunk variant dispatch.
  */
 
-import { AdvancedPrdaChunk, Cinema4DPrdaChunk, ClassicPrdaChunk, RayTracedPrdaChunk } from "../../../binary/misc_chunks.ts";
+import {
+  AdvancedPrdaChunk,
+  Cinema4DPrdaChunk,
+  ClassicPrdaChunk,
+  RayTracedPrdaChunk,
+} from "../../../binary/misc_chunks.ts";
 import { AdvancedRendererOptions } from "./advanced.ts";
 import { Cinema4DRendererOptions } from "./cinema_4d.ts";
 import { ClassicRendererOptions } from "./classic.ts";
@@ -22,7 +27,7 @@ export type RendererOptions =
   | RendererOptionsBase;
 
 // NOTE(port): Python builds _WRAPPERS at import time too, so the evaluation-time reads of the imported classes match.
-export const _WRAPPERS: Map<Function, typeof RendererOptionsBase> = new Map<Function, typeof RendererOptionsBase>([
+const _WRAPPERS: Map<Function, typeof RendererOptionsBase> = new Map<Function, typeof RendererOptionsBase>([
   [ClassicPrdaChunk, ClassicRendererOptions],
   [AdvancedPrdaChunk, AdvancedRendererOptions],
   [Cinema4DPrdaChunk, Cinema4DRendererOptions],
@@ -40,4 +45,10 @@ export function rendererOptionsFor(body: Chunk, comp: CompItem): RendererOptions
   return new wrapperCls({ body, comp });
 }
 
-export { AdvancedRendererOptions, Cinema4DRendererOptions, ClassicRendererOptions, RayTracedRendererOptions, RendererOptionsBase };
+export {
+  AdvancedRendererOptions,
+  Cinema4DRendererOptions,
+  ClassicRendererOptions,
+  RayTracedRendererOptions,
+  RendererOptionsBase,
+};

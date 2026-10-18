@@ -1,6 +1,6 @@
 // Port of py_aep/models/application.py.
 
-import { INSPECT, describe } from "../../pyrt/index.ts";
+import { INSPECT, describe, descriptor, ValueError, type Path, type ClassAttributes } from "../../pyrt/index.ts";
 import { aeWrites } from "../ae_version.ts";
 import { LEGACY_NAME_FORMAT } from "../binary/chunk.ts";
 import type { HeadChunk } from "../binary/item_chunks.ts";
@@ -8,7 +8,6 @@ import { ChunkField } from "./descriptors.ts";
 import { validateAeVersion, validateU1 } from "./validators.ts";
 import type { Preferences } from "./preferences.ts";
 import type { Viewer } from "./viewer/viewer.ts";
-import { descriptor, ValueError, type Path, type ClassAttributes } from "../../pyrt/index.ts";
 import { Project } from "./project.ts";
 
 // Version-gated parts After Effects expects from the format version alone,
@@ -17,10 +16,10 @@ import { Project } from "./project.ts";
 // is damaged", "missing data in file"), and so does an AE 16 project relabelled
 // 22 (without the AE 17 Media Replacement folder id), while relabels between
 // 15 and 16, 17 and 18, 18 and 22, and among 23-26 open unchanged.
-export const _LAYOUT_PARTS = ["matte layer id", "media replacement folder id"] as const;
+const _LAYOUT_PARTS = ["matte layer id", "media replacement folder id"] as const;
 
 /** A version whose file layout matches the project's. */
-export function _validateVersion(value: string, obj: Application): void {
+function _validateVersion(value: string, obj: Application): void {
   validateAeVersion(value);
   const current = obj._head.aeVersionMajor;
   const target = Number.parseInt(value.split(".")[0], 10);
@@ -181,14 +180,22 @@ export class Application {
   }
 
   static {
-    descriptor(this, "buildNumber", new ChunkField("_head", "aeBuildNumber", {
-      // An 8-bit field of the head chunk: a larger build would wrap.
-      validate: validateU1,
-    }));
-    descriptor(this, "version", new ChunkField("_head", "version", {
-      validate: _validateVersion,
-      postSet: (obj: Application) => obj._head.syncFileFormatVersion(),
-    }));
+    descriptor(
+      this,
+      "buildNumber",
+      new ChunkField("_head", "aeBuildNumber", {
+        // An 8-bit field of the head chunk: a larger build would wrap.
+        validate: validateU1,
+      }),
+    );
+    descriptor(
+      this,
+      "version",
+      new ChunkField("_head", "version", {
+        validate: _validateVersion,
+        postSet: (obj: Application) => obj._head.syncFileFormatVersion(),
+      }),
+    );
     descriptor(this, "isBeta", ChunkField.bool("_head", "aeVersionBetaFlag"));
   }
 }

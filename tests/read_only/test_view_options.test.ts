@@ -191,9 +191,7 @@ describe("TestViewOptionsUseDisplayColorManagement", () => {
 
   test("test_display_color_management_off", () => {
     /** Test display color management disabled. */
-    const opts = _getActiveViewOptions(
-      SAMPLES_DIR.div("channels_use_display_color_management_off.aep"),
-    );
+    const opts = _getActiveViewOptions(SAMPLES_DIR.div("channels_use_display_color_management_off.aep"));
     expect(opts.useDisplayColorManagement).toBe(false);
   });
 });

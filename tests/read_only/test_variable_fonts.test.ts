@@ -75,7 +75,12 @@ describe("TestVariableFontAxisProperty", () => {
   test("test_animated_axis_scalar_keyframes", () => {
     const props = _animatorProps(_vfLayer("variable_font_axis_animated.aep"));
     const wght = asInstance(props.property("ADBE Text VF Axis 1"), Property);
-    expect(valueEquals(wght.keyframes.map((kf) => kf.value), [300.0, 700.0])).toBe(true);
+    expect(
+      valueEquals(
+        wght.keyframes.map((kf) => kf.value),
+        [300.0, 700.0],
+      ),
+    ).toBe(true);
     expect(wght.axisTag).toBe("wght");
     const wdth = asInstance(props.property("ADBE Text VF Axis 2"), Property);
     expect(wdth.value).toBe(80.0);

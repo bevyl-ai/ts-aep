@@ -88,7 +88,14 @@ const CJK: ReadonlyMap<string, CjkCodepage> = new Map([
   ["cp950", CP950],
 ]);
 
-function badByte(out: string[], byte: number, errors: Errors, enc: string, pos: number, reason = "invalid start byte"): void {
+function badByte(
+  out: string[],
+  byte: number,
+  errors: Errors,
+  enc: string,
+  pos: number,
+  reason = "invalid start byte",
+): void {
   if (errors === "surrogateescape") {
     out.push(String.fromCharCode(0xdc00 + byte));
   } else if (errors === "replace") {
@@ -258,7 +265,13 @@ function encodeUtf8Slow(text: string, errors: Errors): Uint8Array {
   return Uint8Array.from(out);
 }
 
-function decodeSingleByte(data: Uint8Array, errors: Errors, limit: number, enc: string, table?: readonly number[]): string {
+function decodeSingleByte(
+  data: Uint8Array,
+  errors: Errors,
+  limit: number,
+  enc: string,
+  table?: readonly number[],
+): string {
   if (limit === 0x100) return chars(data);
   const ascii = shortAscii(data);
   if (ascii !== null) return ascii;
@@ -346,7 +359,13 @@ function decodeCjk(data: Uint8Array, errors: Errors, codec: CjkCodepage, encodin
   return out.join("");
 }
 
-function encodeSingleByte(text: string, errors: Errors, limit: number, enc: string, table?: readonly number[]): Uint8Array {
+function encodeSingleByte(
+  text: string,
+  errors: Errors,
+  limit: number,
+  enc: string,
+  table?: readonly number[],
+): Uint8Array {
   const out = new Uint8Array(text.length);
   for (let i = 0; i < text.length; i++) {
     const c = text.charCodeAt(i);
@@ -356,7 +375,13 @@ function encodeSingleByte(text: string, errors: Errors, limit: number, enc: stri
   return out;
 }
 
-function encodeSingleByteSlow(text: string, errors: Errors, limit: number, enc: string, table?: readonly number[]): Uint8Array {
+function encodeSingleByteSlow(
+  text: string,
+  errors: Errors,
+  limit: number,
+  enc: string,
+  table?: readonly number[],
+): Uint8Array {
   const out: number[] = [];
   for (let i = 0; i < text.length; i++) {
     const c = text.charCodeAt(i);
@@ -438,7 +463,8 @@ function decodeUtf32(data: Uint8Array, errors: Errors, le: boolean, offset = 0):
       ? (data[i] | (data[i + 1] << 8) | (data[i + 2] << 16) | (data[i + 3] << 24)) >>> 0
       : ((data[i] << 24) | (data[i + 1] << 16) | (data[i + 2] << 8) | data[i + 3]) >>> 0;
     if (cp > 0x10ffff) i = fail(i, i + 4, "code point not in range(0x110000)");
-    else if (cp >= 0xd800 && cp < 0xe000) i = fail(i, i + 4, "code point in surrogate code point range(0xd800, 0xe000)");
+    else if (cp >= 0xd800 && cp < 0xe000)
+      i = fail(i, i + 4, "code point in surrogate code point range(0xd800, 0xe000)");
     else {
       out.push(String.fromCodePoint(cp));
       i += 4;
@@ -499,8 +525,10 @@ export function decode(data: Uint8Array, encoding = "utf-8", errors: Errors = "s
       return decodeUtf32(data, errors, false);
     case "utf-32": {
       // A BOM picks the byte order and is dropped; without one, little-endian (the native order).
-      if (data[0] === 0xff && data[1] === 0xfe && data[2] === 0 && data[3] === 0) return decodeUtf32(data.subarray(4), errors, true, 4);
-      if (data[0] === 0 && data[1] === 0 && data[2] === 0xfe && data[3] === 0xff) return decodeUtf32(data.subarray(4), errors, false, 4);
+      if (data[0] === 0xff && data[1] === 0xfe && data[2] === 0 && data[3] === 0)
+        return decodeUtf32(data.subarray(4), errors, true, 4);
+      if (data[0] === 0 && data[1] === 0 && data[2] === 0xfe && data[3] === 0xff)
+        return decodeUtf32(data.subarray(4), errors, false, 4);
       return decodeUtf32(data, errors, true);
     }
     default: {

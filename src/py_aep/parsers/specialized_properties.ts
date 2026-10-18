@@ -2,7 +2,15 @@
 
 import type { ListChunk } from "../binary/chunk.ts";
 import type { TdmnChunk } from "../binary/property_chunks.ts";
-import { ChunkNotFoundError, filterByListType, filterByType, findByListType, findByListTypeOrNull, findByType, findByTypeOrNull } from "../binary/utils.ts";
+import {
+  ChunkNotFoundError,
+  filterByListType,
+  filterByType,
+  findByListType,
+  findByListTypeOrNull,
+  findByType,
+  findByTypeOrNull,
+} from "../binary/utils.ts";
 import { CosParser } from "../cos/index.ts";
 import { decodeBtdk } from "../cos/schema.ts";
 // Python's builtin `SyntaxError` as raised by `CosParser`.
@@ -21,7 +29,7 @@ import { ByteStream, OverflowError, ValueError, warn, zip, instanceDict } from "
 import { late } from "../models/late.ts";
 
 // `logging.getLogger(__name__)`: only the warning path is wired to pyrt `warn`.
-export const logger = {
+const logger = {
   debug(..._args: string[]) {},
   info(..._args: string[]) {},
   warning: (m: string) => warn(m),

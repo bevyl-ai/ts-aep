@@ -3,16 +3,50 @@
 import { describe, expect, test } from "bun:test";
 
 import "../../src/py_aep/binary/_register.ts";
-import { ByteStream, NotImplementedError, Path, ValueError, b, Bytes, concat, decode, encode, floordiv, valueEquals, struct } from "../../src/pyrt/index.ts";
+import {
+  ByteStream,
+  NotImplementedError,
+  Path,
+  ValueError,
+  b,
+  Bytes,
+  concat,
+  decode,
+  encode,
+  floordiv,
+  valueEquals,
+  struct,
+} from "../../src/pyrt/index.ts";
 
 import { _FILE_FORMATS } from "../../src/py_aep/data/file_formats.ts";
-import { _PARSERS, _probeBmp, _probeDpxCineon, _probeGif, _probeHdr, _probeHeif, _probeMgjson, _probeMov, _probeMp3, _probeTiff, probeMedia } from "../../src/py_aep/resolvers/media_probe.ts";
-import { buildAiDocumentOptiData, buildCrawOptiData, buildDpxOptiData, buildPsdLayerOptiData, buildPsdOptiData, buildRhdrOptiData, buildTextOptiData, buildTiffOptiData } from "../../src/py_aep/binary/footage_chunks.ts";
+import {
+  _PARSERS,
+  _probeBmp,
+  _probeDpxCineon,
+  _probeGif,
+  _probeHdr,
+  _probeHeif,
+  _probeMgjson,
+  _probeMov,
+  _probeMp3,
+  _probeTiff,
+  probeMedia,
+} from "../../src/py_aep/resolvers/media_probe.ts";
+import {
+  buildAiDocumentOptiData,
+  buildCrawOptiData,
+  buildDpxOptiData,
+  buildPsdLayerOptiData,
+  buildPsdOptiData,
+  buildRhdrOptiData,
+  buildTextOptiData,
+  buildTiffOptiData,
+} from "../../src/py_aep/binary/footage_chunks.ts";
 import { approx, raises } from "../support/pytest.ts";
 
 const ASSETS = new Path(import.meta.dir, "..", "..", "samples", "assets");
-const BASE = new Path(import.meta.dir, "..", "..", "samples", "models", "folder", "folder.aep");
-const IMPORT_DIR = new Path(import.meta.dir, "..", "..", "samples", "models", "import");
+new Path(import.meta.dir, "..", "..", "samples", "models", "folder", "folder.aep");
+new Path(import.meta.dir, "..", "..", "samples", "models", "import");
 
 describe("TestMediaProbe", () => {
   /** Media-header probing matches the values AE reads on import. */
@@ -302,10 +336,7 @@ describe("TestProbeFormatVariants", () => {
     const doc = {
       dataDynamicSamples: [
         {
-          samples: [
-            { time: "2020-01-01T00:00:00.1234567Z" },
-            { time: "2020-01-01T00:00:05.0000000+00:00" },
-          ],
+          samples: [{ time: "2020-01-01T00:00:00.1234567Z" }, { time: "2020-01-01T00:00:05.0000000+00:00" }],
         },
       ],
     };

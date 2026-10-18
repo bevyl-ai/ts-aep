@@ -21,7 +21,12 @@ import { parseProject } from "../helpers.ts";
 import type { CosNode } from "../../src/py_aep/cos/cos.ts";
 import type { TextDocument } from "../../src/py_aep/models/text/text_document.ts";
 import { _cachedLineData } from "../../src/py_aep/models/text/ranges.ts";
-import { CompositionUnsupported, _CharStyle, _shapeStretch, composeLines } from "../../src/py_aep/resolvers/text_composition.ts";
+import {
+  CompositionUnsupported,
+  _CharStyle,
+  _shapeStretch,
+  composeLines,
+} from "../../src/py_aep/resolvers/text_composition.ts";
 import { resolvePostscript } from "../../src/py_aep/svg/fonts.ts";
 import { raises } from "../support/pytest.ts";
 import { format } from "../support/python.ts";
@@ -35,13 +40,7 @@ const FIXTURE = SAMPLES_DIR.div("box_matrix.aep");
  * PostScript names the matrix layers' style runs compose with; CI
  * runners without them (e.g. ubuntu-latest) cannot exercise parity.
  */
-const FIXTURE_FONTS = [
-  "MyriadPro-Regular",
-  "ArialMT",
-  "Arial-BoldMT",
-  "TimesNewRomanPSMT",
-  "CourierNewPSMT",
-];
+const FIXTURE_FONTS = ["MyriadPro-Regular", "ArialMT", "Arial-BoldMT", "TimesNewRomanPSMT", "CourierNewPSMT"];
 
 // Python `pytest.skip(..., allow_module_level=True)` skips the whole module.
 // Each test carries the same skip condition here.
@@ -105,9 +104,7 @@ test.skipIf(moduleSkip)("test_every_matrix_layer_composes_or_refuses", () => {
       continue;
     }
     if (!valueEquals(composed.spans, cachedSpans)) {
-      mismatches.push(
-        `${name}: spans ${repr(composed.spans.slice(0, 3))}... != ${repr(cachedSpans.slice(0, 3))}...`,
-      );
+      mismatches.push(`${name}: spans ${repr(composed.spans.slice(0, 3))}... != ${repr(cachedSpans.slice(0, 3))}...`);
       continue;
     }
     for (const [computed, expected] of zip(composed.baselines, cachedBaselines)) {
@@ -149,7 +146,13 @@ test.skipIf(moduleSkip)("test_length_changing_case_map_is_refused", () => {
   // 'straße'.upper() == 'STRASSE': clusters no longer map 1:1 onto the
   // source characters, so both caps modes must refuse, not crash.
   for (const caps of [1, 2]) {
-    const style = new _CharStyle("ArialMT", new Map<string, CosNode>([["1", 36.0], ["12", caps]]));
+    const style = new _CharStyle(
+      "ArialMT",
+      new Map<string, CosNode>([
+        ["1", 36.0],
+        ["12", caps],
+      ]),
+    );
     raises(
       CompositionUnsupported,
       () => {

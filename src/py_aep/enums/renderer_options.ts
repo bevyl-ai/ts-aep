@@ -37,7 +37,7 @@ export const ShadowMapResolution = defineEnum(
 );
 export type ShadowMapResolution = EnumValue<typeof ShadowMapResolution>;
 
-export const _SHADOW_MAP_RESOLUTION_LABELS: Readonly<Record<ShadowMapResolution, string>> = {
+const _SHADOW_MAP_RESOLUTION_LABELS: Readonly<Record<ShadowMapResolution, string>> = {
   0: "Comp Size",
   1: "250",
   2: "500",
@@ -72,7 +72,7 @@ export const EnvironmentLightShadowResolution = defineEnum(
 );
 export type EnvironmentLightShadowResolution = EnumValue<typeof EnvironmentLightShadowResolution>;
 
-export const _ENV_LIGHT_SHADOW_RESOLUTION_LABELS: Readonly<Record<EnvironmentLightShadowResolution, string>> = {
+const _ENV_LIGHT_SHADOW_RESOLUTION_LABELS: Readonly<Record<EnvironmentLightShadowResolution, string>> = {
   0: "Half (2MB)",
   1: "Full (16MB)",
   2: "Double (128MB)",

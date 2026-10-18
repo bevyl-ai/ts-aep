@@ -69,18 +69,22 @@ export type PropertyValueType = EnumValue<typeof PropertyValueType>;
  *
  * @see https://ae-scripting.docsforadobe.dev/property/property/#propertysetinterpolationtypeatkey
  */
-export const KeyframeInterpolationType = defineEnum("KeyframeInterpolationType", {
-  LINEAR: 6612,
-  BEZIER: 6613,
-  HOLD: 6614,
-}, {
-  /** Convert binary value to KeyframeInterpolationType. */
-  fromBinary(value: number) {
-    return this.ofOrNull(value + 6611) ?? this.LINEAR;
+export const KeyframeInterpolationType = defineEnum(
+  "KeyframeInterpolationType",
+  {
+    LINEAR: 6612,
+    BEZIER: 6613,
+    HOLD: 6614,
   },
-  /** Convert KeyframeInterpolationType to binary value. */
-  toBinary(self: number): number {
-    return Math.trunc(self) - 6611;
+  {
+    /** Convert binary value to KeyframeInterpolationType. */
+    fromBinary(value: number) {
+      return this.ofOrNull(value + 6611) ?? this.LINEAR;
+    },
+    /** Convert KeyframeInterpolationType to binary value. */
+    toBinary(self: number): number {
+      return Math.trunc(self) - 6611;
+    },
   },
-});
+);
 export type KeyframeInterpolationType = EnumValue<typeof KeyframeInterpolationType>;

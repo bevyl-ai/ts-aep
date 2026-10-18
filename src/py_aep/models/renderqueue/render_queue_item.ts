@@ -1,20 +1,7 @@
 // Port of py_aep/models/renderqueue/render_queue_item.py
 
-import { INSPECT } from "../../../pyrt/index.ts";
-import { ColorDepthSetting, DiskCacheSetting, EffectsSetting, FieldRender, FrameBlendingSetting, FrameRateSetting, GetSettingsFormat, GuideLayers, LogType, MotionBlurSetting, ProxyUseSetting, PulldownSetting, RenderQuality, RQItemStatus, SoloSwitchesSetting, TimeSpanSource } from "../../enums/index.ts";
-import { ContainerChunk, ListChunk } from "../../binary/chunk.ts";
-import { LHD3_BLOCK_SINGLE, setLhd3Count } from "../../binary/ldat_chunks.ts";
-import { buildOmContainer, buildRoutBlock, cloneChunkTree } from "../../binary/mutations.ts";
-import { RenderSettingsItem, type RoutItem } from "../../binary/render_chunks.ts";
-import { Utf8Chunk } from "../../binary/scalar_chunks.ts";
-import { findByType, indexByIdentity, splitOnType } from "../../binary/utils.ts";
-import { ChunkField } from "../descriptors.ts";
-import type { CompItem } from "../items/composition.ts";
-import type { Project } from "../project.ts";
-import { _validateNumber, validateBool, validatePositiveInt, validatePositiveNumber, validateSequence, validateString } from "../validators.ts";
-import { SettingsView, type SettingsSpec, type SettingValue, type SettingValues, settingsToNumber, settingsToString } from "./settings.ts";
-import type { RenderQueue } from "./render_queue.ts";
 import {
+  INSPECT,
   deepcopy,
   descriptor,
   floatRepr,
@@ -24,14 +11,58 @@ import {
   ValueError,
   type ClassAttributes,
 } from "../../../pyrt/index.ts";
+import {
+  ColorDepthSetting,
+  DiskCacheSetting,
+  EffectsSetting,
+  FieldRender,
+  FrameBlendingSetting,
+  FrameRateSetting,
+  GetSettingsFormat,
+  GuideLayers,
+  LogType,
+  MotionBlurSetting,
+  ProxyUseSetting,
+  PulldownSetting,
+  RenderQuality,
+  RQItemStatus,
+  SoloSwitchesSetting,
+  TimeSpanSource,
+} from "../../enums/index.ts";
+import { ContainerChunk, ListChunk } from "../../binary/chunk.ts";
+import { LHD3_BLOCK_SINGLE, setLhd3Count } from "../../binary/ldat_chunks.ts";
+import { buildOmContainer, buildRoutBlock, cloneChunkTree } from "../../binary/mutations.ts";
+import { RenderSettingsItem, type RoutItem } from "../../binary/render_chunks.ts";
+import { Utf8Chunk } from "../../binary/scalar_chunks.ts";
+import { findByType, indexByIdentity, splitOnType } from "../../binary/utils.ts";
+import { ChunkField } from "../descriptors.ts";
+import type { CompItem } from "../items/composition.ts";
+import type { Project } from "../project.ts";
+import {
+  _validateNumber,
+  validateBool,
+  validatePositiveInt,
+  validatePositiveNumber,
+  validateSequence,
+  validateString,
+} from "../validators.ts";
+import {
+  SettingsView,
+  type SettingsSpec,
+  type SettingValue,
+  type SettingValues,
+  settingsToNumber,
+  settingsToString,
+} from "./settings.ts";
+import type { RenderQueue } from "./render_queue.ts";
 import { OutputModule } from "./output_module.ts";
 import { parseOutputModule } from "../../parsers/output_module.ts";
 
 // NOTE(port): the epoch is a UTC `Date`; Python's naive datetime(1904, 1, 1) is the same wall-clock instant.
-export const _AEP_EPOCH = new Date(Date.UTC(1904, 0, 1));
+const _AEP_EPOCH = new Date(Date.UTC(1904, 0, 1));
 
 /** Convert Mac HFS+ epoch timestamp to datetime, or None if 0. */
-export function _startTimeFromBinary(value: number): Date | null {
+function _startTimeFromBinary(value: number): Date | null {
   if (!value) return null;
   return new Date(_AEP_EPOCH.getTime() + value * 1000);
 }
@@ -41,7 +72,7 @@ export function _startTimeFromBinary(value: number): Date | null {
  * 2 in an empty queue (AE 2026: ids 9 and 3 -\> an added item gets 10, a
  * duplicate after it 11).
  */
-export function _nextItemId(rq: RenderQueue): number {
+function _nextItemId(rq: RenderQueue): number {
   return Math.max(1, ...rq.items.map((item) => item._ldat.itemId)) + 1;
 }
 
@@ -49,7 +80,7 @@ export function _nextItemId(rq: RenderQueue): number {
  * The render settings view: AE marks the item's render settings as
  * written by a script on every `setSettings` (AE 2026).
  */
-export class _RenderSettingsView extends SettingsView<RenderSettingValues> {
+class _RenderSettingsView extends SettingsView<RenderSettingValues> {
   declare _owner: RenderQueueItem;
   set(key: string, value: SettingValue | null): void {
     super.set(key, value);
@@ -62,15 +93,15 @@ export type RenderSettingValues = SettingValues & {
   "3:2 Pulldown": RenderQueueItem["_pulldown"];
   "Color Depth": RenderQueueItem["_colorDepth"];
   "Disk Cache": RenderQueueItem["_diskCache"];
-  "Effects": RenderQueueItem["_effects"];
+  Effects: RenderQueueItem["_effects"];
   "Field Render": RenderQueueItem["_fieldRender"];
   "Frame Blending": RenderQueueItem["_frameBlending"];
   "Frame Rate": RenderQueueItem["_frameRateSetting"];
   "Guide Layers": RenderQueueItem["_guideLayers"];
   "Motion Blur": RenderQueueItem["_motionBlur"];
   "Proxy Use": RenderQueueItem["_proxyUse"];
-  "Quality": RenderQueueItem["_quality"];
-  "Resolution": RenderQueueItem["_resolution"];
+  Quality: RenderQueueItem["_quality"];
+  Resolution: RenderQueueItem["_resolution"];
   "Skip Existing Files": RenderQueueItem["_skipExistingFiles"];
   "Solo Switches": RenderQueueItem["_soloSwitches"];
   "Time Span Duration": RenderQueueItem["timeSpanDuration"];
@@ -85,7 +116,7 @@ export type RenderSettingValues = SettingValues & {
 // RENDER_SETTINGS: ExtendScript key -> (attribute, optional enum class)
 // ---------------------------------------------------------------------------
 
-export const RENDER_SETTINGS: SettingsSpec = new Map([
+const RENDER_SETTINGS: SettingsSpec = new Map([
   ["3:2 Pulldown", ["_pulldown", PulldownSetting]],
   ["Color Depth", ["_colorDepth", ColorDepthSetting]],
   ["Disk Cache", ["_diskCache", DiskCacheSetting]],
@@ -563,10 +594,7 @@ export class RenderQueueItem {
       return [0, Math.round(this.comp.duration * fr) + 0];
     }
     if (source === TimeSpanSource.WORK_AREA_ONLY) {
-      return [
-        Math.round(this.comp.workAreaStart * fr) + 0,
-        Math.round(this.comp.workAreaDuration * fr) + 0,
-      ];
+      return [Math.round(this.comp.workAreaStart * fr) + 0, Math.round(this.comp.workAreaDuration * fr) + 0];
     }
     const [startSec, durSec] = this._resolvedTimeSpan();
     return [Math.round(startSec * fr) + 0, Math.round(durSec * fr) + 0];
@@ -620,8 +648,7 @@ export class RenderQueueItem {
       newDuration = custom ? oldDuration : oldStart + oldDuration - seconds;
       if (newDuration <= 0) {
         throw new ValueError(
-          `Start time ${floatRepr(seconds)} is at or past the span end ` +
-            `(${floatRepr(oldStart + oldDuration)})`,
+          `Start time ${floatRepr(seconds)} is at or past the span end ` + `(${floatRepr(oldStart + oldDuration)})`,
         );
       }
       // The same one-frame floor the duration path enforces: reaching it
@@ -937,10 +964,14 @@ export class RenderQueueItem {
     descriptor(this, "logType", ChunkField.enum(LogType, "_ldat", "logType"));
     descriptor(this, "name", new ChunkField("_ldat", "templateName"));
     descriptor(this, "queueItemNotify", ChunkField.bool("_ldat", "queueItemNotify", { minVersion: 22 }));
-    descriptor(this, "startTime", new ChunkField("_ldat", "startTime", {
-      transform: _startTimeFromBinary,
-      readOnly: true,
-    }));
+    descriptor(
+      this,
+      "startTime",
+      new ChunkField("_ldat", "startTime", {
+        transform: _startTimeFromBinary,
+        readOnly: true,
+      }),
+    );
     descriptor(this, "status", ChunkField.enum(RQItemStatus, "_ldat", "status", { postSet: "_onStatusChanged" }));
     descriptor(this, "_colorDepth", ChunkField.enum(ColorDepthSetting, "_ldat", "colorDepth"));
     descriptor(this, "_diskCache", ChunkField.enum(DiskCacheSetting, "_ldat", "diskCache"));
@@ -955,8 +986,12 @@ export class RenderQueueItem {
     descriptor(this, "_skipExistingFiles", ChunkField.bool("_ldat", "skipExistingFiles"));
     descriptor(this, "_soloSwitches", ChunkField.enum(SoloSwitchesSetting, "_ldat", "soloSwitches"));
     descriptor(this, "_timeSpanSource", ChunkField.enum(TimeSpanSource, "_ldat", "timeSpanSource"));
-    descriptor(this, "_frameRateSetting", ChunkField.enum(FrameRateSetting, "_ldat", "useThisFrameRate", {
-      postSet: "_setOutputFrameRates",
-    }));
+    descriptor(
+      this,
+      "_frameRateSetting",
+      ChunkField.enum(FrameRateSetting, "_ldat", "useThisFrameRate", {
+        postSet: "_setOutputFrameRates",
+      }),
+    );
   }
 }

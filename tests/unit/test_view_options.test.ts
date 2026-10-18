@@ -12,14 +12,8 @@
 
 import { describe, expect, test } from "bun:test";
 import "../../src/py_aep/binary/_register.ts";
-import { Path } from "../../src/pyrt/index.ts";
 import { FastPreviewType, ViewOptions } from "../../src/py_aep/index.ts";
 import { FipsChunk } from "../../src/py_aep/binary/misc_chunks.ts";
-
-// `if TYPE_CHECKING: pass` block dropped (type-only, no runtime effect).
-
-// Python: Path(__file__).parent.parent.parent; import.meta.dir is already the file's parent.
-const SAMPLES_DIR = new Path(import.meta.dir).parent.parent.div("samples", "models", "view");
 
 describe("TestViewOptionsWithoutItem", () => {
   /**

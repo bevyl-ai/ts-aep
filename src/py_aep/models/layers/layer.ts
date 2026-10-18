@@ -1,32 +1,8 @@
 // Port of py_aep/models/layers/layer.py
 
-import { INSPECT, describe } from "../../../pyrt/index.ts";
-import type { LdtaChunk } from "../../binary/layer_chunks.ts";
-import type { Keyframe } from "../properties/keyframe.ts";
-import type { MarkerValue } from "../properties/marker.ts";
-import { AutoOrientType, Label, LayerType } from "../../enums/index.ts";
-import { aeWrites } from "../../ae_version.ts";
-import { Chunk, ListChunk } from "../../binary/chunk.ts";
-import { layerTimebase, rescaleTicks } from "../../binary/composition_chunks.ts";
-import { CmtaChunk } from "../../binary/item_chunks.ts";
-import { buildGideList, buildOvdg, cloneChunkTree, remapLayerRefTdpi, rewriteOwnerTdpi, rewriteTimeBase } from "../../binary/mutations.ts";
-import { TdmnChunk, TdsbChunk, TdsnChunk } from "../../binary/property_chunks.ts";
-import { Utf8Chunk } from "../../binary/scalar_chunks.ts";
-import { filterByListType, filterByType, findByType, indexByIdentity, listTypeOf } from "../../binary/utils.ts";
-import { _effectInstances, rehomeEffectDefinitions } from "../../parsers/effect.ts";
-import { parseProperties } from "../../parsers/property.ts";
-import { getChunksByMatchName, getMatchNameRuns } from "../../parsers/utils.ts";
-import { Mat4, aspectScale, buildWorldMatrix, composeOrientation, decomposeTransform, layerSourceAspect, positionSpaceAspect, rigAimsAtPoi, rotationPart, squarePixels, stripOrientation } from "../../resolvers/transform.ts";
-import { ChunkField, _suppressMaterialization, type EffectParamDefs } from "../descriptors.ts";
-import { autoName } from "../naming.ts";
-import { Property } from "../properties/property.ts";
-import { PropertyBase } from "../properties/property_base.ts";
-import { PropertyGroup } from "../properties/property_group.ts";
-import { _validateNumber, validateInt, validateNumber, validateString } from "../validators.ts";
-import type { AVItem } from "../items/av_item.ts";
-import type { CompItem } from "../items/composition.ts";
-import type { AVLayer } from "./av_layer.ts";
 import {
+  INSPECT,
+  describe,
   KeyError,
   ValueError,
   descriptor,
@@ -41,14 +17,57 @@ import {
   warn,
   type ClassAttributes,
 } from "../../../pyrt/index.ts";
+import type { LdtaChunk } from "../../binary/layer_chunks.ts";
+import type { Keyframe } from "../properties/keyframe.ts";
+import type { MarkerValue } from "../properties/marker.ts";
+import { AutoOrientType, Label, LayerType } from "../../enums/index.ts";
+import { aeWrites } from "../../ae_version.ts";
+import { Chunk, ListChunk } from "../../binary/chunk.ts";
+import { layerTimebase, rescaleTicks } from "../../binary/composition_chunks.ts";
+import { CmtaChunk } from "../../binary/item_chunks.ts";
+import {
+  buildGideList,
+  buildOvdg,
+  cloneChunkTree,
+  remapLayerRefTdpi,
+  rewriteOwnerTdpi,
+  rewriteTimeBase,
+} from "../../binary/mutations.ts";
+import { TdmnChunk, TdsbChunk, TdsnChunk } from "../../binary/property_chunks.ts";
+import { Utf8Chunk } from "../../binary/scalar_chunks.ts";
+import { filterByListType, filterByType, findByType, indexByIdentity, listTypeOf } from "../../binary/utils.ts";
+import { _effectInstances, rehomeEffectDefinitions } from "../../parsers/effect.ts";
+import { parseProperties } from "../../parsers/property.ts";
+import { getChunksByMatchName, getMatchNameRuns } from "../../parsers/utils.ts";
+import {
+  Mat4,
+  aspectScale,
+  buildWorldMatrix,
+  composeOrientation,
+  decomposeTransform,
+  layerSourceAspect,
+  positionSpaceAspect,
+  rigAimsAtPoi,
+  rotationPart,
+  squarePixels,
+  stripOrientation,
+} from "../../resolvers/transform.ts";
+import { ChunkField, _suppressMaterialization, type EffectParamDefs } from "../descriptors.ts";
+import { autoName } from "../naming.ts";
+import { Property } from "../properties/property.ts";
+import type { PropertyBase } from "../properties/property_base.ts";
+import { PropertyGroup } from "../properties/property_group.ts";
+import { _validateNumber, validateInt, validateNumber, validateString } from "../validators.ts";
+import type { AVItem } from "../items/av_item.ts";
+import type { CompItem } from "../items/composition.ts";
+import type { AVLayer } from "./av_layer.ts";
 import type { MatchNameTypes } from "../properties/match_name_types.ts";
 import * as _avLayer from "./av_layer.ts";
 import * as _composition from "../items/composition.ts";
 import { late } from "../late.ts";
 
-
 // logging.getLogger(__name__)
-export const logger = {
+const logger = {
   debug() {},
   info() {},
   warning: (m: string) => warn(m),
@@ -56,17 +75,17 @@ export const logger = {
 
 // AE turns any stretch under 1 % into 655 / 65536 (1 % in 16.16, rounded
 // down), in percent.
-export const _MIN_STRETCH = (655 * 100) / 65536;
+const _MIN_STRETCH = (655 * 100) / 65536;
 
 // The stretch is a float32 stored as a ratio with a signed 32-bit dividend;
 // 2147483520 is the largest float32 under 2**31.
-export const _validateStretch = _validateNumber({
+const _validateStretch = _validateNumber({
   min: -2147483520 * 100.0,
   max: 2147483520 * 100.0,
 });
 
 // The start time is a signed 32-bit count of the layer's timebase ticks.
-export const _validateStartTime = _validateNumber({
+const _validateStartTime = _validateNumber({
   min: (layer: Layer) => -0x80000000 / layer._layerTimebase(),
   max: (layer: Layer) => 0x7fffffff / layer._layerTimebase(),
 });
@@ -92,7 +111,7 @@ export function _noSourceId(comp: CompItem): number {
  * @returns A list of controller UUID strings from the OvG2/CPrp/Utf8 entries; each matches an
  *   `EssentialGraphicsController.uuid` on the source comp.
  */
-export function _parseOvg2Uuids(tdgpChunks: Chunk[]): string[] {
+function _parseOvg2Uuids(tdgpChunks: Chunk[]): string[] {
   const uuids: string[] = [];
   for (const ovg2List of filterByListType(tdgpChunks, "OvG2")) {
     for (const cprp of filterByListType(ovg2List.chunks, "CPrp")) {
@@ -106,19 +125,19 @@ export function _parseOvg2Uuids(tdgpChunks: Chunk[]): string[] {
 }
 
 /** World matrix a child of `parent` is placed in, at comp `time`. */
-export function _parentWorld(parent: Layer | null, time: number, childIs3d: boolean): Mat4 {
+function _parentWorld(parent: Layer | null, time: number, childIs3d: boolean): Mat4 {
   if (parent == null) return Mat4.identity();
   return buildWorldMatrix(parent, time, !childIs3d, { asParent: true });
 }
 
 /** `list.index(x)` with `==` (identity for layers) and CPython's ValueError. */
-export function _listIndex<T>(xs: T[], x: T): number {
+function _listIndex<T>(xs: T[], x: T): number {
   for (let i = 0; i < xs.length; i++) if (xs[i] === x) return i;
   throw new ValueError(`${literal(x)} is not in list`);
 }
 
 /** `list.remove(x)` with CPython's ValueError. */
-export function _listRemove<T>(xs: T[], x: T): void {
+function _listRemove<T>(xs: T[], x: T): void {
   for (let i = 0; i < xs.length; i++) {
     if (xs[i] === x) {
       xs.splice(i, 1);
@@ -131,7 +150,11 @@ export function _listRemove<T>(xs: T[], x: T): void {
 /** A group holding a property whose left-out default follows other state (see `Layer._LIVE_DEFAULTS`). */
 export type LiveDefaultGroup = "ADBE Transform Group" | "ADBE Camera Options Group";
 /** A property whose left-out default follows other state (see `Layer._LIVE_DEFAULTS`). */
-export type LiveDefaultProperty = "ADBE Position" | "ADBE Anchor Point" | "ADBE Camera Zoom" | "ADBE Camera Focus Distance";
+export type LiveDefaultProperty =
+  | "ADBE Position"
+  | "ADBE Anchor Point"
+  | "ADBE Camera Zoom"
+  | "ADBE Camera Focus Distance";
 
 /** Keyword arguments of `Layer._new`. */
 type LayerNewKw = {
@@ -364,13 +387,7 @@ export class Layer extends PropertyGroup {
   }
 
   constructor(kw: LayerInitKw) {
-    const {
-      _ldta,
-      _cmta,
-      _nameUtf8,
-      _layerList,
-      containingComp,
-    } = kw;
+    const { _ldta, _cmta, _nameUtf8, _layerList, containingComp } = kw;
     // NOTE(port): TS cannot touch `this` before super(); the early self._ldta/_cmta/_layer_list/_essential_property_uuids assignments move below it (the base __init__ never reads them) and new.target stands in for self in the match-name lookup.
 
     const layerTypeRaw = _ldta.layerType;
@@ -490,13 +507,7 @@ export class Layer extends PropertyGroup {
    */
   _buildPropertyTree(effectParamDefs: EffectParamDefs): void {
     assert(this._tdgp != null);
-    const props = parseProperties(
-      getMatchNameRuns(this._tdgp),
-      1,
-      effectParamDefs,
-      this.containingComp,
-      this,
-    );
+    const props = parseProperties(getMatchNameRuns(this._tdgp), 1, effectParamDefs, this.containingComp, this);
     this._properties = props;
     for (const child of props) child._parentProperty = this;
     late.synthesizeLayerProperties(this);
@@ -980,9 +991,7 @@ export class Layer extends PropertyGroup {
     let current: Layer | null = newParent;
     while (current != null) {
       if (seen.has(current)) {
-        throw new ValueError(
-          "cannot parent a layer to itself or to one of its descendants",
-        );
+        throw new ValueError("cannot parent a layer to itself or to one of its descendants");
       }
       seen.add(current);
       current = current.parent;
@@ -1102,10 +1111,7 @@ export class Layer extends PropertyGroup {
     const orientation = current("ADBE Orientation");
     let newPos = decomposeTransform(newLocal, squareAnchor)[0];
     newPos = [newPos[0] / newSpace, ...newPos.slice(1)];
-    let [, newScale, newRz] = decomposeTransform(
-      stripOrientation(newLocal, orientation),
-      squareAnchor,
-    );
+    let [, newScale, newRz] = decomposeTransform(stripOrientation(newLocal, orientation), squareAnchor);
     if (newScale[0] < 0 && is3d) {
       // `decomposeTransform` signals a mirrored basis by negating x
       // alone. AE spreads the flip across all three axes and keeps the
@@ -1117,7 +1123,10 @@ export class Layer extends PropertyGroup {
       newScale = newScale.map((component) => -Math.abs(component));
     }
 
-    const writeCompensation = (matchName: "ADBE Position" | "ADBE Scale" | "ADBE Rotate Z", newValue: number | number[]): void => {
+    const writeCompensation = (
+      matchName: "ADBE Position" | "ADBE Scale" | "ADBE Rotate Z",
+      newValue: number | number[],
+    ): void => {
       // Only write values that actually changed to avoid materializing
       // synthetic properties unnecessarily. Keyframed scale / rotation
       // values are left untouched, matching ExtendScript (the layer
@@ -1163,9 +1172,7 @@ export class Layer extends PropertyGroup {
     if (scaleProp.keyframes?.length > 0) {
       const scaleNow = current("ADBE Scale");
       const factors = Array.from({ length: newScale.length }, (_, axis) =>
-        axis < scaleNow.length && scaleNow[axis] !== 0
-          ? newScale[axis] / scaleNow[axis]
-          : 1.0,
+        axis < scaleNow.length && scaleNow[axis] !== 0 ? newScale[axis] / scaleNow[axis] : 1.0,
       );
       // Skipped when the parent applies no scale, for the reason
       // `writeCompensation` gives: an unchanged value is not written.
@@ -1519,16 +1526,10 @@ export class Layer extends PropertyGroup {
       // layer's own stretch scales it, exactly as `_layerTimebase`
       // derives it - a 200 % layer counts ticks against twice the
       // comp's base.
-      rewriteTimeBase(
-        clonedList,
-        this._layerTimebase(intoComp._cdta.internalTimebase),
-      );
+      rewriteTimeBase(clonedList, this._layerTimebase(intoComp._cdta.internalTimebase));
       modelIdx = 0;
       if (intoComp.layers.length > 0) {
-        chunkIdx = indexByIdentity(
-          intoComp._itemList.chunks,
-          intoComp.layers[0]._layerList,
-        );
+        chunkIdx = indexByIdentity(intoComp._itemList.chunks, intoComp.layers[0]._layerList);
       } else {
         chunkIdx = intoComp._findFirstLayerPosition();
       }
@@ -1554,15 +1555,10 @@ export class Layer extends PropertyGroup {
       // copying into a 2:1 comp).
       const [childWorld, parentWorld, oldAspects] = unparent;
       const sourceAspect = oldAspects[0];
-      newLayer._compensateReparent(
-        null,
-        childWorld,
-        parentWorld,
-        Mat4.identity(),
-        0.0,
-        oldAspects,
-        [sourceAspect, sourceAspect],
-      );
+      newLayer._compensateReparent(null, childWorld, parentWorld, Mat4.identity(), 0.0, oldAspects, [
+        sourceAspect,
+        sourceAspect,
+      ]);
     }
 
     // Increment user-defined name
@@ -1700,10 +1696,7 @@ export class Layer extends PropertyGroup {
     // Find chunk insertion point
     let chunkIdx: number;
     if (targetIndex < comp._layers.length) {
-      chunkIdx = indexByIdentity(
-        comp._itemList.chunks,
-        comp._layers[targetIndex]._layerList,
-      );
+      chunkIdx = indexByIdentity(comp._itemList.chunks, comp._layers[targetIndex]._layerList);
     } else if (comp._layers.length > 0) {
       const [, lastEnd] = comp._layerBlockSlice(comp._layers[comp._layers.length - 1]);
       chunkIdx = lastEnd;

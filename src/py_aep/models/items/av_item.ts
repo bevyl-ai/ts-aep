@@ -31,9 +31,9 @@ import { SolidSource } from "../sources/solid.ts";
 // order). This emulates the 3.12 table (linear probes 9, perturb 5, resize at fill*5 >= mask*3)
 // for the add / discard / iterate surface that `AVItem._used_in` uses. Exact for ids in
 // [0, 2^31) (AE item ids); a generic pyrt set shim would supersede it.
-export class _IdHashSet<T extends { id: number }> {
-  private _keys: (T | null)[] = new Array(8).fill(null);
-  private _hashes: number[] = new Array(8).fill(0); // -1 = dummy
+class _IdHashSet<T extends { id: number }> {
+  private _keys: (T | null)[] = Array.from({ length: 8 }, () => null);
+  private _hashes: number[] = Array.from({ length: 8 }, () => 0); // -1 = dummy
   private _mask = 7;
   private _fill = 0;
   private _used = 0;
@@ -110,8 +110,8 @@ export class _IdHashSet<T extends { id: number }> {
     while (newsize <= minused) newsize <<= 1;
     const oldKeys = this._keys;
     const oldHashes = this._hashes;
-    this._keys = new Array(newsize).fill(null);
-    this._hashes = new Array(newsize).fill(0);
+    this._keys = Array.from({ length: newsize }, () => null);
+    this._hashes = Array.from({ length: newsize }, () => 0);
     this._mask = newsize - 1;
     this._fill = this._used;
     for (let n = 0; n < oldKeys.length; n++) {
@@ -141,16 +141,14 @@ export class _IdHashSet<T extends { id: number }> {
   }
 }
 
-export function _validateUseProxy(value: boolean, obj: AVItem): void {
+function _validateUseProxy(value: boolean, obj: AVItem): void {
   validateBool(value);
   if (obj.proxySource == null && value) {
-    throw new AttributeError(
-      "Cannot set useProxy to true when there is no proxy source.",
-    );
+    throw new AttributeError("Cannot set useProxy to true when there is no proxy source.");
   }
 }
 
-export function _syncProxyActive(obj: AVItem): void {
+function _syncProxyActive(obj: AVItem): void {
   // idta 0x38 records that a proxy is assigned, not that it is in use:
   // AE 2026 keeps 1 after `useProxy = false` and writes 0 only on
   // `setProxyToNone()` (as in sample proxy.aep's `proxy_disabled` items).
@@ -375,10 +373,7 @@ export class AVItem extends Item {
   setProxyToNone(): void {
     if (this._proxySource) {
       const proxyPin = this._pinChunks[this._proxyPinIndex];
-      this._itemList.chunks.splice(
-        indexByIdentity(this._itemList.chunks, proxyPin),
-        1,
-      );
+      this._itemList.chunks.splice(indexByIdentity(this._itemList.chunks, proxyPin), 1);
       this._pinChunks.splice(this._proxyPinIndex, 1);
       this._proxySource = null;
     }
@@ -486,10 +481,7 @@ export class AVItem extends Item {
    * @throws {@link NotImplementedError} If After Effects requires a format-specific `opti` header
    *   not implemented for this format.
    */
-  setProxyWithSequence(
-    file: PathLike,
-    forceAlphabetical: boolean = false,
-  ): void {
+  setProxyWithSequence(file: PathLike, forceAlphabetical: boolean = false): void {
     this._setProxy(
       FileSource._fromFile(file, {
         sequence: true,
@@ -507,9 +499,7 @@ export class AVItem extends Item {
    * and any sequence prefix/ext); solid/placeholder sources are built
    * from sspc+opti.
    */
-  static _pinForSource(
-    source: FileSource | SolidSource | PlaceholderSource,
-  ): ListChunk {
+  static _pinForSource(source: FileSource | SolidSource | PlaceholderSource): ListChunk {
     if (source instanceof FileSource) {
       return source._pin;
     }
@@ -538,19 +528,20 @@ export class AVItem extends Item {
 
   /** Set a proxy LIST:Pin chunk (add or replace). */
   private _setProxy(source: FileSource | SolidSource | PlaceholderSource): void {
-    this._replacePin(
-      this._proxyPinIndex,
-      this.constructor._pinForSource(source),
-    );
+    this._replacePin(this._proxyPinIndex, this.constructor._pinForSource(source));
     this._proxySource = source;
     source._joinProject(this._project);
     this.useProxy = true;
   }
 
   static {
-    descriptor(this, "useProxy", ChunkField.bool("_idta", "useProxy", {
-      validate: _validateUseProxy,
-      postSet: _syncProxyActive,
-    }));
+    descriptor(
+      this,
+      "useProxy",
+      ChunkField.bool("_idta", "useProxy", {
+        validate: _validateUseProxy,
+        postSet: _syncProxyActive,
+      }),
+    );
   }
 }

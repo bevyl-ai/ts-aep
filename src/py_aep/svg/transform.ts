@@ -38,7 +38,15 @@ export class Affine {
   }
 
   equals(other: unknown): boolean {
-    return other instanceof Affine && this.a === other.a && this.b === other.b && this.c === other.c && this.d === other.d && this.e === other.e && this.f === other.f;
+    return (
+      other instanceof Affine &&
+      this.a === other.a &&
+      this.b === other.b &&
+      this.c === other.c &&
+      this.d === other.d &&
+      this.e === other.e &&
+      this.f === other.f
+    );
   }
 
   /** Return `self @ other` (apply `other` first, then `self`). */
@@ -73,11 +81,11 @@ export class Affine {
 export const IDENTITY = new Affine();
 
 // One transform function: name + parenthesized numeric args.
-export const _FUNC_RE = /([a-zA-Z]+)\s*\(([^)]*)\)/g;
+const _FUNC_RE = /([a-zA-Z]+)\s*\(([^)]*)\)/g;
 
-export const _FUNCTIONS: ReadonlySet<string> = new Set(["matrix", "translate", "scale", "rotate", "skewX", "skewY"]);
+const _FUNCTIONS: ReadonlySet<string> = new Set(["matrix", "translate", "scale", "rotate", "skewX", "skewY"]);
 
-export function _numbers(text: string): number[] {
+function _numbers(text: string): number[] {
   return Array.from(text.matchAll(NUMBER_RE), (m) => Number(m[0]));
 }
 
@@ -123,7 +131,7 @@ export function parseTransform(value: string): Affine {
  * by `parseTransform`.
  */
 // NOTE(port): platform libm — CPython's own math.* results vary by platform libm; V8 (fdlibm) may differ in the last ulp.
-export function _singleTransform(name: string, n: number[]): Affine {
+function _singleTransform(name: string, n: number[]): Affine {
   if (name === "matrix") {
     return new Affine(n[0], n[1], n[2], n[3], n[4], n[5]);
   }

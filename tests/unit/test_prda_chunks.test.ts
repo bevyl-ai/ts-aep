@@ -6,15 +6,20 @@ import { ByteStream, Bytes, valueEquals } from "../../src/pyrt/index.ts";
 
 import "../../src/py_aep/binary/_register.ts";
 import { asInstance } from "../helpers.ts";
-import { AdvancedPrdaChunk, Cinema4DPrdaChunk, ClassicPrdaChunk, PrdaChunk, RayTracedPrdaChunk } from "../../src/py_aep/binary/misc_chunks.ts";
+import {
+  AdvancedPrdaChunk,
+  Cinema4DPrdaChunk,
+  ClassicPrdaChunk,
+  PrdaChunk,
+  RayTracedPrdaChunk,
+} from "../../src/py_aep/binary/misc_chunks.ts";
 import { approx } from "../support/pytest.ts";
 
 const PRDA_CLASSIC_DEFAULT = Bytes.fromHex("000000010000000000000000");
 // big-endian head: version, renderer tag, quality 8, two reserved words
 // little-endian tail: resolution 1, smoothness 3, size 1.0 x3, centre 0.0 x3
 const PRDA_ADVANCED_DEFAULT = Bytes.fromHex(
-  "0000000100000003000000080000000100000000" +
-    "01000000030000000000803f0000803f0000803f000000000000000000000000",
+  "0000000100000003000000080000000100000000" + "01000000030000000000803f0000803f0000803f000000000000000000000000",
 );
 const PRDA_CINEMA_DEFAULT = Bytes.fromHex("0000000100000001000000190000000100000000");
 // obsolete renderer, removed in AE 2020 (17.0)
@@ -22,8 +27,7 @@ const PRDA_RAYTRACED = Bytes.fromHex("00000001000000000000000300000001");
 
 const PRDA_CLASSIC_SET = Bytes.fromHex("000000010000000000000003");
 const PRDA_ADVANCED_SET = Bytes.fromHex(
-  "00000001000000030000003d0000000100000000" +
-    "02000000060000000000a03e0000a03e0000a03e565595be408e633d555555bd",
+  "00000001000000030000003d0000000100000000" + "02000000060000000000a03e0000a03e0000a03e565595be408e633d555555bd",
 );
 const PRDA_CINEMA_SET = Bytes.fromHex("00000001000000010000002c0000000100000000");
 

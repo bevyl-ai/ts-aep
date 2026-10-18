@@ -30,11 +30,14 @@ describe("TestRoundtripRendererOptions", () => {
   test("test_classic_shadow_map", () => {
     const tmpPath = makeTmpPath();
     const app = parseAep(COMPOSITION_DIR.div("renderer_classic_3d.aep"));
-    asInstance(app.project.compositions[0].rendererOptions, ClassicRendererOptions).shadowMapResolution = ShadowMapResolution.RES_4000;
+    asInstance(app.project.compositions[0].rendererOptions, ClassicRendererOptions).shadowMapResolution =
+      ShadowMapResolution.RES_4000;
 
     const comp = _reparse(app, tmpPath);
 
-    expect(asInstance(comp.rendererOptions, ClassicRendererOptions).shadowMapResolution).toBe(ShadowMapResolution.RES_4000);
+    expect(asInstance(comp.rendererOptions, ClassicRendererOptions).shadowMapResolution).toBe(
+      ShadowMapResolution.RES_4000,
+    );
   });
 
   test("test_assign_from_another_options_view", () => {
@@ -67,7 +70,9 @@ describe("TestRoundtripRendererOptions", () => {
     const comp = _reparse(app, tmpPath);
 
     expect(asInstance(comp.rendererOptions, AdvancedRendererOptions).quality).toBe(125);
-    expect(asInstance(comp.rendererOptions, AdvancedRendererOptions).resolution).toBe(EnvironmentLightShadowResolution.HALF);
+    expect(asInstance(comp.rendererOptions, AdvancedRendererOptions).resolution).toBe(
+      EnvironmentLightShadowResolution.HALF,
+    );
     expect(asInstance(comp.rendererOptions, AdvancedRendererOptions).smoothness).toBe(20);
   });
 
@@ -88,7 +93,9 @@ describe("TestRoundtripRendererOptions", () => {
     const comp = _reparse(app, tmpPath);
 
     expect(approx(asInstance(comp.rendererOptions, AdvancedRendererOptions).castingBoxSize, 640.0)).toBe(true);
-    expect(approx(asInstance(comp.rendererOptions, AdvancedRendererOptions).castingBoxCenter, [100.0, 200.0, -300.0])).toBe(true);
+    expect(
+      approx(asInstance(comp.rendererOptions, AdvancedRendererOptions).castingBoxCenter, [100.0, 200.0, -300.0]),
+    ).toBe(true);
   });
 
   test("test_mapping_write_round_trips", () => {

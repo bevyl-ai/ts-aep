@@ -122,9 +122,7 @@ describe("TestSentinelOutPoint", () => {
   test("test_out_point_equals_duration", () => {
     const project = projectFixture();
     const comp = _compById(project, COMP_ID);
-    expect(
-      isclose(comp._cdta.workAreaEndAbsolute, comp.displayStartTime + comp.duration, 1e-9),
-    ).toBe(true);
+    expect(isclose(comp._cdta.workAreaEndAbsolute, comp.displayStartTime + comp.duration, 1e-9)).toBe(true);
   });
 
   /** Frame out_point should equal frame_duration for sentinel case. */

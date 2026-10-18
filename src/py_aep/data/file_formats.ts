@@ -87,7 +87,7 @@ export const FORMAT_3D_MODEL_SCENE = "LDOM";
  * on either platform, but an IMIO sequence never opens on Windows and a
  * STIL sequence never opens on macOS.
  */
-export const GENERIC_STILL_FORMATS = { macos: "IMIO", windows: "STIL" } as const;
+const GENERIC_STILL_FORMATS = { macos: "IMIO", windows: "STIL" } as const;
 
 /**
  * The `sspc` code AE on the target platform writes for `fmt`.
@@ -187,15 +187,12 @@ export const _FILE_FORMATS: Map<string, FileFormat> = new Map<string, FileFormat
 //   - `.mov` accepts PROJECT (a QuickTime file may carry an AE project).
 // Extensions not in `samples/assets/` (`.ai`, `.pdf`, `.aet`, `.jpeg`, `.tiff`)
 // follow documented AE behavior / format aliases and are marked below.
-export const _FOOTAGE = ImportAsType.FOOTAGE;
-export const _COMP = ImportAsType.COMP;
-export const _CROPPED = ImportAsType.COMP_CROPPED_LAYERS;
-export const _PROJECT = ImportAsType.PROJECT;
+const _FOOTAGE = ImportAsType.FOOTAGE;
+const _COMP = ImportAsType.COMP;
+const _CROPPED = ImportAsType.COMP_CROPPED_LAYERS;
+const _PROJECT = ImportAsType.PROJECT;
 
-export const _IMPORT_AS_TYPES: Map<string, ReadonlySet<ImportAsType>> = new Map<
-  string,
-  ReadonlySet<ImportAsType>
->([
+const _IMPORT_AS_TYPES: Map<string, ReadonlySet<ImportAsType>> = new Map<string, ReadonlySet<ImportAsType>>([
   // Layered Photoshop - footage, comp, or comp-cropped.
   [".psd", new Set([_FOOTAGE, _COMP, _CROPPED])],
   [".psb", new Set([_FOOTAGE, _COMP, _CROPPED])],

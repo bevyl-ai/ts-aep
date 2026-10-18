@@ -6,7 +6,12 @@ import { createHash } from "node:crypto";
 
 import { describe, expect, test } from "bun:test";
 
-import { ColorProfileNotFoundError, IccProfileLibrary, defaultIccDirectories, iccProfileId } from "../../src/py_aep/color/icc.ts";
+import {
+  ColorProfileNotFoundError,
+  IccProfileLibrary,
+  defaultIccDirectories,
+  iccProfileId,
+} from "../../src/py_aep/color/icc.ts";
 import { _ICC_PROFILE_MAPPING, profileIdForName } from "../../src/py_aep/enums/mappings.ts";
 import { b, Bytes, valueEquals } from "../../src/pyrt/index.ts";
 import { raises } from "../support/pytest.ts";
@@ -15,12 +20,9 @@ import { range } from "../support/python.ts";
 /** Name -> 16-byte ID inversion of the catalogue. */
 describe("TestProfileIdForName", () => {
   test("test_known_name", () => {
-    expect(
-      valueEquals(
-        profileIdForName("sRGB IEC61966-2.1"),
-        Bytes.fromHex("1d3fda2edb4a89ab60a23c5f7c7d81dd"),
-      ),
-    ).toBe(true);
+    expect(valueEquals(profileIdForName("sRGB IEC61966-2.1"), Bytes.fromHex("1d3fda2edb4a89ab60a23c5f7c7d81dd"))).toBe(
+      true,
+    );
   });
 
   test("test_unknown_name_returns_none", () => {
@@ -43,12 +45,7 @@ describe("TestIccProfileId", () => {
     expected.set(Bytes.repeat(b("\x00"), 4), 44);
     expected.set(Bytes.repeat(b("\x00"), 4), 64);
     expected.set(Bytes.repeat(b("\x00"), 16), 84);
-    expect(
-      valueEquals(
-        iccProfileId(data),
-        new Uint8Array(createHash("md5").update(expected).digest()),
-      ),
-    ).toBe(true);
+    expect(valueEquals(iccProfileId(data), new Uint8Array(createHash("md5").update(expected).digest()))).toBe(true);
     expect(iccProfileId(data).length).toBe(16);
   });
 
@@ -73,9 +70,7 @@ describe("TestLibraryErrors", () => {
   test("test_hash_for_uses_catalogue_without_disk", () => {
     // Even with no directories, a catalogued name resolves via the mapping.
     const lib = new IccProfileLibrary([]);
-    expect(
-      valueEquals(lib.hashFor("Apple RGB"), Bytes.fromHex("47ae2b5f4c143df9d07b5dc78036b5a8")),
-    ).toBe(true);
+    expect(valueEquals(lib.hashFor("Apple RGB"), Bytes.fromHex("47ae2b5f4c143df9d07b5dc78036b5a8"))).toBe(true);
   });
 
   test("test_hash_for_unknown_raises", () => {

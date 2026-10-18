@@ -9,9 +9,9 @@ export const NUMBER_RE = pyRe(String.raw`[-+]?(?:\d*\.\d+|\d+\.?)(?:[eE][-+]?\d+
 /** The same token allowing a trailing `%` (CSS color / ratio values). */
 export const NUMBER_PCT_RE = pyRe(String.raw`[-+]?(?:\d*\.\d+|\d+\.?)(?:[eE][-+]?\d+)?%?`, 0, "g");
 /** A length: a number and an optional unit or `%`. */
-export const _LENGTH_RE = pyRe(String.raw`([-+]?(?:\d*\.\d+|\d+\.?)(?:[eE][-+]?\d+)?)\s*(%|[A-Za-z]+)?`);
+const _LENGTH_RE = pyRe(String.raw`([-+]?(?:\d*\.\d+|\d+\.?)(?:[eE][-+]?\d+)?)\s*(%|[A-Za-z]+)?`);
 /** CSS absolute units in user units (px): CSS Values 3 fixes 1in = 96px. */
-export const _ABSOLUTE_UNITS = new Map<string, number>([
+const _ABSOLUTE_UNITS = new Map<string, number>([
   ["px", 1.0],
   ["in", 96.0],
   ["cm", 96.0 / 2.54],
@@ -67,7 +67,7 @@ export function localName(tag: string): string {
  * Clamp a float to the `[0.0, 1.0]` range.
  */
 export function clamp01(value: number): number {
-  return value < 0.0 ? 0.0 : (value > 1.0 ? 1.0 : value);
+  return value < 0.0 ? 0.0 : value > 1.0 ? 1.0 : value;
 }
 
 /**

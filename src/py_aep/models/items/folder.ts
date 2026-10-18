@@ -111,10 +111,7 @@ export class FolderItem extends Item {
    * - `project`: The project that owns this folder.
    * - `parentFolder`: The folder that will contain this folder.
    */
-  static _new(
-    name: string,
-    kw: { project: Project; parentFolder: FolderItem },
-  ): FolderItem {
+  static _new(name: string, kw: { project: Project; parentFolder: FolderItem }): FolderItem {
     const { project, parentFolder } = kw;
     validateString(name);
     const newId = project._allocateId();
@@ -132,13 +129,7 @@ export class FolderItem extends Item {
 
     const itemList = new ListChunk({
       listType: "Item",
-      chunks: [
-        ...buildItemIdChunks(newId, project._head.aeVersionMajor),
-        idta,
-        nameUtf8,
-        sfdt,
-        sfdr,
-      ],
+      chunks: [...buildItemIdChunks(newId, project._head.aeVersionMajor), idta, nameUtf8, sfdt, sfdr],
     });
 
     const folder = new this({
@@ -233,19 +224,11 @@ export class FolderItem extends Item {
       name = autoName(CompItem._autoName, existing);
     }
 
-    const comp = CompItem._new(
-      name,
-      width,
-      height,
-      pixelAspect,
-      duration,
-      frameRate,
-      {
-        project: this._project,
-        parentFolder: this,
-        minDimension,
-      },
-    );
+    const comp = CompItem._new(name, width, height, pixelAspect, duration, frameRate, {
+      project: this._project,
+      parentFolder: this,
+      minDimension,
+    });
 
     // AE places a newly created/imported comp (its Item plus view-data
     // chunks) at the FRONT of the folder - right after the root folder's
@@ -281,11 +264,7 @@ export class FolderItem extends Item {
    * @throws {@link ValueError} If no preferences directory was provided, or the preset name does
    *   not resolve to exactly one preset.
    */
-  addCompFromPreset(
-    name: string | null,
-    preset: string,
-    duration: number,
-  ): CompItem {
+  addCompFromPreset(name: string | null, preset: string, duration: number): CompItem {
     validateName(preset);
     const presets = this._project._preferences.compositionPresets();
     if (!presets?.length) {
@@ -301,20 +280,10 @@ export class FolderItem extends Item {
     }
     if (matches.length !== 1) {
       const available = presets.map((p) => literal(p.name)).join(", ");
-      throw new ValueError(
-        `preset ${literal(preset)} matched ${matches.length} presets; ` +
-          `available: ${available}`,
-      );
+      throw new ValueError(`preset ${literal(preset)} matched ${matches.length} presets; ` + `available: ${available}`);
     }
     const found = matches[0];
-    return this.addComp(
-      name,
-      found.width,
-      found.height,
-      found.pixelAspect,
-      duration,
-      found.frameRate,
-    );
+    return this.addComp(name, found.width, found.height, found.pixelAspect, duration, found.frameRate);
   }
 
   /**
@@ -330,14 +299,22 @@ export class FolderItem extends Item {
    */
   _sortChildrenByName(): void {
     const [header, blocks] = this._childChunkBlocks();
-    blocks.splice(0, blocks.length, ...[...blocks].sort((a, b) => compare(a[0].name.toLowerCase(), b[0].name.toLowerCase())));
+    blocks.splice(
+      0,
+      blocks.length,
+      ...[...blocks].sort((a, b) => compare(a[0].name.toLowerCase(), b[0].name.toLowerCase())),
+    );
     this._childrenContainer.splice(
       0,
       this._childrenContainer.length,
       ...header,
       ...blocks.flatMap(([, chunks]) => chunks),
     );
-    this.items.splice(0, this.items.length, ...[...this.items].sort((a, b) => compare(a.name.toLowerCase(), b.name.toLowerCase())));
+    this.items.splice(
+      0,
+      this.items.length,
+      ...[...this.items].sort((a, b) => compare(a.name.toLowerCase(), b.name.toLowerCase())),
+    );
   }
 
   /**
@@ -347,9 +324,7 @@ export class FolderItem extends Item {
    */
   private _childChunkBlocks(): [Chunk[], [Item, Chunk[]][]] {
     // Keyed by object identity, as Python's `id()` was.
-    const byItemList = new Map<Chunk, Item>(
-      this.items.map((item): [Chunk, Item] => [item._itemList, item]),
-    );
+    const byItemList = new Map<Chunk, Item>(this.items.map((item): [Chunk, Item] => [item._itemList, item]));
     const header: Chunk[] = [];
     const blocks: [Item, Chunk[]][] = [];
     for (const chunk of this._childrenContainer) {

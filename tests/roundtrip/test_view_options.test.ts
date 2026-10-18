@@ -16,9 +16,14 @@ import { Path, ValueError, isclose, assert } from "../../src/pyrt/index.ts";
 import { parseAppFresh } from "../helpers.ts";
 
 import "../../src/py_aep/binary/_register.ts";
-import { ChannelType, FastPreviewType, ViewerType, type ViewOptions } from "../../src/py_aep/index.ts";
-import { parse as parseAep } from "../../src/py_aep/index.ts";
-import type { Application } from "../../src/py_aep/index.ts";
+import {
+  ChannelType,
+  FastPreviewType,
+  ViewerType,
+  type ViewOptions,
+  parse as parseAep,
+  type Application,
+} from "../../src/py_aep/index.ts";
 import { makeTmpPath, raises } from "../support/pytest.ts";
 
 // `Path(__file__).parent.parent.parent / ...` in the Python source.
@@ -328,9 +333,7 @@ describe("TestRoundtripUseDisplayColorManagement", () => {
   /** Roundtrip tests for ViewOptions.useDisplayColorManagement. */
   test("test_toggle_display_color_management", () => {
     const tmpPath = makeTmpPath();
-    const [app, opts] = _getActiveAppAndOptions(
-      SAMPLES_DIR.div("channels_use_display_color_management_off.aep"),
-    );
+    const [app, opts] = _getActiveAppAndOptions(SAMPLES_DIR.div("channels_use_display_color_management_off.aep"));
     expect(opts.useDisplayColorManagement).toBe(false);
 
     opts.useDisplayColorManagement = true;

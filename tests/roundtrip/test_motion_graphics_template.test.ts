@@ -5,7 +5,19 @@
 
 import { describe, expect, test } from "bun:test";
 
-import { AssertionError, ByteStream, Path, StopIteration, getMember, getOrThrow, len, assert, truthy, valueEquals, repr } from "../../src/pyrt/index.ts";
+import {
+  AssertionError,
+  ByteStream,
+  Path,
+  StopIteration,
+  getMember,
+  getOrThrow,
+  len,
+  assert,
+  truthy,
+  valueEquals,
+  repr,
+} from "../../src/pyrt/index.ts";
 
 import { asInstance, getComp, parseProjectFresh } from "../helpers.ts";
 import { AVLayer } from "../../src/py_aep/models/layers/av_layer.ts";
@@ -41,13 +53,25 @@ function _primary(project: Project): CompItem {
 
 function _opacity(comp: CompItem): Property {
   const layer = comp.layers[0];
-  return asInstance(next(layer.transform, (p) => p.matchName === "ADBE Opacity"), Property);
+  return asInstance(
+    next(layer.transform, (p) => p.matchName === "ADBE Opacity"),
+    Property,
+  );
 }
 
 function _effectParam(comp: CompItem, effectMn: string, paramMn: string, layerIndex = 0): Property {
-  const effects = asInstance(next(comp.layers[layerIndex].properties, (p) => p.matchName === "ADBE Effect Parade"), PropertyGroup);
-  const effect = asInstance(next(effects.properties, (p) => p.matchName === effectMn), PropertyGroup);
-  return asInstance(next(effect.properties, (p) => p.matchName === paramMn), Property);
+  const effects = asInstance(
+    next(comp.layers[layerIndex].properties, (p) => p.matchName === "ADBE Effect Parade"),
+    PropertyGroup,
+  );
+  const effect = asInstance(
+    next(effects.properties, (p) => p.matchName === effectMn),
+    PropertyGroup,
+  );
+  return asInstance(
+    next(effect.properties, (p) => p.matchName === paramMn),
+    Property,
+  );
 }
 
 function _cif3Cctls(comp: CompItem): ListChunk[] {
@@ -69,10 +93,7 @@ function _cctlCount(comp: CompItem): Map<string, number> {
   const counts = new Map<string, number>();
   for (const cif of comp._itemList.chunks) {
     if (cif instanceof ListChunk && ["CIFO", "CIF2", "CIF3"].includes(cif.listType)) {
-      counts.set(
-        cif.listType,
-        sum(cif.chunks.map((c) => (c instanceof ListChunk && c.listType === "CCtl" ? 1 : 0))),
-      );
+      counts.set(cif.listType, sum(cif.chunks.map((c) => (c instanceof ListChunk && c.listType === "CCtl" ? 1 : 0))));
     }
   }
   return counts;
@@ -87,7 +108,10 @@ describe("TestCanAddProperty", () => {
   test("test_position_cannot_be_added", () => {
     // Position is a 2D/3D point, not a supported controller type.
     const comp = _primary(parseProjectFresh(BASE));
-    const pos = asInstance(next(comp.layers[0].transform, (p) => p.matchName === "ADBE Position"), Property);
+    const pos = asInstance(
+      next(comp.layers[0].transform, (p) => p.matchName === "ADBE Position"),
+      Property,
+    );
     expect(pos.canAddToMotionGraphicsTemplate(comp)).toBe(false);
   });
 
@@ -113,7 +137,10 @@ describe("TestCanAddProperty", () => {
     const project = parseProjectFresh(EG_DIR.parent.div("property", "mask_add.aep"));
     const comp = project.compositions[0];
     const mask = asInstance(asInstance(comp.layers[0].masks, PropertyGroup).property(0), PropertyGroup);
-    const maskOpacity = asInstance(next(mask.properties, (p) => p.matchName === "ADBE Mask Opacity"), Property);
+    const maskOpacity = asInstance(
+      next(mask.properties, (p) => p.matchName === "ADBE Mask Opacity"),
+      Property,
+    );
     expect(maskOpacity.propertyValueType).toBe(PropertyValueType.OneD);
     expect(maskOpacity.canAddToMotionGraphicsTemplate(comp)).toBe(true);
   });
@@ -133,8 +160,14 @@ describe("TestCanAddProperty", () => {
     // controller (menu entries included), which py_aep does not build.
     const project = parseProjectFresh(EG_DIR.div("dropdown_controller.aep"));
     const comp = getComp(project, "primary");
-    const effects = asInstance(next(comp.layers[0].properties, (p) => p.matchName === "ADBE Effect Parade"), PropertyGroup);
-    const pseudo = asInstance(next(effects.properties, (p) => p.matchName.startsWith("Pseudo/")), PropertyGroup);
+    const effects = asInstance(
+      next(comp.layers[0].properties, (p) => p.matchName === "ADBE Effect Parade"),
+      PropertyGroup,
+    );
+    const pseudo = asInstance(
+      next(effects.properties, (p) => p.matchName.startsWith("Pseudo/")),
+      PropertyGroup,
+    );
     const menu = asInstance(pseudo.properties[0], Property);
     expect(menu.canAddToMotionGraphicsTemplate(comp)).toBe(false);
   });
@@ -229,11 +262,23 @@ class TestEffectParamPaths {
   static _stored_json(comp: CompItem, ctrlName: string): string {
     // The CPrp JSON of the named controller, straight from the chunks.
     for (const cctl of _cif3Cctls(comp)) {
-      const cps2 = asInstance(next(cctl.chunks, (c) => getMember(c, "listType", "") === "CpS2"), ListChunk);
-      const name = asInstance(next(cps2.chunks, (c) => c.chunkType === "Utf8"), Utf8Chunk).value;
+      const cps2 = asInstance(
+        next(cctl.chunks, (c) => getMember(c, "listType", "") === "CpS2"),
+        ListChunk,
+      );
+      const name = asInstance(
+        next(cps2.chunks, (c) => c.chunkType === "Utf8"),
+        Utf8Chunk,
+      ).value;
       if (!valueEquals(name, ctrlName)) continue;
-      const cprp = asInstance(next(cctl.chunks, (c) => getMember(c, "listType", "") === "CPrp"), ListChunk);
-      return asInstance(next(cprp.chunks, (c) => c.chunkType === "Utf8"), Utf8Chunk).value;
+      const cprp = asInstance(
+        next(cctl.chunks, (c) => getMember(c, "listType", "") === "CPrp"),
+        ListChunk,
+      );
+      return asInstance(
+        next(cprp.chunks, (c) => c.chunkType === "Utf8"),
+        Utf8Chunk,
+      ).value;
     }
     throw new AssertionError(`controller ${repr(ctrlName)} not found`);
   }
@@ -419,9 +464,18 @@ describe("TestIndexedGroupControllers", () => {
     const project = parseProjectFresh(TestIndexedGroupControllers.FIXTURE);
     const comp = TestIndexedGroupControllers._comp(project);
     const solid = next(comp.layers, (lyr) => truthy(lyr.masks));
-    const effects = asInstance(next(solid.properties, (p) => p.matchName === "ADBE Effect Parade"), PropertyGroup);
-    const fx = asInstance(next(effects.properties, (p) => p.matchName === "ADBE Fractal Noise"), PropertyGroup);
-    const prop = asInstance(next(fx.properties, (p) => p.matchName === "ADBE Fractal Noise-0010"), Property);
+    const effects = asInstance(
+      next(solid.properties, (p) => p.matchName === "ADBE Effect Parade"),
+      PropertyGroup,
+    );
+    const fx = asInstance(
+      next(effects.properties, (p) => p.matchName === "ADBE Fractal Noise"),
+      PropertyGroup,
+    );
+    const prop = asInstance(
+      next(fx.properties, (p) => p.matchName === "ADBE Fractal Noise-0010"),
+      Property,
+    );
     const resolved = _sourcePropertyPath(prop);
     assert(resolved != null);
     expect(
@@ -500,8 +554,14 @@ describe("TestAddLayerMediaReplacement", () => {
     const utf8s = fixtureCctl.chunks.filter((c) => c.chunkType === "Utf8");
     const uuidStr = asInstance(utf8s[0], Utf8Chunk).value;
     const thumbnail = asInstance(utf8s[3], Utf8Chunk).value;
-    const cprp = asInstance(next(fixtureCctl.chunks, (c) => getMember(c, "listType", "") === "CPrp"), ListChunk);
-    const pathJson = asInstance(next(cprp.chunks, (c) => c.chunkType === "Utf8"), Utf8Chunk).value;
+    const cprp = asInstance(
+      next(fixtureCctl.chunks, (c) => getMember(c, "listType", "") === "CPrp"),
+      ListChunk,
+    );
+    const pathJson = asInstance(
+      next(cprp.chunks, (c) => c.chunkType === "Utf8"),
+      Utf8Chunk,
+    ).value;
 
     const [built, _name, _ctyp] = buildMediaCctl(
       "image_with_alpha.png",

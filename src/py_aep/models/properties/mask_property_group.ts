@@ -25,7 +25,7 @@ import { late } from "../late.ts";
 // sessions, so its exact choice is not reproducible from file content;
 // py_aep cycles the same palette deterministically instead (RGB bytes,
 // observed on AE 2026 defaults).
-export const _MASK_COLOR_CYCLE: readonly (readonly [number, number, number])[] = [
+const _MASK_COLOR_CYCLE: readonly (readonly [number, number, number])[] = [
   [30, 64, 30],
   [181, 56, 56],
   [228, 216, 76],
@@ -135,17 +135,13 @@ export class MaskPropertyGroup extends PropertyGroup {
       return;
     }
     const path = this.property("ADBE Mask Shape");
-    const shapes = (
-      path.keyframes?.length > 0 ? path.keyframes.map((kf) => kf.value) : [path.value]
-    );
+    const shapes = path.keyframes?.length > 0 ? path.keyframes.map((kf) => kf.value) : [path.value];
     if (value) {
       // Measured on AE 2026: switching RotoBezier on gives each vertex
       // of every key tension 1 when both its handles are zero (it stays
       // a corner) and 1/3 otherwise, then stores the tangents those
       // tensions draw as the handles.
-      const tensions = shapes.map((s) =>
-        keyframeTensions([], s._storedTangents(-1), s._storedTangents(1)),
-      );
+      const tensions = shapes.map((s) => keyframeTensions([], s._storedTangents(-1), s._storedTangents(1)));
       this._maskShapeTdsb.rotoBezier = true;
       for (const [i, shape] of shapes.entries()) {
         shape._setTensions(tensions[i]);
@@ -194,7 +190,10 @@ export class MaskPropertyGroup extends PropertyGroup {
     kw: { name: string; maskId: number },
   ): MaskPropertyGroup {
     const { name, maskId } = kw;
-    const color = _MASK_COLOR_CYCLE[(((maskId - 1) % _MASK_COLOR_CYCLE.length) + _MASK_COLOR_CYCLE.length) % _MASK_COLOR_CYCLE.length];
+    const color =
+      _MASK_COLOR_CYCLE[
+        (((maskId - 1) % _MASK_COLOR_CYCLE.length) + _MASK_COLOR_CYCLE.length) % _MASK_COLOR_CYCLE.length
+      ];
     const _tdmn = new TdmnChunk({ value: "ADBE Mask Atom" });
     const _mkif = new MkifChunk({
       mode: 1, // binary PF_MaskMode for MaskMode.ADD
@@ -313,10 +312,7 @@ export class MaskPropertyGroup extends PropertyGroup {
     // on write, exactly as AE leaves them).
     const chunks = this._tdgp.chunks;
     const foundAt = chunks.findIndex(
-      (c) =>
-        c.chunkType === "tdmn" &&
-        "value" in c && c.value === "ADBE Mask Shape" &&
-        c.synthetic,
+      (c) => c.chunkType === "tdmn" && "value" in c && c.value === "ADBE Mask Shape" && c.synthetic,
     );
     const insertAt = foundAt >= 0 ? foundAt : chunks.length;
     if (foundAt >= 0) {

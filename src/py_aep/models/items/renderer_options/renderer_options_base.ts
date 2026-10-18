@@ -1,11 +1,9 @@
 /** Shared plumbing for the per-renderer option wrappers. */
 
-import { INSPECT, describe } from "../../../../pyrt/index.ts";
-import { AttributeError, objectSetattr, pyObject, literal } from "../../../../pyrt/index.ts";
+import { INSPECT, describe, AttributeError, objectSetattr, pyObject, literal } from "../../../../pyrt/index.ts";
 import { SettingsView, type SettingsSpec } from "../../renderqueue/settings.ts";
 import type { CompItem } from "../composition.ts";
 import type { Chunk } from "../../../binary/chunk.ts";
-
 
 /**
  * A renderer's options, as both a mapping and a typed object.

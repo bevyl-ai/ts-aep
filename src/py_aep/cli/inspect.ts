@@ -23,13 +23,7 @@ import { ListChunk, readAep } from "../binary/chunk.ts";
 import type { Chunk } from "../binary/chunk.ts";
 import { filterByListType } from "../binary/utils.ts";
 import { chunkLabel, extractLeafChunks, formatHexDump, walkChunks } from "./_chunk_helpers.ts";
-import {
-  ByteStream,
-  Path,
-  at,
-  getOrThrow,
-  literal,
-  compare } from "../../pyrt/index.ts";
+import { ByteStream, Path, at, getOrThrow, literal, compare } from "../../pyrt/index.ts";
 import { intOption, parseCommandLine, runMain, usageError, type Command } from "./args.ts";
 
 export function print(text: string): void {
@@ -37,7 +31,6 @@ export function print(text: string): void {
 }
 
 // ── Tree display ────────────────────────────────────────────────────────────
-
 
 /** Return size or value detail for a leaf chunk. */
 export function _chunkDetail(chunk: Chunk): string {
@@ -269,7 +262,13 @@ Examples:
 
 export function main(argv: string[] = process.argv.slice(2)): number {
   const { values, positionals } = parseCommandLine(INSPECT, argv);
-  if (positionals.length !== 1) usageError(INSPECT, positionals.length ? `unrecognized arguments: ${positionals.slice(1).join(" ")}` : "the following arguments are required: file");
+  if (positionals.length !== 1)
+    usageError(
+      INSPECT,
+      positionals.length
+        ? `unrecognized arguments: ${positionals.slice(1).join(" ")}`
+        : "the following arguments are required: file",
+    );
   const args = {
     tree: values.tree === true,
     depth: typeof values.depth === "string" ? intOption(INSPECT, "depth", values.depth) : -1,

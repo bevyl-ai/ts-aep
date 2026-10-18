@@ -1,9 +1,29 @@
 /** Effect and parameter definition parsers. */
 
 import { ListChunk, type Chunk } from "../binary/chunk.ts";
-import type { AnglePardChunk, BooleanPardChunk, ColorPardChunk, EnumPardChunk, IntegerPardChunk, PardChunk, ScalarPardChunk, SliderPardChunk, ThreeDPardChunk, TwoDPardChunk } from "../binary/misc_chunks.ts";
+import type {
+  AnglePardChunk,
+  BooleanPardChunk,
+  ColorPardChunk,
+  EnumPardChunk,
+  IntegerPardChunk,
+  PardChunk,
+  ScalarPardChunk,
+  SliderPardChunk,
+  ThreeDPardChunk,
+  TwoDPardChunk,
+} from "../binary/misc_chunks.ts";
 import type { TdmnChunk } from "../binary/property_chunks.ts";
-import { ChunkNotFoundError, filterByListType, filterByType, findByListType, findByListTypeOrNull, findByType, findByTypeOrNull, indexByIdentity } from "../binary/utils.ts";
+import {
+  ChunkNotFoundError,
+  filterByListType,
+  filterByType,
+  findByListType,
+  findByListTypeOrNull,
+  findByType,
+  findByTypeOrNull,
+  indexByIdentity,
+} from "../binary/utils.ts";
 import { MATCH_NAME_TO_AUTO_NAME } from "../data/match_names.ts";
 import { EFFECT_PARAM_SPATIAL_FLAGS } from "../data/spatial_flags.ts";
 import { PropertyControlType, PropertyType, PropertyValueType } from "../enums/index.ts";
@@ -17,23 +37,9 @@ import { getChunksByMatchName, getMatchNameRuns } from "./utils.ts";
 import type { CompItem } from "../models/items/composition.ts";
 import type { Layer } from "../models/layers/layer.ts";
 import type { Project } from "../models/project.ts";
-import {
-  warn,
-  decode,
-  encode,
-  LookupError,
-  UnicodeDecodeError,
-} from "../../pyrt/index.ts";
+import { decode, encode, LookupError, UnicodeDecodeError } from "../../pyrt/index.ts";
 import * as _property from "./property.ts";
 import { late } from "../models/late.ts";
-
-// `logging.getLogger(__name__)`: this module logs nothing today, so only the
-// warning path is wired to pyrt `warn`.
-export const logger = {
-  debug() {},
-  info() {},
-  warning: (m: string) => warn(m),
-};
 
 /**
  * A parsed pard parameter definition. The first four fields come from every
@@ -64,8 +70,7 @@ export interface ParamDef {
 /** A parameter's value or default as its definition gives it. */
 export type ParamValue = number | number[] | null;
 
-
-export const _PVT_DIMENSIONS: Map<number, number> = new Map<number, number>([
+const _PVT_DIMENSIONS: Map<number, number> = new Map<number, number>([
   [PropertyValueType.COLOR, 4],
   [PropertyValueType.ThreeD_SPATIAL, 3],
   [PropertyValueType.TwoD_SPATIAL, 2],
@@ -78,13 +83,12 @@ export const _PVT_DIMENSIONS: Map<number, number> = new Map<number, number>([
  * @param paramDef - The parameter definition from parT parsing.
  * @returns A `PropSpec` suitable for `Property._new()`.
  */
-export function _paramDefToSpec(matchName: string, paramDef: ParamDef): PropSpec {
+function _paramDefToSpec(matchName: string, paramDef: ParamDef): PropSpec {
   const pvt = paramDef.propertyValueType ?? PropertyValueType.OneD;
   const controlType = paramDef.propertyControlType;
   const isColor = controlType === PropertyControlType.COLOR;
   const dims = _PVT_DIMENSIONS.get(pvt) ?? 1;
-  const isSpatial =
-    pvt === PropertyValueType.TwoD_SPATIAL || pvt === PropertyValueType.ThreeD_SPATIAL || isColor;
+  const isSpatial = pvt === PropertyValueType.TwoD_SPATIAL || pvt === PropertyValueType.ThreeD_SPATIAL || isColor;
   const [value, defaultValue] = _resolveEffectValue(matchName, paramDef, controlType);
   // PropSpec is a NamedTuple: positional, in field order. Skipped optional
   // fields are passed as `undefined` so their defaults apply.
@@ -170,7 +174,7 @@ export function _resolveEffectValue(
  * @param prop - The property to update in place.
  * @param paramDef - The parameter definition.
  */
-export function _applyParamDefMetadata(prop: Property, paramDef: ParamDef): void {
+function _applyParamDefMetadata(prop: Property, paramDef: ParamDef): void {
   prop.lastValue = paramDef.lastValue ?? null;
   const minVal = paramDef.minValue ?? null;
   if (minVal != null) prop._minValueFallback = minVal;
@@ -205,12 +209,12 @@ export function _applyParamDefMetadata(prop: Property, paramDef: ParamDef): void
  * A point parameter's pard default (percent of the layer) as the fraction
  * its `cdat` stores, or `null` when it is not a point.
  */
-export function _pointFraction(raw: PropertyValue): number[] | null {
+function _pointFraction(raw: PropertyValue): number[] | null {
   if (!Array.isArray(raw) || raw.length < 2) return null;
   return raw.map((v) => v / 100.0);
 }
 
-export function _pointPixels(prop: Property, fraction: number[]): PropertyValue {
+function _pointPixels(prop: Property, fraction: number[]): PropertyValue {
   return prop._resolveValue([...fraction]);
 }
 
@@ -235,7 +239,7 @@ export function _bindPointDefault(prop: Property, raw: PropertyValue): void {
  * Keep a synthesized point as the fraction AE stores, read through the
  * layer's current size, with the default `_bindPointDefault` gives.
  */
-export function _normalizeSyntheticPoint(prop: Property): void {
+function _normalizeSyntheticPoint(prop: Property): void {
   const raw = prop._value;
   const fraction = _pointFraction(raw);
   if (fraction == null || prop._cdat == null) return;
@@ -255,10 +259,7 @@ export function _normalizeSyntheticPoint(prop: Property): void {
  *   projects store parameter names in.
  * @returns Map of parameter match names to definition dicts.
  */
-export function parseEffectParamDefs(
-  sspcChildChunks: Chunk[],
-  codePage: number,
-): Map<string, ParamDef> {
+function parseEffectParamDefs(sspcChildChunks: Chunk[], codePage: number): Map<string, ParamDef> {
   const partChunk = findByListType(sspcChildChunks, "parT");
   const paramDefs = new Map<string, ParamDef>();
 
@@ -280,15 +281,13 @@ export function parseEffectParamDefs(
 // Checkboxes AE 2026 reports without min / max. Nothing in their pard sets
 // them apart: the other 2067 checkboxes of the effect samples, including
 // ones with the same flags, are bounded 0-1.
-export const _UNBOUNDED_CHECKBOXES: ReadonlySet<string> = new Set<string>([
+const _UNBOUNDED_CHECKBOXES: ReadonlySet<string> = new Set<string>([
   "ADBE Paint On Transparent",
   "ADBE FreePin3 On Transparent",
 ]);
 
 // Codecs of the `nnhd` code pages that are not `cp<number>`.
-export const _CODE_PAGE_CODECS: Map<number, string> = new Map<number, string>([
-  [0x0100, "mac_roman"],
-]);
+const _CODE_PAGE_CODECS: Map<number, string> = new Map<number, string>([[0x0100, "mac_roman"]]);
 
 /**
  * A `pard` name in the project's code page.
@@ -318,7 +317,7 @@ export function _decodePardName(name: string, codePage: number): string {
  * @param prop - The property to update in place.
  * @param paramDef - The parameter definition.
  */
-export function _mergeParamDef(prop: Property, paramDef: ParamDef): void {
+function _mergeParamDef(prop: Property, paramDef: ParamDef): void {
   prop._autoName = paramDef.name || prop._autoName;
   prop._propertyControlType = paramDef.propertyControlType;
   if (prop._arbs != null && paramDef.defaultArbp !== undefined) {
@@ -358,7 +357,7 @@ export function _mergeParamDef(prop: Property, paramDef: ParamDef): void {
  * - `parentProperty`: The effect group that owns the synthesized child.
  * @returns A Property or PropertyGroup with default values.
  */
-export function _synthesizeEffectProperty(
+function _synthesizeEffectProperty(
   matchName: string,
   paramDef: ParamDef,
   propertyDepth: number,
@@ -401,7 +400,7 @@ export function _synthesizeEffectProperty(
  * @param parentProperty - The effect group that owns the parsed children.
  * @returns List of parsed and merged properties.
  */
-export function _parseEffectProperties(
+function _parseEffectProperties(
   tdgpChunk: ListChunk,
   paramDefs: Map<string, ParamDef>,
   childDepth: number,
@@ -411,17 +410,9 @@ export function _parseEffectProperties(
   layer: Layer | null = null,
 ): (Property | PropertyGroup)[] {
   // Skip index-0 internal parameters (not exposed in ExtendScript).
-  const propertyRuns = [...getMatchNameRuns(tdgpChunk)].filter(
-    ([name]) => !name.endsWith("-0000"),
-  );
+  const propertyRuns = [...getMatchNameRuns(tdgpChunk)].filter(([name]) => !name.endsWith("-0000"));
 
-  const parsed = _property.parseProperties(
-    propertyRuns,
-    childDepth,
-    new Map(),
-    composition,
-    layer,
-  );
+  const parsed = _property.parseProperties(propertyRuns, childDepth, new Map(), composition, layer);
 
   // Index parsed children by match_name for O(1) lookup.
   const parsedByMn = new Map<string, Property | PropertyGroup>(
@@ -473,7 +464,7 @@ export function _parseEffectProperties(
   return ordered;
 }
 
-export const _ITEM_CONTAINERS: ReadonlySet<string> = new Set(["Fold", "Item", "Sfdr"]);
+const _ITEM_CONTAINERS: ReadonlySet<string> = new Set(["Fold", "Item", "Sfdr"]);
 
 /**
  * Every effect instance under `chunks` (folder, item or layer lists) as
@@ -501,7 +492,7 @@ export function* _effectInstances(chunks: Chunk[]): Generator<[string, ListChunk
 }
 
 /** The instance's `parT`, if it holds its effect's definitions. */
-export function _heldDefinitions(sspc: ListChunk): ListChunk | null {
+function _heldDefinitions(sspc: ListChunk): ListChunk | null {
   const parts = filterByListType(sspc.chunks, "parT");
   return parts.length > 0 && parts[0].chunks.length > 0 ? parts[0] : null;
 }
@@ -515,7 +506,7 @@ export function _heldDefinitions(sspc: ListChunk): ListChunk | null {
  * AE 15 to 26); a project saved by an older version (AE 15 in samples/) has
  * no `LIST:EfdG` to hold them instead.
  */
-export function _projectParamDefs(composition: CompItem, matchName: string): Map<string, ParamDef> {
+function _projectParamDefs(composition: CompItem, matchName: string): Map<string, ParamDef> {
   const project = composition._project;
   for (const [name, sspc] of _effectInstances(project._rifx.chunks)) {
     if (name === matchName && _heldDefinitions(sspc) != null) {
@@ -594,10 +585,7 @@ export const parseEffect = _suppressMaterialization().decorate(function parse_ef
 
   let paramDefs: Map<string, ParamDef>;
   try {
-    paramDefs = parseEffectParamDefs(
-      sspcChildChunks,
-      composition._project._nnhd._systemCodePage,
-    );
+    paramDefs = parseEffectParamDefs(sspcChildChunks, composition._project._nnhd._systemCodePage);
   } catch (e) {
     if (!(e instanceof ChunkNotFoundError)) throw e;
     paramDefs = new Map();
@@ -665,14 +653,12 @@ export const parseEffect = _suppressMaterialization().decorate(function parse_ef
 
 // Method shorthand: each extractor takes the pard variant its control type
 // reads as (`_PARD_VARIANTS`), so parameters are checked bivariantly.
-export type PardExtractor = { extract(body: PardChunk, result: ParamDef): void }["extract"];
+type PardExtractor = { extract(body: PardChunk, result: ParamDef): void }["extract"];
 
-export const _PARD_EXTRACTORS: Map<number, PardExtractor> = new Map();
+const _PARD_EXTRACTORS: Map<number, PardExtractor> = new Map();
 
 /** Register a pard field extractor for the given control type(s). */
-export function _pardExtractor(
-  ...controlTypes: PropertyControlType[]
-): (func: PardExtractor) => PardExtractor {
+function _pardExtractor(...controlTypes: PropertyControlType[]): (func: PardExtractor) => PardExtractor {
   function decorator(func: PardExtractor): PardExtractor {
     for (const ct of controlTypes) _PARD_EXTRACTORS.set(ct, func);
     return func;
@@ -682,14 +668,14 @@ export function _pardExtractor(
 
 // Python's `@_pard_extractor(...)` decorator is applied as a registration call
 // directly after each definition, which keeps the registration order.
-export function _extractAngle(body: AnglePardChunk, result: ParamDef): void {
+function _extractAngle(body: AnglePardChunk, result: ParamDef): void {
   result.lastValue = body.lastValue;
   if (body.default_ != null) result.default = _intify(body.default_);
   result.propertyValueType = PropertyValueType.OneD;
 }
 _pardExtractor(PropertyControlType.ANGLE)(_extractAngle);
 
-export function _extractBoolean(body: BooleanPardChunk, result: ParamDef): void {
+function _extractBoolean(body: BooleanPardChunk, result: ParamDef): void {
   result.lastValue = body.lastValue;
   result.defaultValue = body.default_;
   result.minValue = 0;
@@ -697,7 +683,7 @@ export function _extractBoolean(body: BooleanPardChunk, result: ParamDef): void 
 }
 _pardExtractor(PropertyControlType.BOOLEAN)(_extractBoolean);
 
-export function _extractColor(body: ColorPardChunk, result: ParamDef): void {
+function _extractColor(body: ColorPardChunk, result: ParamDef): void {
   // pard stores colors as [A, R, G, B] in 0-255 range;
   // ExtendScript uses [R, G, B, A] in 0-1 range.
   {
@@ -714,7 +700,7 @@ export function _extractColor(body: ColorPardChunk, result: ParamDef): void {
 }
 _pardExtractor(PropertyControlType.COLOR)(_extractColor);
 
-export function _extractEnum(body: EnumPardChunk, result: ParamDef): void {
+function _extractEnum(body: EnumPardChunk, result: ParamDef): void {
   result.lastValue = body.lastValue;
   result.nbOptions = body.nbOptions;
   result.defaultValue = body.default_;
@@ -725,18 +711,18 @@ _pardExtractor(PropertyControlType.ENUM)(_extractEnum);
 
 /** Return integral floats as int, matching ExtendScript output. */
 // NOTE(port): Python returns int for integral floats, else the float; JS numbers carry the same value, and the int/float type is only observable via repr()/type().
-export function _intify(value: number): number {
+function _intify(value: number): number {
   return Number.isInteger(value) ? Math.trunc(value) : value;
 }
 
-export function _extractInteger(body: IntegerPardChunk, result: ParamDef): void {
+function _extractInteger(body: IntegerPardChunk, result: ParamDef): void {
   if (body.default_ != null) result.default = body.default_;
   result.minValue = body.validMin;
   result.maxValue = body.validMax;
 }
 _pardExtractor(PropertyControlType.INTEGER)(_extractInteger);
 
-export function _extractScalar(body: ScalarPardChunk, result: ParamDef): void {
+function _extractScalar(body: ScalarPardChunk, result: ParamDef): void {
   result.lastValue = body.lastValue;
   if (body.default_ != null) result.default = _intify(body.default_);
   result.minValue = _intify(body.validMin);
@@ -746,7 +732,7 @@ export function _extractScalar(body: ScalarPardChunk, result: ParamDef): void {
 }
 _pardExtractor(PropertyControlType.SCALAR)(_extractScalar);
 
-export function _extractSlider(body: SliderPardChunk, result: ParamDef): void {
+function _extractSlider(body: SliderPardChunk, result: ParamDef): void {
   result.lastValue = body.lastValue;
   if (body.default_ != null && Number.isFinite(body.default_)) {
     result.default = _intify(body.default_);
@@ -762,7 +748,7 @@ export function _extractSlider(body: SliderPardChunk, result: ParamDef): void {
 }
 _pardExtractor(PropertyControlType.SLIDER)(_extractSlider);
 
-export function _extractThreeD(body: ThreeDPardChunk, result: ParamDef): void {
+function _extractThreeD(body: ThreeDPardChunk, result: ParamDef): void {
   result.lastValue = [body.lastValueX, body.lastValueY, body.lastValueZ];
   // Percent of the layer size; `_point_default_pixels` converts it.
   result.defaultValue = body.default_;
@@ -770,31 +756,31 @@ export function _extractThreeD(body: ThreeDPardChunk, result: ParamDef): void {
 }
 _pardExtractor(PropertyControlType.THREE_D)(_extractThreeD);
 
-export function _extractTwoD(body: TwoDPardChunk, result: ParamDef): void {
+function _extractTwoD(body: TwoDPardChunk, result: ParamDef): void {
   result.lastValue = [body.lastValueX, body.lastValueY];
   result.defaultValue = body.default_;
   result.propertyValueType = PropertyValueType.TwoD_SPATIAL;
 }
 _pardExtractor(PropertyControlType.TWO_D)(_extractTwoD);
 
-export function _extractLayer(body: PardChunk, result: ParamDef): void {
+function _extractLayer(body: PardChunk, result: ParamDef): void {
   result.propertyValueType = PropertyValueType.LAYER_INDEX;
   result.defaultValue = 0;
 }
 _pardExtractor(PropertyControlType.LAYER)(_extractLayer);
 
-export function _extractMask(body: PardChunk, result: ParamDef): void {
+function _extractMask(body: PardChunk, result: ParamDef): void {
   result.propertyValueType = PropertyValueType.MASK_INDEX;
   result.defaultValue = 0;
 }
 _pardExtractor(PropertyControlType.MASK)(_extractMask);
 
-export function _extractCurve(body: PardChunk, result: ParamDef): void {
+function _extractCurve(body: PardChunk, result: ParamDef): void {
   result.propertyValueType = PropertyValueType.CUSTOM_VALUE;
 }
 _pardExtractor(PropertyControlType.CURVE)(_extractCurve);
 
-export function _extractNoValue(body: PardChunk, result: ParamDef): void {
+function _extractNoValue(body: PardChunk, result: ParamDef): void {
   result.propertyValueType = PropertyValueType.NO_VALUE;
 }
 _pardExtractor(
@@ -805,10 +791,7 @@ _pardExtractor(
 )(_extractNoValue);
 
 /** Parse effect parameter definition from pard chunk, returning a map of values. */
-export function _parseEffectParameterDef(
-  parameterChunks: Chunk[],
-  codePage: number,
-): ParamDef {
+function _parseEffectParameterDef(parameterChunks: Chunk[], codePage: number): ParamDef {
   const pardChunk = findByType(parameterChunks, "pard");
 
   const controlType = PropertyControlType.of(pardChunk.propertyControlType);
@@ -839,11 +822,7 @@ export function _parseEffectParameterDef(
     const pdnmData = utf8Chunk.value;
     if (controlType === PropertyControlType.ENUM) {
       result.propertyParameters = pdnmData.split("|");
-    } else if (
-      pdnmData &&
-      controlType === PropertyControlType.BOOLEAN &&
-      !result.name.trim()
-    ) {
+    } else if (pdnmData && controlType === PropertyControlType.BOOLEAN && !result.name.trim()) {
       // A checkbox's pdnm is the label beside its box (a button's, the
       // button text): AE 2026 names the parameter by it only when the
       // pard name is blank (2102 / 2102 such checkboxes, 279 / 279
@@ -869,10 +848,7 @@ export function _parseEffectParameterDef(
  * @returns Map of effect match names to their parameter definitions (effect_match_name -\>
  *   param_match_name -\> param_def).
  */
-export function parseEffectDefinitions(
-  rootChunks: Chunk[],
-  codePage: number,
-): Map<string, Map<string, ParamDef>> {
+export function parseEffectDefinitions(rootChunks: Chunk[], codePage: number): Map<string, Map<string, ParamDef>> {
   const efdgChunk = findByListTypeOrNull(rootChunks, "EfdG");
   if (efdgChunk === null) return new Map();
 
@@ -903,9 +879,7 @@ export function parseEffectDefinitions(
  * never re-reads it after parse), so callers cache the result rather
  * than re-walking per lookup.
  */
-export function effectDefinitionEntries(
-  rootChunks: Chunk[],
-): [string, string, ListChunk][] {
+export function effectDefinitionEntries(rootChunks: Chunk[]): [string, string, ListChunk][] {
   const efdgChunk = findByListTypeOrNull(rootChunks, "EfdG");
   if (efdgChunk === null) return [];
 

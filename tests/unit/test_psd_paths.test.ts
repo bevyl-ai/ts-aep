@@ -2,15 +2,7 @@
 
 import { describe, expect, test } from "bun:test";
 
-import {
-  AssertionError,
-  Path,
-  Bytes,
-  len,
-  assert,
-  valueEquals,
-  repr,
-} from "../../src/pyrt/index.ts";
+import { AssertionError, Path, Bytes, len, assert, valueEquals, repr } from "../../src/pyrt/index.ts";
 import { PsdLayer, readPsdLayers } from "../../src/py_aep/resolvers/psd_layers.ts";
 import { parseVectorMask } from "../../src/py_aep/resolvers/psd_paths.ts";
 import "../../src/py_aep/binary/_register.ts";
@@ -33,11 +25,7 @@ function _vectorMask(psd: string, layer: string): Uint8Array {
 describe("TestParseVectorMask", () => {
   test("test_rectangle", () => {
     // Corner knots: anchors in canvas pixels, zero tangents.
-    const shapes = parseVectorMask(
-      _vectorMask("psd_vector_mask.psd", "vector masked"),
-      64,
-      64,
-    );
+    const shapes = parseVectorMask(_vectorMask("psd_vector_mask.psd", "vector masked"), 64, 64);
     expect(len(shapes)).toBe(1);
     const shape = shapes[0];
     expect(shape.closed).toBe(true);
@@ -60,11 +48,7 @@ describe("TestParseVectorMask", () => {
   test("test_smooth_knots_match_ae_tangents", () => {
     // The record's first point is the AE in-tangent handle (pinned by
     // the psd_vector_mask_curves fixture: identical values).
-    const shapes = parseVectorMask(
-      _vectorMask("psd_vector_mask_curves.psd", "curved"),
-      64,
-      64,
-    );
+    const shapes = parseVectorMask(_vectorMask("psd_vector_mask_curves.psd", "curved"), 64, 64);
     const shape = shapes[0];
     expect(
       valueEquals(shape.vertices, [
@@ -93,11 +77,7 @@ describe("TestParseVectorMask", () => {
   });
 
   test("test_multiple_subpaths", () => {
-    const shapes = parseVectorMask(
-      _vectorMask("psd_vector_mask_multi.psd", "two rects"),
-      64,
-      64,
-    );
+    const shapes = parseVectorMask(_vectorMask("psd_vector_mask_multi.psd", "two rects"), 64, 64);
     expect(len(shapes)).toBe(2);
     expect(valueEquals(shapes[0].vertices[0], [6.0, 6.0])).toBe(true);
     expect(valueEquals(shapes[1].vertices[0], [38.0, 38.0])).toBe(true);

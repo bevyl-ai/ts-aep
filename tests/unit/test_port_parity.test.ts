@@ -26,5 +26,9 @@ test.each<[string[], number]>([
 });
 
 test("test_mgjson_naive_and_aware_times", () => {
-  raises(TypeError, () => _probeMgjson(mgjson(["2020-01-01T00:00:00", "2020-01-01T00:00:01+05"])), "can't compare offset-naive and offset-aware datetimes");
+  raises(
+    TypeError,
+    () => _probeMgjson(mgjson(["2020-01-01T00:00:00", "2020-01-01T00:00:01+05"])),
+    "can't compare offset-naive and offset-aware datetimes",
+  );
 });

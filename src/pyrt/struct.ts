@@ -12,8 +12,16 @@ type Code = { ch: string; count: number; size: number };
 // Type of the tuple `unpack(F, ...)` yields, for a literal format F (`any[]` otherwise).
 type Digit = "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9";
 type DigitTuple = {
-  "0": []; "1": [0]; "2": [0, 0]; "3": [0, 0, 0]; "4": [0, 0, 0, 0]; "5": [0, 0, 0, 0, 0];
-  "6": [0, 0, 0, 0, 0, 0]; "7": [0, 0, 0, 0, 0, 0, 0]; "8": [0, 0, 0, 0, 0, 0, 0, 0]; "9": [0, 0, 0, 0, 0, 0, 0, 0, 0];
+  "0": [];
+  "1": [0];
+  "2": [0, 0];
+  "3": [0, 0, 0];
+  "4": [0, 0, 0, 0];
+  "5": [0, 0, 0, 0, 0];
+  "6": [0, 0, 0, 0, 0, 0];
+  "7": [0, 0, 0, 0, 0, 0, 0];
+  "8": [0, 0, 0, 0, 0, 0, 0, 0];
+  "9": [0, 0, 0, 0, 0, 0, 0, 0, 0];
 };
 type Times10<T extends 0[]> = [...T, ...T, ...T, ...T, ...T, ...T, ...T, ...T, ...T, ...T];
 type CountOf<S extends string, Acc extends 0[] = []> = S extends `${infer D extends Digit}${infer R}`
@@ -23,8 +31,21 @@ type SplitCount<S extends string, D extends string = ""> = S extends `${infer C 
   ? SplitCount<R, `${D}${C}`>
   : [D, S];
 type CodeValue = {
-  c: Uint8Array; b: number; B: number; "?": boolean; h: number; H: number; i: number; I: number;
-  l: number; L: number; q: bigint; Q: bigint; e: number; f: number; d: number;
+  c: Uint8Array;
+  b: number;
+  B: number;
+  "?": boolean;
+  h: number;
+  H: number;
+  i: number;
+  I: number;
+  l: number;
+  L: number;
+  q: bigint;
+  Q: bigint;
+  e: number;
+  f: number;
+  d: number;
 };
 type Fill<T extends 0[], V> = { [K in keyof T]: V };
 type ParseCodes<S extends string> = S extends ""
@@ -60,13 +81,35 @@ export type Unpacked<F extends string> = string extends F
     : ParseCodes<F>;
 
 const SIZES: Record<string, number> = {
-  x: 1, c: 1, b: 1, B: 1, "?": 1, h: 2, H: 2, i: 4, I: 4, l: 4, L: 4,
-  q: 8, Q: 8, e: 2, f: 4, d: 8, s: 1, p: 1,
+  x: 1,
+  c: 1,
+  b: 1,
+  B: 1,
+  "?": 1,
+  h: 2,
+  H: 2,
+  i: 4,
+  I: 4,
+  l: 4,
+  L: 4,
+  q: 8,
+  Q: 8,
+  e: 2,
+  f: 4,
+  d: 8,
+  s: 1,
+  p: 1,
 };
 
 const INT_RANGE: Record<string, [number, number]> = {
-  b: [-0x80, 0x7f], B: [0, 0xff], h: [-0x8000, 0x7fff], H: [0, 0xffff],
-  i: [-0x80000000, 0x7fffffff], I: [0, 0xffffffff], l: [-0x80000000, 0x7fffffff], L: [0, 0xffffffff],
+  b: [-0x80, 0x7f],
+  B: [0, 0xff],
+  h: [-0x8000, 0x7fff],
+  H: [0, 0xffff],
+  i: [-0x80000000, 0x7fffffff],
+  I: [0, 0xffffffff],
+  l: [-0x80000000, 0x7fffffff],
+  L: [0, 0xffffffff],
 };
 
 const FLOAT32_MAX = 3.4028234663852886e38;
@@ -155,19 +198,47 @@ export class Struct<F extends string = string> {
       }
       for (let k = 0; k < count; k++) {
         switch (ch) {
-          case "c": out.push(d.slice(p, p + 1)); break;
-          case "b": out.push((d[p] << 24) >> 24); break;
-          case "B": out.push(d[p]); break;
-          case "?": out.push(d[p] !== 0); break;
-          case "h": out.push((u16(d, p, le) << 16) >> 16); break;
-          case "H": out.push(u16(d, p, le)); break;
-          case "i": case "l": out.push(u32(d, p, le) | 0); break;
-          case "I": case "L": out.push(u32(d, p, le)); break;
-          case "q": out.push(scratch(d, p, 8).getBigInt64(0, le)); break;
-          case "Q": out.push(scratch(d, p, 8).getBigUint64(0, le)); break;
-          case "e": out.push(halfToFloat(u16(d, p, le))); break;
-          case "f": out.push(scratch(d, p, 4).getFloat32(0, le)); break;
-          case "d": out.push(scratch(d, p, 8).getFloat64(0, le)); break;
+          case "c":
+            out.push(d.slice(p, p + 1));
+            break;
+          case "b":
+            out.push((d[p] << 24) >> 24);
+            break;
+          case "B":
+            out.push(d[p]);
+            break;
+          case "?":
+            out.push(d[p] !== 0);
+            break;
+          case "h":
+            out.push((u16(d, p, le) << 16) >> 16);
+            break;
+          case "H":
+            out.push(u16(d, p, le));
+            break;
+          case "i":
+          case "l":
+            out.push(u32(d, p, le) | 0);
+            break;
+          case "I":
+          case "L":
+            out.push(u32(d, p, le));
+            break;
+          case "q":
+            out.push(scratch(d, p, 8).getBigInt64(0, le));
+            break;
+          case "Q":
+            out.push(scratch(d, p, 8).getBigUint64(0, le));
+            break;
+          case "e":
+            out.push(halfToFloat(u16(d, p, le)));
+            break;
+          case "f":
+            out.push(scratch(d, p, 4).getFloat32(0, le));
+            break;
+          case "d":
+            out.push(scratch(d, p, 8).getFloat64(0, le));
+            break;
         }
         p += SIZES[ch];
       }
@@ -277,9 +348,17 @@ function packOne(out: Uint8Array, p: number, ch: string, v: PackValue, le: boole
       if (n < range[0] || n > range[1]) throw rangeError(ch);
       // Uint8Array stores take the low 8 bits, which covers negative values.
       switch (ch) {
-        case "b": case "B": out[p] = n; break;
-        case "h": case "H": put16(out, p, n, le); break;
-        default: put32(out, p, n, le); break;
+        case "b":
+        case "B":
+          out[p] = n;
+          break;
+        case "h":
+        case "H":
+          put16(out, p, n, le);
+          break;
+        default:
+          put32(out, p, n, le);
+          break;
       }
     }
   }
@@ -353,19 +432,47 @@ function compileUnpack(codes: Code[], le: boolean): Unpacker | null {
     if (exprs.length + count > 256) return null;
     for (let i = 0; i < count; i++) {
       switch (ch) {
-        case "c": exprs.push(`d.slice(p+${k},p+${k + 1})`); break;
-        case "b": exprs.push(`d[p+${k}]<<24>>24`); break;
-        case "B": exprs.push(`d[p+${k}]`); break;
-        case "?": exprs.push(`d[p+${k}]!==0`); break;
-        case "h": exprs.push(`${u16(k)}<<16>>16`); break;
-        case "H": exprs.push(u16(k)); break;
-        case "i": case "l": exprs.push(`${u32(k)}|0`); break;
-        case "I": case "L": exprs.push(`${u32(k)}>>>0`); break;
-        case "q": exprs.push(`scratch(d,p+${k},8).getBigInt64(0,${le})`); break;
-        case "Q": exprs.push(`scratch(d,p+${k},8).getBigUint64(0,${le})`); break;
-        case "e": exprs.push(`half_to_float(${u16(k)})`); break;
-        case "f": exprs.push(`scratch(d,p+${k},4).getFloat32(0,${le})`); break;
-        case "d": exprs.push(`scratch(d,p+${k},8).getFloat64(0,${le})`); break;
+        case "c":
+          exprs.push(`d.slice(p+${k},p+${k + 1})`);
+          break;
+        case "b":
+          exprs.push(`d[p+${k}]<<24>>24`);
+          break;
+        case "B":
+          exprs.push(`d[p+${k}]`);
+          break;
+        case "?":
+          exprs.push(`d[p+${k}]!==0`);
+          break;
+        case "h":
+          exprs.push(`${u16(k)}<<16>>16`);
+          break;
+        case "H":
+          exprs.push(u16(k));
+          break;
+        case "i":
+        case "l":
+          exprs.push(`${u32(k)}|0`);
+          break;
+        case "I":
+        case "L":
+          exprs.push(`${u32(k)}>>>0`);
+          break;
+        case "q":
+          exprs.push(`scratch(d,p+${k},8).getBigInt64(0,${le})`);
+          break;
+        case "Q":
+          exprs.push(`scratch(d,p+${k},8).getBigUint64(0,${le})`);
+          break;
+        case "e":
+          exprs.push(`half_to_float(${u16(k)})`);
+          break;
+        case "f":
+          exprs.push(`scratch(d,p+${k},4).getFloat32(0,${le})`);
+          break;
+        case "d":
+          exprs.push(`scratch(d,p+${k},8).getFloat64(0,${le})`);
+          break;
       }
       k += SIZES[ch];
     }
@@ -406,9 +513,11 @@ function u16(d: Uint8Array, p: number, le: boolean): number {
 }
 
 function u32(d: Uint8Array, p: number, le: boolean): number {
-  return (le
-    ? d[p] | (d[p + 1] << 8) | (d[p + 2] << 16) | (d[p + 3] << 24)
-    : (d[p] << 24) | (d[p + 1] << 16) | (d[p + 2] << 8) | d[p + 3]) >>> 0;
+  return (
+    (le
+      ? d[p] | (d[p + 1] << 8) | (d[p + 2] << 16) | (d[p + 3] << 24)
+      : (d[p] << 24) | (d[p + 1] << 16) | (d[p + 2] << 8) | d[p + 3]) >>> 0
+  );
 }
 
 const SCRATCH = new ArrayBuffer(8);
@@ -499,7 +608,8 @@ export function packInto(format: string, buffer: Uint8Array, offset: number, ...
   const s = get(format);
   if (offset < 0) {
     if (offset + s.size > 0) throw new StructError(`no space to pack ${s.size} bytes at offset ${offset}`);
-    if (offset + buffer.length < 0) throw new StructError(`offset ${offset} out of range for ${buffer.length}-byte buffer`);
+    if (offset + buffer.length < 0)
+      throw new StructError(`offset ${offset} out of range for ${buffer.length}-byte buffer`);
     offset += buffer.length;
   }
   if (buffer.length - offset < s.size) {

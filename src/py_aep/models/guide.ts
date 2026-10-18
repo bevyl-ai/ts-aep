@@ -1,9 +1,8 @@
 // Python: src/py_aep/models/guide.py (`from __future__ import annotations`: dropped)
 
-import { INSPECT } from "../../pyrt/index.ts";
+import { INSPECT, descriptor, floatRepr } from "../../pyrt/index.ts";
 import { GuideItem } from "../binary/ldat_chunks.ts";
 import { GuideOrientationType } from "../enums/index.ts";
-import { descriptor, floatRepr } from "../../pyrt/index.ts";
 import { ChunkField } from "./descriptors.ts";
 import { validateF8 } from "./validators.ts";
 
@@ -70,19 +69,12 @@ export class Guide {
   }
 
   [INSPECT](): string {
-    const orient =
-      this.orientationType === GuideOrientationType.HORIZONTAL
-        ? "horizontal"
-        : "vertical";
+    const orient = this.orientationType === GuideOrientationType.HORIZONTAL ? "horizontal" : "vertical";
     return `Guide(${orient}, position=${floatRepr(this.position)})`;
   }
 
   static {
-    descriptor(this, "orientationType", ChunkField.enum(
-      GuideOrientationType,
-      "_guideItem",
-      "orientationType",
-    ));
+    descriptor(this, "orientationType", ChunkField.enum(GuideOrientationType, "_guideItem", "orientationType"));
     descriptor(this, "position", new ChunkField("_guideItem", "position", { validate: validateF8 }));
     descriptor(this, "positionType", new ChunkField("_guideItem", "positionType"));
   }

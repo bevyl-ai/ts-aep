@@ -46,9 +46,7 @@ export function rotoBezierTangents(
   scaleX: number,
   scaleY: number,
 ): [number[][], number[][]] {
-  const points: [number, number][] = vertices.map(
-    ([x, y]): [number, number] => [x * scaleX, y * scaleY],
-  );
+  const points: [number, number][] = vertices.map(([x, y]): [number, number] => [x * scaleX, y * scaleY]);
   const count = points.length;
   const ks = tensions.map((t) => (1.0 - t) * 0.5);
   const ins: number[][] = Array.from({ length: count }, () => [0.0, 0.0]);
@@ -79,15 +77,9 @@ export function rotoBezierTangents(
     ];
     const [fx, fy] = points[0];
     const [sx, sy] = points[1];
-    outs[0] = [
-      (sx + ins[1][0] - fx) * ks[0],
-      (sy + ins[1][1] - fy) * ks[0],
-    ];
+    outs[0] = [(sx + ins[1][0] - fx) * ks[0], (sy + ins[1][1] - fy) * ks[0]];
   }
-  return [
-    ins.map(([x, y]) => [x / scaleX, y / scaleY]),
-    outs.map(([x, y]) => [x / scaleX, y / scaleY]),
-  ];
+  return [ins.map(([x, y]) => [x / scaleX, y / scaleY]), outs.map(([x, y]) => [x / scaleX, y / scaleY])];
 }
 
 /**
@@ -95,11 +87,7 @@ export function rotoBezierTangents(
  * its own, or, when it has none, 1 at a vertex whose stored handles are
  * both zero and 1/3 at any other.
  */
-export function keyframeTensions(
-  tensions: number[],
-  inTangents: number[][],
-  outTangents: number[][],
-): number[] {
+export function keyframeTensions(tensions: number[], inTangents: number[][], outTangents: number[][]): number[] {
   if (tensions.length === inTangents.length) {
     return [...tensions];
   }

@@ -4,6 +4,4 @@
 
 export { AVItem } from "./av_item.ts";
 export { CompItem } from "./composition.ts";
-export { FolderItem } from "./folder.ts";
 export { FootageItem } from "./footage.ts";
-export { Item } from "./item.ts";

@@ -59,33 +59,49 @@ describe("TestPropertyNameGuard", () => {
   test("test_marker_property_rename_rejected", () => {
     const app = parseAep(PT);
     const marker = _firstLeaf(app, (p) => p.matchName === "ADBE Marker");
-    raises(ValueError, () => {
-      marker.name = "my markers";
-    }, "indexed group");
+    raises(
+      ValueError,
+      () => {
+        marker.name = "my markers";
+      },
+      "indexed group",
+    );
   });
 
   test("test_layer_style_no_value_rename_rejected", () => {
     const app = parseAep(PT);
     const gradient = _firstLeaf(app, (p) => p.matchName.endsWith("outerGlow/gradient"));
-    raises(ValueError, () => {
-      gradient.name = "grad";
-    }, "indexed group");
+    raises(
+      ValueError,
+      () => {
+        gradient.name = "grad";
+      },
+      "indexed group",
+    );
   });
 
   test("test_transform_group_rename_rejected", () => {
     const app = parseAep(PT);
     const group = app.project.compositions[0].layers[0].property("ADBE Transform Group");
-    raises(ValueError, () => {
-      group.name = "Xform";
-    }, "indexed group");
+    raises(
+      ValueError,
+      () => {
+        group.name = "Xform";
+      },
+      "indexed group",
+    );
   });
 
   test("test_transform_leaf_rename_rejected", () => {
     const app = parseAep(PT);
     const prop = _firstLeaf(app, (p) => p.matchName === "ADBE Opacity");
-    raises(ValueError, () => {
-      prop.name = "Alpha";
-    }, "indexed group");
+    raises(
+      ValueError,
+      () => {
+        prop.name = "Alpha";
+      },
+      "indexed group",
+    );
   });
 
   test("test_mask_rename_still_round_trips", () => {
@@ -127,9 +143,9 @@ describe("TestPropertyNameGuard", () => {
     effect.name = "Renamed Effect";
     const out = tmpPath.div("effect_rename.aep");
     app.project.save(out);
-    const names = parseAep(out).project.compositions.flatMap((comp) =>
-      comp.layers.flatMap((layer) => [...truthyOr(layer.effects, [])]),
-    ).map((fx) => fx.name);
+    const names = parseAep(out)
+      .project.compositions.flatMap((comp) => comp.layers.flatMap((layer) => [...truthyOr(layer.effects, [])]))
+      .map((fx) => fx.name);
     expect(names.includes("Renamed Effect")).toBe(true);
   });
 
@@ -158,9 +174,13 @@ describe("TestDimensionsReadOnly", () => {
     const app = parseAep(SAMPLES_DIR.div("property", "property_2D_position.aep"));
     const pos = _firstLeaf(app, (p) => p.matchName === "ADBE Position");
     const before = pos.dimensions;
-    raises(AttributeError, () => {
-      pos.dimensions = 5;
-    }, "read-only");
+    raises(
+      AttributeError,
+      () => {
+        pos.dimensions = 5;
+      },
+      "read-only",
+    );
     expect(pos.dimensions).toBe(before);
   });
 });
@@ -179,9 +199,13 @@ describe("TestExpressionEnabledGuard", () => {
   test("test_rejected_when_expressions_impossible", () => {
     const app = parseAep(PT);
     const target = _firstLeaf(app, (p) => !p.canSetExpression);
-    raises(ValueError, () => {
-      target.expressionEnabled = true;
-    }, "cannot take an expression");
+    raises(
+      ValueError,
+      () => {
+        target.expressionEnabled = true;
+      },
+      "cannot take an expression",
+    );
   });
 
   test("test_allowed_when_expressions_possible", () => {
@@ -189,14 +213,20 @@ describe("TestExpressionEnabledGuard", () => {
     const app = parseAep(SAMPLES_DIR.div("property", "all_animated.aep"));
     const comp = app.project.compositions[0];
     // NOTE(port): next(gen) → Array.find; on a miss Python raises StopIteration, TS fails at the next line - the test errors either way
-    const rot = asInstance(Array.from(comp.avLayers[0].transform).find((p) => p.matchName === "ADBE Rotate Z"), Property);
+    const rot = asInstance(
+      Array.from(comp.avLayers[0].transform).find((p) => p.matchName === "ADBE Rotate Z"),
+      Property,
+    );
     expect(rot.canSetExpression).toBe(true);
     rot.expression = "time * 2";
     rot.expressionEnabled = true;
     const out = tmpPath.div("expr_enabled.aep");
     app.project.save(out);
     const comp2 = parseAep(out).project.compositions[0];
-    const rot2 = asInstance(Array.from(comp2.avLayers[0].transform).find((p) => p.matchName === "ADBE Rotate Z"), Property);
+    const rot2 = asInstance(
+      Array.from(comp2.avLayers[0].transform).find((p) => p.matchName === "ADBE Rotate Z"),
+      Property,
+    );
     expect(rot2.expressionEnabled).toBe(true);
   });
 
@@ -278,18 +308,26 @@ describe("TestTemporalEaseSetterWritesThrough", () => {
   test("test_wrong_length_rejected", () => {
     const app = parseAep(BEZ);
     const keyframe = _animated(app).keyframes[1];
-    raises(ValueError, () => {
-      keyframe.inTemporalEase = new Array(99).fill(new KeyframeEase(0.0, 5.0));
-    }, "expects");
+    raises(
+      ValueError,
+      () => {
+        keyframe.inTemporalEase = Array.from({ length: 99 }, () => new KeyframeEase(0.0, 5.0));
+      },
+      "expects",
+    );
   });
 
   test("test_non_ease_value_rejected", () => {
     const app = parseAep(BEZ);
     const keyframe = _animated(app).keyframes[1];
-    raises(ValueError, () => {
-      // @ts-expect-error deliberately wrong-typed element (Python `# type: ignore[list-item]`)
-      keyframe.inTemporalEase = [0.5];
-    }, "KeyframeEase");
+    raises(
+      ValueError,
+      () => {
+        // @ts-expect-error deliberately wrong-typed element (Python `# type: ignore[list-item]`)
+        keyframe.inTemporalEase = [0.5];
+      },
+      "KeyframeEase",
+    );
   });
 });
 
@@ -307,7 +345,7 @@ describe("TestMotionGraphicsPredicateAgreesWithBuilder", () => {
     const app = parseAep(EG);
     let checked = 0;
     for (const comp of app.project.compositions) {
-      for (const prop of _leaves(app, (p) => true)) {
+      for (const prop of _leaves(app, (_p) => true)) {
         if (prop.canAddToMotionGraphicsTemplate(comp)) {
           prop.addToMotionGraphicsTemplate(comp);
           checked += 1;

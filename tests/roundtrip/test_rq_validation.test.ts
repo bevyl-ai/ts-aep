@@ -22,8 +22,7 @@ import { RenderQueue } from "../../src/py_aep/models/renderqueue/render_queue.ts
 import type { RenderQueueItem } from "../../src/py_aep/models/renderqueue/render_queue_item.ts";
 import { approx, makeTmpPath, raises } from "../support/pytest.ts";
 
-const SAMPLE = new Path(import.meta.path)
-  .parent.parent.parent.div("samples", "models", "output_module", "file.aep");
+const SAMPLE = new Path(import.meta.path).parent.parent.parent.div("samples", "models", "output_module", "file.aep");
 
 function _rqi(project: Project): RenderQueueItem {
   return asInstance(project.renderQueue, RenderQueue).items[0];

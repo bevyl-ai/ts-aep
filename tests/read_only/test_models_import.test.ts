@@ -7,11 +7,9 @@ import { ImportOptions } from "../../src/py_aep/models/import_options.ts";
 import { Path, ValueError } from "../../src/pyrt/index.ts";
 import { raises } from "../support/pytest.ts";
 
-
 // Python: Path(__file__).parent.parent.parent / "samples" / ...
 const ASSETS = new Path(import.meta.path).parent.parent.parent.div("samples", "assets");
 const BASE = new Path(import.meta.path).parent.parent.parent.div("samples", "models", "folder", "folder.aep");
-const IMPORT_DIR = new Path(import.meta.path).parent.parent.parent.div("samples", "models", "import");
 
 describe("TestImportFileErrors", () => {
   /** Validation and error handling. */

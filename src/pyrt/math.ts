@@ -79,7 +79,7 @@ function dlMul(x: number, y: number): [number, number] {
     t = c * y;
     const yh = t - (t - y);
     const yl = y - yh;
-    return [z, ((xh * yh - z) + xh * yl + xl * yh) + xl * yl];
+    return [z, xh * yh - z + xh * yl + xl * yh + xl * yl];
   }
   return [z, fma(x, y, -z)];
 }
@@ -94,7 +94,14 @@ function vectorNorm(vec: number[], max: number, foundNan: boolean): number {
   const maxE = frexpExp(max);
   if (maxE < -1023) {
     // When max_e < -1023, ldexp(1.0, -max_e) would overflow.
-    return DBL_MIN * vectorNorm(vec.map((v) => v / DBL_MIN), max / DBL_MIN, foundNan);
+    return (
+      DBL_MIN *
+      vectorNorm(
+        vec.map((v) => v / DBL_MIN),
+        max / DBL_MIN,
+        foundNan,
+      )
+    );
   }
   const scale = pow2(-maxE);
   let csum = 1.0;

@@ -13,7 +13,7 @@
 import { NotImplementedError, ValueError } from "./errors.ts";
 
 /** `re.error` */
-export class PyReError extends ValueError {}
+class PyReError extends ValueError {}
 
 /** Python `re` flag values. */
 export const reFlags = {
@@ -38,7 +38,7 @@ const U_SPACE = "\\t\\n\\v\\f\\r\\x1c-\\x20\\x85\\xa0\\u1680\\u2000-\\u200a\\u20
 const U_WORD = "\\p{L}\\p{N}_";
 const A_SPACE = " \\t\\n\\r\\f\\v";
 const A_WORD = "A-Za-z0-9_";
-const JS_SYNTAX = new Set([..."^$\\.*+?()[]{}|/"]);
+const JS_SYNTAX = new Set("^$\\.*+?()[]{}|/");
 
 const cache = new Map<string, RegExp>();
 

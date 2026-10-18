@@ -11,7 +11,15 @@ import { expect, test } from "bun:test";
 
 import { dictPop, assert, int, Path, RuntimeError, ValueError } from "../../src/pyrt/index.ts";
 
-import { AudioChannels, AudioCodec, MPEGAudioFormat, MPEGMultiplexer, OutputChannels, OutputColorDepth, VideoCodec } from "../../src/py_aep/enums/index.ts";
+import {
+  AudioChannels,
+  AudioCodec,
+  MPEGAudioFormat,
+  MPEGMultiplexer,
+  OutputChannels,
+  OutputColorDepth,
+  VideoCodec,
+} from "../../src/py_aep/enums/index.ts";
 import { parseFormatOptions } from "../../src/py_aep/parsers/format_options.ts";
 import { RenderQueue } from "../../src/py_aep/models/renderqueue/render_queue.ts";
 import "../../src/py_aep/binary/_register.ts";
@@ -42,26 +50,23 @@ function _relId(p: Path): string {
 
 const _CORPUS = sorted(SAMPLES_DIR.div("models").rglob("*.aep"), (p: Path) => p.parts);
 
-test.each(_CORPUS.map((p) => [_relId(p), p]))(
-  "test_parent_om_backref_is_wired[%s]",
-  (_id: string, aepPath: Path) => {
-    const app = parseApp(aepPath);
-    for (const rqi of asInstance(app.project.renderQueue, RenderQueue).items) {
-      for (const om of rqi.outputModules) {
-        if (om.formatOptions != null) {
-          expect(om.formatOptions._parentOm).toBe(om);
-        }
+test.each(_CORPUS.map((p) => [_relId(p), p]))("test_parent_om_backref_is_wired[%s]", (_id: string, aepPath: Path) => {
+  const app = parseApp(aepPath);
+  for (const rqi of asInstance(app.project.renderQueue, RenderQueue).items) {
+    for (const om of rqi.outputModules) {
+      if (om.formatOptions != null) {
+        expect(om.formatOptions._parentOm).toBe(om);
       }
     }
-  },
-);
+  }
+});
 
 test("test_parent_om_backref_survives_apply_template", () => {
   // apply_template swaps the Ropt and re-derives format_options; the
   // fresh object must be re-wired. Template parsing needs a prefs dir,
   // so emulate the re-derive path directly (the real one also detaches
   // the outgoing wrapper - see the batch_edit rollback tests below).
-  const tmpPath = makeTmpPath();
+  makeTmpPath();
   const project = parseProjectFresh(FORMAT_DIR.div("targa", "base.aep"));
   const om = _om(project);
   const foBefore = om.formatOptions;

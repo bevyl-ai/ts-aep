@@ -1,19 +1,15 @@
 /** Parser and serializer for After Effects gradient XML in GCky Utf8 chunks. */
 
 import { Element, ParseError, fromstring } from "../../pyrt/etree.ts";
-import {
-  warn,
-} from "../../pyrt/index.ts";
+import { warn } from "../../pyrt/index.ts";
 import { Gradient, GradientAlphaStop, GradientColorStop } from "../models/properties/gradient.ts";
 import type { Utf8Chunk } from "../binary/scalar_chunks.ts";
 
-export const logger = {
+const logger = {
   debug() {},
   info() {},
   warning: (m: string) => warn(m),
 };
-
-export { Element, ParseError, fromstring };
 
 /**
  * Parse AE gradient XML into a `Gradient` instance.
@@ -65,7 +61,7 @@ export function parseGradientXml(utf8: Utf8Chunk): Gradient | null {
  * Returns a dict mapping key text to the value element (the second
  * child of each prop.pair).
  */
-export function _getPairs(propListElem: Element): Map<string, Element> {
+function _getPairs(propListElem: Element): Map<string, Element> {
   const pairs = new Map<string, Element>();
   for (const pair of propListElem.findall("prop.pair")) {
     const keyElem = pair.find("key");
@@ -80,14 +76,14 @@ export function _getPairs(propListElem: Element): Map<string, Element> {
 }
 
 /** Get text content from a \<string\> element. */
-export function _getStringValue(elem: Element | null): string | null {
+function _getStringValue(elem: Element | null): string | null {
   if (elem == null) return null;
   if (elem.tag === "string") return elem.text;
   return null;
 }
 
 /** Parse the 'Color Stops' prop.list into GradientColorStop objects. */
-export function _parseColorStops(colorStopsElem: Element | null): GradientColorStop[] {
+function _parseColorStops(colorStopsElem: Element | null): GradientColorStop[] {
   if (colorStopsElem == null) return [];
 
   const pairs = _getPairs(colorStopsElem);
@@ -106,16 +102,14 @@ export function _parseColorStops(colorStopsElem: Element | null): GradientColorS
     if (arrayElem == null) continue;
     const floats = _parseFloatArray(arrayElem);
     if (floats.length >= 5) {
-      stops.push(
-        new GradientColorStop(floats[0], floats[1], [floats[2], floats[3], floats[4]]),
-      );
+      stops.push(new GradientColorStop(floats[0], floats[1], [floats[2], floats[3], floats[4]]));
     }
   }
   return stops;
 }
 
 /** Parse the 'Alpha Stops' prop.list into GradientAlphaStop objects. */
-export function _parseAlphaStops(alphaStopsElem: Element | null): GradientAlphaStop[] {
+function _parseAlphaStops(alphaStopsElem: Element | null): GradientAlphaStop[] {
   if (alphaStopsElem == null) return [];
 
   const pairs = _getPairs(alphaStopsElem);
@@ -140,7 +134,7 @@ export function _parseAlphaStops(alphaStopsElem: Element | null): GradientAlphaS
 }
 
 /** Parse an \<array\> element containing \<float\> children. */
-export function _parseFloatArray(arrayElem: Element): number[] {
+function _parseFloatArray(arrayElem: Element): number[] {
   const floats: number[] = [];
   for (const child of arrayElem) {
     if (child.tag === "float" && child.text != null) {

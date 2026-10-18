@@ -8,12 +8,7 @@
  * prefix.
  */
 
-import {
-  Path,
-  ValueError,
-  literal,
-  type PathLike,
-} from "../../pyrt/index.ts";
+import { Path, ValueError, literal, type PathLike } from "../../pyrt/index.ts";
 import { AI_COMP_EXTENSIONS, PSD_COMP_EXTENSIONS } from "../data/file_formats.ts";
 import { readAiLayerOcgs, readAiLayers, type AiLayer } from "./ai_layers.ts";
 import { PsdGroup, readPsdLayers, type PsdLayer, type PsdNode } from "./psd_layers.ts";
@@ -27,10 +22,7 @@ import { PsdGroup, readPsdLayers, type PsdLayer, type PsdNode } from "./psd_laye
  * @throws {@link UnsupportedPsdLayersError} If the file is not a valid PSD/PSB.
  * @throws {@link FlattenedPsdError} If the document has no layer records.
  */
-export function psdLeafLayers(
-  file: PathLike,
-  kw: { maskBoxes?: boolean } = {},
-): PsdLayer[] {
+export function psdLeafLayers(file: PathLike, kw: { maskBoxes?: boolean } = {}): PsdLayer[] {
   const { maskBoxes = true } = kw;
   const leaves: PsdLayer[] = [];
 
@@ -45,11 +37,7 @@ export function psdLeafLayers(
   };
 
   _walk(readPsdLayers(file, { maskBoxes }));
-  leaves.splice(
-    0,
-    leaves.length,
-    ...leaves.toSorted((a, b) => a.recordIndex - b.recordIndex),
-  );
+  leaves.splice(0, leaves.length, ...leaves.toSorted((a, b) => a.recordIndex - b.recordIndex));
   return leaves;
 }
 
@@ -74,9 +62,7 @@ export function listLayers(file: PathLike): string[] {
   if (AI_COMP_EXTENSIONS.has(suffix)) {
     return [...readAiLayers(file)].reverse();
   }
-  throw new ValueError(
-    `listLayers supports layered .psd/.psb/.ai/.pdf files, got ${literal(suffix)}`,
-  );
+  throw new ValueError(`listLayers supports layered .psd/.psb/.ai/.pdf files, got ${literal(suffix)}`);
 }
 
 /**
@@ -91,10 +77,7 @@ export function listLayers(file: PathLike): string[] {
  * @throws {@link ValueError} If the extension is not a layered format, or no selectable layer of
  *   `file` has that stored index.
  */
-export function layerIndexForStored(
-  file: PathLike,
-  storedIndex: number,
-): number {
+export function layerIndexForStored(file: PathLike, storedIndex: number): number {
   const suffix = new Path(file).suffix.toLowerCase();
   if (PSD_COMP_EXTENSIONS.has(suffix)) {
     const leaves = psdLeafLayers(file, { maskBoxes: false });
@@ -119,17 +102,10 @@ export function layerIndexForStored(
     }
     return names.length - 1 - storedIndex;
   }
-  throw new ValueError(
-    `layerIndexForStored supports layered .psd/.psb/.ai/.pdf ` +
-      `files, got ${literal(suffix)}`,
-  );
+  throw new ValueError(`layerIndexForStored supports layered .psd/.psb/.ai/.pdf ` + `files, got ${literal(suffix)}`);
 }
 
-export function _outOfRange(
-  file: PathLike,
-  layerIndex: number,
-  names: string[],
-): ValueError {
+function _outOfRange(file: PathLike, layerIndex: number, names: string[]): ValueError {
   return new ValueError(
     `${new Path(file).name}: layerIndex ${layerIndex} out of range; the ` +
       `file has ${names.length} selectable layers (top first): ${literal(names)}`,
@@ -143,10 +119,7 @@ export function _outOfRange(
  * @throws {@link ValueError} If `layerIndex` is out of range.
  * @throws {@link UnsupportedPsdLayersError} If the file's layers cannot be read.
  */
-export function resolvePsdLayer(
-  file: PathLike,
-  layerIndex: number,
-): PsdLayer {
+export function resolvePsdLayer(file: PathLike, layerIndex: number): PsdLayer {
   const leaves = psdLeafLayers(file);
   if (!(0 <= layerIndex && layerIndex < leaves.length)) {
     throw _outOfRange(

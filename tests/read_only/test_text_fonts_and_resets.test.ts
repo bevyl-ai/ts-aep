@@ -14,7 +14,21 @@
 
 import { describe, expect, test } from "bun:test";
 
-import { AssertionError, getOr, float, getMember, len, Path, assert, valueEquals, truthyOr, StopIteration, ValueError, zip, mod } from "../../src/pyrt/index.ts";
+import {
+  AssertionError,
+  getOr,
+  float,
+  getMember,
+  len,
+  Path,
+  assert,
+  valueEquals,
+  truthyOr,
+  StopIteration,
+  ValueError,
+  zip,
+  mod,
+} from "../../src/pyrt/index.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { parseProject } from "../conftest.ts";
 import { parseProjectFresh } from "../helpers.ts";
@@ -103,10 +117,7 @@ class TestUsedFonts {
   }
 
   _expected(records: UsedFontRecord[]) {
-    return records.map((rec) => [
-      rec.font.postScriptName,
-      rec.usedAt.map((u) => [u.layerID, float(u.layerTimeD)]),
-    ]);
+    return records.map((rec) => [rec.font.postScriptName, rec.usedAt.map((u) => [u.layerID, float(u.layerTimeD)])]);
   }
 }
 
@@ -128,9 +139,7 @@ describe("TestUsedFonts", () => {
   });
 
   test("test_sorted_by_post_script_name", () => {
-    const names = parseProject(REPLACE_FONT_AEP).usedFonts.map(
-      (e) => e.font.postScriptName,
-    );
+    const names = parseProject(REPLACE_FONT_AEP).usedFonts.map((e) => e.font.postScriptName);
     expect(valueEquals(names, sorted(names))).toBe(true);
   });
 });
@@ -152,9 +161,7 @@ class TestReplaceFont {
       );
       state.set(name, [
         docs[0]._fonts.map((f) => f.postScriptName),
-        docs.map((d) =>
-          _charRunSpans(d).map(([s, e, style]) => [s, e, getOr(style, "0")]),
-        ),
+        docs.map((d) => _charRunSpans(d).map(([s, e, style]) => [s, e, getOr(style, "0")])),
       ]);
     }
     return state;
@@ -170,19 +177,14 @@ describe("TestReplaceFont", () => {
     expect(project.replaceFont("Verdana", "Georgia")).toBe(true);
     // AE inserts the replacement directly after the replaced font and
     // keeps the old entry; unaffected runs are untouched.
-    expect(
-      valueEquals(self._layer_state(project), self._layer_state(parseProject(REPLACE_FONT_AFTER_AEP))),
-    ).toBe(true);
+    expect(valueEquals(self._layer_state(project), self._layer_state(parseProject(REPLACE_FONT_AFTER_AEP)))).toBe(true);
   });
 
   test("test_used_fonts_after_replace_matches_ae", () => {
     const project = parseProjectFresh(REPLACE_FONT_AEP);
     project.replaceFont("Verdana", "Georgia");
     const expected = _fixture("replace_font_probe.json").after.usedFonts.value;
-    const got = project.usedFonts.map((e) => [
-      e.font.postScriptName,
-      e.usedAt.map((u) => [u.layerId, u.layerTime]),
-    ]);
+    const got = project.usedFonts.map((e) => [e.font.postScriptName, e.usedAt.map((u) => [u.layerId, u.layerTime])]);
     const want = expected.map((r: UsedFontRecord) => [
       r.font.postScriptName,
       r.usedAt.map((u) => [u.layerID, float(u.layerTimeD)]),
@@ -204,9 +206,7 @@ describe("TestReplaceFont", () => {
 
   test("test_accepts_font_objects", () => {
     const project = parseProjectFresh(REPLACE_FONT_AEP);
-    const verdana = project.usedFonts
-      .map((e) => e.font)
-      .find((f) => f.postScriptName === "Verdana");
+    const verdana = project.usedFonts.map((e) => e.font).find((f) => f.postScriptName === "Verdana");
     if (verdana === undefined) throw new StopIteration();
     expect(project.replaceFont(verdana, "Georgia")).toBe(true);
   });
@@ -217,9 +217,7 @@ describe("TestReplaceFont", () => {
     project.replaceFont("Verdana", "Georgia");
     const out = tmpPath.div("replaced.aep");
     project.save(out);
-    const names = parseProjectFresh(out).usedFonts.map(
-      (e) => e.font.postScriptName,
-    );
+    const names = parseProjectFresh(out).usedFonts.map((e) => e.font.postScriptName);
     expect(names.includes("Georgia")).toBe(true);
     expect(names.includes("Verdana")).toBe(false);
   });
@@ -400,21 +398,22 @@ describe("TestFuzzRegressions", () => {
     const project = parseProjectFresh(REPLACE_FONT_AEP);
     const doc = _doc(project, "RESET", "reset_para");
     const names = doc._fonts.map((f) => f.postScriptName);
-    assert(
-      names.filter((n) => n === "MyriadPro-Regular").length === 2,
-      "sample lost its duplicate",
-    );
-    expect(valueEquals(doc._usedFontObjects().map((f) => f.postScriptName), ["MyriadPro-Regular"])).toBe(
-      true,
-    );
+    assert(names.filter((n) => n === "MyriadPro-Regular").length === 2, "sample lost its duplicate");
+    expect(
+      valueEquals(
+        doc._usedFontObjects().map((f) => f.postScriptName),
+        ["MyriadPro-Regular"],
+      ),
+    ).toBe(true);
 
     expect(project.replaceFont("MyriadPro-Regular", "Georgia")).toBe(true);
 
-    expect(valueEquals(doc._usedFontObjects().map((f) => f.postScriptName), ["Georgia"])).toBe(true);
     expect(
-      project.usedFonts
-        .map((e) => e.font.postScriptName)
-        .includes("MyriadPro-Regular"),
-    ).toBe(false);
+      valueEquals(
+        doc._usedFontObjects().map((f) => f.postScriptName),
+        ["Georgia"],
+      ),
+    ).toBe(true);
+    expect(project.usedFonts.map((e) => e.font.postScriptName).includes("MyriadPro-Regular")).toBe(false);
   });
 });

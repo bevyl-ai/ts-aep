@@ -13,21 +13,26 @@
 import { describe, expect, test } from "bun:test";
 import "../../src/py_aep/binary/_register.ts";
 import { parseAppFresh } from "../helpers.ts";
-import { AttributeError, getOr, deepcopy, getMember, len, Path, assert, valueEquals, truthyOr, repr, StopIteration, ValueError, zip } from "../../src/pyrt/index.ts";
+import {
+  AttributeError,
+  getOr,
+  deepcopy,
+  getMember,
+  len,
+  Path,
+  assert,
+  valueEquals,
+  truthyOr,
+  repr,
+  StopIteration,
+  ValueError,
+  zip,
+} from "../../src/pyrt/index.ts";
 
 import { serialize } from "../../src/py_aep/cos/index.ts";
 // noqa: F401 (documents the data source)
 import { type CosDict, type CosNode } from "../../src/py_aep/cos/cos.ts";
-import {
-  cosAt,
-  cosContains,
-  cosDict,
-  cosGetOr,
-  cosItem,
-  cosIter,
-  cosLen,
-  cosPop,
-} from "../../src/py_aep/cos/kinds.ts";
+import { cosAt, cosContains, cosDict, cosGetOr, cosItem, cosIter, cosLen, cosPop } from "../../src/py_aep/cos/kinds.ts";
 import type { Application } from "../../src/py_aep/models/application.ts";
 import type { TextDocument } from "../../src/py_aep/models/text/text_document.ts";
 import { AutoKernType, ParagraphJustification } from "../../src/py_aep/enums/index.ts";
@@ -111,8 +116,7 @@ function _assertByteParity(pyDoc: TextDocument, fixtureApp: Application, opName:
   const expected = _docFor(fixtureApp, opName);
   assert(
     valueEquals(_maskedBytes(pyDoc._cosData), _maskedBytes(expected._cosData)),
-    `${opName}: py-written btdk diverges from the AE fixture ` +
-      `(outside the masked /PC cache)`,
+    `${opName}: py-written btdk diverges from the AE fixture ` + `(outside the masked /PC cache)`,
   );
 }
 
@@ -182,7 +186,7 @@ describe("TestScalarWrites", () => {
 
   test("test_noop_write_keeps_structure", () => {
     const fixtureApp = getFixtureApp();
-    const probe = getProbe();
+    getProbe();
     const [_app, doc] = _baseDoc();
     doc.characterRange(2, 8).fontSize = 36;
     _assertAliasIntegrity(doc);
@@ -213,7 +217,7 @@ describe("TestScalarWrites", () => {
 
   test("test_zero_span_write_is_noop", () => {
     const fixtureApp = getFixtureApp();
-    const probe = getProbe();
+    getProbe();
     const [_app, doc] = _baseDoc();
     doc.characterRange(3, 3).fontSize = 90;
     _assertByteParity(doc, fixtureApp, "W_ZERO_STYLE");
@@ -279,7 +283,12 @@ describe("TestColorFontLeadingWrites", () => {
     const [_app, doc] = _baseDoc();
     const before = doc._fonts.map((f) => f.postScriptName);
     doc.characterRange(3, 7).font = before[0];
-    expect(valueEquals(doc._fonts.map((f) => f.postScriptName), before)).toBe(true);
+    expect(
+      valueEquals(
+        doc._fonts.map((f) => f.postScriptName),
+        before,
+      ),
+    ).toBe(true);
   });
 
   test("test_fill_color_write_and_clear", () => {
@@ -391,7 +400,7 @@ describe("TestTextReplacement", () => {
 
   test("test_replace_adds_paragraph", () => {
     const fixtureApp = getFixtureApp();
-    const probe = getProbe();
+    getProbe();
     const [_app, doc] = _styledBase();
     doc.characterRange(3, 5).text = "A\nB";
     expect(doc.paragraphCount).toBe(2);
@@ -447,7 +456,7 @@ describe("TestPasteFrom", () => {
   });
 
   test("test_paste_cross_document_remaps_fonts", () => {
-    const fixtureApp = getFixtureApp();
+    getFixtureApp();
     const probe = getProbe();
     const [app, doc] = _baseDoc();
     const srcDoc = _docFor(app, "W_SPLIT");
@@ -461,8 +470,8 @@ describe("TestPasteFrom", () => {
   });
 
   test("test_paste_shorter_invalidates_target", () => {
-    const fixtureApp = getFixtureApp();
-    const probe = getProbe();
+    getFixtureApp();
+    getProbe();
     const [app, doc] = _baseDoc();
     const srcDoc = _docFor(app, "W_SPLIT");
     srcDoc.text = "QQQQ";
@@ -500,9 +509,7 @@ describe("TestPasteFrom", () => {
     const pastedStyle = cosDict(_cosPath(pasted._doc, "0", "6", "0", 1, "0", "0", "6"), "get");
     const sourceStyle = cosDict(_cosPath(source._doc, "0", "6", "0", 0, "0", "0", "6"), "get");
     const keys = new Set<string>([...pastedStyle.keys(), ...sourceStyle.keys()]);
-    const diffKeys = new Set(
-      [...keys].filter((k) => !valueEquals(getOr(pastedStyle, k), getOr(sourceStyle, k))),
-    );
+    const diffKeys = new Set([...keys].filter((k) => !valueEquals(getOr(pastedStyle, k), getOr(sourceStyle, k))));
     expect([...diffKeys].every((k) => k === "0")).toBe(true);
   });
 });
@@ -535,7 +542,7 @@ describe("TestPasteLeadingEdgeKern", () => {
   });
 
   test("test_paste_mid_maps_edge_to_preceding_pair", () => {
-    const fixture3App = getFixture3App();
+    getFixture3App();
     const probe3 = getProbe3();
     const [app, doc] = _baseDoc("abcdef");
     doc.characterRange(2, 5).pasteFrom(_edgeSource(app).characterRange(0, 3));

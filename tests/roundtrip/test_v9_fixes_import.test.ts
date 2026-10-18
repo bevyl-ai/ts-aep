@@ -7,7 +7,28 @@ import { expect, test } from "bun:test";
 import { copyFileSync, utimesSync } from "node:fs";
 import * as nodepath from "node:path";
 import { deflateSync } from "node:zlib";
-import { AssertionError, at, b, Bytes, concat, getOr, encode, floordiv, getMember, getOrThrow, len, mod, Path, fspath, assert, truthy, valueEquals, truthyOr, struct, ValueError } from "../../src/pyrt/index.ts";
+import {
+  AssertionError,
+  at,
+  b,
+  Bytes,
+  concat,
+  getOr,
+  encode,
+  floordiv,
+  getMember,
+  getOrThrow,
+  len,
+  mod,
+  Path,
+  fspath,
+  assert,
+  truthy,
+  valueEquals,
+  truthyOr,
+  struct,
+  ValueError,
+} from "../../src/pyrt/index.ts";
 
 import { ImportAsType, parse as parseAep } from "../../src/py_aep/index.ts";
 import { defaultIccDirectories, defaultIccLibrary, iccProfileId } from "../../src/py_aep/color/icc.ts";
@@ -45,7 +66,17 @@ function _project(base: Path = BASE): Project {
 }
 
 type ImportOptionValues = Partial<
-  Pick<ImportOptions, "importAs" | "sequence" | "forceAlphabetical" | "layerIndex" | "layerDimensions" | "layerStyles" | "rangeStart" | "rangeEnd">
+  Pick<
+    ImportOptions,
+    | "importAs"
+    | "sequence"
+    | "forceAlphabetical"
+    | "layerIndex"
+    | "layerDimensions"
+    | "layerStyles"
+    | "rangeStart"
+    | "rangeEnd"
+  >
 >;
 
 function _import(project: Project, path: Path, options: ImportOptionValues = {}): FootageItem | CompItem {
@@ -116,11 +147,7 @@ function _psdRecord(
 /** An 8-bit RGB PSD with raw-coded layer records. */
 function _psd(path: Path, size: number, records: [Uint8Array, Uint8Array][]): Path {
   let layerInfo = struct.pack(">h", -len(records));
-  layerInfo = concat(
-    layerInfo,
-    Bytes.join(records.map(([r]) => r)),
-    Bytes.join(records.map(([, d]) => d)),
-  );
+  layerInfo = concat(layerInfo, Bytes.join(records.map(([r]) => r)), Bytes.join(records.map(([, d]) => d)));
   layerInfo = concat(layerInfo, Bytes.repeat(b("\0"), mod(len(layerInfo), 2)));
   const section = concat(struct.pack(">I", len(layerInfo)), layerInfo, struct.pack(">I", 0));
   const header = concat(
@@ -163,9 +190,7 @@ function _tiff(path: Path, bits: number[], photometric: number, extra: number | 
   if (extra != null) tags.push([338, 3, 1, struct.pack("<HH", extra, 0)]);
   if (photometric === 3) {
     const entries = 1 << bits[0];
-    const colorMap = Bytes.join(
-      Array.from(range(entries), (i) => struct.pack("<H", floordiv(i * 65535, entries - 1))),
-    );
+    const colorMap = Bytes.join(Array.from(range(entries), (i) => struct.pack("<H", floordiv(i * 65535, entries - 1))));
     tags.push([320, 3, 3 * entries, struct.pack("<I", len(out))]);
     out = concat(out, Bytes.repeat(colorMap, 3));
   }
@@ -196,9 +221,7 @@ function crc32(data: Uint8Array): number {
 }
 
 function _png(path: Path, width: number, height: number): Path {
-  const raw = Bytes.join(
-    Array.from(range(height), () => concat(b("\x00"), Bytes.repeat(b("\x00"), width))),
-  );
+  const raw = Bytes.join(Array.from(range(height), () => concat(b("\x00"), Bytes.repeat(b("\x00"), width))));
 
   const chunk = (kind: Uint8Array, data: Uint8Array): Uint8Array => {
     const crc = crc32(concat(kind, data));
@@ -252,9 +275,7 @@ test.each([
   _import(project, ASSETS.div(asset), options);
   const items = _layerFootage(project, asset);
   expect(truthy(items)).toBe(true);
-  const before = new Map(
-    items.map((item) => [item.id, [item.name, _pinBytes(_fileSource(item))]] as const),
-  );
+  const before = new Map(items.map((item) => [item.id, [item.name, _pinBytes(_fileSource(item))]] as const));
   for (const item of items) {
     _fileSource(item).reload();
   }
@@ -296,19 +317,26 @@ test("test_sequence_reload_keeps_the_unreduced_duration", () => {
 
 // --- C4: conform rates AE cannot open ------------------------------------
 
-test.each([["mov_23_976.mov"], ["dpx_seq.0001.dpx"]])("test_tiny_conform_rate_is_rejected_unmodified[%#]", (asset: string) => {
-  // AE 2026 refused to open py's projects holding 0.0004 ("zero denominator
-  // in ratio multiply") and opened 0.0005 on a movie and a sequence.
-  const project = _project();
-  const item = _import(project, ASSETS.div(asset), { sequence: asset.endsWith(".dpx") });
-  const before = projectBytes(project);
-  raises(ValueError, () => {
-    _fileSource(item).conformFrameRate = 0.0004;
-  }, "0.0005");
-  expect(valueEquals(projectBytes(project), before)).toBe(true);
-  _fileSource(item).conformFrameRate = 0.0005;
-  expect(approx(_fileSource(item).conformFrameRate, 0.0005, { abs: 1e-5 })).toBe(true);
-});
+test.each([["mov_23_976.mov"], ["dpx_seq.0001.dpx"]])(
+  "test_tiny_conform_rate_is_rejected_unmodified[%#]",
+  (asset: string) => {
+    // AE 2026 refused to open py's projects holding 0.0004 ("zero denominator
+    // in ratio multiply") and opened 0.0005 on a movie and a sequence.
+    const project = _project();
+    const item = _import(project, ASSETS.div(asset), { sequence: asset.endsWith(".dpx") });
+    const before = projectBytes(project);
+    raises(
+      ValueError,
+      () => {
+        _fileSource(item).conformFrameRate = 0.0004;
+      },
+      "0.0005",
+    );
+    expect(valueEquals(projectBytes(project), before)).toBe(true);
+    _fileSource(item).conformFrameRate = 0.0005;
+    expect(approx(_fileSource(item).conformFrameRate, 0.0005, { abs: 1e-5 })).toBe(true);
+  },
+);
 
 // --- C6: footage size ------------------------------------------------------
 
@@ -339,50 +367,61 @@ test("test_footage_wider_than_32767_px_is_rejected_unmodified", () => {
 
 // --- C7 / C10 / C13: synthetic Photoshop documents ------------------------
 
-test.each([[ImportAsType.COMP], [ImportAsType.COMP_CROPPED_LAYERS]])("test_hidden_photoshop_layer_imports_disabled[%#]", (how) => {
-  const tmpPath = makeTmpPath();
-  // AE 2026 turns the video switch off for a layer hidden in Photoshop
-  // (synthetic hidden_layer.psd: frame 0 rendered without it).
-  const path = _psd(tmpPath.div("hidden.psd"), 16, [
-    _psdRecord("visible", [0, 0, 8, 8], { lyid: 2 }),
-    _psdRecord("hidden", [4, 4, 12, 12], { hidden: true, lyid: 3 }),
-  ]);
-  const comp = asInstance(_import(_project(), path, { importAs: how }), CompItem);
-  const enabled = new Map(comp.layers.map((layer) => [String(layer.name), layer.enabled] as const));
-  expect(valueEquals(enabled, new Map([["hidden", false], ["visible", true]]))).toBe(true);
-});
+test.each([[ImportAsType.COMP], [ImportAsType.COMP_CROPPED_LAYERS]])(
+  "test_hidden_photoshop_layer_imports_disabled[%#]",
+  (how) => {
+    const tmpPath = makeTmpPath();
+    // AE 2026 turns the video switch off for a layer hidden in Photoshop
+    // (synthetic hidden_layer.psd: frame 0 rendered without it).
+    const path = _psd(tmpPath.div("hidden.psd"), 16, [
+      _psdRecord("visible", [0, 0, 8, 8], { lyid: 2 }),
+      _psdRecord("hidden", [4, 4, 12, 12], { hidden: true, lyid: 3 }),
+    ]);
+    const comp = asInstance(_import(_project(), path, { importAs: how }), CompItem);
+    const enabled = new Map(comp.layers.map((layer) => [String(layer.name), layer.enabled] as const));
+    expect(
+      valueEquals(
+        enabled,
+        new Map([
+          ["hidden", false],
+          ["visible", true],
+        ]),
+      ),
+    ).toBe(true);
+  },
+);
 
-test.each([[ImportAsType.COMP], [ImportAsType.COMP_CROPPED_LAYERS]])("test_hidden_photoshop_group_imports_disabled[%#]", (how) => {
-  const tmpPath = makeTmpPath();
-  // AE 2026 turns the group's nested-comp layer off and leaves the
-  // children's switches alone (synthetic hidden_group.psd).
-  const path = _psd(tmpPath.div("hidden_group.psd"), 16, [
-    _psdRecord("</Layer group>", [0, 0, 0, 0], { lsct: 3, lyid: 10 }),
-    _psdRecord("in hidden group", [0, 0, 8, 8], { lyid: 11 }),
-    _psdRecord("hidden group", [0, 0, 0, 0], { hidden: true, lsct: 1, lyid: 12 }),
-    _psdRecord("top visible", [8, 8, 16, 16], { lyid: 13 }),
-  ]);
-  const comp = asInstance(_import(_project(), path, { importAs: how }), CompItem);
-  const layers = new Map<string, Layer>(comp.layers.map((layer) => [String(layer.name), layer] as const));
-  expect(getOrThrow(layers, "top visible").enabled).toBe(true);
-  const group = getOrThrow(layers, "hidden group");
-  expect(group.enabled).toBe(false);
-  expect(
-    valueEquals(
-      asInstance(asInstance(group, AVLayer).source, CompItem).layers.map((inner) => inner.enabled),
-      [true],
-    ),
-  ).toBe(true);
-});
+test.each([[ImportAsType.COMP], [ImportAsType.COMP_CROPPED_LAYERS]])(
+  "test_hidden_photoshop_group_imports_disabled[%#]",
+  (how) => {
+    const tmpPath = makeTmpPath();
+    // AE 2026 turns the group's nested-comp layer off and leaves the
+    // children's switches alone (synthetic hidden_group.psd).
+    const path = _psd(tmpPath.div("hidden_group.psd"), 16, [
+      _psdRecord("</Layer group>", [0, 0, 0, 0], { lsct: 3, lyid: 10 }),
+      _psdRecord("in hidden group", [0, 0, 8, 8], { lyid: 11 }),
+      _psdRecord("hidden group", [0, 0, 0, 0], { hidden: true, lsct: 1, lyid: 12 }),
+      _psdRecord("top visible", [8, 8, 16, 16], { lyid: 13 }),
+    ]);
+    const comp = asInstance(_import(_project(), path, { importAs: how }), CompItem);
+    const layers = new Map<string, Layer>(comp.layers.map((layer) => [String(layer.name), layer] as const));
+    expect(getOrThrow(layers, "top visible").enabled).toBe(true);
+    const group = getOrThrow(layers, "hidden group");
+    expect(group.enabled).toBe(false);
+    expect(
+      valueEquals(
+        asInstance(asInstance(group, AVLayer).source, CompItem).layers.map((inner) => inner.enabled),
+        [true],
+      ),
+    ).toBe(true);
+  },
+);
 
 test("test_layer_ids_without_lyid_number_from_two", () => {
   const tmpPath = makeTmpPath();
   // AE 2026 numbers the layers of a PSD without `lyid` blocks from 2 in
   // record order (opti 0x154 and sspc layer_id).
-  const path = _psd(tmpPath.div("no_ids.psd"), 16, [
-    _psdRecord("a", [0, 0, 8, 8]),
-    _psdRecord("b", [8, 8, 16, 16]),
-  ]);
+  const path = _psd(tmpPath.div("no_ids.psd"), 16, [_psdRecord("a", [0, 0, 8, 8]), _psdRecord("b", [8, 8, 16, 16])]);
   const project = _project();
   _import(project, path, { importAs: ImportAsType.COMP });
   const ids = new Map(
@@ -390,7 +429,15 @@ test("test_layer_ids_without_lyid_number_from_two", () => {
       (item) => [String(_fileSource(item).layerName), _fileSource(item)._sspc.layerId] as const,
     ),
   );
-  expect(valueEquals(ids, new Map([["a", 2], ["b", 3]]))).toBe(true);
+  expect(
+    valueEquals(
+      ids,
+      new Map([
+        ["a", 2],
+        ["b", 3],
+      ]),
+    ),
+  ).toBe(true);
 });
 
 test("test_photoshop_layer_count_above_255", () => {
@@ -428,7 +475,12 @@ test("test_background_layer_is_named_background", () => {
   const asset = ASSETS.div("depth", "psd_rgb8_bg_layer.psd");
   expect(listLayers(asset).at(-1)).toBe("Background");
   const comp = asInstance(_import(_project(), asset, { importAs: ImportAsType.COMP }), CompItem);
-  expect(valueEquals(comp.layers.map((layer) => String(layer.name)), ["Layer 1", "Background"])).toBe(true);
+  expect(
+    valueEquals(
+      comp.layers.map((layer) => String(layer.name)),
+      ["Layer 1", "Background"],
+    ),
+  ).toBe(true);
 });
 
 // --- C9: empty content box at Layer Size -------------------------------
@@ -511,10 +563,9 @@ test("test_invalid_default_sequence_fps_preference_is_rejected", () => {
   const tmpPath = makeTmpPath();
   const prefs = tmpPath.div("prefs");
   prefs.mkdir();
-  prefs.div("Adobe After Effects 26.0 Prefs-indep-general.txt").writeText(
-    '["Import Options Preference Section"]\n' +
-      '\t"Import Options Default Sequence FPS" = "0.000000"\n',
-  );
+  prefs
+    .div("Adobe After Effects 26.0 Prefs-indep-general.txt")
+    .writeText('["Import Options Preference Section"]\n' + '\t"Import Options Default Sequence FPS" = "0.000000"\n');
   const project = parseAep(BASE, { aePreferencesDir: prefs }).project;
   raises(
     ValueError,
@@ -548,8 +599,8 @@ test.each([
     const source = _fileSource(item);
     const opti = source._opti.tobytes();
     expect(source._sspc.depth).toBe(depth);
-    expect(opti[0x1E]).toBe(channels);
-    expect(Bytes.intFromBytes(opti.slice(0x28, 0x2A), "little")).toBe(8);
+    expect(opti[0x1e]).toBe(channels);
+    expect(Bytes.intFromBytes(opti.slice(0x28, 0x2a), "little")).toBe(8);
     expect(Bytes.intFromBytes(opti.slice(0x30, 0x32), "little")).toBe(layers);
     expect(source._sspc.dataSize).toBe(dataSize);
   },

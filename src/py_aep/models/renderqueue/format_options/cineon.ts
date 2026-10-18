@@ -85,30 +85,61 @@ export class CineonFormatOptions extends FormatOptionsBase {
   declare bitDepth: number;
 
   static {
-    descriptor(this, "tenBitBlackPoint", new ChunkField("_body", "tenBitBlackPoint", {
-      validate: _validateNumber({ min: 0, max: 1023, integer: true }),
-    }));
-    descriptor(this, "tenBitWhitePoint", new ChunkField("_body", "tenBitWhitePoint", {
-      validate: _validateNumber({ min: 0, max: 1023, integer: true }),
-    }));
-    descriptor(this, "convertedBlackPoint", new ChunkField("_body", "convertedBlackPoint", {
-      validate: _validateNumber(),
-    }));
-    descriptor(this, "convertedWhitePoint", new ChunkField("_body", "convertedWhitePoint", {
-      validate: _validateNumber(),
-    }));
-    descriptor(this, "currentGamma", new ChunkField("_body", "currentGamma", {
-      validate: _validateNumber(),
-    }));
-    descriptor(this, "highlightExpansion", // Backed by a u2 field: an out-of-range value overflows `struct`
-    // and crashes save() mid-write, leaving a partial .aep on disk.
-    new ChunkField("_body", "highlightExpansion", { validate: validateU2 }));
+    descriptor(
+      this,
+      "tenBitBlackPoint",
+      new ChunkField("_body", "tenBitBlackPoint", {
+        validate: _validateNumber({ min: 0, max: 1023, integer: true }),
+      }),
+    );
+    descriptor(
+      this,
+      "tenBitWhitePoint",
+      new ChunkField("_body", "tenBitWhitePoint", {
+        validate: _validateNumber({ min: 0, max: 1023, integer: true }),
+      }),
+    );
+    descriptor(
+      this,
+      "convertedBlackPoint",
+      new ChunkField("_body", "convertedBlackPoint", {
+        validate: _validateNumber(),
+      }),
+    );
+    descriptor(
+      this,
+      "convertedWhitePoint",
+      new ChunkField("_body", "convertedWhitePoint", {
+        validate: _validateNumber(),
+      }),
+    );
+    descriptor(
+      this,
+      "currentGamma",
+      new ChunkField("_body", "currentGamma", {
+        validate: _validateNumber(),
+      }),
+    );
+    descriptor(
+      this,
+      "highlightExpansion", // Backed by a u2 field: an out-of-range value overflows `struct`
+      // and crashes save() mid-write, leaving a partial .aep on disk.
+      new ChunkField("_body", "highlightExpansion", { validate: validateU2 }),
+    );
     descriptor(this, "logarithmicConversion", ChunkField.bool("_body", "logarithmicConversion"));
-    descriptor(this, "fileFormat", ChunkField.enum(CineonFileFormat, "_body", "fileFormat", {
-      allowOutOfEnumValues: true,
-    }));
-    descriptor(this, "bitDepth", new ChunkField("_body", "bitDepth", {
-      validate: validateOneOf([8, 10, 12, 16]),
-    }));
+    descriptor(
+      this,
+      "fileFormat",
+      ChunkField.enum(CineonFileFormat, "_body", "fileFormat", {
+        allowOutOfEnumValues: true,
+      }),
+    );
+    descriptor(
+      this,
+      "bitDepth",
+      new ChunkField("_body", "bitDepth", {
+        validate: validateOneOf([8, 10, 12, 16]),
+      }),
+    );
   }
 }

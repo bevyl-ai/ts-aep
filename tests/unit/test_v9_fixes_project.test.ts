@@ -17,7 +17,6 @@ import { b, Bytes, bytesEqual, valueEquals, ValueError } from "../../src/pyrt/in
 import { makeTmpPath, raises } from "../support/pytest.ts";
 import { sorted } from "../support/python.ts";
 
-
 // NOTE(port): `raises()` takes a single class; this local helper implements the
 // Python `pytest.raises((A, B))` tuple form (isinstance any-match, rethrow otherwise).
 function _raisesAny(classes: Array<abstract new (...a: never[]) => Error>, fn: () => unknown): Error {
@@ -46,17 +45,12 @@ describe("TestVersionValidation", () => {
     expect(py_aep.newProject(version).version).toBe(version);
   });
 
-  test.each([
-    "0.0x0",
-    "12.0x1",
-    "14.0x1",
-    "19.0x1",
-    "20.0x1",
-    "21.0x1",
-    "256.0x1",
-  ])("test_unknown_major_rejected[%#]", (version: string) => {
-    raises(ValueError, () => py_aep.newProject(version));
-  });
+  test.each(["0.0x0", "12.0x1", "14.0x1", "19.0x1", "20.0x1", "21.0x1", "256.0x1"])(
+    "test_unknown_major_rejected[%#]",
+    (version: string) => {
+      raises(ValueError, () => py_aep.newProject(version));
+    },
+  );
 
   test.each(["27.0x67", "185.0x67", "255.0x67"])(
     "test_newer_major_takes_the_ae_2026_project[%#]",
@@ -139,7 +133,7 @@ describe("TestVersionValidation", () => {
 
 describe("TestWorkingSpaceNone", () => {
   test("test_none_round_trips", () => {
-    const tmpPath = makeTmpPath();
+    makeTmpPath();
     // AE 2026 accepts workingSpace = "None": `PwCs` keeps `{}` and `cpid`
     // is all 0xFF, as in a new project.
     const app = py_aep.newProject();
@@ -154,10 +148,7 @@ describe("TestWorkingSpaceNone", () => {
     const app = py_aep.newProject();
     const cpid = app.project._cpid.data;
     const utf8 = app.project._wsUtf8;
-    app.project._wsUtf8 = app.project._rewriteColorProfile(
-      "PwCs",
-      '{"baseColorProfile":{"colorProfileName":"X"}}',
-    );
+    app.project._wsUtf8 = app.project._rewriteColorProfile("PwCs", '{"baseColorProfile":{"colorProfileName":"X"}}');
     app.project._cpid.data = Bytes.repeat(b("\x01"), 16);
     app.project.workingSpace = "None";
     expect(app.project.workingSpace).toBe("None");
