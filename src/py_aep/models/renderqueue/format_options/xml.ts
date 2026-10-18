@@ -164,6 +164,32 @@ export class _ScalarParam {
  * @param root - The parsed XML root element.
  * @returns Tuple of (params dict, value-elements dict, param-elements dict).
  */
+/**
+ * `ET.fromstring(text)`, as a private copy of a tree parsed once per distinct
+ * text: output modules mostly share a handful of templates. A malformed text
+ * raises every time, as `fromstring` does; callers own and mutate their copy.
+ */
+function _parseXml(text: string): ETElement {
+  let tree = _XML_TREES.get(text);
+  if (tree === undefined) {
+    tree = ET.fromstring(text);
+    if (_XML_TREES.size >= 64) _XML_TREES.delete(_XML_TREES.keys().next().value!);
+    _XML_TREES.set(text, tree);
+  }
+  return _copyTree(tree);
+}
+
+const _XML_TREES = new Map<string, ETElement>();
+
+function _copyTree(e: ETElement): ETElement {
+  const copy = new ET.Element(e.tag);
+  copy.attrib = new Map(e.attrib);
+  copy.text = e.text;
+  copy.tail = e.tail;
+  copy._children = e._children.map(_copyTree);
+  return copy;
+}
+
 export function _extractParams(
   root: ETElement,
 ): [Map<string, string>, Map<string, ETElement>, Map<string, ETElement>] {
@@ -334,7 +360,7 @@ export class XmlFormatOptions extends FormatOptionsBase {
     if (xmlStart >= 0) {
       this._xmlHeader = raw.slice(0, xmlStart);
       const xmlText = decode(raw.slice(xmlStart), "utf-8", "replace").split("\x00")[0];
-      this._xmlRoot = ET.fromstring(xmlText);
+      this._xmlRoot = _parseXml(xmlText);
       const [data, valElements, paramElements] = _extractParams(this._xmlRoot);
       this._valElements = valElements;
       this._paramElements = paramElements;
