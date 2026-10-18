@@ -31,7 +31,7 @@ import {
   format,
   getOrThrow,
   int,
-  repr,
+  literal,
   sorted,
   str,
 } from "../../pyrt/index.ts";
@@ -49,7 +49,7 @@ export function print(text: string, kw: { file?: typeof sys.stderr } = {}): void
 export function _chunkDetail(chunk: Chunk): string {
   const val = "value" in chunk ? chunk.value : null;
   if (val != null) {
-    let v = repr(val);
+    let v = literal(val);
     // Python len() and slicing count code points, not UTF-16 units.
     const cps = Array.from(v);
     if (cps.length > 60) v = cps.slice(0, 57).join("") + "...";
@@ -387,7 +387,7 @@ export class ArgumentParser<T extends Namespace = Namespace> {
         continue;
       }
       if (spec.storeTrue) {
-        if (eq >= 0) this.error(`argument ${spec.flag}: ignored explicit argument ${repr(a.slice(eq + 1))}`);
+        if (eq >= 0) this.error(`argument ${spec.flag}: ignored explicit argument ${literal(a.slice(eq + 1))}`);
         out[spec.dest] = true;
         continue;
       }
@@ -406,7 +406,7 @@ export class ArgumentParser<T extends Namespace = Namespace> {
           out[spec.dest] = spec.type_(value);
         } catch (e) {
           if (!(e instanceof ValueError)) throw e;
-          this.error(`argument ${spec.flag}: invalid ${spec.type_.name} value: ${repr(value)}`);
+          this.error(`argument ${spec.flag}: invalid ${spec.type_.name} value: ${literal(value)}`);
         }
       }
     }

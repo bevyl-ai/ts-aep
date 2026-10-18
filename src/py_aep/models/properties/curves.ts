@@ -23,7 +23,7 @@ import {
   getOrThrow,
   int,
   valueEquals,
-  repr,
+  literal,
   sorted,
   zip,
 } from "../../../pyrt/index.ts";
@@ -294,7 +294,7 @@ export class Curves {
   evaluate(channel: string, x: number, clamp = true): number {
     if (!CURVES_CHANNELS.includes(channel)) {
       throw new ValueError(
-        `channel must be one of ${CURVES_CHANNELS.join(", ")}, not ${repr(channel)}`,
+        `channel must be one of ${CURVES_CHANNELS.join(", ")}, not ${literal(channel)}`,
       );
     }
     validateNumber(x);

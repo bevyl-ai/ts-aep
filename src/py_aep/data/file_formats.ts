@@ -6,7 +6,7 @@
  * is the 4-char code stored in `SspcChunk.source_format_type`.
  */
 
-import { ValueError, repr } from "../../pyrt/index.ts";
+import { ValueError, literal } from "../../pyrt/index.ts";
 import { ImportAsType } from "../enums/index.ts";
 
 /** Static per-format defaults for footage import. */
@@ -283,6 +283,6 @@ export function getImportAsTypes(suffix: string): ReadonlySet<ImportAsType> {
  */
 export function getFileFormat(suffix: string): FileFormat {
   const fmt = _FILE_FORMATS.get(suffix.toLowerCase()) ?? null;
-  if (fmt == null) throw new ValueError(`Unsupported footage format: ${repr(suffix)}`);
+  if (fmt == null) throw new ValueError(`Unsupported footage format: ${literal(suffix)}`);
   return fmt;
 }

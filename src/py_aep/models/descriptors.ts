@@ -13,7 +13,7 @@ import {
   ValueError,
   getattr,
   int,
-  repr,
+  literal,
   hasInstanceDict,
   instanceDict,
   typeName,
@@ -227,12 +227,12 @@ export function _validateEnumMember(enumCls: EnumHelpers<number>, value: unknown
         .map((m) => `${enumCls.nameOf(m)} (${m})`)
         .join(", ");
       throw new ValueError(
-        `Invalid value ${repr(value)} for ${repr(publicName)}. ` +
+        `Invalid value ${literal(value)} for ${literal(publicName)}. ` +
           `Valid ${enumCls.__name__} values: ${members}`,
       );
     }
   } else {
-    throw new ValueError(`${repr(value)} is not a valid ${enumCls.__name__}`);
+    throw new ValueError(`${literal(value)} is not a valid ${enumCls.__name__}`);
   }
 }
 
@@ -328,14 +328,14 @@ export class ChunkField<
     const body = getattr(obj, this.chunkAttr);
     if (body == null) {
       if (this.default !== _SENTINEL) return this.default;
-      throw new AttributeError(`chunk body ${repr(this.chunkAttr)} is null`);
+      throw new AttributeError(`chunk body ${literal(this.chunkAttr)} is null`);
     }
     const value = getattr(body, this.field);
     return (this.transform ? this.transform(value) : value);
   }
 
   __set__(obj: O & ChunkOwner, value: T): void {
-    if (this.readOnly) throw new AttributeError(`${repr(this.publicName)} is read-only.`);
+    if (this.readOnly) throw new AttributeError(`${literal(this.publicName)} is read-only.`);
     if (this.minVersion != null) {
       let major: number | null;
       try {
@@ -348,14 +348,14 @@ export class ChunkField<
       }
       if (major != null && major < this.minVersion) {
         throw new AttributeError(
-          `${repr(this.publicName)} requires AE ${this.minVersion}+ file format.`,
+          `${literal(this.publicName)} requires AE ${this.minVersion}+ file format.`,
         );
       }
     }
     if (!_materializationAllowed.get()) {
       throw new RuntimeError(
-        `Cannot write ${repr(this.publicName)} via descriptor during ` +
-          `parsing. Use instanceDict(obj).set(${repr(this.publicName)}, value) for ` +
+        `Cannot write ${literal(this.publicName)} via descriptor during ` +
+          `parsing. Use instanceDict(obj).set(${literal(this.publicName)}, value) for ` +
           `parse-time overrides.`,
       );
     }

@@ -26,7 +26,7 @@ import type { LightLayer } from "../models/layers/light_layer.ts";
 import type { MatchNameTypes } from "../models/properties/match_name_types.ts";
 import type { Property } from "../models/properties/property.ts";
 import type { PropertyGroup } from "../models/properties/property_group.ts";
-import { AttributeError, NotImplementedError, ValueError, degrees, typeName, max, min, mod, repr, sum, hypot } from "../../pyrt/index.ts";
+import { AttributeError, NotImplementedError, ValueError, degrees, typeName, max, min, mod, literal, sum, hypot } from "../../pyrt/index.ts";
 
 type _PropertyName = {
   [K in keyof MatchNameTypes]: MatchNameTypes[K] extends Property<infer _V> ? K : never;
@@ -593,7 +593,7 @@ export function _autoRotation(layer: Layer, time: number, position: number[]): [
     const prop = layer.transform.property("ADBE Position");
     if (prop.dimensionsSeparated) {
       throw new NotImplementedError(
-        `layer ${repr(layer.name)} auto-orients along a path with separated ` +
+        `layer ${literal(layer.name)} auto-orients along a path with separated ` +
           "Position dimensions, which the transform math does not model",
       );
     }
@@ -608,7 +608,7 @@ export function _autoRotation(layer: Layer, time: number, position: number[]): [
   if (mode === AutoOrientType.CAMERA_OR_POINT_OF_INTEREST && threeD) {
     if (layer.parent != null) {
       throw new NotImplementedError(
-        `layer ${repr(layer.name)} is parented and turned towards the ` +
+        `layer ${literal(layer.name)} is parented and turned towards the ` +
           "camera, which the transform math does not model",
       );
     }
@@ -616,7 +616,7 @@ export function _autoRotation(layer: Layer, time: number, position: number[]): [
   }
   if (mode === AutoOrientType.CHARACTERS_TOWARD_CAMERA) {
     throw new NotImplementedError(
-      `layer ${repr(layer.name)} turns its characters towards the camera, ` +
+      `layer ${literal(layer.name)} turns its characters towards the camera, ` +
         "which the transform math does not model",
     );
   }

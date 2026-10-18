@@ -1,7 +1,7 @@
 /** Shared plumbing for the per-renderer option wrappers. */
 
 import { INSPECT, describe } from "../../../../pyrt/index.ts";
-import { AttributeError, objectSetattr, pyObject, repr } from "../../../../pyrt/index.ts";
+import { AttributeError, objectSetattr, pyObject, literal } from "../../../../pyrt/index.ts";
 import { SettingsView, type SettingsSpec } from "../../renderqueue/settings.ts";
 import type { CompItem } from "../composition.ts";
 import type { Chunk } from "../../../binary/chunk.ts";
@@ -50,7 +50,7 @@ export class RendererOptionsBase extends SettingsView {
     // wrapper. Reject it instead of silently dropping it.
     // NOTE(port): `name in prototype` is `hasattr(type(self), name)`; pyrt `hasattr` would run descriptor getters on the prototype.
     if (!name.startsWith("_") && !(name in this.constructor.prototype)) {
-      throw new AttributeError(`${this.constructor.name} has no option ${repr(name)}`);
+      throw new AttributeError(`${this.constructor.name} has no option ${literal(name)}`);
     }
     objectSetattr(this, name, value);
   }

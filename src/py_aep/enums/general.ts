@@ -4,7 +4,7 @@
  * These enums match the values used in After Effects ExtendScript.
  */
 
-import { ValueError, getOrThrow, int, intEnum, repr, type EnumValue } from "../../pyrt/index.ts";
+import { ValueError, getOrThrow, int, intEnum, literal, type EnumValue } from "../../pyrt/index.ts";
 import type { EnumHelpers } from "../../pyrt/enum.ts";
 
 /**
@@ -545,7 +545,7 @@ export const GpuAccelType = intEnum("GpuAccelType", {
     if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\n?$/i.test(value)) {
       throw new ValueError(
         `expected a valid UUID string ` +
-          `(xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx), got ${repr(value)}`,
+          `(xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx), got ${literal(value)}`,
       );
     }
     return value;
@@ -1036,7 +1036,7 @@ export const ViewerType = intEnum("ViewerType", {
   fromString(label: string | null): ViewerType {
     if (!label) label = "";
     const viewerType = _VIEWER_STRING_MAP.get(label);
-    if (viewerType === undefined) throw new ValueError(`Unknown viewer type label: ${repr(label)}`);
+    if (viewerType === undefined) throw new ValueError(`Unknown viewer type label: ${literal(label)}`);
     return viewerType;
   },
 });

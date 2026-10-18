@@ -18,7 +18,7 @@ import {
   descriptor,
   getattr,
   assert,
-  repr,
+  literal,
   round,
   zip,
 } from "../../../pyrt/index.ts";
@@ -57,7 +57,7 @@ export function _validateInterpolationType(value: KeyframeInterpolationType, key
   if (!prop.isInterpolationTypeValid(value)) {
     throw new ValueError(
       `${KeyframeInterpolationType.nameOf(value)} is not a valid ` +
-        `interpolation type for ${repr(prop.name)}.`,
+        `interpolation type for ${literal(prop.name)}.`,
     );
   }
 }
@@ -100,7 +100,7 @@ export function _validateRoving(value: boolean, keyframe: Keyframe): void {
   if (prop == null) return;
   if (!prop._hasMotionPath) {
     throw new ValueError(
-      `roving can only be set on a spatial property, not ${repr(prop.matchName)}`,
+      `roving can only be set on a spatial property, not ${literal(prop.matchName)}`,
     );
   }
   if (keyframe._prev == null || keyframe._next == null) {

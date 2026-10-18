@@ -16,7 +16,7 @@ import {
   objectSetattr,
   assert,
   pyClassHooks,
-  repr,
+  literal,
   split,
   instanceDict,
   typeName,
@@ -794,7 +794,7 @@ export class PropertyGroup extends PropertyBase {
     }
     if (typeof key === "string") {
       const prop = this._childOrNull(key);
-      if (prop === null) throw new KeyError(repr(key));
+      if (prop === null) throw new KeyError(literal(key));
       return prop;
     }
     throw new TypeError(`Property key must be int or str, not ${typeName(key)}`);
@@ -937,7 +937,7 @@ export class PropertyGroup extends PropertyBase {
       const resolved = family ? resolveFontExact(family) : null;
       if (resolved == null) {
         throw new ValueError(
-          `Could not locate an installed font for family ${repr(family)}; pass fontFile explicitly.`,
+          `Could not locate an installed font for family ${literal(family)}; pass fontFile explicitly.`,
         );
       }
       fontFile = resolved[0].toString();
@@ -947,7 +947,7 @@ export class PropertyGroup extends PropertyBase {
     const axis = axes.find((a) => a.tag === axisTag) ?? null;
     if (axis == null) {
       const available = axes.map((a) => a.tag).join(", ");
-      throw new ValueError(`The font has no ${repr(axisTag)} axis (available: ${available}).`);
+      throw new ValueError(`The font has no ${literal(axisTag)} axis (available: ${available}).`);
     }
 
     const slots = this.properties.filter(

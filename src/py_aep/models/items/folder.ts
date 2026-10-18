@@ -10,7 +10,7 @@ import { FootageItem } from "./footage.ts";
 import { Item } from "./item.ts";
 import type { Project } from "../project.ts";
 import type { Viewer } from "../viewer/viewer.ts";
-import { ValueError, StopIteration, compare, repr, sorted } from "../../../pyrt/index.ts";
+import { ValueError, StopIteration, compare, literal, sorted } from "../../../pyrt/index.ts";
 import { CompItem } from "./composition.ts";
 
 /**
@@ -300,9 +300,9 @@ export class FolderItem extends Item {
       matches = presets.filter((p) => p.name.toLowerCase().includes(needle));
     }
     if (matches.length !== 1) {
-      const available = presets.map((p) => repr(p.name)).join(", ");
+      const available = presets.map((p) => literal(p.name)).join(", ");
       throw new ValueError(
-        `preset ${repr(preset)} matched ${matches.length} presets; ` +
+        `preset ${literal(preset)} matched ${matches.length} presets; ` +
           `available: ${available}`,
       );
     }

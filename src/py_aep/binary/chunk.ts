@@ -26,7 +26,7 @@ import {
   floordiv,
   getattr,
   valueEquals,
-  repr,
+  literal,
   struct,
   type ClassAttributes,
   type IO,
@@ -624,7 +624,7 @@ export class ContainerChunk extends Chunk {
     }
     if (encoded.length + 1 > size) {
       throw new ValueError(
-        `${repr(value)} does not fit this project's ${size}-byte ` +
+        `${literal(value)} does not fit this project's ${size}-byte ` +
           `${this.chunkType} (at most ${size - 1} UTF-8 bytes)`,
       );
     }
@@ -946,7 +946,7 @@ export function readAep(
   const rawType = readBytes(fp, 4);
   const chunkType = decode(rawType, "ASCII");
   if (chunkType !== "RIFX") {
-    throw new ValueError(`Expected RIFX, got ${repr(chunkType)}`);
+    throw new ValueError(`Expected RIFX, got ${literal(chunkType)}`);
   }
   const [lenBody] = readFmt("I", fp);
   const rifx = ListChunk.read(fp, lenBody, {

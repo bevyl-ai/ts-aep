@@ -44,7 +44,7 @@ import {
   jsonFloat,
   truthy,
   radians,
-  repr,
+  literal,
   round,
   rstrip,
   setdefault,
@@ -207,7 +207,7 @@ export function _parseItem(reader: _Reader, osType: string): _Value {
     reader.raw(reader.u4());
     return null;
   }
-  throw new ValueError(`unhandled descriptor OSType ${repr(osType)}`);
+  throw new ValueError(`unhandled descriptor OSType ${literal(osType)}`);
 }
 
 /** Parse an `lmfx`/`lfx2` block body: version u4s (ending 16) + root Objc. */
@@ -324,29 +324,19 @@ export const _STROKE_POSITION = new Map<string, number>([
   ["CtrF", 3.0],
 ]);
 
-/** Python `repr()` of a parsed descriptor value (dicts print as `{'k': v}`). */
-// NOTE(port): int/float — integral values are plain numbers by design (RULEBOOK §4); a whole-valued double prints as "5" not "5.0" in unsupported-style error messages.
-export function _repr(value: _Value): string {
-  if (value instanceof Map) {
-    return `{${[...value].map(([k, v]) => `${repr(k)}: ${_repr(v)}`).join(", ")}}`;
-  }
-  if (Array.isArray(value)) return `[${value.map(_repr).join(", ")}]`;
-  return repr(value);
-}
-
 export function _enum(table: Map<string, number>): (value: _Value) => number {
   return function convert(value: _Value): number {
     // Map.get, not a plain-object lookup: descriptor strings such as
     // "constructor" must not reach Object.prototype.
     const hit = typeof value === "string" ? table.get(value) : undefined;
-    if (hit === undefined) throw new UnsupportedStyleError(`unmapped enum value ${_repr(value)}`);
+    if (hit === undefined) throw new UnsupportedStyleError(`unmapped enum value ${literal(value)}`);
     return hit;
   };
 }
 
 export function _number(value: _Value): number {
   if (typeof value !== "number") {
-    throw new UnsupportedStyleError(`expected a number, got ${_repr(value)}`);
+    throw new UnsupportedStyleError(`expected a number, got ${literal(value)}`);
   }
   return value;
 }
@@ -359,13 +349,13 @@ export function _bool01(value: _Value): number {
 export function _arith(value: _Value): number {
   if (typeof value === "number") return value;
   if (typeof value === "boolean") return value ? 1 : 0;
-  throw new TypeError(`unsupported operand type for /: ${repr(value)}`);
+  throw new TypeError(`unsupported operand type for /: ${literal(value)}`);
 }
 
 /** Python `obj[key]` for a descriptor value: only dicts (Maps) are subscriptable here. */
 export function _subscript(obj: _Value, key: string): _Value {
   if (obj instanceof Map) return getOrThrow(obj, key);
-  throw new TypeError(`${repr(obj)} is not subscriptable with ${repr(key)}`);
+  throw new TypeError(`${literal(obj)} is not subscriptable with ${literal(key)}`);
 }
 
 /** Python `for x in value` over a parsed descriptor value. */
@@ -373,12 +363,12 @@ export function _pyIter(value: _Value): _Value[] {
   if (Array.isArray(value)) return value;
   if (value instanceof Map) return [...value.keys()];
   if (typeof value === "string") return Array.from(value);
-  throw new TypeError(`${repr(value)} object is not iterable`);
+  throw new TypeError(`${literal(value)} object is not iterable`);
 }
 
 export function _color(value: _Value): number[] {
   if (!(value instanceof Map) || (value.get("_class") ?? null) !== "RGBC") {
-    throw new UnsupportedStyleError(`unsupported color model ${_repr(value)}`);
+    throw new UnsupportedStyleError(`unsupported color model ${literal(value)}`);
   }
   return [
     _arith(getOrThrow(value, "Rd  ")) / 255.0,
@@ -390,18 +380,18 @@ export function _color(value: _Value): number[] {
 
 export function _point(value: _Value): number[] {
   if (!(value instanceof Map)) {
-    throw new UnsupportedStyleError(`expected a point, got ${_repr(value)}`);
+    throw new UnsupportedStyleError(`expected a point, got ${literal(value)}`);
   }
   return [_number(getOrThrow(value, "Hrzn")), _number(getOrThrow(value, "Vrtc"))];
 }
 
 export function _gradient(value: _Value): Gradient {
   if (!(value instanceof Map) || (value.get("_class") ?? null) !== "Grdn") {
-    throw new UnsupportedStyleError(`expected a gradient, got ${_repr(value)}`);
+    throw new UnsupportedStyleError(`expected a gradient, got ${literal(value)}`);
   }
   if ((value.get("GrdF") ?? null) !== "CstS") {
     // Noise gradients ("ClNs") have no AE representation.
-    throw new UnsupportedStyleError(`unsupported gradient form ${repr(value.get("GrdF") ?? null)}`);
+    throw new UnsupportedStyleError(`unsupported gradient form ${literal(value.get("GrdF") ?? null)}`);
   }
   // `Lctn` stop locations are always on Photoshop's fixed 0..4096 scale.
   // The sibling `Intr` field is the gradient editor's Smoothness slider
@@ -776,7 +766,7 @@ export function parseLayerStyles(
     } catch (exc) {
       if (!(exc instanceof ValueError)) throw exc;
       warn(
-        `layer ${repr(leaf.name)}: the layer-styles descriptor could not ` +
+        `layer ${literal(leaf.name)}: the layer-styles descriptor could not ` +
           "be decoded; the styles are imported as disabled",
       );
       return null;
@@ -921,7 +911,7 @@ export function _bevelPads(instance: Map<string, _Value>, name: string): [number
     height = Math.ceil(size / 2);
   } else {
     throw new NotImplementedError(
-      `layer ${repr(name)}: the merged bounds of a ${repr(style)} bevel are not ` +
+      `layer ${literal(name)}: the merged bounds of a ${literal(style)} bevel are not ` +
         "known; import without merging its layer styles",
     );
   }
@@ -1009,7 +999,7 @@ export function mergedStylesBounds(node: PsdLayer, globalAngle: number): _Box {
     if (!(exc instanceof ValueError)) throw exc;
     throw Object.assign(
       new NotImplementedError(
-        `layer ${repr(node.name)}: its layer-styles descriptor cannot be ` +
+        `layer ${literal(node.name)}: its layer-styles descriptor cannot be ` +
           "decoded, so the merged bounds are not known",
       ),
       { cause: exc },

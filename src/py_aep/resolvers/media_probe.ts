@@ -33,7 +33,7 @@ import {
   mod,
   truthy,
   valueEquals,
-  repr,
+  literal,
   round,
   rshift,
   rstrip,
@@ -301,7 +301,7 @@ export function probeMedia(file: Path, data: Uint8Array | null = null): MediaInf
   const parser = _PARSERS.get(suffix);
   if (parser == null) {
     throw new NotImplementedError(
-      `Media-header probing is not implemented for ${repr(suffix)}. ` +
+      `Media-header probing is not implemented for ${literal(suffix)}. ` +
         `Supported: ${sorted([..._PARSERS.keys()]).join(", ")}.`,
     );
   }
@@ -819,7 +819,7 @@ export function _probeBigtiff(fp: ProbeStream, en: "<" | ">"): MediaInfo {
 
 export function _probeTiff(fp: ProbeStream): MediaInfo {
   const bo = fp.read(2);
-  if (!(bytesEq(bo, b("II")) || bytesEq(bo, b("MM")))) throw new ValueError(`Not a valid TIFF file (bad byte order ${repr(bo)})`);
+  if (!(bytesEq(bo, b("II")) || bytesEq(bo, b("MM")))) throw new ValueError(`Not a valid TIFF file (bad byte order ${literal(bo)})`);
   const en = bytesEq(bo, b("II")) ? "<" : ">";
   const version = struct.unpack(`${en}H`, fp.read(2))[0];
   if (version === 43) return _probeBigtiff(fp, en);

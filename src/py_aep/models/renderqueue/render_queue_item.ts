@@ -22,7 +22,7 @@ import {
   getOrThrow,
   int,
   max,
-  repr,
+  literal,
   round,
   StopIteration,
   ValueError,
@@ -340,8 +340,8 @@ export class RenderQueueItem {
     const status = this.status;
     const statusRepr = RQItemStatus.has(status)
       ? `<RQItemStatus.${RQItemStatus.nameOf(status)}: ${status}>`
-      : repr(status);
-    return `RenderQueueItem(name=${repr(this.name)}, status=${statusRepr}, comp_name=${repr(this.compName)})`;
+      : literal(status);
+    return `RenderQueueItem(name=${literal(this.name)}, status=${statusRepr}, comp_name=${literal(this.compName)})`;
   }
 
   /** The composition that will be rendered by this render-queue item. Read-only. */
@@ -760,7 +760,7 @@ export class RenderQueueItem {
     // Python's repr of an IntEnum member is `<GetSettingsFormat.X: n>` (members are plain numbers here).
     const formatRepr = GetSettingsFormat.has(format_)
       ? `<GetSettingsFormat.${GetSettingsFormat.nameOf(format_)}: ${format_}>`
-      : repr(format_);
+      : literal(format_);
     throw new ValueError(`Unsupported format: ${formatRepr}`);
   }
 
@@ -811,7 +811,7 @@ export class RenderQueueItem {
       }
     }
     const names = rsItems.map((t) => t.cleanTemplateName);
-    throw new ValueError(`Template ${repr(name)} not found. Available: ${repr(names)}`);
+    throw new ValueError(`Template ${literal(name)} not found. Available: ${literal(names)}`);
   }
 
   /** Remove this item from the render queue. */

@@ -28,7 +28,7 @@ import {
   int,
   assert,
   truthy,
-  repr,
+  literal,
   round,
   sorted,
   ValueError,
@@ -1893,7 +1893,7 @@ export class CompItem extends AVItem {
     } else if (otherLayer != null && otherLayer.length > 0 && relIndex != null && relIndex !== 0) {
       const otherIdx = this.layers.indexOf(otherLayer);
       if (otherIdx < 0) {
-        throw new ValueError(`${repr(otherLayer)} is not in list`);
+        throw new ValueError(`${literal(otherLayer)} is not in list`);
       }
       return at(this.layers, otherIdx + relIndex);
     }

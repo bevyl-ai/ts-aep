@@ -26,7 +26,7 @@ import {
   bytes_,
   bytesEq,
   decode,
-  repr,
+  literal,
   rstrip,
   sorted,
 } from "../../pyrt/index.ts";
@@ -155,7 +155,7 @@ export class ColorProfileNotFoundError extends LookupError {
   constructor(name: string, searched: Iterable<Path>) {
     const dirs = [...searched].map((d) => d.toString()).join("\n  ");
     super(
-      `ICC profile ${repr(name)} was not found. Writing an Adobe-CMS ` +
+      `ICC profile ${literal(name)} was not found. Writing an Adobe-CMS ` +
         "working/display color space needs the profile's ICC file, which is " +
         "discovered from the installed Adobe Color directories (present " +
         "wherever After Effects is installed). Searched:\n  " +

@@ -39,7 +39,7 @@ import {
   assert,
   truthy,
   valueEquals,
-  repr,
+  literal,
   round,
   sorted,
   split,
@@ -946,12 +946,12 @@ export class RangeField<T extends InstanceValue> {
   }
 
   __set__(obj: CharacterRange, value: T | null): void {
-    if (this.readOnly) throw new AttributeError(`${repr(this.publicName)} is read-only.`);
+    if (this.readOnly) throw new AttributeError(`${literal(this.publicName)} is read-only.`);
     let raw: CosNode = null;
     if (value != null) {
       if (this.validate != null) this.validate(value, obj._docRef);
       // Every writable field declares its reverse; only read-only ones omit it.
-      if (this.reverse == null) throw new AttributeError(`${repr(this.publicName)} is read-only.`);
+      if (this.reverse == null) throw new AttributeError(`${literal(this.publicName)} is read-only.`);
       raw = this.reverse(value);
     }
     const [start, end] = obj._bounds();

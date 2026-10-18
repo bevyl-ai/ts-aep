@@ -34,7 +34,7 @@ import {
   setdefault,
   sorted,
   int,
-  repr,
+  literal,
   encode,
   decode,
   b,
@@ -270,7 +270,7 @@ export function requireOcioConfig(config: string | null, purpose: string): Path 
   const resolved = config != null ? resolveOcioConfig(config) : null;
   if (resolved == null) {
     throw new ValueError(
-      `Cannot resolve the project's OCIO configuration (${repr(config)}), ` +
+      `Cannot resolve the project's OCIO configuration (${literal(config)}), ` +
         `which is needed to ${purpose}.`,
     );
   }
@@ -466,7 +466,7 @@ export function _outputEnvelope(index: _ConfigIndex, colorSpace: OcioValue): [st
       ];
     }
   }
-  throw new ValueError(`${repr(colorSpace)} is not a color space in the OCIO config`);
+  throw new ValueError(`${literal(colorSpace)} is not a color space in the OCIO config`);
 }
 
 /**

@@ -26,7 +26,7 @@ import {
   len,
   truthy,
   valueEquals,
-  repr,
+  literal,
   setdefault,
   sorted,
   str,
@@ -381,7 +381,7 @@ export class ValidationResult {
 
   /** Add a difference. */
   addDiff(path: string, expected: ToDictValue, parsed: ToDictValue, category = "other"): void {
-    this.differences.push(`${path}: expected ${repr(expected)}, got ${repr(parsed)}`);
+    this.differences.push(`${path}: expected ${literal(expected)}, got ${literal(parsed)}`);
     this.categories.set(category, (this.categories.get(category) ?? 0) + 1);
   }
 
@@ -1954,7 +1954,7 @@ export function _parseArgs(argv: string[]): {
       }
       if (!_CATEGORY_CHOICES.includes(value)) {
         _parserError(
-          `argument -c/--category: invalid choice: ${repr(value)} (choose from ${_CATEGORY_CHOICES.join(", ")})`,
+          `argument -c/--category: invalid choice: ${literal(value)} (choose from ${_CATEGORY_CHOICES.join(", ")})`,
         );
       }
       category = value;

@@ -19,7 +19,7 @@ import {
   ValueError,
   truthy,
   pyfloat,
-  repr,
+  literal,
   round,
   instanceDict,
 } from "../../pyrt/index.ts";
@@ -164,11 +164,11 @@ export class CosField<T extends InstanceValue, A extends string = string, O exte
    */
   _checkWritable(obj: O): void {
     if (this.readOnly) {
-      throw new AttributeError(`${repr(this.publicName)} is read-only.`);
+      throw new AttributeError(`${literal(this.publicName)} is read-only.`);
     }
     if (this.minVersion != null) {
       if (getAeVersionMajor(obj) < this.minVersion) {
-        throw new AttributeError(`${repr(this.publicName)} requires AE ${this.minVersion}+ file format.`);
+        throw new AttributeError(`${literal(this.publicName)} requires AE ${this.minVersion}+ file format.`);
       }
     }
   }
@@ -180,7 +180,7 @@ export class CosField<T extends InstanceValue, A extends string = string, O exte
   _coerce(obj: O, value: NonNullable<T>): CosNode {
     if (this.validate != null) this.validate(value, obj);
     // Every writable field declares its reverse; only read-only ones omit it.
-    if (this.reverse == null) throw new AttributeError(`${repr(this.publicName)} is read-only.`);
+    if (this.reverse == null) throw new AttributeError(`${literal(this.publicName)} is read-only.`);
     return this.reverse(value);
   }
 

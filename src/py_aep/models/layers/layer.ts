@@ -38,7 +38,7 @@ import {
   truthy,
   valueEquals,
   truthyOr,
-  repr,
+  literal,
   round,
   warn,
   deferred,
@@ -118,7 +118,7 @@ export function _parentWorld(parent: Layer | null, time: number, childIs3d: bool
 /** `list.index(x)` with `==` (identity for layers) and CPython's ValueError. */
 export function _listIndex<T>(xs: T[], x: T): number {
   for (let i = 0; i < xs.length; i++) if (xs[i] === x) return i;
-  throw new ValueError(`${repr(x)} is not in list`);
+  throw new ValueError(`${literal(x)} is not in list`);
 }
 
 /** `list.remove(x)` with CPython's ValueError. */

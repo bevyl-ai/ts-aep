@@ -40,7 +40,7 @@ import {
   max,
   truthy,
   truthyOr,
-  repr,
+  literal,
   rstrip,
   split,
   str,
@@ -91,7 +91,7 @@ export function _fontOutlines(psName: string): [fontkit.Font, boolean, _GlyphBou
     } catch (exc) {
       if (!(exc instanceof Error) || !_isOsError(exc)) throw exc;
       throw Object.assign(
-        new NotImplementedError(`font file for ${repr(psName)} is unreadable: ${path.toString()}`),
+        new NotImplementedError(`font file for ${literal(psName)} is unreadable: ${path.toString()}`),
         { cause: exc },
       );
     }

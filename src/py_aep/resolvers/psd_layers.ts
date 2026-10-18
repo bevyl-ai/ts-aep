@@ -24,7 +24,7 @@ import {
   IndexError,
   valueEquals,
   pySlice,
-  repr,
+  literal,
   rstrip,
   struct,
   StructError,
@@ -612,7 +612,7 @@ export function readPsdLayers(file: PathLike, kw: { maskBoxes?: boolean } = {}):
       const area = (region[2] - region[0]) * (region[3] - region[1]);
       const source = rec.isFill ? data.length : sum(channels.map(([, n]) => n));
       if (area > _MAX_INFLATION * source) {
-        throw new UnsupportedPsdLayersError(`${name}: layer ${repr(rec.name)} is larger than its pixel data.`);
+        throw new UnsupportedPsdLayersError(`${name}: layer ${literal(rec.name)} is larger than its pixel data.`);
       }
       const alpha = rec.isFill ? null : spans.get(-1) ?? null;
       const maskSpan = spans.get(mask.channelId);
@@ -656,7 +656,7 @@ export function _userMask(mask: Uint8Array, fileName: string, layerName: string)
     if (parameters & 0x03) {
       // NOTE(port): message and category match warnings.warn; stacklevel=3 only picks the reported source location, which has no JS equivalent.
       warn(
-        `${fileName}: the density / feather of layer ${repr(layerName)}'s ` +
+        `${fileName}: the density / feather of layer ${literal(layerName)}'s ` +
           "mask is not modeled; its footage is sized as if unmasked",
       );
       return null;

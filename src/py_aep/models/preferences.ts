@@ -17,7 +17,7 @@ import {
   float,
   getOrThrow,
   int,
-  repr,
+  literal,
   round,
   sorted,
   split,
@@ -504,7 +504,7 @@ export class Preferences {
 
   _missing(sectionName: string, keyName: string, prefType: PREFType): KeyError {
     return new KeyError(
-      `no preference ${repr(keyName)} in section ${repr(sectionName)} (${PREFType.nameOf(PREFType.of(prefType))})`,
+      `no preference ${literal(keyName)} in section ${literal(sectionName)} (${PREFType.nameOf(PREFType.of(prefType))})`,
     );
   }
 

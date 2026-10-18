@@ -7,7 +7,7 @@ import {
   max,
   assert,
   valueEquals,
-  repr,
+  literal,
   split,
 } from "../../../pyrt/index.ts";
 import { PropertyType, PropertyValueType } from "../../enums/index.ts";
@@ -35,7 +35,7 @@ const _effect = deferred<typeof import("../../parsers/effect.ts")>("py_aep/parse
 // NOTE(port): local twin of CPython `list.index` / `list.remove` (py_eq compare, ValueError "x is not in list"); no pyrt shim exists.
 export function listIndex<T>(xs: readonly T[], x: T): number {
   const i = xs.findIndex((y) => valueEquals(y, x));
-  if (i < 0) throw new ValueError(`${repr(x)} is not in list`);
+  if (i < 0) throw new ValueError(`${literal(x)} is not in list`);
   return i;
 }
 
@@ -384,9 +384,9 @@ export class PropertyBase {
       // would not accept writes a truncated LIST:tdbs (no cdat, no
       // tdum/tduM) for MARKER and NO_VALUE properties, which makes
       // AE reject the whole project as damaged.
-      const where = parent == null ? "a root property" : repr(parent.matchName);
+      const where = parent == null ? "a root property" : literal(parent.matchName);
       throw new ValueError(
-        `Cannot set the name of ${repr(this.matchName)}: its parent ` +
+        `Cannot set the name of ${literal(this.matchName)}: its parent ` +
           `(${where}) is not an indexed group. Only masks, effects, ` +
           `text animators and shape groups can be renamed.`,
       );

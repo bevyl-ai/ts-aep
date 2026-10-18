@@ -6,7 +6,7 @@
  * `matrix(a b c d e f)` ordering.
  */
 
-import { float, radians, repr } from "../../pyrt/index.ts";
+import { float, radians, literal } from "../../pyrt/index.ts";
 import { NUMBER_RE } from "./_util.ts";
 import { UnsupportedSVGError } from "./errors.ts";
 
@@ -102,7 +102,7 @@ export function parseTransform(value: string): Affine {
   for (const [, name, args] of value.matchAll(_FUNC_RE)) {
     const nums = _numbers(args);
     if (!_FUNCTIONS.has(name)) {
-      throw new UnsupportedSVGError(`Unsupported transform function: ${repr(name)}`);
+      throw new UnsupportedSVGError(`Unsupported transform function: ${literal(name)}`);
     }
     if (
       !nums.every((x) => Number.isFinite(x)) ||

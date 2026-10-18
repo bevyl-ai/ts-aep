@@ -19,7 +19,7 @@ import {
   mod,
   valueEquals,
   radians,
-  repr,
+  literal,
   hypot,
   patternMatch,
 } from "../../pyrt/index.ts";
@@ -158,7 +158,7 @@ export class _PathParser {
           continue;
         }
       } else if (cmd === "") {
-        throw new UnsupportedSVGError(`Path data starts with a number: ${repr(tok)}`);
+        throw new UnsupportedSVGError(`Path data starts with a number: ${literal(tok)}`);
       } else {
         // Implicit repeat: a subsequent M/m becomes L/l.
         if (cmd === "M") {

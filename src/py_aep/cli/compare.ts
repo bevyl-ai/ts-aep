@@ -36,7 +36,7 @@ import {
   int,
   max,
   valueEquals,
-  repr,
+  literal,
   sorted,
   str,
   sum,
@@ -978,7 +978,7 @@ export function parseArgs(argv: string[]): Args {
         out.context = int(value);
       } catch (e) {
         if (!(e instanceof ValueError)) throw e;
-        parserError(`argument --context: invalid int value: ${repr(value)}`);
+        parserError(`argument --context: invalid int value: ${literal(value)}`);
       }
     }
   }

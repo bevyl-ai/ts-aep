@@ -15,7 +15,7 @@ import {
   getOrThrow,
   int,
   isdigit,
-  repr,
+  literal,
   round,
   str,
   typeName,
@@ -249,7 +249,7 @@ export class ParamsDict extends Map<string, string> {
   }
 
   delete(key: string): boolean {
-    if (!super.has(key)) throw new KeyError(repr(key));
+    if (!super.has(key)) throw new KeyError(literal(key));
     super.delete(key);
     if (this._owner != null) this._owner._onParamRemoved(key);
     return true;
@@ -270,7 +270,7 @@ export class ParamsDict extends Map<string, string> {
   pop(key: string, ...default_: string[]): string {
     if (!this.has(key)) {
       if (default_.length > 0) return default_[0];
-      throw new KeyError(repr(key));
+      throw new KeyError(literal(key));
     }
     const value = getOrThrow(this, key);
     this.delete(key);
@@ -279,7 +279,7 @@ export class ParamsDict extends Map<string, string> {
 
   popitem(): [string, string] {
     const keys = [...this.keys()];
-    if (keys.length === 0) throw new KeyError(repr("popitem(): dictionary is empty"));
+    if (keys.length === 0) throw new KeyError(literal("popitem(): dictionary is empty"));
     const key = keys[keys.length - 1];
     const value = getOrThrow(this, key);
     super.delete(key);
@@ -467,7 +467,7 @@ export class XmlFormatOptions extends FormatOptionsBase {
     if (value == null) return;
     // NOTE(port): int/float — integral values are plain numbers by design (RULEBOOK §4); an integral float such as 2.0 is accepted where Python raises TypeError.
     if (!((typeof value === "number" && Number.isInteger(value)) || typeof value === "boolean")) {
-      throw new TypeError(`expected an int or IntEnum for ${repr(key)}, got ${typeName(value)}`);
+      throw new TypeError(`expected an int or IntEnum for ${literal(key)}, got ${typeName(value)}`);
     }
     // int() normalizes IntEnum members so str() yields the numeric form.
     const intValue = int(value);
@@ -477,7 +477,7 @@ export class XmlFormatOptions extends FormatOptionsBase {
         .map((m: number) => `${enumCls.nameOf(m)} (${m})`)
         .join(", ");
       throw new ValueError(
-        `Invalid value ${repr(value)} for ${repr(key)}. ` +
+        `Invalid value ${literal(value)} for ${literal(key)}. ` +
           `Valid ${enumCls.__name__} values: ${members}`,
       );
     }

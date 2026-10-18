@@ -8,7 +8,7 @@ import {
   descriptor,
   floatRepr,
   compare,
-  repr,
+  literal,
   round,
   type ClassAttributes,
 } from "../../../pyrt/index.ts";
@@ -628,7 +628,7 @@ export class FootageSource {
     const project = this._project;
     const config = requireOcioConfig(
       project != null ? project.ocioConfigurationFile : null,
-      `build the color-profile envelope for ${repr(name)}`,
+      `build the color-profile envelope for ${literal(name)}`,
     );
     return ocioColorProfileEnvelope(config, name);
   }

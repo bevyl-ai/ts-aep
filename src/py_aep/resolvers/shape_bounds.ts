@@ -40,7 +40,7 @@ import {
   max,
   min,
   radians,
-  repr,
+  literal,
 } from "../../pyrt/index.ts";
 import type { MatchNameTypes } from "../models/properties/match_name_types.ts";
 import type { Property } from "../models/properties/property.ts";
@@ -481,7 +481,7 @@ export function _walk(
       }
     } else if (matchName.startsWith("ADBE Vector Filter") && !_BOX_NEUTRAL_FILTERS.has(matchName)) {
       throw new NotImplementedError(
-        `sourceRectAtTime does not model the ${repr(item.name)} path operation`,
+        `sourceRectAtTime does not model the ${literal(item.name)} path operation`,
       );
     }
   }

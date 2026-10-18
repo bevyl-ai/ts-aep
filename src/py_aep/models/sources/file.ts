@@ -44,7 +44,7 @@ import {
   getOrThrow,
   int,
   truthyOr,
-  repr,
+  literal,
   round,
   sorted,
   str,
@@ -678,7 +678,7 @@ export class FileSource extends FootageSource {
     if (envelope == null) {
       // TODO(port): Python passes stacklevel=3 so the warning is attributed to the caller of the public API (warning filename/lineno); pyrt warn(message) has no stacklevel and JS has no Python frames, so only that attribution differs, not the message text.
       warn(
-        `OCIO configuration ${repr(project.ocioConfigurationFile)} not found ` +
+        `OCIO configuration ${literal(project.ocioConfigurationFile)} not found ` +
           `or without a default color space: ${new Path(this._file).name} keeps ` +
           "an Adobe color profile",
       );
@@ -1300,7 +1300,7 @@ export class FileSource extends FootageSource {
         windows,
       });
     }
-    throw new ValueError(`layerIndex requires a layered .psd/.psb/.ai/.pdf file, got ${repr(suffix)}`);
+    throw new ValueError(`layerIndex requires a layered .psd/.psb/.ai/.pdf file, got ${literal(suffix)}`);
   }
 
   /**
@@ -1331,11 +1331,11 @@ export class FileSource extends FootageSource {
       // The "Import Options Default Sequence FPS" preference; outside
       // the conform-rate range it cannot time a sequence (0 divided
       // by zero below).
-      throw new ValueError(`invalid default sequence frame rate ${repr(defaultFrameRate)}`);
+      throw new ValueError(`invalid default sequence frame rate ${literal(defaultFrameRate)}`);
     }
     const m = _FRAME_NUMBER_RE.exec(file.stem);
     if (m == null && !forceAlphabetical) {
-      throw new ValueError(`Sequence import requires a numbered filename, got ${repr(file.name)}`);
+      throw new ValueError(`Sequence import requires a numbered filename, got ${literal(file.name)}`);
     }
 
     const hasRange = rangeStart > 0 || rangeEnd > 0;

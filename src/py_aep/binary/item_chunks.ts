@@ -22,7 +22,7 @@ import {
   mod,
   objectSetattr,
   or,
-  repr,
+  literal,
   rshift,
   split,
   ValueError,
@@ -250,7 +250,7 @@ export class HeadChunk extends Chunk {
   set version(value: string) {
     const m = AE_VERSION_RE.exec(value);
     if (!m) {
-      throw new ValueError(`Invalid version format: ${repr(value)}`);
+      throw new ValueError(`Invalid version format: ${literal(value)}`);
     }
     const [major, minor, build] = [int(m[1]), int(m[2]), int(m[3])];
     this.aeVersionMajorA = floordiv(major, 8);
