@@ -25,9 +25,7 @@ import {
   concat,
   decode,
   float,
-  floordiv,
   getOrThrow,
-  int,
   max,
   min,
   mod,
@@ -1015,7 +1013,7 @@ export function _probeGif(fp: ProbeStream): MediaInfo {
     // AE stretches it to roughly two seconds, giving every frame the same
     // floor(200 / frames) hundredths - measured at 3, 5, 7, 9 and 14
     // frames. (ffmpeg instead substitutes a flat 10 hundredths.)
-    delay = frames * Math.max(1, floordiv(200, frames));
+    delay = frames * Math.max(1, Math.floor(200 / frames));
   }
   const duration = delay / 100.0;
   return new MediaInfo({
@@ -1806,7 +1804,7 @@ export function _parseMgjsonTime(t: JsonValue): { us: number; aware: boolean } |
   const m = strp.exec(s);
   if (m) {
     const frac = m[7] === undefined ? "" : m[7].padEnd(6, "0");
-    const us = _naiveDatetimeUs(int(m[1]), int(m[2]), int(m[3]), int(m[4]), int(m[5]), int(m[6]), int(frac || "0"));
+    const us = _naiveDatetimeUs(Number.parseInt(m[1], 10), Number.parseInt(m[2], 10), Number.parseInt(m[3], 10), Number.parseInt(m[4], 10), Number.parseInt(m[5], 10), Number.parseInt(m[6], 10), Number.parseInt(frac || "0", 10));
     if (us !== null) return { us, aware: false };
   }
   try {
@@ -1893,7 +1891,7 @@ export function _mp3FrameSize(header: number): number {
   if (version === 1 || layer !== 1 || bitrateI === 0 || bitrateI === 0xf || srI === 3) return 0;
   const bitrate = (version === 3 ? _MP3_BR_M1_L3 : _MP3_BR_M2_L3)[bitrateI] * 1000;
   const spf = version === 3 ? 1152 : 576;
-  return floordiv((spf / 8) * bitrate, getOrThrow(_MP3_SR, version)[srI]) + ((header >>> 9) & 0x1);
+  return Math.floor(((spf / 8) * bitrate) / getOrThrow(_MP3_SR, version)[srI]) + ((header >>> 9) & 0x1);
 }
 
 /**
@@ -1978,7 +1976,7 @@ export function _probeMp3(fp: ProbeStream): MediaInfo {
     // _find_mp3_frame already rejected the reserved bitrate/rate codes, so
     // the frame size here is always > 0.
     const frameSize = _mp3FrameSize(h);
-    duration = (floordiv(fileSize - audioStart, frameSize) * spf) / sr;
+    duration = (Math.floor((fileSize - audioStart) / frameSize) * spf) / sr;
   }
   return new MediaInfo({ duration, hasAudio: true, audioSampleRate: sr });
 }
@@ -2108,7 +2106,7 @@ export function _probeSwf(fp: ProbeStream): MediaInfo {
   const vals: number[] = [];
   let pos = 5;
   for (let i = 0; i < 4; i++) {
-    vals.push(int(bits.slice(pos, pos + nbits), 2));
+    vals.push(Number.parseInt(bits.slice(pos, pos + nbits), 2));
     pos += nbits;
   }
   const width = Math.floor((vals[1] - vals[0]) / 20);
@@ -2295,8 +2293,8 @@ export function _probeHdr(fp: ProbeStream): MediaInfo {
   const parts = Bytes.split(fp.readline());
   if (parts.length < 4) throw new ValueError("Cannot parse HDR resolution line");
   const dims = new Map<string, number>();
-  dims.set(Bytes.toHex(parts[0].slice(-1)), int(decode(parts[1], "ascii")));
-  dims.set(Bytes.toHex(parts[2].slice(-1)), int(decode(parts[3], "ascii")));
+  dims.set(Bytes.toHex(parts[0].slice(-1)), Number.parseInt(decode(parts[1], "ascii"), 10));
+  dims.set(Bytes.toHex(parts[2].slice(-1)), Number.parseInt(decode(parts[3], "ascii"), 10));
   const X = Bytes.toHex(b("X"));
   const Y = Bytes.toHex(b("Y"));
   if (!dims.has(X) || !dims.has(Y)) {

@@ -9,7 +9,7 @@
 // taking the member as `self`, e.g. `OutputChannels.label(member)`; same
 // values and lookups as the Python properties. Applies to every enum here.
 
-import { ValueError, getOrThrow, round, int, decode, literal, format, defineEnum } from "../../pyrt/index.ts";
+import { ValueError, getOrThrow, round, decode, literal, defineEnum } from "../../pyrt/index.ts";
 import type { EnumValue } from "../../pyrt/index.ts";
 
 /**
@@ -397,7 +397,7 @@ export const AudioSampleRate = defineEnum("AudioSampleRate", {
     if (self <= 0) {
       return "";
     }
-    return `${format(self / 1000, ".3f")} kHz`;
+    return `${(self / 1000).toFixed(3)} kHz`;
   },
 
   /**
@@ -466,7 +466,7 @@ export const PostRenderAction = defineEnum("PostRenderAction", {
 
   /** Convert PostRenderAction to binary value. */
   toBinary(self: number): number {
-    return int(self) - 3612;
+    return Math.trunc(self) - 3612;
   },
 });
 export type PostRenderAction = EnumValue<typeof PostRenderAction>;

@@ -18,7 +18,6 @@ import {
   descriptor,
   encode,
   field,
-  int,
   OverflowError,
   round,
   struct,
@@ -274,7 +273,7 @@ export class SspcChunk extends Chunk {
   }
 
   set sourceModified(value: number) {
-    const stamp = value ? int(value) + MAC_EPOCH_OFFSET : 0;
+    const stamp = value ? Math.trunc(value) + MAC_EPOCH_OFFSET : 0;
     // int.to_bytes raises OverflowError (not ValueError) when the value does not fit
     if (stamp < 0) throw new OverflowError("can't convert negative int to unsigned");
     if (stamp >= 2 ** 32) throw new OverflowError("int too big to convert");

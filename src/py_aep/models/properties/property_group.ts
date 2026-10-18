@@ -6,11 +6,9 @@ import {
   ValueError,
   at,
   Bytes,
-  deferred,
   getOr,
   getattr,
   getOrThrow,
-  int,
   max,
   objectGetattr,
   objectSetattr,
@@ -43,11 +41,9 @@ import { Property, _valuesEqual, _vfTagFromStr } from "./property.ts";
 import { _INDEXED_GROUP_MATCH_NAMES, PropertyBase } from "./property_base.ts";
 import type { MaskPropertyGroup } from "./mask_property_group.ts";
 import type { MatchNameTypes } from "./match_name_types.ts";
+import { late } from "../late.ts";
 
 
-const _maskPropertyGroup = deferred<typeof import("./mask_property_group.ts")>("py_aep/models/properties/mask_property_group");
-const _effect = deferred<typeof import("../../parsers/effect.ts")>("py_aep/parsers/effect");
-const _property = deferred<typeof import("../../parsers/property.ts")>("py_aep/parsers/property");
 
 // Mandatory empty subgroups AE writes inside some freshly added shape
 // elements, as (match name, tdsb lock flags, tdsb enable flags) triples. A
@@ -173,7 +169,7 @@ export function _nextMaskName(names: Iterable<string>): string {
     const match = _NUMBERED_MASK.exec(name);
     if (match == null) continue;
     const digits = match[1] ?? null;
-    const number = digits != null ? int(digits) : 1;
+    const number = digits != null ? Number.parseInt(digits, 10) : 1;
     if (number > highest) {
       highest = number;
       width = digits != null ? digits.length : 1;
@@ -1081,7 +1077,7 @@ export class PropertyGroup extends PropertyBase {
     // The name is numbered past the highest "Mask N" name, independently
     // of the id (AE 2026: beside "Mask 1" and a mask renamed "stored" the
     // new mask is id 3 "Mask 2"; beside "Mask 1" and "Mask 3", "Mask 4").
-    const mask = _maskPropertyGroup().MaskPropertyGroup._new(this, this.propertyDepth + 1, {
+    const mask = late.MaskPropertyGroup._new(this, this.propertyDepth + 1, {
       name: _nextMaskName(existing.map((m) => m.name)),
       maskId: nextId,
     });
@@ -1155,7 +1151,7 @@ export class PropertyGroup extends PropertyBase {
   _installedEffectDef(name: string): [string, string, ListChunk] | null {
     if (this.matchName !== "ADBE Effect Parade") return null;
     const project = this._containingLayer.containingComp._project;
-    const found = _effect().matchEffectDefinition(project._effectDefinitions(), name);
+    const found = late.matchEffectDefinition(project._effectDefinitions(), name);
     if (found != null) return found;
     return _bakedEffectDef(name);
   }
@@ -1233,7 +1229,7 @@ export class PropertyGroup extends PropertyBase {
     _insertBeforeGroupEnd(parentTdgp, sspc);
 
     const effectParamDefs = comp._project._effectParamDefs;
-    const effect = _effect().parseEffect(
+    const effect = late.parseEffect(
       sspc,
       matchName,
       this.propertyDepth + 1,
@@ -1264,7 +1260,7 @@ export class PropertyGroup extends PropertyBase {
     _insertBeforeGroupEnd(parentTdgp, tdmn);
     _insertBeforeGroupEnd(parentTdgp, tdgp);
 
-    const group = _property().parsePropertyGroup(
+    const group = late.parsePropertyGroup(
       tdgp,
       matchName,
       this.propertyDepth + 1,

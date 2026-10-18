@@ -28,7 +28,6 @@ import {
   Path,
   ValueError,
   at,
-  format,
   getOrThrow,
   int,
   literal,
@@ -115,19 +114,19 @@ export function _inspectItem(path: Path, index: number): number {
   for (const [i, c] of item.chunks.entries()) {
     const label = chunkLabel(c);
     if (c instanceof ListChunk) {
-      print(`  [${format(i, "2d")}] ${label} (${c.chunks.length} children)`);
+      print(`  [${String(i).padStart(2)}] ${label} (${c.chunks.length} children)`);
       for (const [j, cc] of c.chunks.entries()) {
         const cl = chunkLabel(cc);
         if (cc instanceof ListChunk) {
-          print(`    [${format(j, "2d")}] ${cl} (${cc.chunks.length} children)`);
+          print(`    [${String(j).padStart(2)}] ${cl} (${cc.chunks.length} children)`);
         } else {
           const detail = _chunkDetail(cc);
-          print(`    [${format(j, "2d")}] ${cl} (${detail})`);
+          print(`    [${String(j).padStart(2)}] ${cl} (${detail})`);
         }
       }
     } else {
       const detail = _chunkDetail(c);
-      print(`  [${format(i, "2d")}] ${label} (${detail})`);
+      print(`  [${String(i).padStart(2)}] ${label} (${detail})`);
     }
   }
   return 0;

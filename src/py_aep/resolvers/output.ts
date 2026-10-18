@@ -6,7 +6,7 @@
  */
 
 import { OutputChannels, OutputColorDepth, TimeSpanSource } from "../enums/index.ts";
-import { IndexError, AepError, floordiv, format, int, mod, numStr, truthyOr, round } from "../../pyrt/index.ts";
+import { IndexError, AepError, mod, numStr, truthyOr, round } from "../../pyrt/index.ts";
 import type { CompItem } from "../models/items/composition.ts";
 import type { RenderSettingValues } from "../models/renderqueue/render_queue_item.ts";
 import type { SettingsView } from "../models/renderqueue/settings.ts";
@@ -195,7 +195,7 @@ export function gcd(a: number, b: number): number {
  */
 export function calculateAspectRatio(width: number, height: number): string {
   const gcd_ = gcd(width, height);
-  return `${floordiv(width, gcd_)}x${floordiv(height, gcd_)}`;
+  return `${Math.floor(width / gcd_)}x${Math.floor(height / gcd_)}`;
 }
 
 /**
@@ -210,9 +210,9 @@ export function calculateAspectRatio(width: number, height: number): string {
  */
 export function formatFrameNumber(frame: number, fps: number): string {
   const framesPerFoot = 16; // Standard 35mm film: 16 frames per foot
-  const feet = floordiv(frame, framesPerFoot);
+  const feet = Math.floor(frame / framesPerFoot);
   const remainingFrames = mod(frame, framesPerFoot);
-  return `${format(feet, "04d")}+${format(remainingFrames, "02d")}`;
+  return `${String(feet).padStart(4, "0")}+${String(remainingFrames).padStart(2, "0")}`;
 }
 
 /**
@@ -225,23 +225,23 @@ export function formatFrameNumber(frame: number, fps: number): string {
  * @returns Timecode string like '0-00-00-00' (hours-minutes-seconds-frames).
  */
 export function formatTimecode(seconds: number, fps: number, isDuration = false): string {
-  const fpsInt = fps !== 0 ? int(fps) : 1;
+  const fpsInt = fps !== 0 ? Math.trunc(fps) : 1;
   // Use ceiling for durations, floor for absolute times
   let totalFrames: number;
   if (isDuration) {
     totalFrames = Math.ceil(seconds * fpsInt);
   } else {
-    totalFrames = int(seconds * fpsInt);
+    totalFrames = Math.trunc(seconds * fpsInt);
   }
 
   const frames = mod(totalFrames, fpsInt);
-  const totalSeconds = floordiv(totalFrames, fpsInt);
+  const totalSeconds = Math.floor(totalFrames / fpsInt);
   const secs = mod(totalSeconds, 60);
   const totalMinutes = Math.floor(totalSeconds / 60);
   const mins = mod(totalMinutes, 60);
   const hours = Math.floor(totalMinutes / 60);
 
-  return `${hours}-${format(mins, "02d")}-${format(secs, "02d")}-${format(frames, "02d")}`;
+  return `${hours}-${String(mins).padStart(2, "0")}-${String(secs).padStart(2, "0")}-${String(frames).padStart(2, "0")}`;
 }
 
 /**
@@ -318,7 +318,7 @@ export function resolveOutputFilename(
   // Precompute formatted frame rate string
   let frameRateStr: string | null = null;
   if (frameRate != null) {
-    frameRateStr = frameRate === int(frameRate) ? `${int(frameRate)}` : numStr(frameRate);
+    frameRateStr = frameRate === Math.trunc(frameRate) ? `${Math.trunc(frameRate)}` : numStr(frameRate);
   }
 
   // Build substitution map: template_key -> resolved_value
@@ -424,15 +424,15 @@ export function resolveTimeSpan(
     durationTime = comp.duration;
     timeSpanEnd = comp.duration;
     durationFrames = round(comp.duration * effectiveFrameRate);
-    firstRenderedFrame = int(comp.displayStartTime * effectiveFrameRate);
+    firstRenderedFrame = Math.trunc(comp.displayStartTime * effectiveFrameRate);
   } else {
     timeSpanStart = rqSettings.get("Time Span Start");
     durationTime = rqSettings.get("Time Span Duration");
     timeSpanEnd = rqSettings.get("Time Span End");
     durationFrames = round(durationTime * effectiveFrameRate);
     firstRenderedFrame =
-      int(comp.displayStartTime * effectiveFrameRate) +
-      int(timeSpanStart * effectiveFrameRate);
+      Math.trunc(comp.displayStartTime * effectiveFrameRate) +
+      Math.trunc(timeSpanStart * effectiveFrameRate);
   }
 
   const startFrame = firstRenderedFrame;

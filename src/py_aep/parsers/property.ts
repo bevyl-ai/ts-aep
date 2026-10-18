@@ -20,6 +20,7 @@ import { parseGradient, parseOrientation, parseShape, parseTextDocument } from "
 import { getChunksByMatchName, getMatchNameRuns } from "./utils.ts";
 import { warn, zip } from "../../pyrt/index.ts";
 import { Property, _EssentialOverrideProperty } from "../models/properties/property.ts";
+import { late } from "../models/late.ts";
 
 // `logging.getLogger(__name__)`: this module logs nothing today, so only the
 // warning path is wired to pyrt `warn`.
@@ -509,3 +510,5 @@ export const _parseMaskAtom = _suppressMaterialization().decorate(function _pars
   maskGroup._isMask = true;
   return maskGroup;
 });
+
+Object.assign(late, { parsePropertyGroup, _parseMaskAtom });

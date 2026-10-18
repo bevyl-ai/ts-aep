@@ -41,15 +41,13 @@ import {
   literal,
   round,
   warn,
-  deferred,
   type ClassAttributes,
 } from "../../../pyrt/index.ts";
 import type { MatchNameTypes } from "../properties/match_name_types.ts";
 import * as _avLayer from "./av_layer.ts";
 import * as _composition from "../items/composition.ts";
+import { late } from "../late.ts";
 
-const _synthesisCore = deferred<typeof import("../../synthesis/core.ts")>("py_aep/synthesis/core");
-const _layer = deferred<typeof import("../../parsers/layer.ts")>("py_aep/parsers/layer");
 
 // logging.getLogger(__name__)
 export const logger = {
@@ -503,7 +501,7 @@ export class Layer extends PropertyGroup {
     );
     this._properties = props;
     for (const child of props) child._parentProperty = this;
-    _synthesisCore().synthesizeLayerProperties(this);
+    late.synthesizeLayerProperties(this);
   }
 
   /**
@@ -1541,7 +1539,7 @@ export class Layer extends PropertyGroup {
 
     // Re-parse cloned chunks into a model instance
     const effectDefs = intoComp._project._effectParamDefs;
-    const newLayer = _layer().parseLayer(clonedList, intoComp, effectDefs);
+    const newLayer = late.parseLayer(clonedList, intoComp, effectDefs);
 
     intoComp._layers.splice(modelIdx, 0, newLayer);
 

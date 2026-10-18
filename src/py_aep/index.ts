@@ -122,5 +122,6 @@ export { memfs, useMemoryFs, useHostFs, fsBackend } from "../pyrt/host.ts";
 export { setWarningHandler } from "../pyrt/errors.ts";
 export { AepError, AttributeError, FileExistsError, FileNotFoundError, IndexError, KeyError, LookupError, NotImplementedError, OSError, OverflowError, RuntimeError, StructError, UnicodeDecodeError, UnicodeEncodeError, UnicodeError, ValueError, ZeroDivisionError } from "../pyrt/errors.ts";
 
-// Last import: registers every `deferred()` target (pyrt/deferred.ts).
-import "./_modules.ts";
+
+// Only the models call synthesis/core (through `late`), so load it here.
+import "./synthesis/core.ts";

@@ -162,14 +162,13 @@ is not provable from the code, keep `int`.
 Drop pyrt names that are no longer used in the file. Keep import order
 otherwise.
 
-A `deferred(...)` cycle breaker becomes a static import when the target
+A lazy cycle breaker becomes a static import when the target
 module cannot reach the importing one through value imports (type-only
 imports are erased and don't count), counting static imports already added
 during the same run. The target then fully evaluates before the importer, and
 it cannot observe a half-initialized module: every module still evaluating
 reaches the importer, so the target reaching one would mean it reaches the
-importer. A one-off codemod (since removed)
-applied this; rerun `bun tools/gen_deferred_modules.ts` afterwards.
+importer. The rest go through `late` (`src/py_aep/models/late.ts`).
 
 ## Pass 2: docstrings to TSDoc
 
@@ -260,8 +259,7 @@ Each of these changes structure and needs its own guide section first:
   class fields and accessors (decorators or explicit getters/setters).
 - `int_enum` / `py_enum` → TS `enum` or `as const` objects (touches public
   API through `E.of`, `E.name_of`).
-- The remaining `deferred(...)` cycle breakers (real cycles) → restructured
-  imports.
+- Done: the lazy registry is gone; real cycles go through `late`.
 - `__getattr__` / `py_object` proxies, `__eq__`/`__len__` dunders → explicit
   methods.
 - snake_case internals → camelCase (public names stay until an API decision).

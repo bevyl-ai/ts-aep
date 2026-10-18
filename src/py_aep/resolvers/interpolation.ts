@@ -17,7 +17,7 @@
  *   parameter (see `_ArcSpline`).
  */
 
-import { IndexError, ZeroDivisionError, at, getOrThrow, int, max, min, mod, radians, sum, compositeKey, zip } from "../../pyrt/index.ts";
+import { IndexError, ZeroDivisionError, at, getOrThrow, max, min, mod, radians, sum, compositeKey, zip } from "../../pyrt/index.ts";
 import { KeyframeInterpolationType } from "../enums/index.ts";
 import { ORIENTATION_KIND, SHAPE_KIND, type ParallelKind } from "../models/properties/parallel.ts";
 import { Shape } from "../models/properties/shape.ts";
@@ -1157,7 +1157,7 @@ export function _rovingUnits(
   travelled: number,
   total: number,
 ): number {
-  if (curve == null) return int((units1 - units0) * (travelled / total) + units0);
+  if (curve == null) return Math.trunc((units1 - units0) * (travelled / total) + units0);
   const t = _tOnAxis(curve, 1, travelled);
   const seconds = _cubic1d(curve[0][0], curve[1][0], curve[2][0], curve[3][0], t);
   return units0 + Math.floor(timebase * seconds + 0.5);

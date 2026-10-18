@@ -27,12 +27,10 @@ import {
   getOrThrow,
   truthy,
   pyIter,
-  str,
   typeName,
   truthyOr,
   compositeKey,
   setdefault,
-  int,
   literal,
   encode,
   decode,
@@ -304,7 +302,7 @@ export const _builtinConfigRoots = lruCache((): Path[] => {
 /** Sort key for an install directory: its release year, then its name. */
 export function _installYear(installDir: Path): [number, string] {
   const match = reSearch(String.raw`(\d{4})`, installDir.name);
-  return [match ? int(match[1]) : 0, installDir.name];
+  return [match ? Number.parseInt(match[1], 10) : 0, installDir.name];
 }
 
 /** `baseProfileType` for an OCIO color space (see `color/envelope.py`). */
@@ -435,7 +433,7 @@ export function _outputEnvelope(index: _ConfigIndex, colorSpace: OcioValue): [st
   // Only a string can be a color-space or alias name; any YAML key a role.
   if (typeof colorSpace === "string" && index.families.has(colorSpace)) {
     const family = getOrThrow(index.families, colorSpace);
-    const name = truthy(family) ? `${str(family)}/${colorSpace}` : colorSpace;
+    const name = truthy(family) ? `${String(family)}/${colorSpace}` : colorSpace;
     return [name, _compact({ colorSpace1: colorSpace })];
   }
   if (index.roles.has(colorSpace)) {
@@ -476,7 +474,7 @@ export function* _iterOutputColorSpaces(index: _ConfigIndex): Generator<OcioValu
   yield* index.aliases.keys();
   yield* index.roles.keys();
   for (const [display, views] of index.displays) {
-    for (const view of views) yield `${str(display)}/${view}`;
+    for (const view of views) yield `${String(display)}/${view}`;
   }
 }
 
@@ -521,7 +519,7 @@ export function ocioColorSpaceForProfileId(
   // NOTE(port): Python hands back a non-string role key (`roles: {3: x}`) as
   // is; the `str`-typed `OutputModule.outputColorSpace` gets its `str()`.
   if (typeof name === "string") return name;
-  return name == null ? null : str(name);
+  return name == null ? null : String(name);
 }
 
 /**
@@ -705,7 +703,7 @@ export function ocioInputEnvelope(configPath: Path, filePath: string): string | 
       if (typeof colorSpace !== "string") return null;
       const target = index.roles.get(colorSpace) ?? colorSpace;
       const family = truthyOr(truthyOr(index.families.get(target) ?? null, index.aliases.get(target) ?? null), "");
-      const name = truthy(family) ? `${str(family)}/${colorSpace}` : colorSpace;
+      const name = truthy(family) ? `${String(family)}/${colorSpace}` : colorSpace;
       return buildOcioEnvelope(name, _compact({ colorSpace1: colorSpace }));
     }
     return null;

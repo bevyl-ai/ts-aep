@@ -38,7 +38,6 @@ import {
   decode,
   fspath,
   getOrThrow,
-  int,
   jsonFloat,
   truthy,
   radians,
@@ -877,7 +876,7 @@ export function* _enabledInstances(
 export function _roundAway(value: number): number {
   // The epsilon lands exact halves (a 30 degree light: sin * 11 = 5.4999...
   // in doubles) where AE does.
-  return int(copysign(Math.floor(Math.abs(value) + 0.5 + 1e-9), value));
+  return Math.trunc(copysign(Math.floor(Math.abs(value) + 0.5 + 1e-9), value));
 }
 
 export function _blurReach(size: number, spread: number, precise: boolean): number {
@@ -963,7 +962,7 @@ export function _instanceBox(
     const position = instance.has("Styl") ? instance.get("Styl") : "OutF";
     if (position === "InsF") return null;
     const reach = position === "OutF" ? size : Math.ceil(size / 2);
-    lead = trail = int(reach) + 2;
+    lead = trail = Math.trunc(reach) + 2;
   } else if (key === "ebbl") {
     const pads = _bevelPads(instance, name);
     if (pads == null) return null;

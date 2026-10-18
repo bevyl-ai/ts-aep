@@ -23,7 +23,6 @@ import {
   bytesEq,
   descriptor,
   getOrThrow,
-  int,
   assert,
   truthy,
   literal,
@@ -2299,7 +2298,7 @@ export class CompItem extends AVItem {
       sourceId: item.id,
       duration: layerDuration,
       containingComp: this,
-      label: int(item.label),
+      label: Math.trunc(item.label),
       effectParamDefs: this._project._effectParamDefs,
     });
     this._insertLayer(layer);
@@ -2847,7 +2846,7 @@ export class CompItem extends AVItem {
   }));
     descriptor(this, "dropFrame", ChunkField.bool("_cdrp", "value", {
     transform: (v: number) => v !== 0,
-    reverse: (v: boolean) => int(v),
+    reverse: (v: boolean) => Number(v),
     default: false,
   }));
   }

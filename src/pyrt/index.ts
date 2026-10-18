@@ -16,7 +16,6 @@ export { defineEnum, auto, type EnumValue } from "./enum.ts";
 export { Path, PurePath, PurePosixPath, PureWindowsPath, fspath, type PathLike } from "./pathlib.ts";
 export { descriptor, getDescriptor, descriptorsOf, pyObject, pyClassHooks, objectSetattr, objectGetattr, instanceDict, hasInstanceDict, type ClassAttributes, type Descriptor } from "./dunder.ts";
 export * from "./pytest.ts";
-export { deferred } from "./deferred.ts";
 export * as etree from "./etree.ts";
 export { hypot } from "./math.ts";
 export { jsonLoads, jsonDumps, jsonFloat, jsonGet, jsonGetitem, jsonInt, JSONDecodeError, type JsonValue, encodeBasestring, encodeBasestringAscii, type LoadsOptions, type DumpsOptions } from "./json.ts";

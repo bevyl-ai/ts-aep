@@ -11,7 +11,6 @@ import { NUMBER_RE } from "./_util.ts";
 import { UnsupportedSVGError } from "./errors.ts";
 import {
   float,
-  int,
   islower,
   isspace,
   max,
@@ -354,7 +353,7 @@ export class _PathParser {
       dtheta += 2 * Math.PI;
     }
 
-    const nSegs = max([1, int(Math.ceil(Math.abs(dtheta) / (Math.PI / 2.0)))]);
+    const nSegs = max([1, Math.trunc(Math.ceil(Math.abs(dtheta) / (Math.PI / 2.0)))]);
     const delta = dtheta / nSegs;
     const t = (4.0 / 3.0) * Math.tan(delta / 4.0);
     let theta = theta1;

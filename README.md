@@ -170,7 +170,6 @@ the same check inside workerd through miniflare (see its header).
 bun install
 tools/fetch-samples.sh   # upstream checkout + LFS samples (~240 MB)
 bun test
-bun tools/gen_deferred_modules.ts --check   # the deferred-import hub is current
 ```
 
 ## License

@@ -6,7 +6,7 @@
  * interpretation.
  */
 
-import { define, descriptor, divmod, field, floordiv, Fraction, round } from "../../pyrt/index.ts";
+import { define, descriptor, divmod, field, Fraction, round } from "../../pyrt/index.ts";
 import { toDividendDivisor, toFixed1616, toFloat32Ratio } from "./bin_utils.ts";
 import { BitField } from "./bitfield.ts";
 import { Chunk } from "./chunk.ts";
@@ -106,7 +106,7 @@ export function layerTimebase(internalTimebase: number, stretch: number): number
  * going from 24 to 25 fps).
  */
 export function rescaleTicks(ticks: number, old: number, new_: number): number {
-  return floordiv(2 * ticks * new_ + old, 2 * old);
+  return Math.floor((2 * ticks * new_ + old) / (2 * old));
 }
 
 /**

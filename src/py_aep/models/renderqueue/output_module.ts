@@ -33,7 +33,6 @@ import {
   descriptor,
   getattr,
   getOrThrow,
-  int,
   assert,
   truthy,
   valueEquals,
@@ -41,7 +40,6 @@ import {
   literal,
   round,
   rstrip,
-  str,
   Path,
   RuntimeError,
   ValueError,
@@ -95,14 +93,14 @@ export function _labelOrName(key: string | null, v: RuleValue): string {
     if (label) return label;
     return E.nameOf(v);
   }
-  return str(v);
+  return String(v);
 }
 
 /** Python `getattr(v, "name", None) or str(v)` (see `_labelOrName`). */
 export function _nameOrStr(key: string | null, v: RuleValue): string {
   const E = key == null ? null : _KEY_ENUM.get(key);
   if (E != null && E.has(v)) return E.nameOf(v);
-  return str(v);
+  return String(v);
 }
 
 // NOTE(port): `{value!r}` of an IntEnum member is `<Cls.NAME: n>` in Python but a raw int stays
@@ -201,7 +199,7 @@ export function _xmlOptionsOf<K extends "audioBitrate" | "audioCodec" | "bitrate
 export function _setXmlParamRaw(om: OutputModule, paramKey: string, value: number): void {
   const fo = om._formatOptions;
   if (fo instanceof XmlFormatOptions) {
-    fo._setParam(paramKey, str(value));
+    fo._setParam(paramKey, String(value));
   }
 }
 
@@ -350,7 +348,7 @@ export class OutputModule {
       [
         (om) => om._colorMode,
         (om, v) => {
-          om._roou.colorPremultiplied = int(v);
+          om._roou.colorPremultiplied = Math.trunc(Number(v));
         },
       ],
     ],
@@ -359,7 +357,7 @@ export class OutputModule {
       [
         (om) => om._depth,
         (om, v) => {
-          om._roou.depth = int(v);
+          om._roou.depth = Math.trunc(Number(v));
         },
       ],
     ],
@@ -377,7 +375,7 @@ export class OutputModule {
       [
         (om) => om._audioChannels,
         (om, v) => {
-          om._writeAudioFormatRaw("audioChannels", int(v));
+          om._writeAudioFormatRaw("audioChannels", Math.trunc(Number(v)));
         },
       ],
     ],
@@ -386,7 +384,7 @@ export class OutputModule {
       [
         (om) => om._audioBitDepth,
         (om, v) => {
-          om._writeAudioFormatRaw("audioBitDepth", int(v));
+          om._writeAudioFormatRaw("audioBitDepth", Math.trunc(Number(v)));
         },
       ],
     ],
@@ -395,7 +393,7 @@ export class OutputModule {
       [
         (om) => _xmlOptionsOf(om, "mpegAudioFormat"),
         (om, v) => {
-          _setXmlParamRaw(om, "ADBEMPEGAudioFormat", int(v));
+          _setXmlParamRaw(om, "ADBEMPEGAudioFormat", Math.trunc(Number(v)));
         },
       ],
     ],
@@ -652,7 +650,7 @@ export class OutputModule {
       this._omLdat.outputAudioAuto = 0;
     } else {
       throw new ValueError(
-        `Unsupported OutputAudio value: ${str(value)}. Expected ` + "OutputAudio.OFF, OutputAudio.AUTO, or OutputAudio.ON.",
+        `Unsupported OutputAudio value: ${String(value)}. Expected ` + "OutputAudio.OFF, OutputAudio.AUTO, or OutputAudio.ON.",
       );
     }
   }
@@ -990,8 +988,8 @@ export class OutputModule {
 
   /** Re-pair the depth to the alpha choice (RGBA \<-\> `+` depths). */
   _pairDepthToChannels(): void {
-    const depthVal = int(this._depth);
-    const isRgba = this._omLdat.channels === int(OutputChannels.RGBA);
+    const depthVal = Math.trunc(this._depth);
+    const isRgba = this._omLdat.channels === Math.trunc(OutputChannels.RGBA);
     const target = isRgba ? _DEPTH_PLUS : _DEPTH_MINUS;
     const paired = target.get(depthVal);
     if (paired !== undefined) {
@@ -1031,8 +1029,8 @@ export class OutputModule {
     }
     const channels = this._omLdat.channels;
     const body = fo._body;
-    if ([int(OutputChannels.RGB), int(OutputChannels.RGBA)].includes(channels)) {
-      body.hasAlpha = channels === int(OutputChannels.RGBA);
+    if ([Math.trunc(OutputChannels.RGB), Math.trunc(OutputChannels.RGBA)].includes(channels)) {
+      body.hasAlpha = channels === Math.trunc(OutputChannels.RGBA);
       body.channelCount = body.hasAlpha ? 4 : 3;
     }
     const depth = this._roou.depth;
@@ -1065,7 +1063,7 @@ export class OutputModule {
         roou.audioSampleRate = 48000.0;
       }
       if (!_AUDIO_ENCODINGS.has(roou.audioBitDepth)) {
-        roou.audioBitDepth = int(AudioBitDepth.SIXTEEN_BIT);
+        roou.audioBitDepth = Math.trunc(AudioBitDepth.SIXTEEN_BIT);
       }
       roou.audioEncoding = roou.audioBitDepth === 4 ? 3 : 2;
     } else {
@@ -1265,7 +1263,7 @@ export class OutputModule {
     const rqi = this._parentRqi;
     const startSeconds = rqi.timeSpanStart;
     const frameRate = rqi.comp.frameRate;
-    return int(round(startSeconds * frameRate));
+    return Math.trunc(round(startSeconds * frameRate));
   }
 
   set _startingNumber(value: number) {
@@ -1355,7 +1353,7 @@ export class OutputModule {
 
   /** The output folder path from the alas chunk. */
   get _folderPath(): string {
-    return str(this._alasData.has("fullpath") ? this._alasData.get("fullpath") : "");
+    return String(this._alasData.has("fullpath") ? this._alasData.get("fullpath") : "");
   }
 
   /** The file name template from the Utf8 chunk. */
@@ -1482,7 +1480,7 @@ export class OutputModule {
       timeSpan.endTime,
       timeSpan.durationTime,
       omChannels,
-      int(project.bitsPerChannel),
+      Math.trunc(project.bitsPerChannel),
       omDepth,
       compressor,
       rqSettings.get("Field Render"),

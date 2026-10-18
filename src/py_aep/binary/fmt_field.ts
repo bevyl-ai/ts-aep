@@ -16,7 +16,6 @@ import {
   field,
   fields,
   getattr,
-  int,
   lstrip,
   truthy,
   struct,
@@ -182,7 +181,7 @@ export function fmtField(fmt: string, kw: FmtFieldOptions = {}) {
     if (encoding != null) {
       default_ = "";
     } else if (fmt.endsWith("s")) {
-      const n = fmt.length > 1 ? int(fmt.slice(0, -1)) : 1;
+      const n = fmt.length > 1 ? Number.parseInt(fmt.slice(0, -1), 10) : 1;
       default_ = new Uint8Array(n);
     } else {
       // Coerce so constructed chunks hold the read-time type
@@ -549,7 +548,7 @@ export function _encodeValue(
     out.set(encoded.length > fieldSize ? encoded.subarray(0, fieldSize) : encoded);
     return out;
   }
-  if (coerces.has(idx)) return int(value);
+  if (coerces.has(idx)) return Math.trunc(Number(value));
   return value;
 }
 

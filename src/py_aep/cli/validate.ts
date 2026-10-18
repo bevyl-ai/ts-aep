@@ -27,7 +27,6 @@ import {
   valueEquals,
   literal,
   setdefault,
-  str,
   zip,
   isReal,
   jsonLoads,
@@ -1602,7 +1601,7 @@ export function compareRenderQueue(
           // See the footage-source note: PureWindowsPath keeps
           // basename extraction host-OS-independent.
           const expName = new PureWindowsPath(expFile).name;
-          const parsedName = new PureWindowsPath(str(parsedFile)).name;
+          const parsedName = new PureWindowsPath(String(parsedFile)).name;
           if (expName !== parsedName) {
             result.addDiff(`${omPath}.fileName`, expName, parsedName, "renderqueue");
           }

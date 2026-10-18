@@ -34,6 +34,7 @@ import { _bindPointDefault } from "../parsers/effect.ts";
 import { _PARAMETRIC_MESH_TOP_LEVEL_SPECS, _SKIP_FOR_CAMERA, _SKIP_FOR_LIGHT, _SKIP_FOR_REGULAR_AV, _SKIP_FOR_SHAPE, _SKIP_FOR_TEXT, _TOP_LEVEL_SPECS, _TRANSFORM_FIXED_DEFAULTS, _TRANSFORM_SPECS } from "./property.ts";
 import type { GroupSpec, PropSpec } from "./property.ts";
 import type { Layer } from "../models/layers/layer.ts";
+import { late } from "../models/late.ts";
 
 // ---------------------------------------------------------------------------
 // Recursive child synthesis + bounds application (single pass)
@@ -452,3 +453,5 @@ export function synthesizeLayerProperties(layer: Layer): void {
   _setTransformDefaults(layer, aeMajor);
   _followLiveDefaults(layer);
 }
+
+Object.assign(late, { applyDimensionalityNaming, followSourceAnchor, synthesizeLayerProperties });

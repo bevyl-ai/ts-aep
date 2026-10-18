@@ -42,7 +42,7 @@ import type { AVLayer } from "../models/layers/av_layer.ts";
 import type { Layer } from "../models/layers/layer.ts";
 import type { Property } from "../models/properties/property.ts";
 import type { PropertyGroup } from "../models/properties/property_group.ts";
-import { valueEquals, int, jsonDumps } from "../../pyrt/index.ts";
+import { valueEquals, jsonDumps } from "../../pyrt/index.ts";
 import { FootageItem } from "../models/items/footage.ts";
 import { SolidSource } from "../models/sources/solid.ts";
 import { TextDocument } from "../models/text/text_document.ts";
@@ -308,7 +308,7 @@ export function fontCapsJson(prop: Property): string {
   if (value instanceof TextDocument) {
     font = value.font || "";
     const fs = value.fontSize;
-    if (fs != null) size = Number.isInteger(fs) ? int(fs) : fs;
+    if (fs != null) size = Number.isInteger(fs) ? Math.trunc(fs) : fs;
   }
   return jsonDumps(
     {

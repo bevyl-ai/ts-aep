@@ -9,10 +9,8 @@ import { Label } from "../../enums/index.ts";
 import {
   IndexError,
   ValueError,
-  deferred,
   descriptor,
   dictPop,
-  format,
   assert,
   valueEquals,
   type ClassAttributes,
@@ -23,9 +21,9 @@ import { validateName, validateString } from "../validators.ts";
 import type { Project } from "../project.ts";
 import type { FolderItem } from "./folder.ts";
 import type { Viewer } from "../viewer/viewer.ts";
+import { late } from "../late.ts";
 
 // NOTE(port): a module-level import in Python; parsers/effect imports the item subclasses, which extend Item.
-const _effect = deferred<typeof import("../../parsers/effect.ts")>("py_aep/parsers/effect");
 
 // NOTE(port): list.remove shim; Python compares with `==` (Item.__eq__ is by
 // id), so the match uses py_eq (which dispatches to __eq__) rather than identity.
@@ -118,7 +116,7 @@ export class Item {
    * Read-only.
    */
   get dynamicLinkGuid(): string {
-    return `${format(this.id, "08x")}-0000-0000-0000-000000000000`;
+    return `${this.id.toString(16).padStart(8, "0")}-0000-0000-0000-000000000000`;
   }
 
   /** The item comment. Read / Write. */
@@ -325,7 +323,7 @@ export class Item {
   remove(): void {
     // Remove from parent folder's binary chunks
     const removed = this._removeFromParentChunks();
-    _effect().rehomeEffectDefinitions(this._project, _effect()._effectInstances(removed));
+    late.rehomeEffectDefinitions(this._project, late._effectInstances(removed));
 
     // Remove from model collections
     assert(this._parentFolder != null);

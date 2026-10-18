@@ -69,7 +69,6 @@ import {
   getattr,
   setattr,
   getOrThrow,
-  int,
   max,
   assert,
   truthy,
@@ -80,13 +79,11 @@ import {
   rshift,
   round,
   setdefault,
-  str,
   strip,
   compositeKey,
   warn,
   bytesEq,
   descriptor,
-  format,
   instanceDict,
   jsonDumps,
   jsonLoads,
@@ -197,7 +194,7 @@ export const _setColorManagementSystem = requiresVersion(24)(function color_mana
   value: ColorManagementSystem | number,
 ): void {
   validateEnum(ColorManagementSystem)(value);
-  this._updateCmsSetting("colorManagementSystem", int(value));
+  this._updateCmsSetting("colorManagementSystem", Math.trunc(value));
 });
 
 export const _setLutInterpolationMethod = requiresVersion(24)(function lut_interpolation_method(
@@ -205,7 +202,7 @@ export const _setLutInterpolationMethod = requiresVersion(24)(function lut_inter
   value: LutInterpolationMethod | number,
 ): void {
   validateEnum(LutInterpolationMethod)(value);
-  this._updateCmsSetting("lutInterpolationMethod", int(value));
+  this._updateCmsSetting("lutInterpolationMethod", Math.trunc(value));
 });
 
 export const _setOcioConfigurationFile = requiresVersion(24)(function ocio_configuration_file(
@@ -498,8 +495,8 @@ export class Project {
     });
     if ([1, 2].includes(depth)) {
       // 0 = 8 bpc = the chunk default
-      nhed.bitsPerChannel = int(depth);
-      nnhd.bitsPerChannel = int(depth);
+      nhed.bitsPerChannel = Math.trunc(depth);
+      nnhd.bitsPerChannel = Math.trunc(depth);
     }
     const blob = preferences._getBytes(
       "Project Pref Section",
@@ -1110,7 +1107,7 @@ export class Project {
    */
   get ocioConfigurationFile(): string {
     const settings = this._getCmsSettings();
-    return str(getOrThrow(settings, "ocioConfigurationFile"));
+    return String(getOrThrow(settings, "ocioConfigurationFile"));
   }
 
   set ocioConfigurationFile(value: PathLike) {
@@ -1395,14 +1392,14 @@ export class Project {
   _importSvgCropped(file: Path): CompItem {
     const doc = readSvg(file);
     // AE truncates the canvas to whole pixels (2434.9 -> 2434).
-    const width = int(doc.width);
-    const height = int(doc.height);
+    const width = Math.trunc(doc.width);
+    const height = Math.trunc(doc.height);
     if (!(1 <= width && width <= 30000 && 1 <= height && height <= 30000)) {
       // AE's own import refuses a canvas under 1 px a side ("width and
       // height must be > 0") but builds 1 to 3 px compositions, below
       // the 4 px `addComp` floor (AE 2026).
       throw new UnsupportedSVGError(
-        `SVG canvas ${format(doc.width, "g")} x ${format(doc.height, "g")} is outside the ` +
+        `SVG canvas ${String(Number(doc.width.toPrecision(6)))} x ${String(Number(doc.height.toPrecision(6)))} is outside the ` +
           "1 to 30000 px composition size range (width / height or " +
           "viewBox missing, invalid or out of range)",
       );
@@ -2411,7 +2408,7 @@ export class Project {
     descriptor(this, "revision", new ChunkField("_head", "fileRevision", { validate: validateU4 }));
     descriptor(this, "compensateForSceneReferredProfiles", ChunkField.bool("_acer", "value", {
       transform: (v: number) => v !== 0,
-      reverse: (v: boolean) => int(v),
+      reverse: (v: boolean) => Number(v),
       minVersion: 16,
     }));
     descriptor(this, "audioSampleRate", new ChunkField("_adfr", "value", {

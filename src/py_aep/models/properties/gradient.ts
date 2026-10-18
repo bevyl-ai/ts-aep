@@ -4,11 +4,9 @@ import { INSPECT, describe, compare } from "../../../pyrt/index.ts";
 import {
   ValueError,
   descriptor,
-  format,
   objectGetattr,
   objectSetattr,
   valueEquals,
-  str,
   type ClassAttributes,
 } from "../../../pyrt/index.ts";
 import { toF4 } from "../../binary/bin_utils.ts";
@@ -381,7 +379,7 @@ export class Gradient {
  * significant digits (e.g. `0.83` becomes `0.82999998`).
  */
 export function _formatFloat(value: number): string {
-  return format(toF4(value), ".8g");
+  return String(Number(toF4(value).toPrecision(8)));
 }
 
 /** XML lines for one `Alpha Stops` / `Color Stops` prop.pair. */
@@ -398,7 +396,7 @@ export function _stopsLines(kind: string, stops: number[][]): string[] {
   // LEXICOGRAPHIC key order (Stop-0, Stop-1, Stop-10, ..., Stop-15,
   // Stop-2, ...), not numeric order. Match that so gradients with >9
   // stops are byte-identical (identical for <=10 stops).
-  for (const i of [...Array.from({ length: stops.length }, (_, i) => i)].sort((a, b) => compare(str(a), str(b)))) {
+  for (const i of [...Array.from({ length: stops.length }, (_, i) => i)].sort((a, b) => compare(String(a), String(b)))) {
     const values = stops[i];
     lines.push(
       "<prop.pair>",

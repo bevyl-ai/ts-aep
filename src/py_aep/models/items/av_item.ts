@@ -14,7 +14,6 @@ import {
   AttributeError,
   ValueError,
   descriptor,
-  int,
   assert,
   type PathLike,
   type ClassAttributes,
@@ -156,7 +155,7 @@ export function _syncProxyActive(obj: AVItem): void {
   // AE 2026 keeps 1 after `useProxy = false` and writes 0 only on
   // `setProxyToNone()` (as in sample proxy.aep's `proxy_disabled` items).
   assert(obj._idta != null);
-  obj._idta._proxyActive = int(obj._proxySource != null);
+  obj._idta._proxyActive = Number(obj._proxySource != null);
   obj._syncModifiedTime();
 }
 

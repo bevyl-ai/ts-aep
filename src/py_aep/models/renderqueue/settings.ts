@@ -12,11 +12,9 @@ import {
   KeyError,
   ValueError,
   getattr,
-  int,
   valueEquals,
   literal,
   setattr,
-  str,
   compositeKey,
   mappingItems,
   typeName,
@@ -250,7 +248,7 @@ export function _coerceEnum(enumClass: LabeledEnum, value: SettingValue | null):
     if (member === null) {
       const members = enumClass
         .members()
-        .map((m) => `${enumClass.nameOf(m)} (${int(m)})`)
+        .map((m) => `${enumClass.nameOf(m)} (${Math.trunc(m)})`)
         .join(", ");
       throw new ValueError(
         `Invalid int value ${literal(value)} for ${enumClass.enumName}. ` +
@@ -341,7 +339,7 @@ export function buildResizeToStrings(preferences: Preferences): Map<string, stri
  * All other types pass through unchanged.
  */
 export function _toNumberValue(value: SettingValue): SettingValue {
-  if (IntEnum.has(value)) return int(value);
+  if (IntEnum.has(value)) return Math.trunc(value);
   return value;
 }
 
@@ -387,9 +385,9 @@ export function _toStringValue(
   if (enumClass != null && enumClass.has(value)) return enumLabel(enumClass, value);
   if (key === "Resolution") return _RESOLUTION_STRINGS.get(_tupleKey(value)) ?? "Custom";
   if (key === "Resize to") return resizeMap.get(_tupleKey(value)) ?? "Custom";
-  if (typeof value === "boolean") return str(value).toLowerCase();
+  if (typeof value === "boolean") return String(value).toLowerCase();
   // NOTE(port): int/float — integral values are plain numbers by design (RULEBOOK §4); a float getter value such as 30.0 (Time Span Duration, Use comp's frame rate) renders "30" here where Python gives "30.0" (returned string only, never saved).
-  return str(value);
+  return String(value);
 }
 
 /** `settings.items()` of a dict or a settings view. */

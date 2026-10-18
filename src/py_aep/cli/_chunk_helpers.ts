@@ -10,7 +10,7 @@
 import "../binary/_register.ts";
 import { ListChunk, readAep } from "../binary/chunk.ts";
 import type { Chunk } from "../binary/chunk.ts";
-import { BytesIO, format, getOrThrow, ValueError } from "../../pyrt/index.ts";
+import { BytesIO, getOrThrow, ValueError } from "../../pyrt/index.ts";
 import type { Path } from "../../pyrt/index.ts";
 
 /**
@@ -172,8 +172,8 @@ export function formatHexDump(data: Uint8Array, bytesPerLine = 16): string {
 
     const leftBytes = chunk.slice(0, mid);
     const rightBytes = chunk.slice(mid);
-    const left = Array.from(leftBytes, (b) => format(b, "02X")).join(" ");
-    const right = Array.from(rightBytes, (b) => format(b, "02X")).join(" ");
+    const left = Array.from(leftBytes, (b) => b.toString(16).toUpperCase().padStart(2, "0")).join(" ");
+    const right = Array.from(rightBytes, (b) => b.toString(16).toUpperCase().padStart(2, "0")).join(" ");
 
     const joined = right ? `${left}  ${right}` : left;
 
@@ -181,7 +181,7 @@ export function formatHexDump(data: Uint8Array, bytesPerLine = 16): string {
     const hexStr = joined.padEnd(fullWidth);
 
     const asciiStr = Array.from(chunk, (b) => (0x20 <= b && b <= 0x7e ? String.fromCodePoint(b) : ".")).join("");
-    lines.push(`${format(i, "04X")}: ${hexStr}  ${asciiStr}`);
+    lines.push(`${i.toString(16).toUpperCase().padStart(4, "0")}: ${hexStr}  ${asciiStr}`);
   }
 
   return lines.join("\n");

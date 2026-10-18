@@ -33,7 +33,6 @@ import {
   decode,
   encode,
   float,
-  int,
   rstrip,
   setdefault,
   split,
@@ -103,7 +102,7 @@ export function parseHexValue(value: string): Uint8Array {
       i = end + 1;
     } else if ("0123456789ABCDEFabcdef".includes(value[i])) {
       const pair = value.slice(i, i + 2);
-      raw.push(int(pair, 16));
+      raw.push(Number.parseInt(pair, 16));
       i += 2;
     } else {
       i += 1;
@@ -115,13 +114,8 @@ export function parseHexValue(value: string): Uint8Array {
 /** Parse decimal text into an int when integral, else a float. */
 export function parseNumberText(text: string): number {
   const stripped = strip(text);
-  try {
-    // NOTE(port): int/float — integral values are plain numbers by design (RULEBOOK §4); "30.0" and "30" both yield 30 (read-only getter, never written to a file).
-    return int(stripped) + 0; // + 0 normalizes pyrt's -0 for "-0"
-  } catch (e) {
-    if (!(e instanceof ValueError)) throw e;
-    return float(stripped);
-  }
+  // "30.0" and "30" both read as 30: integral values are plain numbers. `+ 0` turns "-0" into 0.
+  return /^[+-]?\d+$/.test(stripped) ? Number(stripped) + 0 : float(stripped);
 }
 
 /** Decode a preference value as text (hex escapes become UTF-8). */

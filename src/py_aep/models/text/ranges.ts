@@ -42,7 +42,6 @@ import {
   literal,
   round,
   split,
-  str,
   descriptor,
   boxFloat,
 } from "../../../pyrt/index.ts";
@@ -99,7 +98,7 @@ export function u16Slice(s: string, start: number, end: number): string {
 /** The stored text, including the terminator `\r`. */
 export function _rawText(doc: TextDocument): string {
   const val = cosGet(doc._doc, "0", "0");
-  return val != null ? str(val) : "";
+  return val != null ? String(val) : "";
 }
 
 /**
@@ -145,7 +144,7 @@ export function _cachedLineNodes(doc: TextDocument): CosDict[] {
 
   const collect = (node: CosNode): void => {
     if (!(node instanceof Map)) return;
-    if (str(node.get("99") ?? null) === "L") {
+    if (String(node.get("99") ?? null) === "L") {
       lines.push(node);
       return;
     }

@@ -10,7 +10,7 @@
  * type than {@link CosNode} after one of them has run on the value.
  */
 
-import { AttributeError, KeyError, BoxedFloat, at, float, int, literal, typeName } from "../../pyrt/index.ts";
+import { AttributeError, KeyError, BoxedFloat, at, float, literal, typeName } from "../../pyrt/index.ts";
 import { CosString, type CosDict, type CosNode } from "./cos.ts";
 
 /** A COS value kind: a guard that narrows a value to the kind's type. */
@@ -49,8 +49,8 @@ export function cosFloat(x: CosNode): number {
 
 /** Python `int(x)` on a COS value: `TypeError` for every kind `int()` refuses. */
 export function cosInt(x: CosNode): number {
-  if (is(pyNumber, x) || is(pyStr, x)) return int(x);
-  if (x instanceof Uint8Array) return int(bytesText(x));
+  if (is(pyNumber, x) || is(pyStr, x)) return Math.trunc(Number(x));
+  if (x instanceof Uint8Array) return Number.parseInt(bytesText(x), 10);
   throw new TypeError(`int() argument must be a string, a bytes-like object or a real number, not '${typeName(x)}'`);
 }
 

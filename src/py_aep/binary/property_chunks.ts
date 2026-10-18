@@ -18,7 +18,6 @@ import {
   descriptor,
   encode,
   field,
-  int,
   objectSetattr,
   assert,
   struct,
@@ -523,7 +522,7 @@ export class TdumChunk extends Chunk {
     if (this.isColor) {
       raw = struct.pack(">4f", ...this.values);
     } else if (this.isInteger) {
-      raw = struct.pack(">I", int(this.values[0]));
+      raw = struct.pack(">I", Math.trunc(this.values[0]));
     } else {
       raw = struct.pack(`>${this.values.length}d`, ...this.values);
     }

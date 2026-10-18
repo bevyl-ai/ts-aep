@@ -16,11 +16,9 @@ import {
   decode,
   float,
   getOrThrow,
-  int,
   literal,
   round,
   split,
-  str,
   strip,
   compositeKey,
   zip,
@@ -52,7 +50,7 @@ export function labelIndex(preferences: Preferences, key: string, default_: numb
     PREFType.PREF_Type_MACHINE_INDEPENDENT,
     { default: default_ },
   );
-  return int(value);
+  return Math.trunc(value);
 }
 
 /**
@@ -100,7 +98,7 @@ export function _chooseLayerPref(preferences: Preferences, key: string, mapping:
   if (!preferences.havePref(_CHOOSE_LAYER_SECTION, key, PREFType.PREF_Type_MACHINE_SPECIFIC)) {
     return null;
   }
-  const idx = int(preferences.getPrefAsNumber(_CHOOSE_LAYER_SECTION, key, PREFType.PREF_Type_MACHINE_SPECIFIC));
+  const idx = Math.trunc(preferences.getPrefAsNumber(_CHOOSE_LAYER_SECTION, key, PREFType.PREF_Type_MACHINE_SPECIFIC));
   return mapping.get(idx) ?? null;
 }
 
@@ -531,7 +529,7 @@ export class Preferences {
       throw this._missing(sectionName, keyName, prefType);
     }
     if (isOverride === false) return decodePrefNumber(value);
-    if (typeof value === "boolean") return int(value);
+    if (typeof value === "boolean") return Number(value);
     if (typeof value === "number") return value;
     return parseNumberText(value);
   }
@@ -585,9 +583,9 @@ export class Preferences {
       throw this._missing(sectionName, keyName, prefType);
     }
     if (isOverride === false) return decodePrefString(value);
-    if (typeof value === "boolean") return str(int(value));
+    if (typeof value === "boolean") return String(Number(value));
     // NOTE(port): int/float — integral values are plain numbers by design (RULEBOOK §4); a float override such as 30.0 returns "30" where Python returns "30.0".
-    if (typeof value === "number") return str(value);
+    if (typeof value === "number") return String(value);
     return value;
   }
 

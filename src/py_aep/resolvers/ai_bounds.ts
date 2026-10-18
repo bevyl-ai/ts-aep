@@ -47,13 +47,11 @@ import {
   decode,
   float,
   getOrThrow,
-  int,
   numStr,
   truthyOr,
   valueEquals,
   setdefault,
   split,
-  str,
   warn,
   round,
   isReal,
@@ -152,7 +150,7 @@ export const _INLINE_IMAGE_END = /[ \t\n\r\f\v\x00]EI[ \t\n\r\f\v\x00]|[ \t\n\r\
 
 /** `str(x)` for a content-stream operand: every number there is a Python float (`1.0`). */
 export function _operandStr(x: CosNode): string {
-  return isReal(x) ? numStr(x, true) : str(x);
+  return isReal(x) ? numStr(x, true) : String(x);
 }
 
 /**
@@ -378,7 +376,7 @@ export class _Document {
     }
     for (const entry of names) {
       if (entry == null) continue;
-      const filterName = str(this.resolve(entry));
+      const filterName = String(this.resolve(entry));
       if (!_SUPPORTED_FILTERS.has(filterName)) {
         throw this._reject(
           `the content stream uses the ${filterName} filter, which ` +
@@ -411,7 +409,7 @@ export class _Document {
     }
     const length = this.get(info, "Length");
     if (isReal(length)) {
-      return this._data.slice(start, start + int(length));
+      return this._data.slice(start, start + Math.trunc(Number(length)));
     }
     const end = Bytes.indexOf(this._data, b("endstream"), start);
     return end > 0 ? this._data.slice(start, end) : null;
@@ -430,14 +428,14 @@ export class _Document {
    */
   catalog(): CosDict {
     if (this._catalog !== null) return this._catalog;
-    const numbers = [...decode(this._data, "latin-1").matchAll(_ROOT_RE)].map((m) => int(m[1]));
+    const numbers = [...decode(this._data, "latin-1").matchAll(_ROOT_RE)].map((m) => Number.parseInt(m[1], 10));
     // The last trailer wins: an incrementally updated file supersedes the
     // /Root of every earlier revision.
     numbers.reverse();
     for (const number of this._offsets.keys()) numbers.push(number);
     for (const number of numbers) {
       const candidate = this.resolve(new IndirectReference(number, 0));
-      if (candidate instanceof Map && str(candidate.has("Type") ? candidate.get("Type") : "") === "Catalog") {
+      if (candidate instanceof Map && String(candidate.has("Type") ? candidate.get("Type") : "") === "Catalog") {
         this._catalog = candidate;
         return candidate;
       }
@@ -455,7 +453,7 @@ export class _Document {
   *_walkPages(node: CosNode, depth: number): Generator<CosDict> {
     const table = _asDict(this.resolve(node));
     if (table == null || depth > 32) return;
-    if (str(table.has("Type") ? table.get("Type") : "") === "Page") {
+    if (String(table.has("Type") ? table.get("Type") : "") === "Page") {
       yield table;
       return;
     }
@@ -608,7 +606,7 @@ export function _readLiteralString(data: Uint8Array, pos: number): [Uint8Array, 
         if (/[89]/.test(digits)) {
           throw new ValueError(`invalid literal for int() with base 8: b'${digits}'`);
         }
-        out.push(int(digits, 8) & 0xff);
+        out.push(Number.parseInt(digits, 8) & 0xff);
       } else if (bytesEq(nxt, NEWLINE) || bytesEq(nxt, CARRIAGE_RETURN)) {
         // PDF 7.3.4.2: a reverse solidus before an end-of-line marker
         // is a line continuation - both bytes are dropped. Keeping the
@@ -780,8 +778,8 @@ export class _GState {
 export function _baseEncoding(doc: _Document, font: CosDict): string {
   const encoding = doc.get(font, "Encoding");
   const table = _asDict(doc.resolve(encoding));
-  if (table != null) return str(doc.get(table, "BaseEncoding", ""));
-  return encoding == null ? "" : str(encoding);
+  if (table != null) return String(doc.get(table, "BaseEncoding", ""));
+  return encoding == null ? "" : String(encoding);
 }
 
 /** The advances After Effects supplies for a font with no `/Widths`. */
@@ -808,9 +806,9 @@ export function _builtinWidths(doc: _Document, font: CosDict, base: string): Map
  */
 export function _fontMetrics(doc: _Document, font: CosDict | null): Metrics {
   if (!(font instanceof Map)) return _NO_FONT_METRICS;
-  const subtype = str(doc.get(font, "Subtype", ""));
+  const subtype = String(doc.get(font, "Subtype", ""));
   if (subtype === "Type0") return _type0Metrics(doc, font);
-  const first = int(doc.number(font.get("FirstChar") ?? null, 0.0));
+  const first = Math.trunc(doc.number(font.get("FirstChar") ?? null, 0.0));
   const rawWidths = doc.get(font, "Widths");
   let widths = new Map<number, number>();
   if (Array.isArray(rawWidths)) {
@@ -819,7 +817,7 @@ export function _fontMetrics(doc: _Document, font: CosDict | null): Metrics {
     }
   }
   const descriptor = doc.get(font, "FontDescriptor");
-  const base = _baseFont(str(doc.get(font, "BaseFont", "")));
+  const base = _baseFont(String(doc.get(font, "BaseFont", "")));
   const default_ = doc.number(doc.get(descriptor, "MissingWidth"), 0.0);
   if (widths.size === 0) widths = _builtinWidths(doc, font, base);
   const [yMin, yMax] = _verticalExtent(doc, descriptor, STD14_EXTENT.get(base) ?? null);
@@ -843,13 +841,13 @@ export function _type0Metrics(doc: _Document, font: CosDict): Metrics {
     const following = index + 1 < entries.length ? doc.resolve(entries[index + 1]) : null;
     if (Array.isArray(following)) {
       for (const [offset, value] of following.entries()) {
-        widths.set(int(start) + offset, doc.number(value));
+        widths.set(Math.trunc(start) + offset, doc.number(value));
       }
       index += 2;
     } else if (index + 2 < entries.length) {
-      const end = int(doc.number(entries[index + 1]));
+      const end = Math.trunc(doc.number(entries[index + 1]));
       const value = doc.number(entries[index + 2]);
-      for (let code = int(start); code < end + 1; code++) widths.set(code, value);
+      for (let code = Math.trunc(start); code < end + 1; code++) widths.set(code, value);
       index += 3;
     } else {
       break;
@@ -1023,7 +1021,7 @@ export class _Measurer {
       // ---- optional content
       else if (op === "BDC" || op === "BMC") {
         let number = -1;
-        if (op === "BDC" && operands.length >= 2 && str(operands[operands.length - 2]) === "OC") {
+        if (op === "BDC" && operands.length >= 2 && String(operands[operands.length - 2]) === "OC") {
           const reference = this._resourceRef(resources, "Properties", operands[operands.length - 1]);
           if (reference instanceof IndirectReference) number = reference.objectNumber;
         }
@@ -1133,7 +1131,7 @@ export class _Measurer {
     if (target == null) return;
     const doc = this._doc;
     let ctm = gs.ctm;
-    const subtype = str(doc.get(xobject, "Subtype", ""));
+    const subtype = String(doc.get(xobject, "Subtype", ""));
     if (subtype === "Form") {
       const matrix = doc.get(xobject, "Matrix");
       if (Array.isArray(matrix) && matrix.length === 6) {
@@ -1321,7 +1319,7 @@ export function readAiIccProfile(file: PathLike, data: Uint8Array | null = null)
     const spaces = doc.get(doc.get(page, "Resources"), "ColorSpace");
     for (const match of decode(content, "latin-1").matchAll(_COLOR_SPACE_OP_RE)) {
       const space = doc.get(spaces, match[1]);
-      if (Array.isArray(space) && space.length === 2 && str(space[0]) === "ICCBased") {
+      if (Array.isArray(space) && space.length === 2 && String(space[0]) === "ICCBased") {
         const profile = doc.stream(space[1]);
         if (profile.length >= 132 && bytesEq(profile.slice(36, 40), b("acsp"))) {
           return profile;

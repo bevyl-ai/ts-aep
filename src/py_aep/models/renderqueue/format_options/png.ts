@@ -3,7 +3,6 @@
 import {
   ValueError,
   descriptor,
-  int,
   jsonDumps,
   jsonLoads,
   truthy,
@@ -124,7 +123,7 @@ export class PngFormatOptions extends FormatOptionsBase {
 
   set colorPrimaries(value: Hdr10ColorPrimaries) {
     validateEnum(Hdr10ColorPrimaries)(value);
-    this._hdr10Meta.set("displayPrimaries", int(value));
+    this._hdr10Meta.set("displayPrimaries", Math.trunc(value));
     this._syncHdr10();
   }
 

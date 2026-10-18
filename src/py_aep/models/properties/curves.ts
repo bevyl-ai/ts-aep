@@ -19,7 +19,6 @@ import {
   at,
   bytesEq,
   getOrThrow,
-  int,
   valueEquals,
   literal,
   zip,
@@ -301,7 +300,7 @@ export class Curves {
       y = ch._spline.evaluate(x * 255.0) / 255.0;
     } else {
       const f = Math.min(Math.max(x, 0.0), 1.0) * 255.0;
-      const i = Math.min(int(Math.floor(f)), 254);
+      const i = Math.min(Math.trunc(Math.floor(f)), 254);
       const t = f - i;
       const lut = ch._map;
       y = (lut[i] * (1.0 - t) + lut[i + 1] * t) / 255.0;

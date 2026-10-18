@@ -17,11 +17,9 @@ import {
   ValueError,
   encode,
   floatRepr,
-  int,
   max,
   literal,
   split,
-  str,
   FileExistsError,
   typeName,
 } from "../../pyrt/index.ts";
@@ -97,10 +95,10 @@ export function _validateNumber<O>(kw: NumberKw<O | null> = {}): InstanceValidat
     // A bool compares as its int value, as in Python.
     const num = Number(value);
     if (lo != null) {
-      if (exclusiveMin && num <= lo) throw new ValueError(`must be > ${str(lo)}, got ${str(value)}`);
-      if (!exclusiveMin && num < lo) throw new ValueError(`must be >= ${str(lo)}, got ${str(value)}`);
+      if (exclusiveMin && num <= lo) throw new ValueError(`must be > ${String(lo)}, got ${String(value)}`);
+      if (!exclusiveMin && num < lo) throw new ValueError(`must be >= ${String(lo)}, got ${String(value)}`);
     }
-    if (hi != null && num > hi) throw new ValueError(`must be <= ${str(hi)}, got ${str(value)}`);
+    if (hi != null && num > hi) throw new ValueError(`must be <= ${String(hi)}, got ${String(value)}`);
   };
 }
 
@@ -204,7 +202,7 @@ export function validateEnum(enumCls: EnumHelpers<number>): Validator {
 export function validateOneOf<T>(allowed: Iterable<T>): Validator {
   const allowedList = [...allowed];
   const allowedSet = new Set<unknown>(allowedList);
-  const formatted = allowedList.map((v) => str(v)).join(", ");
+  const formatted = allowedList.map((v) => String(v)).join(", ");
 
   return function _validator(value: unknown, instance: unknown = null): void {
     if (!allowedSet.has(value instanceof String ? String(value) : value)) {
@@ -422,7 +420,7 @@ export function validateAeVersion(value: unknown, instance: unknown = null): voi
         `(e.g. '25.6x101'), got ${literal(value)}`,
     );
   }
-  const [major, minor, build] = match.slice(1).map((part) => int(part));
+  const [major, minor, build] = match.slice(1).map((part) => Number.parseInt(part, 10));
   if (major > 0xff) throw new ValueError(`version major must be <= 255, got ${major}`);
   if (minor > 0x0f) throw new ValueError(`version minor must be <= 15, got ${minor}`);
   if (build > 0xff) throw new ValueError(`version build must be <= 255, got ${build}`);
@@ -434,11 +432,11 @@ export function validateAeVersion(value: unknown, instance: unknown = null): voi
  */
 export function validateAeRelease(value: unknown, instance: unknown = null): void {
   validateAeVersion(value);
-  const major = int(split(str(value), ".", 1)[0]);
+  const major = Number.parseInt(split(String(value), ".", 1)[0], 10);
   if (!FORMAT_VERSIONS.has(major) && major < max([...FORMAT_VERSIONS.keys()])) {
     throw new ValueError(
       `After Effects ${major} is not a release py_aep writes; ` +
-        `supported majors: ${str([...FORMAT_VERSIONS.keys()].sort((a, b) => a - b))} and later`,
+        `supported majors: ${String([...FORMAT_VERSIONS.keys()].sort((a, b) => a - b))} and later`,
     );
   }
 }

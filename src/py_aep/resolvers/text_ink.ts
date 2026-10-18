@@ -43,7 +43,6 @@ import {
   literal,
   rstrip,
   split,
-  str,
   compositeKey,
   zip,
 } from "../../pyrt/index.ts";
@@ -220,7 +219,7 @@ export function _justifiedOrigin(
  *   docstring), or when a font is not installed.
  */
 export function textInkRect(doc: TextDocument): { top: number; left: number; width: number; height: number } {
-  const raw = str(truthyOr(cosGet(doc._doc, "0", "0"), ""));
+  const raw = String(truthyOr(cosGet(doc._doc, "0", "0"), ""));
   _checkStyles(doc);
   let styles: _CharStyle[];
   try {

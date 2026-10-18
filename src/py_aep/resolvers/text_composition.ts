@@ -50,7 +50,6 @@ import {
   literal,
   rstrip,
   split,
-  str,
   sum,
   compositeKey,
   ValueError,
@@ -614,7 +613,7 @@ export function _breakParagraph(
  * `uharfbuzz` is unavailable (Python 3.7).
  */
 export function composeLines(doc: TextDocument): ComposedLines {
-  const raw = str(truthyOr(cosGet(doc._doc, "0", "0"), ""));
+  const raw = String(truthyOr(cosGet(doc._doc, "0", "0"), ""));
   const boxSize = doc.boxTextSize;
   if (boxSize == null) {
     throw new CompositionUnsupported("not a box-text document");

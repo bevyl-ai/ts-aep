@@ -20,7 +20,6 @@ import type { Project } from "../models/project.ts";
 import {
   and,
   at,
-  int,
   split,
   strip,
   warn,
@@ -30,6 +29,7 @@ import {
   UnicodeDecodeError,
 } from "../../pyrt/index.ts";
 import * as _property from "./property.ts";
+import { late } from "../models/late.ts";
 
 // `logging.getLogger(__name__)`: this module logs nothing today, so only the
 // warning path is wired to pyrt `warn`.
@@ -730,7 +730,7 @@ _pardExtractor(PropertyControlType.ENUM)(_extractEnum);
 /** Return integral floats as int, matching ExtendScript output. */
 // NOTE(port): Python returns int for integral floats, else the float; JS numbers carry the same value, and the int/float type is only observable via repr()/type().
 export function _intify(value: number): number {
-  return Number.isInteger(value) ? int(value) : value;
+  return Number.isInteger(value) ? Math.trunc(value) : value;
 }
 
 export function _extractInteger(body: IntegerPardChunk, result: ParamDef): void {
@@ -944,3 +944,5 @@ export function matchEffectDefinition(
   }
   return null;
 }
+
+Object.assign(late, { parseEffect, matchEffectDefinition, rehomeEffectDefinitions, _effectInstances });

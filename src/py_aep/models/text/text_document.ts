@@ -6,12 +6,10 @@ import {
   deepcopy,
   descriptor,
   float,
-  int,
   assert,
   truthy,
   valueEquals,
   rstrip,
-  str,
   ValueError,
   zip,
   boxFloat,
@@ -79,7 +77,7 @@ export function _boxCoords(left: number, top: number, width: number, height: num
  * matching that order keeps serialized output byte-identical.
  */
 export function _numericSort(d: CosDict): void {
-  const items = [...d.entries()].sort((a, b) => int(a[0]) - int(b[0]));
+  const items = [...d.entries()].sort((a, b) => Number.parseInt(a[0], 10) - Number.parseInt(b[0], 10));
   d.clear();
   for (const [k, v] of items) d.set(k, v);
 }
@@ -533,7 +531,7 @@ export class TextDocument {
       // AE stores line breaks as CR; present them as LF to callers.
       // Strip exactly the one terminator CR - further trailing CRs
       // are real line breaks (trailing empty paragraphs).
-      const raw0 = str(val);
+      const raw0 = String(val);
       const raw = raw0.endsWith("\r") ? raw0.slice(0, -1) : raw0;
       return raw.replaceAll("\r", "\n");
     }

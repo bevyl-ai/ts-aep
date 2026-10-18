@@ -18,6 +18,7 @@ import { parseGradientXml } from "./gradient.ts";
 import { parseProperty } from "./property_value.ts";
 import { parseBtdkCos } from "./text.ts";
 import { BytesIO, OverflowError, ValueError, warn, zip, instanceDict } from "../../pyrt/index.ts";
+import { late } from "../models/late.ts";
 
 // `logging.getLogger(__name__)`: only the warning path is wired to pyrt `warn`.
 export const logger = {
@@ -330,3 +331,5 @@ export function parseGradient(
 
   return prop;
 }
+
+Object.assign(late, { _parseShapeShap });
