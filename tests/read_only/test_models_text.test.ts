@@ -13,7 +13,18 @@ import type { CompItem } from "../../src/py_aep/models/items/composition.ts";
 import type { TextDocument } from "../../src/py_aep/models/text/text_document.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { getComp } from "../conftest.ts";
-import { AutoKernType, BaselineDirection, DigitSet, FontBaselineOption, FontCapsOption, LeadingType, LineJoinType, LineOrientation, ParagraphDirection, ParagraphJustification } from "../../src/py_aep/enums/index.ts";
+import {
+  AutoKernType,
+  BaselineDirection,
+  DigitSet,
+  FontBaselineOption,
+  FontCapsOption,
+  LeadingType,
+  LineJoinType,
+  LineOrientation,
+  ParagraphDirection,
+  ParagraphJustification,
+} from "../../src/py_aep/enums/index.ts";
 import { approx } from "../support/pytest.ts";
 
 // Path(__file__).parent x3 is the TS root (this file lives in tests/read_only).

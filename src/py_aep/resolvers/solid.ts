@@ -6,7 +6,6 @@
  * naming logic using calibrated HSV thresholds.
  */
 
-
 // -- Hue bands (degrees 0-360) ----------------------------------------
 
 export const _HUE_BANDS: [number, string][] = [
@@ -55,7 +54,7 @@ export function _rgbToHsv(r: number, g: number, b: number): [number, number, num
   } else {
     h = 4.0 + gc - rc;
   }
-  h = ((((h / 6.0) % 1.0) + 1.0) % 1.0);
+  h = (((h / 6.0) % 1.0) + 1.0) % 1.0;
   return [h, s, v];
 }
 

@@ -137,7 +137,12 @@ export function pyIter(x: unknown): unknown[] {
 type Sliceable = { slice(s: number, e: number): Sliceable; length: number; readonly [i: number]: unknown };
 
 /** `xs[start:end]` for arrays and strings with Python's clamping. */
-export function pySlice<T extends Sliceable>(xs: T, start?: number | null, end?: number | null, step?: number | null): T;
+export function pySlice<T extends Sliceable>(
+  xs: T,
+  start?: number | null,
+  end?: number | null,
+  step?: number | null,
+): T;
 export function pySlice(xs: Sliceable, start?: number | null, end?: number | null, step?: number | null): unknown {
   const n = xs.length;
   if (step != null && step !== 1) {
@@ -197,7 +202,9 @@ export function dictPop<K, V>(d: Map<K, V>, k: K, ...dflt: [] | [V]): V {
  * `compositeKey(a, b)` matches `compositeKey(c, d)` when a = c and b = d.
  */
 export function compositeKey(...parts: unknown[]): string {
-  return JSON.stringify(parts, (_k, v) => (typeof v === "bigint" ? `${v}n` : v instanceof Uint8Array ? Array.from(v) : v));
+  return JSON.stringify(parts, (_k, v) =>
+    typeof v === "bigint" ? `${v}n` : v instanceof Uint8Array ? Array.from(v) : v,
+  );
 }
 
 /**
@@ -206,7 +213,11 @@ export function compositeKey(...parts: unknown[]): string {
  * reads as `any`.
  */
 export function getMember<O, N extends string & keyof NonNullable<O>>(obj: O, name: N): Required<NonNullable<O>>[N];
-export function getMember<O, N extends string & keyof NonNullable<O>, D>(obj: O, name: N, dflt: D): Required<NonNullable<O>>[N] | D;
+export function getMember<O, N extends string & keyof NonNullable<O>, D>(
+  obj: O,
+  name: N,
+  dflt: D,
+): Required<NonNullable<O>>[N] | D;
 export function getMember(obj: unknown, name: string, ...dflt: [unknown?]): any;
 export function getMember(obj: unknown, name: string, ...dflt: [unknown?]): unknown {
   if (obj != null && name in Object(obj)) return Reflect.get(Object(obj), name, obj);
@@ -239,7 +250,11 @@ export function valueEquals(a: unknown, b: unknown): boolean {
   if (typeof a === "number" && typeof b === "number") return a === b;
   if (typeof a === "number" && typeof b === "boolean") return a === (b ? 1 : 0);
   if (typeof a === "boolean" && typeof b === "number") return (a ? 1 : 0) === b;
-  if ((typeof a === "bigint" || typeof b === "bigint") && (typeof a === "number" || typeof a === "bigint") && (typeof b === "number" || typeof b === "bigint")) {
+  if (
+    (typeof a === "bigint" || typeof b === "bigint") &&
+    (typeof a === "number" || typeof a === "bigint") &&
+    (typeof b === "number" || typeof b === "bigint")
+  ) {
     return BigInt(a) === BigInt(b);
   }
   if (a == null || b == null) return false;
@@ -312,7 +327,8 @@ export function typeName(x: unknown): string {
   if (x === null) return "null";
   if (x instanceof BoxedFloat) return "number";
   if (typeof x !== "object" && typeof x !== "function") return typeof x;
-  if (typeof x === "function") return x.prototype && /^class\b/.test(Function.prototype.toString.call(x)) ? "class" : "function";
+  if (typeof x === "function")
+    return x.prototype && /^class\b/.test(Function.prototype.toString.call(x)) ? "class" : "function";
   return x.constructor?.name ?? "Object";
 }
 
@@ -403,7 +419,8 @@ export function copy(x: unknown): unknown {
     for (const k of Object.keys(x)) if (!/^\d+$/.test(k)) out[k] = Reflect.get(x, k);
     return out;
   }
-  if (x instanceof String) return Object.assign(Object.setPrototypeOf(new String(x.valueOf()), Object.getPrototypeOf(x)), x);
+  if (x instanceof String)
+    return Object.assign(Object.setPrototypeOf(new String(x.valueOf()), Object.getPrototypeOf(x)), x);
   return Object.assign(Object.create(Object.getPrototypeOf(x)), x);
 }
 
@@ -439,7 +456,8 @@ export function lruCache<A extends unknown[], R>(fn: (...args: A) => R): ((...ar
 
 /** A class instance whose own `toString` (not Object's, Array's or Error's) is its `str()`. */
 function _hasOwnToString(x: unknown): x is { toString(): string } {
-  if (x === null || typeof x !== "object" || x instanceof Error || Array.isArray(x) || ArrayBuffer.isView(x)) return false;
+  if (x === null || typeof x !== "object" || x instanceof Error || Array.isArray(x) || ArrayBuffer.isView(x))
+    return false;
   for (let p = Object.getPrototypeOf(x); p !== null && p !== Object.prototype; p = Object.getPrototypeOf(p)) {
     if (Object.prototype.hasOwnProperty.call(p, "toString")) return true;
   }

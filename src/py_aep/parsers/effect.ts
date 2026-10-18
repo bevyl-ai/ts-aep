@@ -1,9 +1,29 @@
 /** Effect and parameter definition parsers. */
 
 import { ListChunk, type Chunk } from "../binary/chunk.ts";
-import type { AnglePardChunk, BooleanPardChunk, ColorPardChunk, EnumPardChunk, IntegerPardChunk, PardChunk, ScalarPardChunk, SliderPardChunk, ThreeDPardChunk, TwoDPardChunk } from "../binary/misc_chunks.ts";
+import type {
+  AnglePardChunk,
+  BooleanPardChunk,
+  ColorPardChunk,
+  EnumPardChunk,
+  IntegerPardChunk,
+  PardChunk,
+  ScalarPardChunk,
+  SliderPardChunk,
+  ThreeDPardChunk,
+  TwoDPardChunk,
+} from "../binary/misc_chunks.ts";
 import type { TdmnChunk } from "../binary/property_chunks.ts";
-import { ChunkNotFoundError, filterByListType, filterByType, findByListType, findByListTypeOrNull, findByType, findByTypeOrNull, indexByIdentity } from "../binary/utils.ts";
+import {
+  ChunkNotFoundError,
+  filterByListType,
+  filterByType,
+  findByListType,
+  findByListTypeOrNull,
+  findByType,
+  findByTypeOrNull,
+  indexByIdentity,
+} from "../binary/utils.ts";
 import { MATCH_NAME_TO_AUTO_NAME } from "../data/match_names.ts";
 import { EFFECT_PARAM_SPATIAL_FLAGS } from "../data/spatial_flags.ts";
 import { PropertyControlType, PropertyType, PropertyValueType } from "../enums/index.ts";
@@ -17,13 +37,7 @@ import { getChunksByMatchName, getMatchNameRuns } from "./utils.ts";
 import type { CompItem } from "../models/items/composition.ts";
 import type { Layer } from "../models/layers/layer.ts";
 import type { Project } from "../models/project.ts";
-import {
-  warn,
-  decode,
-  encode,
-  LookupError,
-  UnicodeDecodeError,
-} from "../../pyrt/index.ts";
+import { warn, decode, encode, LookupError, UnicodeDecodeError } from "../../pyrt/index.ts";
 import * as _property from "./property.ts";
 import { late } from "../models/late.ts";
 
@@ -64,7 +78,6 @@ export interface ParamDef {
 /** A parameter's value or default as its definition gives it. */
 export type ParamValue = number | number[] | null;
 
-
 export const _PVT_DIMENSIONS: Map<number, number> = new Map<number, number>([
   [PropertyValueType.COLOR, 4],
   [PropertyValueType.ThreeD_SPATIAL, 3],
@@ -83,8 +96,7 @@ export function _paramDefToSpec(matchName: string, paramDef: ParamDef): PropSpec
   const controlType = paramDef.propertyControlType;
   const isColor = controlType === PropertyControlType.COLOR;
   const dims = _PVT_DIMENSIONS.get(pvt) ?? 1;
-  const isSpatial =
-    pvt === PropertyValueType.TwoD_SPATIAL || pvt === PropertyValueType.ThreeD_SPATIAL || isColor;
+  const isSpatial = pvt === PropertyValueType.TwoD_SPATIAL || pvt === PropertyValueType.ThreeD_SPATIAL || isColor;
   const [value, defaultValue] = _resolveEffectValue(matchName, paramDef, controlType);
   // PropSpec is a NamedTuple: positional, in field order. Skipped optional
   // fields are passed as `undefined` so their defaults apply.
@@ -255,10 +267,7 @@ export function _normalizeSyntheticPoint(prop: Property): void {
  *   projects store parameter names in.
  * @returns Map of parameter match names to definition dicts.
  */
-export function parseEffectParamDefs(
-  sspcChildChunks: Chunk[],
-  codePage: number,
-): Map<string, ParamDef> {
+export function parseEffectParamDefs(sspcChildChunks: Chunk[], codePage: number): Map<string, ParamDef> {
   const partChunk = findByListType(sspcChildChunks, "parT");
   const paramDefs = new Map<string, ParamDef>();
 
@@ -286,9 +295,7 @@ export const _UNBOUNDED_CHECKBOXES: ReadonlySet<string> = new Set<string>([
 ]);
 
 // Codecs of the `nnhd` code pages that are not `cp<number>`.
-export const _CODE_PAGE_CODECS: Map<number, string> = new Map<number, string>([
-  [0x0100, "mac_roman"],
-]);
+export const _CODE_PAGE_CODECS: Map<number, string> = new Map<number, string>([[0x0100, "mac_roman"]]);
 
 /**
  * A `pard` name in the project's code page.
@@ -411,17 +418,9 @@ export function _parseEffectProperties(
   layer: Layer | null = null,
 ): (Property | PropertyGroup)[] {
   // Skip index-0 internal parameters (not exposed in ExtendScript).
-  const propertyRuns = [...getMatchNameRuns(tdgpChunk)].filter(
-    ([name]) => !name.endsWith("-0000"),
-  );
+  const propertyRuns = [...getMatchNameRuns(tdgpChunk)].filter(([name]) => !name.endsWith("-0000"));
 
-  const parsed = _property.parseProperties(
-    propertyRuns,
-    childDepth,
-    new Map(),
-    composition,
-    layer,
-  );
+  const parsed = _property.parseProperties(propertyRuns, childDepth, new Map(), composition, layer);
 
   // Index parsed children by match_name for O(1) lookup.
   const parsedByMn = new Map<string, Property | PropertyGroup>(
@@ -594,10 +593,7 @@ export const parseEffect = _suppressMaterialization().decorate(function parse_ef
 
   let paramDefs: Map<string, ParamDef>;
   try {
-    paramDefs = parseEffectParamDefs(
-      sspcChildChunks,
-      composition._project._nnhd._systemCodePage,
-    );
+    paramDefs = parseEffectParamDefs(sspcChildChunks, composition._project._nnhd._systemCodePage);
   } catch (e) {
     if (!(e instanceof ChunkNotFoundError)) throw e;
     paramDefs = new Map();
@@ -670,9 +666,7 @@ export type PardExtractor = { extract(body: PardChunk, result: ParamDef): void }
 export const _PARD_EXTRACTORS: Map<number, PardExtractor> = new Map();
 
 /** Register a pard field extractor for the given control type(s). */
-export function _pardExtractor(
-  ...controlTypes: PropertyControlType[]
-): (func: PardExtractor) => PardExtractor {
+export function _pardExtractor(...controlTypes: PropertyControlType[]): (func: PardExtractor) => PardExtractor {
   function decorator(func: PardExtractor): PardExtractor {
     for (const ct of controlTypes) _PARD_EXTRACTORS.set(ct, func);
     return func;
@@ -805,10 +799,7 @@ _pardExtractor(
 )(_extractNoValue);
 
 /** Parse effect parameter definition from pard chunk, returning a map of values. */
-export function _parseEffectParameterDef(
-  parameterChunks: Chunk[],
-  codePage: number,
-): ParamDef {
+export function _parseEffectParameterDef(parameterChunks: Chunk[], codePage: number): ParamDef {
   const pardChunk = findByType(parameterChunks, "pard");
 
   const controlType = PropertyControlType.of(pardChunk.propertyControlType);
@@ -839,11 +830,7 @@ export function _parseEffectParameterDef(
     const pdnmData = utf8Chunk.value;
     if (controlType === PropertyControlType.ENUM) {
       result.propertyParameters = pdnmData.split("|");
-    } else if (
-      pdnmData &&
-      controlType === PropertyControlType.BOOLEAN &&
-      !result.name.trim()
-    ) {
+    } else if (pdnmData && controlType === PropertyControlType.BOOLEAN && !result.name.trim()) {
       // A checkbox's pdnm is the label beside its box (a button's, the
       // button text): AE 2026 names the parameter by it only when the
       // pard name is blank (2102 / 2102 such checkboxes, 279 / 279
@@ -869,10 +856,7 @@ export function _parseEffectParameterDef(
  * @returns Map of effect match names to their parameter definitions (effect_match_name -\>
  *   param_match_name -\> param_def).
  */
-export function parseEffectDefinitions(
-  rootChunks: Chunk[],
-  codePage: number,
-): Map<string, Map<string, ParamDef>> {
+export function parseEffectDefinitions(rootChunks: Chunk[], codePage: number): Map<string, Map<string, ParamDef>> {
   const efdgChunk = findByListTypeOrNull(rootChunks, "EfdG");
   if (efdgChunk === null) return new Map();
 
@@ -903,9 +887,7 @@ export function parseEffectDefinitions(
  * never re-reads it after parse), so callers cache the result rather
  * than re-walking per lookup.
  */
-export function effectDefinitionEntries(
-  rootChunks: Chunk[],
-): [string, string, ListChunk][] {
+export function effectDefinitionEntries(rootChunks: Chunk[]): [string, string, ListChunk][] {
   const efdgChunk = findByListTypeOrNull(rootChunks, "EfdG");
   if (efdgChunk === null) return [];
 

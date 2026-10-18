@@ -1,12 +1,6 @@
 /** Shape value model for mask and shape path properties. */
 
-import {
-  AttributeError,
-  ValueError,
-  assert,
-  descriptor,
-  truediv,
-} from "../../../pyrt/index.ts";
+import { AttributeError, ValueError, assert, descriptor, truediv } from "../../../pyrt/index.ts";
 import { ShapePoint } from "../../binary/ldat_chunks.ts";
 import { ShphChunk, TensionItem } from "../../binary/misc_chunks.ts";
 import type { FeatherPointItem, OmtnChunk } from "../../binary/misc_chunks.ts";
@@ -15,7 +9,6 @@ import { ChunkField } from "../descriptors.ts";
 import { validateBool, validateF4Point, validateNormalizedFloat, validatePositiveInt } from "../validators.ts";
 import type { Layer } from "../layers/layer.ts";
 import type { Property } from "./property.ts";
-
 
 /** Map binary interpolation (0=non-Hold, 2=Hold) to ExtendScript (0/1). */
 export function _interpTransform(raw: number): number {
@@ -95,7 +88,11 @@ export class FeatherPoint {
     descriptor(this, "segLoc", new ChunkField("_fp", "segLoc", { validate: validatePositiveInt }));
     descriptor(this, "relSegLoc", new ChunkField("_fp", "relSegLoc", { validate: validateNormalizedFloat }));
     descriptor(this, "radius", new ChunkField("_fp", "radius"));
-    descriptor(this, "interp", new ChunkField("_fp", "interpRaw", { transform: _interpTransform, reverse: _interpReverse }));
+    descriptor(
+      this,
+      "interp",
+      new ChunkField("_fp", "interpRaw", { transform: _interpTransform, reverse: _interpReverse }),
+    );
     descriptor(this, "tension", new ChunkField("_fp", "tension", { validate: validateNormalizedFloat }));
     descriptor(this, "relCornerAngle", new ChunkField("_fp", "cornerAngle"));
   }
@@ -307,15 +304,7 @@ export class Shape {
     _maskPath?: Property | null;
     featherPoints?: FeatherPoint[] | null;
   }): Shape {
-    const {
-      _shph,
-      _points,
-      _isMask = false,
-      _layer = null,
-      _omtn = null,
-      _maskPath = null,
-      featherPoints = null,
-    } = kw;
+    const { _shph, _points, _isMask = false, _layer = null, _omtn = null, _maskPath = null, featherPoints = null } = kw;
     const obj: Shape = Object.create(this.prototype);
     obj._shph = _shph;
     obj._points = _points;

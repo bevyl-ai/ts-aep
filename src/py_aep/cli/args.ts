@@ -15,10 +15,18 @@ export function usageError(command: Command, message: string): never {
  * `node:util` `parseArgs` over `argv`, with `-h`/`--help` printing the help
  * text (exit 0) and malformed input reported as a usage error (exit 2).
  */
-export function parseCommandLine(command: Command, argv: string[]): { values: Record<string, string | boolean | undefined>; positionals: string[] } {
+export function parseCommandLine(
+  command: Command,
+  argv: string[],
+): { values: Record<string, string | boolean | undefined>; positionals: string[] } {
   let parsed: ReturnType<typeof parseArgs>;
   try {
-    parsed = parseArgs({ args: argv, options: { help: { type: "boolean", short: "h" }, ...command.options }, allowPositionals: true, strict: true });
+    parsed = parseArgs({
+      args: argv,
+      options: { help: { type: "boolean", short: "h" }, ...command.options },
+      allowPositionals: true,
+      strict: true,
+    });
   } catch (e) {
     if (e instanceof TypeError && typeof (e as { code?: unknown }).code === "string") usageError(command, e.message);
     throw e;

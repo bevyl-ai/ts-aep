@@ -10,7 +10,18 @@
 
 import { describe, expect, test } from "bun:test";
 import { createHash } from "node:crypto";
-import { b, Bytes, bytesEqual, decode, len, Path, truthy, valueEquals, StopIteration, struct } from "../../src/pyrt/index.ts";
+import {
+  b,
+  Bytes,
+  bytesEqual,
+  decode,
+  len,
+  Path,
+  truthy,
+  valueEquals,
+  StopIteration,
+  struct,
+} from "../../src/pyrt/index.ts";
 
 import { ImportOptions, parse } from "../../src/py_aep/index.ts";
 import "../../src/py_aep/binary/_register.ts";
@@ -81,7 +92,7 @@ describe("TestFixedStringTail", () => {
   test("test_assigned_code_with_nul_reads_back_as_reparsed", () => {
     const chunk = new SspcChunk({ sourceFormatType: "\x00vsc" });
     expect(String(chunk.sourceFormatType)).toBe("");
-    expect(valueEquals(Bytes.slice(chunk.tobytes(), 0x16, 0x1A), b("\x00vsc"))).toBe(true);
+    expect(valueEquals(Bytes.slice(chunk.tobytes(), 0x16, 0x1a), b("\x00vsc"))).toBe(true);
   });
 
   test("test_assigned_plain_string_drops_the_old_tail", () => {
@@ -89,7 +100,7 @@ describe("TestFixedStringTail", () => {
     data.set(b("\x00vsc"), 0x16);
     const chunk = asInstance(SspcChunk.frombytes(new Uint8Array(data)), SspcChunk);
     chunk.sourceFormatType = "png!";
-    expect(valueEquals(Bytes.slice(chunk.tobytes(), 0x16, 0x1A), b("png!"))).toBe(true);
+    expect(valueEquals(Bytes.slice(chunk.tobytes(), 0x16, 0x1a), b("png!"))).toBe(true);
   });
 
   test("test_solid_name_stale_tail_round_trips", () => {
@@ -124,7 +135,7 @@ describe("TestFixedStringTail", () => {
 describe("TestTdb4KeyFlagsByte", () => {
   test("test_byte_0x4f_kept_whole", () => {
     const data = new Uint8Array(new Tdb4Chunk().tobytes());
-    data[0x4F] = 0x07;
+    data[0x4f] = 0x07;
     const chunk = asInstance(Tdb4Chunk.frombytes(new Uint8Array(data)), Tdb4Chunk);
     expect(chunk._spatialMarker).toBe(0x07);
     expect(chunk._spatialMarker).toBeTruthy(); // still reads as a spatial stream
@@ -136,8 +147,8 @@ describe("TestTdb4KeyFlagsByte", () => {
     const source = SAMPLES.div("models", "property", "effect_point_speed.aep");
     const data = new Uint8Array(source.readBytes());
     const targets = _leaves(new Uint8Array(data), b("Layr"))
-      .filter(([ctype, body]) => ctype === "tdb4" && data[body + 0x4F] === 1)
-      .map(([, body]) => body + 0x4F);
+      .filter(([ctype, body]) => ctype === "tdb4" && data[body + 0x4f] === 1)
+      .map(([, body]) => body + 0x4f);
     if (targets.length === 0) throw new StopIteration(); // next() on an empty generator
     const target = targets[0];
     data[target] = 0x07;
@@ -168,7 +179,7 @@ describe("TestDataFootageSourceCode", () => {
     const codes = new Set(
       _leaves(data)
         .filter(([ctype]) => ctype === "sspc")
-        .map(([, body]) => Bytes.toHex(Bytes.slice(data, body + 0x16, body + 0x1A))),
+        .map(([, body]) => Bytes.toHex(Bytes.slice(data, body + 0x16, body + 0x1a))),
     );
     const expectedCodes = [b("\x00vsc"), b("\x00vst")].map((x) => Bytes.toHex(x));
     expect(expectedCodes.every((c) => codes.has(c))).toBe(true);

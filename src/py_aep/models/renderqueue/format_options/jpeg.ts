@@ -52,16 +52,28 @@ export class JpegFormatOptions extends FormatOptionsBase {
   declare scans: number;
 
   static {
-    descriptor(this, "quality", new ChunkField("_body", "quality", {
-      validate: _validateNumber({ min: 0, max: 10, integer: true }),
-    }));
-    descriptor(this, "formatType", ChunkField.enum(JpegFormatType, "_body", "formatType", {
-      allowOutOfEnumValues: true,
-    }));
-    descriptor(this, "scans", new ChunkField("_body", "scans", {
-      transform: (x: number) => x + 2,
-      reverse: (x: number) => x - 2,
-      validate: validateOneOf([3, 4, 5]),
-    }));
+    descriptor(
+      this,
+      "quality",
+      new ChunkField("_body", "quality", {
+        validate: _validateNumber({ min: 0, max: 10, integer: true }),
+      }),
+    );
+    descriptor(
+      this,
+      "formatType",
+      ChunkField.enum(JpegFormatType, "_body", "formatType", {
+        allowOutOfEnumValues: true,
+      }),
+    );
+    descriptor(
+      this,
+      "scans",
+      new ChunkField("_body", "scans", {
+        transform: (x: number) => x + 2,
+        reverse: (x: number) => x - 2,
+        validate: validateOneOf([3, 4, 5]),
+      }),
+    );
   }
 }

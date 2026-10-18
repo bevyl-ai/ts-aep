@@ -33,13 +33,7 @@ export function parseMarkers(
   tdmn: TdmnChunk,
 ): Property {
   const tdbsChunk = findByListType(mrstChunk.chunks, "tdbs");
-  const markerProp = parseProperty(
-    tdbsChunk,
-    "ADBE Marker",
-    composition,
-    propertyDepth,
-    tdmn,
-  );
+  const markerProp = parseProperty(tdbsChunk, "ADBE Marker", composition, propertyDepth, tdmn);
   markerProp._wrapper = mrstChunk;
   // ExtendScript reports MARKER (6420); the tdb4 flags alone would fall
   // back to OneD like any 1-D scalar.
@@ -49,12 +43,7 @@ export function parseMarkers(
   const nmrdChunks = filterByListType(mrkyChunk.chunks, "Nmrd");
   for (const [i, nmrdChunk] of nmrdChunks.entries()) {
     const kf = markerProp.keyframes.at(i)!;
-    kf._cacheValue(
-      parseMarker(
-        nmrdChunk,
-        kf,
-      ),
-    );
+    kf._cacheValue(parseMarker(nmrdChunk, kf));
   }
   return markerProp;
 }
@@ -66,11 +55,7 @@ export function parseMarkers(
  * @param keyframe - The keyframe that holds this marker value.
  * @param frameTime - Fallback time in frames (used when no keyframe ref).
  */
-export function parseMarker(
-  nmrdChunk: ListChunk,
-  keyframe: Keyframe | null = null,
-  frameTime = 0,
-): MarkerValue {
+export function parseMarker(nmrdChunk: ListChunk, keyframe: Keyframe | null = null, frameTime = 0): MarkerValue {
   const nmhdChunk = findByType(nmrdChunk.chunks, "NmHd");
 
   const utf8Chunks = filterByType(nmrdChunk.chunks, "Utf8");

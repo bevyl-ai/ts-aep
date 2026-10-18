@@ -3,7 +3,15 @@
 import { PREFType } from "../enums/general.ts";
 import { AutoKernType, ParagraphJustification } from "../enums/text_document.ts";
 import { parseCompPresets, type CompPreset } from "../parsers/comp_presets.ts";
-import { PrefsFile, decodePrefBool, decodePrefNumber, decodePrefString, findPrefsFile, parseHexValue, parseNumberText } from "../parsers/prefs.ts";
+import {
+  PrefsFile,
+  decodePrefBool,
+  decodePrefNumber,
+  decodePrefString,
+  findPrefsFile,
+  parseHexValue,
+  parseNumberText,
+} from "../parsers/prefs.ts";
 import { validateBool, validateEnum, validateName, validateNumber } from "./validators.ts";
 import type { TextDocument } from "./text/text_document.ts";
 import {
@@ -17,7 +25,8 @@ import {
   compositeKey,
   zip,
   typeName,
-  compare } from "../../pyrt/index.ts";
+  compare,
+} from "../../pyrt/index.ts";
 
 export const _validatePrefType = validateEnum(PREFType);
 
@@ -38,12 +47,9 @@ export const _LABEL_INDICES_SECTION = "Label Preference Indices Section 5";
  *   is absent.
  */
 export function labelIndex(preferences: Preferences, key: string, default_: number): number {
-  const value = preferences.getPrefAsNumber(
-    _LABEL_INDICES_SECTION,
-    key,
-    PREFType.PREF_Type_MACHINE_INDEPENDENT,
-    { default: default_ },
-  );
+  const value = preferences.getPrefAsNumber(_LABEL_INDICES_SECTION, key, PREFType.PREF_Type_MACHINE_INDEPENDENT, {
+    default: default_,
+  });
   return Math.trunc(value);
 }
 
@@ -222,9 +228,14 @@ export function defaultCharacterStyle(preferences: Preferences) {
     number("Stroke Blue", factory.stroke_color[2]),
   ];
   return {
-    font: preferences.getPrefAsString(_TEXT_STYLE_SECTION, "Font PostScript Name", PREFType.PREF_Type_MACHINE_SPECIFIC_TEXT, {
-      default: factory.font,
-    }),
+    font: preferences.getPrefAsString(
+      _TEXT_STYLE_SECTION,
+      "Font PostScript Name",
+      PREFType.PREF_Type_MACHINE_SPECIFIC_TEXT,
+      {
+        default: factory.font,
+      },
+    ),
     font_size: number("Size", factory.font_size),
     faux_bold: flag("Synthetic Bold", factory.faux_bold),
     faux_italic: flag("Synthetic Italic", factory.faux_italic),
@@ -240,9 +251,14 @@ export function defaultCharacterStyle(preferences: Preferences) {
     vertical_scale: number("Vertical Scale", factory.vertical_scale * _SCALE_PERCENT) / _SCALE_PERCENT,
     baseline_shift: number("Baseline Shift", factory.baseline_shift),
     auto_leading: flag("Auto Leading", factory.auto_leading),
-    auto_kern_type: _AUTO_KERN_BY_PREF.get(preferences.getPrefAsString(_TEXT_STYLE_SECTION, "Auto Kerning Type", PREFType.PREF_Type_MACHINE_SPECIFIC_TEXT, {
-          default: "Metric Auto Kerning",
-        }).trim()) ?? factory.auto_kern_type,
+    auto_kern_type:
+      _AUTO_KERN_BY_PREF.get(
+        preferences
+          .getPrefAsString(_TEXT_STYLE_SECTION, "Auto Kerning Type", PREFType.PREF_Type_MACHINE_SPECIFIC_TEXT, {
+            default: "Metric Auto Kerning",
+          })
+          .trim(),
+      ) ?? factory.auto_kern_type,
   };
 }
 
@@ -257,9 +273,14 @@ export function defaultCharacterStyle(preferences: Preferences) {
 export function defaultParagraphStyle(preferences: Preferences) {
   const [number, flag] = _sheetReaders(preferences, _PARA_SHEET_SECTION);
   const factory = _FACTORY_PARA_STYLE;
-  const rawJustification = preferences.getPrefAsString(_PARA_SHEET_SECTION, "Justification", PREFType.PREF_Type_MACHINE_SPECIFIC_TEXT, {
-    default: "Left",
-  });
+  const rawJustification = preferences.getPrefAsString(
+    _PARA_SHEET_SECTION,
+    "Justification",
+    PREFType.PREF_Type_MACHINE_SPECIFIC_TEXT,
+    {
+      default: "Left",
+    },
+  );
   const justification = _JUSTIFICATION_BY_PREF.get(rawJustification.split("|")[0].trim()) ?? factory.justification;
   return {
     justification,
@@ -346,7 +367,7 @@ export function applyTextStylePrefs(document: TextDocument, preferences: Prefere
   const tracking = number("Tracking");
   if (tracking != null && differs(document.tracking, tracking)) {
     // tracking is an integer field, unlike the float Size/Baseline Shift.
-    document.tracking = (Math.round(tracking) + 0);
+    document.tracking = Math.round(tracking) + 0;
   }
 
   const baselineShift = number("Baseline Shift");
@@ -469,7 +490,11 @@ export class Preferences {
    * `value` is a typed value when `isOverride` is `true`,
    * otherwise the raw pref-file text (AE's mixed hex/ASCII encoding).
    */
-  private _resolve(sectionName: string, keyName: string, prefType: PREFType): [false, null, false] | [true, PrefValue, true] | [true, string, false] {
+  private _resolve(
+    sectionName: string,
+    keyName: string,
+    prefType: PREFType,
+  ): [false, null, false] | [true, PrefValue, true] | [true, string, false] {
     validateName(sectionName);
     validateName(keyName);
     _validatePrefType(prefType);
@@ -661,11 +686,7 @@ export class Preferences {
    * @param keyName - The key name of the preference.
    * @param prefType - The preference file the preference is read from.
    */
-  havePref(
-    sectionName: string,
-    keyName: string,
-    prefType: PREFType = PREFType.PREF_Type_MACHINE_SPECIFIC,
-  ): boolean {
+  havePref(sectionName: string, keyName: string, prefType: PREFType = PREFType.PREF_Type_MACHINE_SPECIFIC): boolean {
     const [found] = this._resolve(sectionName, keyName, prefType);
     return found;
   }
@@ -681,11 +702,7 @@ export class Preferences {
    * @param keyName - The key name of the preference.
    * @param prefType - The preference file the preference belongs to.
    */
-  deletePref(
-    sectionName: string,
-    keyName: string,
-    prefType: PREFType = PREFType.PREF_Type_MACHINE_SPECIFIC,
-  ): void {
+  deletePref(sectionName: string, keyName: string, prefType: PREFType = PREFType.PREF_Type_MACHINE_SPECIFIC): void {
     validateName(sectionName);
     validateName(keyName);
     _validatePrefType(prefType);
@@ -742,7 +759,9 @@ export class Preferences {
     for (const key of [...section.keys()].sort(compare)) {
       // Each entry is `<name> NUL <template> NUL` in AE's mixed
       // hex/ASCII encoding.
-      const parts = Bytes.split(parseHexValue(getOrThrow(section, key)), new Uint8Array(1)).filter((p) => p?.length > 0);
+      const parts = Bytes.split(parseHexValue(getOrThrow(section, key)), new Uint8Array(1)).filter(
+        (p) => p?.length > 0,
+      );
       if (parts.length >= 2) {
         const name = decode(parts[0], "utf-8", "replace");
         presets.set(name, decode(parts[1], "utf-8", "replace"));

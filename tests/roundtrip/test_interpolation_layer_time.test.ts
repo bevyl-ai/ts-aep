@@ -28,7 +28,6 @@ import { valueEquals } from "../../src/pyrt/index.ts";
 import { approx, makeTmpPath } from "../support/pytest.ts";
 import { max, min, range, sorted } from "../support/python.ts";
 
-
 function _newComp(width = 200, height = 200, fps = 24.0): [Application, CompItem] {
   const app = py_aep.newProject();
   const comp = app.project.rootFolder.addComp("C", width, height, 1.0, 10.0, fps);
@@ -84,12 +83,8 @@ class TestStretchedLayerEaseTimeBase {
     opacity.setValueAtTime(0.0, 0.0);
     opacity.setValueAtTime(2.0, 100.0);
     _bezierBothSides(opacity);
-    opacity.keyframes[0].outTemporalEase = [
-      new KeyframeEase(60.0, 50.0),
-    ];
-    opacity.keyframes[1].inTemporalEase = [
-      new KeyframeEase(20.0, 75.0),
-    ];
+    opacity.keyframes[0].outTemporalEase = [new KeyframeEase(60.0, 50.0)];
+    opacity.keyframes[1].inTemporalEase = [new KeyframeEase(20.0, 75.0)];
     layer.stretch = stretch;
     return [app, opacity];
   }
@@ -185,12 +180,8 @@ class TestRovingRedistributionUnderStretch {
       position.setValueAtTime(time, value);
     }
     _bezierBothSides(position);
-    position.keyframes[0].outTemporalEase = [
-      new KeyframeEase(120.0, 40.0),
-    ];
-    position.keyframes[3].inTemporalEase = [
-      new KeyframeEase(80.0, 65.0),
-    ];
+    position.keyframes[0].outTemporalEase = [new KeyframeEase(120.0, 40.0)];
+    position.keyframes[3].inTemporalEase = [new KeyframeEase(80.0, 65.0)];
     return [app, position];
   }
 }
@@ -220,12 +211,8 @@ class TestInertScaleDimension {
     scale.setValueAtTime(0.0, [100.0, 100.0, 100.0]);
     scale.setValueAtTime(2.0, [200.0, 100.0, 100.0]);
     _bezierBothSides(scale);
-    scale.keyframes[0].outTemporalEase = Array<KeyframeEase>(3).fill(
-      new KeyframeEase(60.0, 50.0),
-    );
-    scale.keyframes[1].inTemporalEase = Array<KeyframeEase>(3).fill(
-      new KeyframeEase(20.0, 75.0),
-    );
+    scale.keyframes[0].outTemporalEase = Array<KeyframeEase>(3).fill(new KeyframeEase(60.0, 50.0));
+    scale.keyframes[1].inTemporalEase = Array<KeyframeEase>(3).fill(new KeyframeEase(20.0, 75.0));
     return scale;
   }
 }
@@ -251,12 +238,8 @@ class TestColourUsesOneSharedProgress {
     const colour = _shapeFillColour(comp);
     colour.setValueAtTime(0.0, [1.0, 0.0, 0.0, 1.0]);
     colour.setValueAtTime(2.0, [0.0, 0.0, 1.0, 1.0]);
-    colour.keyframes[0].outTemporalEase = [
-      new KeyframeEase(0.5, 45.0),
-    ];
-    colour.keyframes[1].inTemporalEase = [
-      new KeyframeEase(0.2, 70.0),
-    ];
+    colour.keyframes[0].outTemporalEase = [new KeyframeEase(0.5, 45.0)];
+    colour.keyframes[1].inTemporalEase = [new KeyframeEase(0.2, 70.0)];
     _bezierBothSides(colour);
     return colour;
   }
@@ -291,7 +274,9 @@ describe("TestStretchedLayerEaseTimeBase", () => {
     app.project.save(path);
 
     const opacity = asInstance(
-      asInstance(parseAppFresh(path).project.compositions[0].layers[0].property("Transform"), PropertyGroup).property("Opacity"),
+      asInstance(parseAppFresh(path).project.compositions[0].layers[0].property("Transform"), PropertyGroup).property(
+        "Opacity",
+      ),
       Property,
     );
     for (const [time, value] of TestStretchedLayerEaseTimeBase.AE_200.entries()) {
@@ -312,7 +297,12 @@ describe("TestNegativeStretchInterpolates", () => {
         { abs: 1e-4 },
       ),
     ).toBe(true);
-    expect(valueEquals(opacity.keyframes.map((kf) => kf.value), [100.0, 50.0, 0.0])).toBe(true);
+    expect(
+      valueEquals(
+        opacity.keyframes.map((kf) => kf.value),
+        [100.0, 50.0, 0.0],
+      ),
+    ).toBe(true);
   });
 
   test("test_interpolates_across_the_reversed_span", () => {
@@ -333,9 +323,7 @@ describe("TestLinearOutSideKeepsTheNextEase", () => {
     opacity.setValueAtTime(0.0, 0.0);
     opacity.setValueAtTime(2.0, 100.0);
     opacity.keyframes[1].inInterpolationType = KeyframeInterpolationType.BEZIER;
-    opacity.keyframes[1].inTemporalEase = [
-      new KeyframeEase(0.0, 90.0),
-    ];
+    opacity.keyframes[1].inTemporalEase = [new KeyframeEase(0.0, 90.0)];
     opacity.keyframes[0].outInterpolationType = KeyframeInterpolationType.LINEAR;
 
     for (const [time, value] of TestLinearOutSideKeepsTheNextEase.AE.entries()) {
@@ -360,7 +348,12 @@ describe("TestLinearOutSideKeepsTheNextEase", () => {
     opacity.setValueAtTime(2.0, 100.0);
     layer.stretch = 200.0;
 
-    expect(approx(opacity.keyframes.map((kf) => kf.time), [0.0, 4.0])).toBe(true);
+    expect(
+      approx(
+        opacity.keyframes.map((kf) => kf.time),
+        [0.0, 4.0],
+      ),
+    ).toBe(true);
     for (const seconds of range(5)) {
       expect(approx(opacity.valueAtTime(seconds), seconds * 25.0, { abs: 1e-3 })).toBe(true);
     }
@@ -407,24 +400,24 @@ describe("TestRovingRedistributionUnderStretch", () => {
   });
 
   // The stretch rows, each run through the same roving assertions.
-  test.each([100.0, 200.0, 50.0, -150.0])(
-    "test_roving_keys_stay_inside_their_run[%#]",
-    (stretch) => {
-      const [_app, position] = self._build(stretch);
-      const anchors = [position.keyframes[0].time, position.keyframes[3].time];
-      position.keyframes[1].roving = true;
-      position.keyframes[2].roving = true;
+  test.each([100.0, 200.0, 50.0, -150.0])("test_roving_keys_stay_inside_their_run[%#]", (stretch) => {
+    const [_app, position] = self._build(stretch);
+    const anchors = [position.keyframes[0].time, position.keyframes[3].time];
+    position.keyframes[1].roving = true;
+    position.keyframes[2].roving = true;
 
-      expect(valueEquals(position.keyframes.map((kf) => kf.roving), [false, true, true, false])).toBe(true);
-      const low = min(anchors);
-      const high = max(anchors);
-      expect(
-        position.keyframes.slice(1, 3).every((kf) => low <= kf.time && kf.time <= high),
-      ).toBe(true);
-      const layerTimes = position.keyframes.map((kf) => kf._layerTime);
-      expect(valueEquals(layerTimes, sorted(layerTimes))).toBe(true);
-    },
-  );
+    expect(
+      valueEquals(
+        position.keyframes.map((kf) => kf.roving),
+        [false, true, true, false],
+      ),
+    ).toBe(true);
+    const low = min(anchors);
+    const high = max(anchors);
+    expect(position.keyframes.slice(1, 3).every((kf) => low <= kf.time && kf.time <= high)).toBe(true);
+    const layerTimes = position.keyframes.map((kf) => kf._layerTime);
+    expect(valueEquals(layerTimes, sorted(layerTimes))).toBe(true);
+  });
 
   test("test_redistribution_persists_through_a_save", () => {
     const tmpPath = makeTmpPath();
@@ -435,7 +428,9 @@ describe("TestRovingRedistributionUnderStretch", () => {
     app.project.save(path);
 
     const reparsed = asInstance(
-      asInstance(parseAppFresh(path).project.compositions[0].layers[0].property("Transform"), PropertyGroup).property("Position"),
+      asInstance(parseAppFresh(path).project.compositions[0].layers[0].property("Transform"), PropertyGroup).property(
+        "Position",
+      ),
       Property,
     );
     expect(

@@ -1,26 +1,88 @@
 // Port of py_aep/models/renderqueue/output_module.py
 
-import { AudioBitDepth, AudioChannels, AudioCodec, AudioSampleRate, CineonFileFormat, ColorManagementSystem, ConvertToLinearLight, GetSettingsFormat, MPEGAudioFormat, MPEGAudioLayer, MPEGMultiplexer, OutputAudio, OutputChannels, OutputColorDepth, OutputColorMode, OutputFormat, PostRenderAction, PostRenderActionSetting, ResizeQuality, RQItemStatus, VideoCodec } from "../../enums/index.ts";
+import {
+  AudioBitDepth,
+  AudioChannels,
+  AudioCodec,
+  AudioSampleRate,
+  CineonFileFormat,
+  ColorManagementSystem,
+  ConvertToLinearLight,
+  GetSettingsFormat,
+  MPEGAudioFormat,
+  MPEGAudioLayer,
+  MPEGMultiplexer,
+  OutputAudio,
+  OutputChannels,
+  OutputColorDepth,
+  OutputColorMode,
+  OutputFormat,
+  PostRenderAction,
+  PostRenderActionSetting,
+  ResizeQuality,
+  RQItemStatus,
+  VideoCodec,
+} from "../../enums/index.ts";
 // NOTE(port): AudioCodec, VideoCodec, MPEGAudioFormat, MPEGAudioLayer and MPEGMultiplexer are
 // not imported by the Python module. They are imported here because `_rulesContext` and
 // `validateState` check `isinstance(value, IntEnum)` on values read from the XML format options,
 // and an enum-class membership test is the only way to tell a decoded member from a raw fallback.
 import { mapOutputAudio, mapOutputColorSpace, profileIdForName } from "../../enums/mappings.ts";
-import { ocioColorSpaceForProfileId, ocioOutputProfileId, requireOcioConfig, resolveOcioConfig } from "../../color/ocio.ts";
+import {
+  ocioColorSpaceForProfileId,
+  ocioOutputProfileId,
+  requireOcioConfig,
+  resolveOcioConfig,
+} from "../../color/ocio.ts";
 import { allowedValues, constrainedKeys, type RuleValue } from "../../data/output_module_rules.ts";
 import { parseFormatOptions } from "../../parsers/format_options.ts";
-import { FORMAT_ID_EXTENSIONS, VIDEO_CODEC_NAMES, resolveOutputFilename, resolveTimeSpan } from "../../resolvers/output.ts";
+import {
+  FORMAT_ID_EXTENSIONS,
+  VIDEO_CODEC_NAMES,
+  resolveOutputFilename,
+  resolveTimeSpan,
+} from "../../resolvers/output.ts";
 import { platformPath } from "../../resolvers/platform_paths.ts";
 import { ChunkField } from "../descriptors.ts";
 import { CompItem } from "../items/composition.ts";
 import { _validateNumber, validateBool, validateEnum, validateSequence, validateString } from "../validators.ts";
-import { CineonFormatOptions, PngFormatOptions, XmlFormatOptions, type JpegFormatOptions, type OpenExrFormatOptions, type TargaFormatOptions, type TiffFormatOptions } from "./format_options/index.ts";
-import { SettingsView, buildResizeToStrings, settingsToNumber, settingsToString, type SettingsSpec, type SettingValue, type SettingValues } from "./settings.ts";
+import {
+  CineonFormatOptions,
+  PngFormatOptions,
+  XmlFormatOptions,
+  type JpegFormatOptions,
+  type OpenExrFormatOptions,
+  type TargaFormatOptions,
+  type TiffFormatOptions,
+} from "./format_options/index.ts";
+import {
+  SettingsView,
+  buildResizeToStrings,
+  settingsToNumber,
+  settingsToString,
+  type SettingsSpec,
+  type SettingValue,
+  type SettingValues,
+} from "./settings.ts";
 import { LHD3_BLOCK_SINGLE, setLhd3Count } from "../../binary/ldat_chunks.ts";
 import { HdrmChunk } from "../../binary/misc_chunks.ts";
-import { OutputModuleSettingsItem, RoptChunk, RouuChunk, TiffRoptChunk, type RenderSettingsItem } from "../../binary/render_chunks.ts";
+import {
+  OutputModuleSettingsItem,
+  RoptChunk,
+  RouuChunk,
+  TiffRoptChunk,
+  type RenderSettingsItem,
+} from "../../binary/render_chunks.ts";
 import { Utf8Chunk } from "../../binary/scalar_chunks.ts";
-import { PENDING_ASCENDCOUNT, alasPlatform, type AlasData, buildAls2List, dumpAlas, findByType, indexByIdentity } from "../../binary/utils.ts";
+import {
+  PENDING_ASCENDCOUNT,
+  alasPlatform,
+  type AlasData,
+  buildAls2List,
+  dumpAlas,
+  findByType,
+  indexByIdentity,
+} from "../../binary/utils.ts";
 import type { Chunk } from "../../binary/chunk.ts";
 import type { EnumHelpers } from "../../../pyrt/enum.ts";
 import type { OutputModuleTemplate } from "../../parsers/templates.ts";
@@ -42,7 +104,9 @@ import {
   ValueError,
   NotImplementedError,
   parseJson,
-  type ClassAttributes, compare } from "../../../pyrt/index.ts";
+  type ClassAttributes,
+  compare,
+} from "../../../pyrt/index.ts";
 
 // NOTE(port): Python's `isinstance(x, bool) or isinstance(x, int)` accepts bools as ints.
 // `isInt` keeps that so raw bool fields still count as ints in the checks below.
@@ -154,8 +218,7 @@ export const _AUDIO_ENCODINGS = new Map<number, number>([
 export function _reject24BitAudio(value: RuleValue, obj: OutputModule): void {
   if (value === AudioBitDepth.TWENTY_FOUR_BIT) {
     throw new ValueError(
-      "Audio Bit Depth 24 Bit is not available: After Effects has no " +
-        "24-bit audio output. Use 8, 16 or 32 Bit.",
+      "Audio Bit Depth 24 Bit is not available: After Effects has no " + "24-bit audio output. Use 8, 16 or 32 Bit.",
     );
   }
 }
@@ -182,10 +245,9 @@ export function _validateForFormat(
 // Reading/writing through the module keeps _CLAMP_ACCESSORS free of
 // isinstance lambdas; every writer is a raw write (validation bypass).
 
-export function _xmlOptionsOf<K extends "audioBitrate" | "audioCodec" | "bitrate" | "mpegAudioFormat" | "mpegMultiplexer" | "videoCodec">(
-  om: OutputModule,
-  attr: K,
-): XmlFormatOptions[K] | null {
+export function _xmlOptionsOf<
+  K extends "audioBitrate" | "audioCodec" | "bitrate" | "mpegAudioFormat" | "mpegMultiplexer" | "videoCodec",
+>(om: OutputModule, attr: K): XmlFormatOptions[K] | null {
   const fo = om._formatOptions;
   if (fo instanceof XmlFormatOptions) {
     return fo[attr];
@@ -205,16 +267,16 @@ export type OutputModuleSettingValues = SettingValues & {
   "Audio Bit Depth": OutputModule["_audioBitDepth"];
   "Audio Channels": OutputModule["_audioChannels"];
   "Audio Sample Rate": OutputModule["_audioSampleRate"];
-  "Channels": OutputModule["_channels"];
-  "Color": OutputModule["_colorMode"];
+  Channels: OutputModule["_channels"];
+  Color: OutputModule["_colorMode"];
   "Convert to Linear Light": OutputModule["_convertToLinearLight"];
   "Crop Bottom": OutputModule["_cropBottom"];
   "Crop Left": OutputModule["_cropLeft"];
   "Crop Right": OutputModule["_cropRight"];
   "Crop Top": OutputModule["_cropTop"];
-  "Crop": OutputModule["_crop"];
-  "Depth": OutputModule["_depth"];
-  "Format": OutputModule["_format"];
+  Crop: OutputModule["_crop"];
+  Depth: OutputModule["_depth"];
+  Format: OutputModule["_format"];
   "Include Project Link": OutputModule["_includeProjectLink"];
   "Include Source XMP Metadata": OutputModule["includeSourceXmp"];
   "Lock Aspect Ratio": OutputModule["_lockAspectRatio"];
@@ -224,7 +286,7 @@ export type OutputModuleSettingValues = SettingValues & {
   "Preserve RGB": OutputModule["_preserveRgb"];
   "Resize Quality": OutputModule["_resizeQuality"];
   "Resize to": OutputModule["_resizeTo"];
-  "Resize": OutputModule["_resize"];
+  Resize: OutputModule["_resize"];
   "Starting #": OutputModule["_startingNumber"];
   "Use Comp Frame Number": OutputModule["_useCompFrameNumber"];
   "Use Region of Interest": OutputModule["_useRegionOfInterest"];
@@ -331,7 +393,15 @@ export class OutputModule {
   declare _nameUtf8: Utf8Chunk | null;
   declare _renderSettingsLdat: RenderSettingsItem;
   declare _parentRqi: RenderQueueItem;
-  declare _formatOptions: CineonFormatOptions | JpegFormatOptions | OpenExrFormatOptions | PngFormatOptions | TargaFormatOptions | TiffFormatOptions | XmlFormatOptions | null;
+  declare _formatOptions:
+    | CineonFormatOptions
+    | JpegFormatOptions
+    | OpenExrFormatOptions
+    | PngFormatOptions
+    | TargaFormatOptions
+    | TiffFormatOptions
+    | XmlFormatOptions
+    | null;
   declare _batchDepth: number;
 
   /** Bypass accessors used by `_applySingletonClamps`: clamps write the
@@ -339,7 +409,10 @@ export class OutputModule {
    * clamp can never recurse into validation. Table invariants in
    * tests/unit/test_output_module_rules.py prove clamped values are
    * always inside the format's own allowed sets. */
-  static _CLAMP_ACCESSORS = new Map<string, [(om: OutputModule) => RuleValue | null, (om: OutputModule, v: RuleValue) => void]>([
+  static _CLAMP_ACCESSORS = new Map<
+    string,
+    [(om: OutputModule) => RuleValue | null, (om: OutputModule, v: RuleValue) => void]
+  >([
     [
       "Color",
       [
@@ -399,7 +472,7 @@ export class OutputModule {
   /**
    * Current-value getters for whole-state validation. Enum-backed OM
    * reads can raise on out-of-enum stored bytes; `validateState`
-   * treats that (and raw fallbacks) as "unclean context -\> skip". 
+   * treats that (and raw fallbacks) as "unclean context -\> skip".
    */
   static _STATE_GETTERS = new Map<string, (om: OutputModule) => RuleValue | null>([
     ["Video Output", (om) => om._videoOutput],
@@ -526,7 +599,15 @@ export class OutputModule {
    *
    * Read-only.
    */
-  get formatOptions(): CineonFormatOptions | JpegFormatOptions | OpenExrFormatOptions | PngFormatOptions | TargaFormatOptions | TiffFormatOptions | XmlFormatOptions | null {
+  get formatOptions():
+    | CineonFormatOptions
+    | JpegFormatOptions
+    | OpenExrFormatOptions
+    | PngFormatOptions
+    | TargaFormatOptions
+    | TiffFormatOptions
+    | XmlFormatOptions
+    | null {
     return this._formatOptions;
   }
 
@@ -556,7 +637,11 @@ export class OutputModule {
    */
   get postRenderTargetComp(): CompItem {
     const compId = this._omLdat.postRenderTargetCompId || null;
-    if (compId == null || this.postRenderAction === PostRenderAction.NONE || this.postRenderAction === PostRenderAction.IMPORT) {
+    if (
+      compId == null ||
+      this.postRenderAction === PostRenderAction.NONE ||
+      this.postRenderAction === PostRenderAction.IMPORT
+    ) {
       return this._parentRqi.comp;
     }
     return getOrThrow(this._project.items, compId) as CompItem;
@@ -647,7 +732,8 @@ export class OutputModule {
       this._omLdat.outputAudioAuto = 0;
     } else {
       throw new ValueError(
-        `Unsupported OutputAudio value: ${String(value)}. Expected ` + "OutputAudio.OFF, OutputAudio.AUTO, or OutputAudio.ON.",
+        `Unsupported OutputAudio value: ${String(value)}. Expected ` +
+          "OutputAudio.OFF, OutputAudio.AUTO, or OutputAudio.ON.",
       );
     }
   }
@@ -724,11 +810,13 @@ export class OutputModule {
     }
     // `label` (output-module enums) > `name` (plain IntEnums, which
     // str() to their bare value on 3.11+) > str (ints, strings).
-    const labels = [...allowed].sort((a, b) => compare([typeof a === "string", a], [typeof b === "string", b]))
+    const labels = [...allowed]
+      .sort((a, b) => compare([typeof a === "string", a], [typeof b === "string", b]))
       .map((v) => _labelOrName(key, v))
       .join(", ");
     throw new ValueError(
-      `${key} ${_valueRepr(key, value)} is not available for format ${literal(OutputFormat.label(fmt))}. ` + `Allowed: ${labels}`,
+      `${key} ${_valueRepr(key, value)} is not available for format ${literal(OutputFormat.label(fmt))}. ` +
+        `Allowed: ${labels}`,
     );
   }
 
@@ -975,7 +1063,8 @@ export class OutputModule {
       const details = violations
         .map(
           ([key, value, allowed]) =>
-            `${key}: ${_nameOrStr(key, value)} not in ` + `{${[...[...allowed].map((v) => _nameOrStr(key, v))].sort(compare).join(", ")}}`,
+            `${key}: ${_nameOrStr(key, value)} not in ` +
+            `{${[...[...allowed].map((v) => _nameOrStr(key, v))].sort(compare).join(", ")}}`,
         )
         .join("; ");
       throw new ValueError(`batchEdit rolled back, invalid final state: ${details}`);
@@ -1214,7 +1303,10 @@ export class OutputModule {
     }
     const project = this._project;
     if (project.colorManagementSystem === ColorManagementSystem.OCIO) {
-      const config = requireOcioConfig(project.ocioConfigurationFile, `compute the output color space id for ${literal(value)}`);
+      const config = requireOcioConfig(
+        project.ocioConfigurationFile,
+        `compute the output color space id for ${literal(value)}`,
+      );
       ldat.outputColorSpaceWorking = 0;
       ldat.outputProfileId = ocioOutputProfileId(config, value);
       return;
@@ -1452,7 +1544,7 @@ export class OutputModule {
     const extension = this._resolveExtension;
     const omChannels = this.settings.get("Channels");
     const omDepth = this.settings.get("Depth");
-    const compressor = this._videoCodec ? VIDEO_CODEC_NAMES.get(this._videoCodec) ?? this._videoCodec : null;
+    const compressor = this._videoCodec ? (VIDEO_CODEC_NAMES.get(this._videoCodec) ?? this._videoCodec) : null;
 
     const [effectiveWidth, effectiveHeight] = this._effectiveDimensions;
     const effectiveFrameRate = this._effectiveFrameRate;
@@ -1674,60 +1766,112 @@ export class OutputModule {
     // Descriptors for the `declare`d fields above.
     descriptor(this, "includeSourceXmp", ChunkField.bool("_omLdat", "includeSourceXmp"));
     descriptor(this, "postRenderAction", ChunkField.enum(PostRenderAction, "_omLdat", "postRenderAction"));
-    descriptor(this, "_audioBitDepth", ChunkField.enum(AudioBitDepth, "_roou", "audioBitDepth", {
-      validate: _validateForFormat("Audio Bit Depth", _reject24BitAudio),
-      postSet: "_syncAudioFormat",
-    }));
-    descriptor(this, "_audioChannels", ChunkField.enum(AudioChannels, "_roou", "audioChannels", {
-      validate: _validateForFormat("Audio Channels"),
-      postSet: "_clampAudioDependents",
-    }));
-    descriptor(this, "_audioSampleRate", ChunkField.enum(AudioSampleRate, "_roou", "audioSampleRate", {
-      validate: _validateForFormat("Audio Sample Rate"),
-    }));
-    descriptor(this, "_channels", ChunkField.enum(OutputChannels, "_omLdat", "channels", {
-      validate: _validateForFormat("Channels"),
-      postSet: "_syncAfterChannels",
-    }));
-    descriptor(this, "_colorMode", ChunkField.enum(OutputColorMode, "_roou", "colorPremultiplied", {
-      validate: _validateForFormat("Color"),
-    }));
+    descriptor(
+      this,
+      "_audioBitDepth",
+      ChunkField.enum(AudioBitDepth, "_roou", "audioBitDepth", {
+        validate: _validateForFormat("Audio Bit Depth", _reject24BitAudio),
+        postSet: "_syncAudioFormat",
+      }),
+    );
+    descriptor(
+      this,
+      "_audioChannels",
+      ChunkField.enum(AudioChannels, "_roou", "audioChannels", {
+        validate: _validateForFormat("Audio Channels"),
+        postSet: "_clampAudioDependents",
+      }),
+    );
+    descriptor(
+      this,
+      "_audioSampleRate",
+      ChunkField.enum(AudioSampleRate, "_roou", "audioSampleRate", {
+        validate: _validateForFormat("Audio Sample Rate"),
+      }),
+    );
+    descriptor(
+      this,
+      "_channels",
+      ChunkField.enum(OutputChannels, "_omLdat", "channels", {
+        validate: _validateForFormat("Channels"),
+        postSet: "_syncAfterChannels",
+      }),
+    );
+    descriptor(
+      this,
+      "_colorMode",
+      ChunkField.enum(OutputColorMode, "_roou", "colorPremultiplied", {
+        validate: _validateForFormat("Color"),
+      }),
+    );
     descriptor(this, "_convertToLinearLight", ChunkField.enum(ConvertToLinearLight, "_omLdat", "convertToLinearLight"));
     descriptor(this, "_crop", ChunkField.bool("_omLdat", "crop", { postSet: "_updateOutputDimensions" }));
-    descriptor(this, "_cropBottom", new ChunkField("_omLdat", "cropBottom", {
-      validate: _validateCrop("_cropTop", "height"),
-      postSet: "_updateOutputDimensions",
-    }));
-    descriptor(this, "_cropLeft", new ChunkField("_omLdat", "cropLeft", {
-      validate: _validateCrop("_cropRight", "width"),
-      postSet: "_updateOutputDimensions",
-    }));
-    descriptor(this, "_cropRight", new ChunkField("_omLdat", "cropRight", {
-      validate: _validateCrop("_cropLeft", "width"),
-      postSet: "_updateOutputDimensions",
-    }));
-    descriptor(this, "_cropTop", new ChunkField("_omLdat", "cropTop", {
-      validate: _validateCrop("_cropBottom", "height"),
-      postSet: "_updateOutputDimensions",
-    }));
-    descriptor(this, "_depth", ChunkField.enum(OutputColorDepth, "_roou", "depth", {
-      allowOutOfEnumValues: true,
-      validate: _validateForFormat("Depth", validateEnum(OutputColorDepth)),
-      postSet: "_syncPngOptions",
-    }));
-    descriptor(this, "_format", ChunkField.enum(OutputFormat, "_roou", "formatId", {
-      allowOutOfEnumValues: true,
-      reverse: (v: number) => OutputFormat.toFormatId(v),
-      transform: (v: string | Uint8Array) => OutputFormat.fromFormatId(v),
-      readOnly: true,
-    }));
+    descriptor(
+      this,
+      "_cropBottom",
+      new ChunkField("_omLdat", "cropBottom", {
+        validate: _validateCrop("_cropTop", "height"),
+        postSet: "_updateOutputDimensions",
+      }),
+    );
+    descriptor(
+      this,
+      "_cropLeft",
+      new ChunkField("_omLdat", "cropLeft", {
+        validate: _validateCrop("_cropRight", "width"),
+        postSet: "_updateOutputDimensions",
+      }),
+    );
+    descriptor(
+      this,
+      "_cropRight",
+      new ChunkField("_omLdat", "cropRight", {
+        validate: _validateCrop("_cropLeft", "width"),
+        postSet: "_updateOutputDimensions",
+      }),
+    );
+    descriptor(
+      this,
+      "_cropTop",
+      new ChunkField("_omLdat", "cropTop", {
+        validate: _validateCrop("_cropBottom", "height"),
+        postSet: "_updateOutputDimensions",
+      }),
+    );
+    descriptor(
+      this,
+      "_depth",
+      ChunkField.enum(OutputColorDepth, "_roou", "depth", {
+        allowOutOfEnumValues: true,
+        validate: _validateForFormat("Depth", validateEnum(OutputColorDepth)),
+        postSet: "_syncPngOptions",
+      }),
+    );
+    descriptor(
+      this,
+      "_format",
+      ChunkField.enum(OutputFormat, "_roou", "formatId", {
+        allowOutOfEnumValues: true,
+        reverse: (v: number) => OutputFormat.toFormatId(v),
+        transform: (v: string | Uint8Array) => OutputFormat.fromFormatId(v),
+        readOnly: true,
+      }),
+    );
     descriptor(this, "_includeProjectLink", ChunkField.bool("_omLdat", "includeProjectLink"));
     descriptor(this, "_lockAspectRatio", ChunkField.bool("_omLdat", "lockAspectRatio"));
-    descriptor(this, "_postRenderActionSetting", ChunkField.enum(PostRenderActionSetting, "_omLdat", "postRenderAction"));
+    descriptor(
+      this,
+      "_postRenderActionSetting",
+      ChunkField.enum(PostRenderActionSetting, "_omLdat", "postRenderAction"),
+    );
     descriptor(this, "_preserveRgb", ChunkField.bool("_omLdat", "preserveRgb"));
     descriptor(this, "_resize", ChunkField.bool("_omLdat", "resize", { postSet: "_updateOutputDimensions" }));
     descriptor(this, "_resizeQuality", ChunkField.enum(ResizeQuality, "_omLdat", "resizeQuality"));
     descriptor(this, "_useCompFrameNumber", ChunkField.bool("_omLdat", "useCompFrameNumber"));
-    descriptor(this, "_useRegionOfInterest", ChunkField.bool("_omLdat", "useRegionOfInterest", { postSet: "_updateOutputDimensions" }));
+    descriptor(
+      this,
+      "_useRegionOfInterest",
+      ChunkField.bool("_omLdat", "useRegionOfInterest", { postSet: "_updateOutputDimensions" }),
+    );
   }
 }

@@ -24,15 +24,7 @@ import { FolderItem } from "../models/items/folder.ts";
 import { FootageItem } from "../models/items/footage.ts";
 import { PropertyGroup } from "../models/properties/property_group.ts";
 import { BitsPerChannel, Label } from "../enums/index.ts";
-import {
-  Path,
-  RuntimeError,
-  literal,
-  str,
-  stringifyJson,
-  boxFloat,
-  type BoxedFloat,
-} from "../../pyrt/index.ts";
+import { Path, RuntimeError, literal, str, stringifyJson, boxFloat, type BoxedFloat } from "../../pyrt/index.ts";
 
 import type { Application } from "../models/application.ts";
 import type { Item } from "../models/items/item.ts";
@@ -580,7 +572,8 @@ export function parseArgs(argv: string[]): Args {
   if (positionals.length === 0) usageError(VISUALIZE, "the following arguments are required: aep_file");
   if (positionals.length > 1) usageError(VISUALIZE, `unrecognized arguments: ${positionals.slice(1).join(" ")}`);
   const format = typeof values.format === "string" ? values.format : "text";
-  if (!FORMATS.includes(format)) usageError(VISUALIZE, `argument --format/-f: invalid choice: '${format}' (choose from ${FORMATS.join(", ")})`);
+  if (!FORMATS.includes(format))
+    usageError(VISUALIZE, `argument --format/-f: invalid choice: '${format}' (choose from ${FORMATS.join(", ")})`);
   return {
     aepFile: positionals[0],
     format,

@@ -8,16 +8,11 @@ import { recursiveFind } from "../../src/py_aep/binary/utils.ts";
 import { b, FileExistsError, Path, valueEquals } from "../../src/pyrt/index.ts";
 import { makeTmpPath, raises } from "../support/pytest.ts";
 
-
 const SAMPLES_DIR = new Path(import.meta.path).parent.parent.parent.div("samples", "models", "project");
 const VIEW_SAMPLES_DIR = new Path(import.meta.path).parent.parent.parent.div("samples", "models", "view");
 const VERSIONS_DIR = new Path(import.meta.path).parent.parent.parent.div("samples", "versions");
 const LAYER_SAMPLES_DIR = new Path(import.meta.path).parent.parent.parent.div("samples", "models", "layer");
-const COMP_SAMPLES_DIR = new Path(import.meta.path).parent.parent.parent.div(
-  "samples",
-  "models",
-  "composition",
-);
+const COMP_SAMPLES_DIR = new Path(import.meta.path).parent.parent.parent.div("samples", "models", "composition");
 
 /** All ldta layer ids in the project, including viewer pseudo-layers. */
 function _allLdtaIds(project: Project): number[] {

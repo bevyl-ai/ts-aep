@@ -18,7 +18,6 @@ import { ocioColorProfileEnvelope, resolveOcioConfig } from "../../src/py_aep/co
 import { decode, Path, ValueError } from "../../src/pyrt/index.ts";
 import { raises, skip } from "../support/pytest.ts";
 
-
 const ROOT = new Path(import.meta.path).parent.parent.parent;
 const CONFIG = ROOT.div("samples/models/output_module/output_color_space_ocio/sergb.ocio");
 

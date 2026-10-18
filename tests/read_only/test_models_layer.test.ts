@@ -22,10 +22,27 @@ import {
   zip,
 } from "../../src/pyrt/index.ts";
 import "../../src/py_aep/binary/_register.ts";
-import { getComp, getFirstLayer, getLayer, getLayerFromJson, getLayerFromJsonByComp, loadExpected, parseProject } from "../conftest.ts";
+import {
+  getComp,
+  getFirstLayer,
+  getLayer,
+  getLayerFromJson,
+  getLayerFromJsonByComp,
+  loadExpected,
+  parseProject,
+} from "../conftest.ts";
 import { asInstance, jsonField } from "../helpers.ts";
 import { parse as parseAep } from "../../src/py_aep/index.ts";
-import { AutoOrientType, BlendingMode, FrameBlendingType, LayerQuality, LayerSamplingQuality, LightType, PropertyType, TrackMatteType } from "../../src/py_aep/enums/index.ts";
+import {
+  AutoOrientType,
+  BlendingMode,
+  FrameBlendingType,
+  LayerQuality,
+  LayerSamplingQuality,
+  LightType,
+  PropertyType,
+  TrackMatteType,
+} from "../../src/py_aep/enums/index.ts";
 import { AVLayer, CameraLayer, LightLayer, ShapeLayer, TextLayer } from "../../src/py_aep/models/layers/index.ts";
 import { ThreeDModelLayer } from "../../src/py_aep/models/layers/three_d_model_layer.ts";
 import { Property } from "../../src/py_aep/models/properties/property.ts";
@@ -163,10 +180,7 @@ describe("TestTimingEdgeCases", () => {
   /** Precomp dur=5s, stretch=200%. OutPoint clamped to 10. */
   test("test_outPoint_clamp_stretch_200", () => {
     const expected = loadExpected(SAMPLES_DIR, "outPoint_clamp");
-    const layer = getLayer(
-      parseProject(SAMPLES_DIR.div("outPoint_clamp.aep")),
-      "outPoint_clamp_stretch_200",
-    );
+    const layer = getLayer(parseProject(SAMPLES_DIR.div("outPoint_clamp.aep")), "outPoint_clamp_stretch_200");
     const layerJson = getLayerFromJsonByComp(expected, "outPoint_clamp_stretch_200");
     expect(isclose(layer.stretch, 200.0)).toBe(true);
     expect(isclose(layer.outPoint, layerJson["outPoint"], 1e-9, 0.001)).toBe(true);
@@ -176,10 +190,7 @@ describe("TestTimingEdgeCases", () => {
   /** Precomp dur=5s, stretch=400%. OutPoint clamped to 20. */
   test("test_outPoint_clamp_stretch_400", () => {
     const expected = loadExpected(SAMPLES_DIR, "outPoint_clamp");
-    const layer = getLayer(
-      parseProject(SAMPLES_DIR.div("outPoint_clamp.aep")),
-      "outPoint_clamp_stretch_400",
-    );
+    const layer = getLayer(parseProject(SAMPLES_DIR.div("outPoint_clamp.aep")), "outPoint_clamp_stretch_400");
     const layerJson = getLayerFromJsonByComp(expected, "outPoint_clamp_stretch_400");
     expect(isclose(layer.stretch, 400.0)).toBe(true);
     expect(isclose(layer.outPoint, layerJson["outPoint"], 1e-9, 0.001)).toBe(true);
@@ -189,10 +200,7 @@ describe("TestTimingEdgeCases", () => {
   /** Precomp dur=5s, collapse=True. AE still clamps to 5. */
   test("test_outPoint_clamp_collapse", () => {
     const expected = loadExpected(SAMPLES_DIR, "outPoint_no_clamp");
-    const layer = getLayer(
-      parseProject(SAMPLES_DIR.div("outPoint_no_clamp.aep")),
-      "outPoint_no_clamp_collapse",
-    );
+    const layer = getLayer(parseProject(SAMPLES_DIR.div("outPoint_no_clamp.aep")), "outPoint_no_clamp_collapse");
     const layerJson = getLayerFromJsonByComp(expected, "outPoint_no_clamp_collapse");
     expect(asInstance(layer, AVLayer).collapseTransformation).toBe(true);
     expect(isclose(layer.outPoint, layerJson["outPoint"], 1e-9, 0.001)).toBe(true);
@@ -202,10 +210,7 @@ describe("TestTimingEdgeCases", () => {
   /** Precomp dur=5s, timeRemap=True. OutPoint NOT clamped (stays 30). */
   test("test_outPoint_no_clamp_timeRemap", () => {
     const expected = loadExpected(SAMPLES_DIR, "outPoint_no_clamp");
-    const layer = getLayer(
-      parseProject(SAMPLES_DIR.div("outPoint_no_clamp.aep")),
-      "outPoint_no_clamp_timeRemap",
-    );
+    const layer = getLayer(parseProject(SAMPLES_DIR.div("outPoint_no_clamp.aep")), "outPoint_no_clamp_timeRemap");
     const layerJson = getLayerFromJsonByComp(expected, "outPoint_no_clamp_timeRemap");
     expect(asInstance(layer, AVLayer).timeRemapEnabled).toBe(true);
     expect(isclose(layer.outPoint, layerJson["outPoint"], 1e-9, 0.001)).toBe(true);
@@ -227,10 +232,7 @@ describe("TestTimingEdgeCases", () => {
   /** Precomp dur=5s, startTime=3s. OutPoint clamped to 3+5=8. */
   test("test_outPoint_clamp_with_startTime", () => {
     const expected = loadExpected(SAMPLES_DIR, "outPoint_clamp");
-    const layer = getLayer(
-      parseProject(SAMPLES_DIR.div("outPoint_clamp.aep")),
-      "outPoint_clamp_with_startTime",
-    );
+    const layer = getLayer(parseProject(SAMPLES_DIR.div("outPoint_clamp.aep")), "outPoint_clamp_with_startTime");
     const layerJson = getLayerFromJsonByComp(expected, "outPoint_clamp_with_startTime");
     expect(isclose(layer.startTime, 3.0, 1e-9, 0.001)).toBe(true);
     expect(isclose(layer.outPoint, layerJson["outPoint"], 1e-9, 0.001)).toBe(true);
@@ -251,10 +253,7 @@ describe("TestTimingEdgeCases", () => {
   /** Layer with negative startTime (-5) and outPoint (20). */
   test("test_outPoint_with_negative_startTime", () => {
     const expected = loadExpected(SAMPLES_DIR, "outPoint");
-    const layer = getLayer(
-      parseProject(SAMPLES_DIR.div("outPoint.aep")),
-      "outPoint_with_negative_startTime",
-    );
+    const layer = getLayer(parseProject(SAMPLES_DIR.div("outPoint.aep")), "outPoint_with_negative_startTime");
     const layerJson = getLayerFromJsonByComp(expected, "outPoint_with_negative_startTime");
     expect(isclose(layer.startTime, layerJson["startTime"])).toBe(true);
     expect(isclose(layer.startTime, -5.0)).toBe(true);
@@ -365,10 +364,7 @@ describe("TestAVLayerAttributes", () => {
 
   test("test_collapseTransformation_true", () => {
     const expected = loadExpected(SAMPLES_DIR, "avlayer_flags");
-    const layer = getLayer(
-      parseProject(SAMPLES_DIR.div("avlayer_flags.aep")),
-      "collapseTransformation_true",
-    );
+    const layer = getLayer(parseProject(SAMPLES_DIR.div("avlayer_flags.aep")), "collapseTransformation_true");
     const layerJson = getLayerFromJsonByComp(expected, "collapseTransformation_true");
     expect(asInstance(layer, AVLayer).collapseTransformation).toBe(layerJson["collapseTransformation"]);
     expect(layerJson["collapseTransformation"]).toBe(true);
@@ -376,10 +372,7 @@ describe("TestAVLayerAttributes", () => {
 
   test("test_preserveTransparency_true", () => {
     const expected = loadExpected(SAMPLES_DIR, "avlayer_flags");
-    const layer = getLayer(
-      parseProject(SAMPLES_DIR.div("avlayer_flags.aep")),
-      "preserveTransparency_true",
-    );
+    const layer = getLayer(parseProject(SAMPLES_DIR.div("avlayer_flags.aep")), "preserveTransparency_true");
     const layerJson = getLayerFromJsonByComp(expected, "preserveTransparency_true");
     expect(asInstance(layer, AVLayer).preserveTransparency).toBe(layerJson["preserveTransparency"]);
     expect(layerJson["preserveTransparency"]).toBe(true);
@@ -468,10 +461,7 @@ describe("TestQualitySettings", () => {
 describe("TestFrameBlending", () => {
   test("test_frameBlendingType_NO_FRAME_BLEND", () => {
     const expected = loadExpected(SAMPLES_DIR, "frameBlendingType");
-    const layer = getLayer(
-      parseProject(SAMPLES_DIR.div("frameBlendingType.aep")),
-      "frameBlendingType_NO_FRAME_BLEND",
-    );
+    const layer = getLayer(parseProject(SAMPLES_DIR.div("frameBlendingType.aep")), "frameBlendingType_NO_FRAME_BLEND");
     const layerJson = getLayerFromJsonByComp(expected, "frameBlendingType_NO_FRAME_BLEND");
     expect(asInstance(layer, AVLayer).frameBlendingType).toBe(layerJson["frameBlendingType"]);
     expect(layerJson["frameBlendingType"]).toBe(FrameBlendingType.NO_FRAME_BLEND);
@@ -480,10 +470,7 @@ describe("TestFrameBlending", () => {
 
   test("test_frameBlendingType_FRAME_MIX", () => {
     const expected = loadExpected(SAMPLES_DIR, "frameBlendingType");
-    const layer = getLayer(
-      parseProject(SAMPLES_DIR.div("frameBlendingType.aep")),
-      "frameBlendingType_FRAME_MIX",
-    );
+    const layer = getLayer(parseProject(SAMPLES_DIR.div("frameBlendingType.aep")), "frameBlendingType_FRAME_MIX");
     const layerJson = getLayerFromJsonByComp(expected, "frameBlendingType_FRAME_MIX");
     expect(asInstance(layer, AVLayer).frameBlendingType).toBe(layerJson["frameBlendingType"]);
     expect(layerJson["frameBlendingType"]).toBe(FrameBlendingType.FRAME_MIX);
@@ -491,10 +478,7 @@ describe("TestFrameBlending", () => {
 
   test("test_frameBlendingType_PIXEL_MOTION", () => {
     const expected = loadExpected(SAMPLES_DIR, "frameBlendingType");
-    const layer = getLayer(
-      parseProject(SAMPLES_DIR.div("frameBlendingType.aep")),
-      "frameBlendingType_PIXEL_MOTION",
-    );
+    const layer = getLayer(parseProject(SAMPLES_DIR.div("frameBlendingType.aep")), "frameBlendingType_PIXEL_MOTION");
     const layerJson = getLayerFromJsonByComp(expected, "frameBlendingType_PIXEL_MOTION");
     expect(asInstance(layer, AVLayer).frameBlendingType).toBe(layerJson["frameBlendingType"]);
     expect(layerJson["frameBlendingType"]).toBe(FrameBlendingType.PIXEL_MOTION);
@@ -536,7 +520,8 @@ describe("TestTrackMatte", () => {
     const expected = loadExpected(SAMPLES_DIR, "trackMatteType");
     const project = parseProject(SAMPLES_DIR.div("trackMatteType.aep"));
     const comp = getComp(project, "trackMatteType_ALPHA");
-    const mattedLayer = comp.layers.find((layer) => asInstance(layer, AVLayer).trackMatteType === TrackMatteType.ALPHA) ?? null;
+    const mattedLayer =
+      comp.layers.find((layer) => asInstance(layer, AVLayer).trackMatteType === TrackMatteType.ALPHA) ?? null;
     let expectedLayer = null;
     for (const item of expected["items"]) {
       if (item["name"] === "trackMatteType_ALPHA" && "layers" in item) {
@@ -557,7 +542,8 @@ describe("TestTrackMatte", () => {
     const expected = loadExpected(SAMPLES_DIR, "trackMatteType");
     const project = parseProject(SAMPLES_DIR.div("trackMatteType.aep"));
     const comp = getComp(project, "trackMatteType_LUMA");
-    const mattedLayer = comp.layers.find((layer) => asInstance(layer, AVLayer).trackMatteType === TrackMatteType.LUMA) ?? null;
+    const mattedLayer =
+      comp.layers.find((layer) => asInstance(layer, AVLayer).trackMatteType === TrackMatteType.LUMA) ?? null;
     let expectedLayer = null;
     for (const item of expected["items"]) {
       if (item["name"] === "trackMatteType_LUMA" && "layers" in item) {
@@ -1129,9 +1115,7 @@ describe("TestTopLevelGroupOrder", () => {
     expect(layer instanceof CameraLayer).toBe(true);
     const matchNames = layer.properties.map((p) => p.matchName);
     // Canonical groups first, then non-canonical tail (Camera Options)
-    expect(
-      valueEquals(matchNames, ["ADBE Marker", "ADBE Transform Group", "ADBE Camera Options Group"]),
-    ).toBe(true);
+    expect(valueEquals(matchNames, ["ADBE Marker", "ADBE Transform Group", "ADBE Camera Options Group"])).toBe(true);
   });
 
   test("test_light_layer", () => {
@@ -1140,9 +1124,7 @@ describe("TestTopLevelGroupOrder", () => {
     const layer = getLayer(project, "lightType_PARALLEL");
     expect(layer instanceof LightLayer).toBe(true);
     const matchNames = layer.properties.map((p) => p.matchName);
-    expect(
-      valueEquals(matchNames, ["ADBE Marker", "ADBE Transform Group", "ADBE Light Options Group"]),
-    ).toBe(true);
+    expect(valueEquals(matchNames, ["ADBE Marker", "ADBE Transform Group", "ADBE Light Options Group"])).toBe(true);
   });
 
   test("test_shape_layer", () => {
@@ -1308,8 +1290,7 @@ describe("TestTopLevelSpecialCases", () => {
       if (expectedNames.has(prop.matchName)) {
         assert(
           prop.name === expectedNames.get(prop.matchName),
-          `${prop.matchName}: expected name ${repr(expectedNames.get(prop.matchName))}, ` +
-            `got ${repr(prop.name)}`,
+          `${prop.matchName}: expected name ${repr(expectedNames.get(prop.matchName))}, ` + `got ${repr(prop.name)}`,
         );
       }
     }
@@ -1439,8 +1420,8 @@ describe("TestTransformNaming", () => {
     expect(matchNames[matchNames.length - 1]).toBe("ADBE Camera Options Group");
     // Marker and Transform are canonical, should come before
     expect(_listIndex(matchNames, "ADBE Marker") < _listIndex(matchNames, "ADBE Camera Options Group")).toBe(true);
-    expect(
-      _listIndex(matchNames, "ADBE Transform Group") < _listIndex(matchNames, "ADBE Camera Options Group"),
-    ).toBe(true);
+    expect(_listIndex(matchNames, "ADBE Transform Group") < _listIndex(matchNames, "ADBE Camera Options Group")).toBe(
+      true,
+    );
   });
 });

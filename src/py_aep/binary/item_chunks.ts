@@ -335,7 +335,10 @@ export class NhedChunk extends Chunk {
 define(NhedChunk, {
   chunkType: field({ default: "nhed" }),
   // Defaults capture a fresh AE 2026 project (see project_chunks.py).
-  _reserved00: bytesField(8, { default: Bytes.concat(Bytes.repeat(new Uint8Array(1), 7), Uint8Array.of(0x05)), repr: false }),
+  _reserved00: bytesField(8, {
+    default: Bytes.concat(Bytes.repeat(new Uint8Array(1), 7), Uint8Array.of(0x05)),
+    repr: false,
+  }),
   _displayByte: u1Field({ repr: false }),
   footageTimecodeDisplayStartType: u1Field({ default: 1 }),
   _reserved0a: bytesField(1, { default: Uint8Array.of(0x01), repr: false }),
@@ -421,7 +424,10 @@ define(NnhdChunk, {
   // Defaults capture a fresh AE 2026 project (see project_chunks.py).
   _reserved00: bytesField(2, { repr: false }),
   _savingPlatform: u1Field({ repr: false }),
-  _reserved03: bytesField(5, { default: Bytes.concat(Bytes.repeat(new Uint8Array(1), 4), Uint8Array.of(0x05)), repr: false }),
+  _reserved03: bytesField(5, {
+    default: Bytes.concat(Bytes.repeat(new Uint8Array(1), 4), Uint8Array.of(0x05)),
+    repr: false,
+  }),
   _displayByte: u1Field({ repr: false }),
   footageTimecodeDisplayStartType: u1Field({ default: 1 }),
   _reserved0a: u1Field({ default: 1, repr: false }),

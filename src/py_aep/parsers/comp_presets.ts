@@ -65,15 +65,7 @@ export function parseCompPresets(prefsFile: PrefsFile): CompPreset[] {
     const item = CompPresetItem.frombytes(data);
     assert(item instanceof CompPresetItem);
     if (item.width === 0 || item.pixelAspectDivisor === 0) continue;
-    presets.push(
-      new CompPreset(
-        name,
-        item.width,
-        item.height,
-        item.pixelAspect,
-        item.frameRate,
-      ),
-    );
+    presets.push(new CompPreset(name, item.width, item.height, item.pixelAspect, item.frameRate));
   }
   return presets;
 }

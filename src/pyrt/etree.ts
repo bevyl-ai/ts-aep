@@ -210,8 +210,7 @@ function getParentMap(context: SelectorContext): Map<Element, Element> {
   return context.parentMap;
 }
 
-const xpathTokenizerRe =
-  /('[^']*'|"[^"]*"|::|\/\/?|\.\.|\(\)|!=|[/.*:[\]()@=])|((?:\{[^}]+\})?[^/[\]()@!=\s]+)|\s+/g;
+const xpathTokenizerRe = /('[^']*'|"[^"]*"|::|\/\/?|\.\.|\(\)|!=|[/.*:[\]()@=])|((?:\{[^}]+\})?[^/[\]()@!=\s]+)|\s+/g;
 
 function xpathTokenizer(pattern: string, namespaces: NsMap): Token[] {
   const out: Token[] = [];
@@ -512,7 +511,10 @@ function _escapeAttrib(text: string): string {
     .replace(/\t/g, "&#09;");
 }
 
-function _namespaces(elem: Element, defaultNamespace: string | null): [Map<string, string | null>, Map<string, string>] {
+function _namespaces(
+  elem: Element,
+  defaultNamespace: string | null,
+): [Map<string, string | null>, Map<string, string>] {
   const qnames = new Map<string, string | null>();
   const namespaces = new Map<string, string>();
   if (defaultNamespace) namespaces.set(defaultNamespace, "");
@@ -625,8 +627,7 @@ export function tostring(
   }
   const lower = enc.toLowerCase();
   const declare =
-    opts.xmlDeclaration === true ||
-    (opts.xmlDeclaration == null && !["utf-8", "us-ascii", "unicode"].includes(lower));
+    opts.xmlDeclaration === true || (opts.xmlDeclaration == null && !["utf-8", "us-ascii", "unicode"].includes(lower));
   const decl = declare ? `<?xml version='1.0' encoding='${enc}'?>\n` : "";
   const text = decl + body;
   if (lower === "us-ascii" || lower === "ascii") {
@@ -731,7 +732,10 @@ class _Parser {
     const semi = s.indexOf(";", start);
     const bad = semi < 0 ? -1 : s.slice(start + 1, semi).search(/[&<\s]/);
     if (semi < 0 || bad >= 0) {
-      this.err(semi < 0 && s.slice(start + 1).search(/[<\s]/) < 0 ? "unclosed token" : "not well-formed (invalid token)", start);
+      this.err(
+        semi < 0 && s.slice(start + 1).search(/[<\s]/) < 0 ? "unclosed token" : "not well-formed (invalid token)",
+        start,
+      );
     }
     const body = s.slice(start + 1, semi);
     this.pos = semi + 1;
@@ -740,7 +744,16 @@ class _Parser {
       const digits = hex ? body.slice(2) : body.slice(1);
       if (!(hex ? /^[0-9a-fA-F]+$/ : /^[0-9]+$/).test(digits)) this.err("not well-formed (invalid token)", start);
       const cp = parseInt(digits, hex ? 16 : 10);
-      if (!(cp === 9 || cp === 10 || cp === 13 || (cp >= 0x20 && cp <= 0xd7ff) || (cp >= 0xe000 && cp <= 0xfffd) || (cp >= 0x10000 && cp <= 0x10ffff))) {
+      if (
+        !(
+          cp === 9 ||
+          cp === 10 ||
+          cp === 13 ||
+          (cp >= 0x20 && cp <= 0xd7ff) ||
+          (cp >= 0xe000 && cp <= 0xfffd) ||
+          (cp >= 0x10000 && cp <= 0x10ffff)
+        )
+      ) {
         this.err("reference to invalid character number", start);
       }
       return String.fromCodePoint(cp);
@@ -809,7 +822,10 @@ class _Parser {
 
   parseInternalSubset(): void {
     const s = this.s;
-    const entityRe = new RegExp(`<!ENTITY\\s+(%\\s+)?([${NAME_START}][${NAME_CHAR}]*)\\s+(?:"([^"]*)"|'([^']*)')\\s*>`, "uy");
+    const entityRe = new RegExp(
+      `<!ENTITY\\s+(%\\s+)?([${NAME_START}][${NAME_CHAR}]*)\\s+(?:"([^"]*)"|'([^']*)')\\s*>`,
+      "uy",
+    );
     for (;;) {
       this.skipWs();
       if (this.pos >= s.length) this.err("unclosed token");

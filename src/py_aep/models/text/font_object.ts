@@ -31,7 +31,7 @@ const isNumberList = (v: InstanceValue): v is number[] | null =>
  * console.log(font.postScriptName);
  * ```
  *
- * **Note:** 
+ * **Note:**
  * This functionality was added in After Effects 24.0.
  *
  * @example
@@ -90,23 +90,35 @@ export class FontObject {
   }
 
   static {
-    descriptor(this, "postScriptName", new CosField<string, "_fontData", FontObject>("_fontData", "0", {
-      transform: str,
-      accepts: isString,
-      reverse: (x: string) => x,
-      default: "",
-    }));
-    descriptor(this, "version", new CosField<string | null, "_fontData", FontObject>("_fontData", "5", {
-      transform: str,
-      accepts: isStringOrNull,
-      reverse: (x: string) => x,
-      default: null,
-    }));
-    descriptor(this, "designVector", new CosField<number[] | null, "_fontData", FontObject>("_fontData", "4", {
-      transform: _designVectorFromCos,
-      accepts: isNumberList,
-      readOnly: true,
-      default: null,
-    }));
+    descriptor(
+      this,
+      "postScriptName",
+      new CosField<string, "_fontData", FontObject>("_fontData", "0", {
+        transform: str,
+        accepts: isString,
+        reverse: (x: string) => x,
+        default: "",
+      }),
+    );
+    descriptor(
+      this,
+      "version",
+      new CosField<string | null, "_fontData", FontObject>("_fontData", "5", {
+        transform: str,
+        accepts: isStringOrNull,
+        reverse: (x: string) => x,
+        default: null,
+      }),
+    );
+    descriptor(
+      this,
+      "designVector",
+      new CosField<number[] | null, "_fontData", FontObject>("_fontData", "4", {
+        transform: _designVectorFromCos,
+        accepts: isNumberList,
+        readOnly: true,
+        default: null,
+      }),
+    );
   }
 }

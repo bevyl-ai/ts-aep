@@ -435,7 +435,9 @@ export const fs: HostFs = new Proxy({} as HostFs, {
     // A Node `Buffer` slices to views; hand out a plain Uint8Array so `slice` copies.
     return (...args: unknown[]) => {
       const out: unknown = v.apply(target, args);
-      return out instanceof Uint8Array && out.constructor !== Uint8Array ? new Uint8Array(out.buffer, out.byteOffset, out.byteLength) : out;
+      return out instanceof Uint8Array && out.constructor !== Uint8Array
+        ? new Uint8Array(out.buffer, out.byteOffset, out.byteLength)
+        : out;
     };
   },
 });

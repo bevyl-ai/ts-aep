@@ -13,9 +13,21 @@ import {
   getOrThrow,
   isdigit,
   literal,
-  typeName, ascii } from "../../../../pyrt/index.ts";
+  typeName,
+  ascii,
+} from "../../../../pyrt/index.ts";
 import { CLAMP_DEPENDENTS } from "../../../data/output_module_rules.ts";
-import { AudioCodec, AudioInterleave, DnxResolution, MPEGAudioFormat, MPEGAudioLayer, MPEGMultiplexer, MPEGMuxStreamCompatibility, MPEGProfile, VideoCodec } from "../../../enums/index.ts";
+import {
+  AudioCodec,
+  AudioInterleave,
+  DnxResolution,
+  MPEGAudioFormat,
+  MPEGAudioLayer,
+  MPEGMultiplexer,
+  MPEGMuxStreamCompatibility,
+  MPEGProfile,
+  VideoCodec,
+} from "../../../enums/index.ts";
 import { ChunkField } from "../../descriptors.ts";
 import { _validateNumber, validateEnum, validateInt } from "../../validators.ts";
 import { FormatOptionsBase } from "./base.ts";
@@ -182,9 +194,7 @@ function _copyTree(e: ETElement): ETElement {
   return copy;
 }
 
-export function _extractParams(
-  root: ETElement,
-): [Map<string, string>, Map<string, ETElement>, Map<string, ETElement>] {
+export function _extractParams(root: ETElement): [Map<string, string>, Map<string, ETElement>, Map<string, ETElement>] {
   const params = new Map<string, string>();
   const valueElements = new Map<string, ETElement>();
   const paramElements = new Map<string, ETElement>();
@@ -461,8 +471,7 @@ export class XmlFormatOptions extends FormatOptionsBase {
         .map((m: number) => `${enumCls.nameOf(m)} (${m})`)
         .join(", ");
       throw new ValueError(
-        `Invalid value ${literal(value)} for ${literal(key)}. ` +
-          `Valid ${enumCls.enumName} values: ${members}`,
+        `Invalid value ${literal(value)} for ${literal(key)}. ` + `Valid ${enumCls.enumName} values: ${members}`,
       );
     }
     const checked = enumCls != null ? enumCls.of(intValue) : intValue;
@@ -734,6 +743,10 @@ export class XmlFormatOptions extends FormatOptionsBase {
     descriptor(this, "resolution", new _EnumParam("ADBEVideoResolution", DnxResolution));
     descriptor(this, "dnxAlphaType", new _ScalarParam("ADBEDNxHDAlphaType"));
     descriptor(this, "mpegMultiplexer", new _EnumParam("ADBEMPEGMultiplexer", MPEGMultiplexer));
-    descriptor(this, "mpegMuxStreamCompatibility", new _EnumParam("ADBEMPEGMuxStreamCompatibility", MPEGMuxStreamCompatibility));
+    descriptor(
+      this,
+      "mpegMuxStreamCompatibility",
+      new _EnumParam("ADBEMPEGMuxStreamCompatibility", MPEGMuxStreamCompatibility),
+    );
   }
 }

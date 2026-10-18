@@ -199,9 +199,7 @@ describe("TestAlphaModeWrites", () => {
 
   function _pngSource(): FileSource {
     const project = parseAep(SAMPLES.div("project", "emptier.aep")).project;
-    const item = project.importFile(
-      new ImportOptions(SAMPLES.parent.div("assets", "image_with_alpha.png")),
-    );
+    const item = project.importFile(new ImportOptions(SAMPLES.parent.div("assets", "image_with_alpha.png")));
     return asInstance(asInstance(item, FootageItem).mainSource, FileSource);
   }
 
@@ -405,22 +403,19 @@ describe("TestMediaColorProfileRecord", () => {
     ["m4a.m4a", false, LinearLightMode.ON_FOR_32BPC],
     ["image_with_alpha.png", false, LinearLightMode.ON_FOR_32BPC],
     ["new_exr.0002.exr", false, LinearLightMode.ON_FOR_32BPC],
-  ])(
-    "test_interpret_as_linear_light_default[%#]",
-    (filename: string, sequence: boolean, expected: LinearLightMode) => {
-      /**
-       * AE turns it off for the formats it decodes through its media
-       * importers - but not for an audio-only movie or an image sequence.
-       */
-      const project = parseAep(SAMPLES.div("project", "emptier.aep")).project;
-      const opts = new ImportOptions(SAMPLES.parent.div("assets", filename));
-      if (sequence) {
-        opts.sequence = true;
-      }
-      const item = project.importFile(opts);
-      expect(asInstance(item, FootageItem).mainSource.interpretAsLinearLight).toBe(expected);
-    },
-  );
+  ])("test_interpret_as_linear_light_default[%#]", (filename: string, sequence: boolean, expected: LinearLightMode) => {
+    /**
+     * AE turns it off for the formats it decodes through its media
+     * importers - but not for an audio-only movie or an image sequence.
+     */
+    const project = parseAep(SAMPLES.div("project", "emptier.aep")).project;
+    const opts = new ImportOptions(SAMPLES.parent.div("assets", filename));
+    if (sequence) {
+      opts.sequence = true;
+    }
+    const item = project.importFile(opts);
+    expect(asInstance(item, FootageItem).mainSource.interpretAsLinearLight).toBe(expected);
+  });
 });
 
 describe("TestWritableInterpretation", () => {

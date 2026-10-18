@@ -22,11 +22,11 @@ translating** and use them; do not reimplement anything they provide. Never edit
 
 ## 1. Files and imports
 
-| Python | TypeScript |
-|---|---|
-| `src/py_aep/a/b.py` | `src/py_aep/a/b.ts` |
-| `src/py_aep/a/__init__.py` | `src/py_aep/a/index.ts` |
-| `tests/x/test_y.py` | `tests/x/test_y.test.ts` |
+| Python                                  | TypeScript                              |
+| --------------------------------------- | --------------------------------------- |
+| `src/py_aep/a/b.py`                     | `src/py_aep/a/b.ts`                     |
+| `src/py_aep/a/__init__.py`              | `src/py_aep/a/index.ts`                 |
+| `tests/x/test_y.py`                     | `tests/x/test_y.test.ts`                |
 | `tests/conftest.py`, `tests/helpers.py` | `tests/conftest.ts`, `tests/helpers.ts` |
 
 - Relative ESM imports **with the `.ts` extension**: `from .chunk import Chunk` →
@@ -68,7 +68,7 @@ translating** and use them; do not reimplement anything they provide. Never edit
   except helpers in `pyrt/num.ts` (`isclose`, `copysign`, `fsum`, `radians`, `degrees`) and
   `math.hypot` → pyrt `hypot` (CPython's rounding);
   `zlib` → `pyrt/zlib.ts` over fflate (`zlib.decompress`, `zlib.decompressobj().decompress(x,
-  max_length)`, `zlib.error`, `gzipDecompress`); `hashlib.md5(x).digest()` → `md5(x)`
+max_length)`, `zlib.error`, `gzipDecompress`); `hashlib.md5(x).digest()` → `md5(x)`
   (`pyrt/md5.ts`); `base64.b64encode/b64decode` → `pyrt/base64.ts` (CPython's non-strict
   decode, `binascii.Error`); `uuid.uuid4()` / `.bytes` → `uuid4()` / `uuid4Bytes()`
   (`pyrt/uuid.ts`); a latin-1 string view of bytes → `bytes_.latin1_str` / `latin1Bytes`;
@@ -98,24 +98,24 @@ translating** and use them; do not reimplement anything they provide. Never edit
 
 ## 3. Values
 
-| Python | TypeScript |
-|---|---|
-| `None` | `null` |
-| `x is None` / `x is not None` | `x == null` / `x != null` (loose: also catches `undefined`) |
-| `True` / `False` | `true` / `false` |
-| `int`, `float` | `number` (see §4 for where they differ) |
-| `str` | `string` |
-| `bytes` | `Uint8Array` (treat as immutable — never write into one you did not just allocate) |
-| `bytearray` | `Uint8Array` you own (mutable) |
-| `list`, `tuple` | arrays (`readonly` for tuples where natural) |
-| `dict` built only to be splatted as `**kwargs` (`cls(**kw)`, `f(**kw)`) | plain object `Record<string, any>` (keys are identifiers; it becomes a TS options object) |
-| `dict` | `Map` — always (except the `**kwargs` case above), unless it is a fixed literal record of identifier keys only read by name (then a plain object `as const`). JS objects reorder integer-like keys and stringify numbers; Maps don't. |
-| `set` / `frozenset` | `Set` (`ReadonlySet` for frozenset); tuple members → `tkey(...)` strings |
-| tuple as dict key / set member | `tkey(a, b)` from pyrt (`Map<string, V>`) |
-| `b"\x00ab"` literal | `b("\x00ab")` from pyrt |
-| `bytes(n)` / `b"\x00" * n` | `new Uint8Array(n)` / `bytes_.repeat(b("\x00"), n)` |
-| bytes ops (`+`, `==`, `.find`, `.strip`, `.startswith`, slicing, `.join`, `.hex`, `int.from_bytes`) | `pyrt bytes_.*` helpers (`concat`, `bytesEq`, `find`, `strip`, `startswith`, `slice`, `join`, `hex`, `intFromBytes`) |
-| `x.decode(enc, errors)` / `s.encode(enc, errors)` | `decode(x, enc, errors)` / `encode(s, enc, errors)` from pyrt — **never** `TextDecoder`/`TextEncoder` (they drop BOMs and replace lone surrogates; `surrogateescape` must round-trip) |
+| Python                                                                                              | TypeScript                                                                                                                                                                                                                            |
+| --------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `None`                                                                                              | `null`                                                                                                                                                                                                                                |
+| `x is None` / `x is not None`                                                                       | `x == null` / `x != null` (loose: also catches `undefined`)                                                                                                                                                                           |
+| `True` / `False`                                                                                    | `true` / `false`                                                                                                                                                                                                                      |
+| `int`, `float`                                                                                      | `number` (see §4 for where they differ)                                                                                                                                                                                               |
+| `str`                                                                                               | `string`                                                                                                                                                                                                                              |
+| `bytes`                                                                                             | `Uint8Array` (treat as immutable — never write into one you did not just allocate)                                                                                                                                                    |
+| `bytearray`                                                                                         | `Uint8Array` you own (mutable)                                                                                                                                                                                                        |
+| `list`, `tuple`                                                                                     | arrays (`readonly` for tuples where natural)                                                                                                                                                                                          |
+| `dict` built only to be splatted as `**kwargs` (`cls(**kw)`, `f(**kw)`)                             | plain object `Record<string, any>` (keys are identifiers; it becomes a TS options object)                                                                                                                                             |
+| `dict`                                                                                              | `Map` — always (except the `**kwargs` case above), unless it is a fixed literal record of identifier keys only read by name (then a plain object `as const`). JS objects reorder integer-like keys and stringify numbers; Maps don't. |
+| `set` / `frozenset`                                                                                 | `Set` (`ReadonlySet` for frozenset); tuple members → `tkey(...)` strings                                                                                                                                                              |
+| tuple as dict key / set member                                                                      | `tkey(a, b)` from pyrt (`Map<string, V>`)                                                                                                                                                                                             |
+| `b"\x00ab"` literal                                                                                 | `b("\x00ab")` from pyrt                                                                                                                                                                                                               |
+| `bytes(n)` / `b"\x00" * n`                                                                          | `new Uint8Array(n)` / `bytes_.repeat(b("\x00"), n)`                                                                                                                                                                                   |
+| bytes ops (`+`, `==`, `.find`, `.strip`, `.startswith`, slicing, `.join`, `.hex`, `int.from_bytes`) | `pyrt bytes_.*` helpers (`concat`, `bytesEq`, `find`, `strip`, `startswith`, `slice`, `join`, `hex`, `intFromBytes`)                                                                                                                  |
+| `x.decode(enc, errors)` / `s.encode(enc, errors)`                                                   | `decode(x, enc, errors)` / `encode(s, enc, errors)` from pyrt — **never** `TextDecoder`/`TextEncoder` (they drop BOMs and replace lone surrogates; `surrogateescape` must round-trip)                                                 |
 
 ## 4. Semantics that differ (use pyrt every time)
 
@@ -204,7 +204,7 @@ translating** and use them; do not reimplement anything they provide. Never edit
 - Call sites: a positional-or-keyword argument passed by keyword in Python is passed
   positionally in TS (fill skipped optional positions with `undefined`, which triggers the
   default exactly like omitting it). Keyword-only arguments go in the trailing object.
-  Translate call sites to *other* modules by reading that function's Python signature.
+  Translate call sites to _other_ modules by reading that function's Python signature.
 - Python `None` passed explicitly stays `null` (does **not** trigger a TS default).
 - `@staticmethod` → `static`. `@classmethod` → `static` with `this` as `cls`
   (`cls(...)` → `new this(...)`; `cls.attr` → `this.attr`). Instance code reading a class
@@ -226,7 +226,7 @@ translating** and use them; do not reimplement anything they provide. Never edit
 - **attrs** (`@define`): fields are declared with `declare` (never JS initializers) and
   registered with `define(Cls, { field: spec, ... })` right after the class, before any
   decorator-equivalent calls. `attrs.field(default=…, repr=False, init=False, eq=False,
-  metadata=…, converter=…)` → `field({ default, repr, init, eq, metadata, converter })`;
+metadata=…, converter=…)` → `field({ default, repr, init, eq, metadata, converter })`;
   `Factory(list)` → `Factory(() => [])`. The class (or a base) must extend `AttrsBase`
   (`binary/chunk.ts`'s `Chunk` and `fmt_field.ts`'s `FmtItem` do). Construction:
   `Cls(a=1, b=2)` → `new Cls({ a: 1, b: 2 })` — keyword object always, using the
@@ -274,7 +274,7 @@ translating** and use them; do not reimplement anything they provide. Never edit
 - `_NulTailStr` (a `str` subclass carrying `.raw`) → `class _NulTailStr extends String { raw }`;
   compare such values with `valueEquals` / `String(x)`.
 - `json.dumps(obj, ...)` → pyrt `jsonDumps(obj, { separators, ensure_ascii, sort_keys, indent,
-  default_ })`: Python's separators, escaping and float spelling. A float that must print as
+default_ })`: Python's separators, escaping and float spelling. A float that must print as
   `1.0` is a `PyFloat` (`jsonLoads` produces them).
 - Dict iteration order = insertion order (Map). Never iterate a plain object whose keys could be
   numeric strings.
@@ -297,6 +297,6 @@ lazily cached module constants). Keep every assertion; `assert a == b` on primit
 
 ## 10. Comments and TODOs
 
-Keep docstrings as JSDoc (`/** … */`) and keep comments that explain *why*. Mark anything you
+Keep docstrings as JSDoc (`/** … */`) and keep comments that explain _why_. Mark anything you
 could not translate faithfully with `// TODO(port): <precise reason>` at the exact spot and keep
 going — never leave a function unimplemented without the TODO, never stub silently.

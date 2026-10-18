@@ -69,9 +69,8 @@ const proc = Bun.spawnSync(
   { cwd: path.join(ROOT, ".upstream"), stderr: "inherit" },
 );
 if (proc.exitCode !== 0) throw new Error("CPython dump failed");
-const py: Record<string, { name: string; single: (number | null)[]; leads: number[]; pairs: Record<string, number> }> = JSON.parse(
-  proc.stdout.toString(),
-);
+const py: Record<string, { name: string; single: (number | null)[]; leads: number[]; pairs: Record<string, number> }> =
+  JSON.parse(proc.stdout.toString());
 
 function decodeJs(label: string, bytes: number[]): number[] | null {
   try {
@@ -89,7 +88,12 @@ const lines = [
 for (const [name, codec] of SINGLE) {
   const { single, leads } = py[codec];
   if (leads.length) throw new Error(`${codec} is not single-byte`);
-  lines.push(`export const ${name}: readonly number[] = [${single.slice(0x80).map((c) => c ?? -1).join(", ")}];`);
+  lines.push(
+    `export const ${name}: readonly number[] = [${single
+      .slice(0x80)
+      .map((c) => c ?? -1)
+      .join(", ")}];`,
+  );
 }
 lines.push(
   "",

@@ -5,7 +5,20 @@
 // keyword-only `rel_tol=` becomes its third positional argument.
 
 import { describe, expect, test } from "bun:test";
-import { AssertionError, getMember, getOrThrow, isclose, len, Path, assert, truthy, valueEquals, repr, StopIteration, zip } from "../../src/pyrt/index.ts";
+import {
+  AssertionError,
+  getMember,
+  getOrThrow,
+  isclose,
+  len,
+  Path,
+  assert,
+  truthy,
+  valueEquals,
+  repr,
+  StopIteration,
+  zip,
+} from "../../src/pyrt/index.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { getComp, getCompFromJsonByName, loadExpected, parseProject } from "../conftest.ts";
 import { asInstance } from "../helpers.ts";
@@ -16,7 +29,11 @@ import { PropertyGroup } from "../../src/py_aep/models/properties/property_group
 import { FootageItem } from "../../src/py_aep/models/items/footage.ts";
 import { FileSource } from "../../src/py_aep/models/sources/file.ts";
 import { SolidSource } from "../../src/py_aep/models/sources/solid.ts";
-import { _resolveControllerSourceLayer, _walkSourceProperty, resolveEssentialPropertyControllers } from "../../src/py_aep/resolvers/essential_properties.ts";
+import {
+  _resolveControllerSourceLayer,
+  _walkSourceProperty,
+  resolveEssentialPropertyControllers,
+} from "../../src/py_aep/resolvers/essential_properties.ts";
 import { round } from "../support/python.ts";
 
 // Python `Path(__file__).parent.parent.parent` is the repo root. A TS file's
@@ -143,10 +160,7 @@ describe("TestCompItemMotionBlur", () => {
   test("test_motionBlurSamplesPerFrame_32", () => {
     const expected = loadExpected(SAMPLES_DIR, "comp_flags");
     const compJson = getCompFromJsonByName(expected, "motionBlurSamplesPerFrame_32");
-    const comp = getComp(
-      parseProject(SAMPLES_DIR.div("comp_flags.aep")),
-      "motionBlurSamplesPerFrame_32",
-    );
+    const comp = getComp(parseProject(SAMPLES_DIR.div("comp_flags.aep")), "motionBlurSamplesPerFrame_32");
     expect(comp.motionBlurSamplesPerFrame).toBe(compJson["motionBlurSamplesPerFrame"]);
     expect(compJson["motionBlurSamplesPerFrame"]).toBe(32);
   });
@@ -154,10 +168,7 @@ describe("TestCompItemMotionBlur", () => {
   test("test_motionBlurAdaptiveSampleLimit_256", () => {
     const expected = loadExpected(SAMPLES_DIR, "comp_flags");
     const compJson = getCompFromJsonByName(expected, "motionBlurAdaptiveSampleLimit_256");
-    const comp = getComp(
-      parseProject(SAMPLES_DIR.div("comp_flags.aep")),
-      "motionBlurAdaptiveSampleLimit_256",
-    );
+    const comp = getComp(parseProject(SAMPLES_DIR.div("comp_flags.aep")), "motionBlurAdaptiveSampleLimit_256");
     expect(comp.motionBlurAdaptiveSampleLimit).toBe(compJson["motionBlurAdaptiveSampleLimit"]);
     expect(compJson["motionBlurAdaptiveSampleLimit"]).toBe(256);
   });
@@ -168,20 +179,14 @@ describe("TestCompItemResolution", () => {
   test("test_resolutionFactor_half", () => {
     const expected = loadExpected(SAMPLES_DIR, "resolutionFactor");
     const compJson = getCompFromJsonByName(expected, "resolutionFactor_half");
-    const comp = getComp(
-      parseProject(SAMPLES_DIR.div("resolutionFactor.aep")),
-      "resolutionFactor_half",
-    );
+    const comp = getComp(parseProject(SAMPLES_DIR.div("resolutionFactor.aep")), "resolutionFactor_half");
     expect(valueEquals(comp.resolutionFactor, compJson["resolutionFactor"])).toBe(true);
   });
 
   test("test_resolutionFactor_quarter", () => {
     const expected = loadExpected(SAMPLES_DIR, "resolutionFactor");
     const compJson = getCompFromJsonByName(expected, "resolutionFactor_quarter");
-    const comp = getComp(
-      parseProject(SAMPLES_DIR.div("resolutionFactor.aep")),
-      "resolutionFactor_quarter",
-    );
+    const comp = getComp(parseProject(SAMPLES_DIR.div("resolutionFactor.aep")), "resolutionFactor_quarter");
     expect(valueEquals(comp.resolutionFactor, compJson["resolutionFactor"])).toBe(true);
   });
 });
@@ -191,10 +196,7 @@ describe("TestCompItemNestedOptions", () => {
   test("test_preserveNestedFrameRate_true", () => {
     const expected = loadExpected(SAMPLES_DIR, "comp_flags");
     const compJson = getCompFromJsonByName(expected, "preserveNestedFrameRate_true");
-    const comp = getComp(
-      parseProject(SAMPLES_DIR.div("comp_flags.aep")),
-      "preserveNestedFrameRate_true",
-    );
+    const comp = getComp(parseProject(SAMPLES_DIR.div("comp_flags.aep")), "preserveNestedFrameRate_true");
     expect(compJson["preserveNestedFrameRate"]).toBe(true);
     expect(comp.preserveNestedFrameRate).toBe(compJson["preserveNestedFrameRate"]);
   });
@@ -202,10 +204,7 @@ describe("TestCompItemNestedOptions", () => {
   test("test_preserveNestedResolution_true", () => {
     const expected = loadExpected(SAMPLES_DIR, "comp_flags");
     const compJson = getCompFromJsonByName(expected, "preserveNestedResolution_true");
-    const comp = getComp(
-      parseProject(SAMPLES_DIR.div("comp_flags.aep")),
-      "preserveNestedResolution_true",
-    );
+    const comp = getComp(parseProject(SAMPLES_DIR.div("comp_flags.aep")), "preserveNestedResolution_true");
     expect(compJson["preserveNestedResolution"]).toBe(true);
     expect(comp.preserveNestedResolution).toBe(compJson["preserveNestedResolution"]);
   });
@@ -368,9 +367,7 @@ describe("TestCompItemDropFrame", () => {
 describe("TestCompItemRenderer", () => {
   test("test_renderers", () => {
     const comp = parseProject(SAMPLES_DIR.div("renderer_classic_3d.aep")).compositions[0];
-    expect(
-      valueEquals(comp.renderers, ["ADBE Advanced 3d", "ADBE Calder", "ADBE Ernst", "ADBE Picasso"]),
-    ).toBe(true);
+    expect(valueEquals(comp.renderers, ["ADBE Advanced 3d", "ADBE Calder", "ADBE Ernst", "ADBE Picasso"])).toBe(true);
   });
 
   test("test_renderer_classic_3d", () => {
@@ -415,10 +412,7 @@ describe("TestCompItemLayerFiltering", () => {
   });
 
   test("test_light_layers", () => {
-    const comp = getComp(
-      parseProject(LAYER_SAMPLES_DIR.div("lightType.aep")),
-      "lightType_POINT",
-    );
+    const comp = getComp(parseProject(LAYER_SAMPLES_DIR.div("lightType.aep")), "lightType_POINT");
     expect(len(comp.lightLayers)).toBe(1);
     expect(comp.lightLayers.every((layer) => layer instanceof LightLayer)).toBe(true);
   });
@@ -430,43 +424,25 @@ describe("TestCompItemLayerFiltering", () => {
   });
 
   test("test_adjustment_layers", () => {
-    const comp = getComp(
-      parseProject(LAYER_SAMPLES_DIR.div("avlayer_flags.aep")),
-      "adjustmentLayer_true",
-    );
+    const comp = getComp(parseProject(LAYER_SAMPLES_DIR.div("avlayer_flags.aep")), "adjustmentLayer_true");
     expect(len(comp.adjustmentLayers)).toBe(1);
-    expect(
-      comp.adjustmentLayers.every((layer) => layer instanceof AVLayer && layer.adjustmentLayer),
-    ).toBe(true);
+    expect(comp.adjustmentLayers.every((layer) => layer instanceof AVLayer && layer.adjustmentLayer)).toBe(true);
   });
 
   test("test_three_d_layers", () => {
-    const comp = getComp(
-      parseProject(LAYER_SAMPLES_DIR.div("avlayer_flags.aep")),
-      "threeDLayer_true",
-    );
+    const comp = getComp(parseProject(LAYER_SAMPLES_DIR.div("avlayer_flags.aep")), "threeDLayer_true");
     expect(len(comp.threeDLayers)).toBe(1);
-    expect(
-      comp.threeDLayers.every((layer) => layer instanceof AVLayer && layer.threeDLayer),
-    ).toBe(true);
+    expect(comp.threeDLayers.every((layer) => layer instanceof AVLayer && layer.threeDLayer)).toBe(true);
   });
 
   test("test_guide_layers", () => {
-    const comp = getComp(
-      parseProject(LAYER_SAMPLES_DIR.div("avlayer_flags.aep")),
-      "guideLayer_true",
-    );
+    const comp = getComp(parseProject(LAYER_SAMPLES_DIR.div("avlayer_flags.aep")), "guideLayer_true");
     expect(len(comp.guideLayers)).toBe(1);
-    expect(
-      comp.guideLayers.every((layer) => layer instanceof AVLayer && layer.guideLayer),
-    ).toBe(true);
+    expect(comp.guideLayers.every((layer) => layer instanceof AVLayer && layer.guideLayer)).toBe(true);
   });
 
   test("test_solo_layers", () => {
-    const comp = getComp(
-      parseProject(LAYER_SAMPLES_DIR.div("layer_switches.aep")),
-      "solo_true",
-    );
+    const comp = getComp(parseProject(LAYER_SAMPLES_DIR.div("layer_switches.aep")), "solo_true");
     expect(len(comp.soloLayers)).toBe(1);
     expect(comp.soloLayers.every((layer) => layer.solo)).toBe(true);
   });
@@ -567,9 +543,7 @@ describe("TestCompItemGuides", () => {
 
   test("test_guide_orientation_vertical", () => {
     const comp = getComp(parseProject(SAMPLES_DIR.div("guides.aep")), "guides_both");
-    const verticalGuides = comp.guides.filter(
-      (g) => g.orientationType === GuideOrientationType.VERTICAL,
-    );
+    const verticalGuides = comp.guides.filter((g) => g.orientationType === GuideOrientationType.VERTICAL);
     expect(len(verticalGuides)).toBe(1);
     expect(verticalGuides[0].position).toBe(960.0);
   });
@@ -597,11 +571,7 @@ describe("TestEssentialGraphics", () => {
     const comp = next_(project.compositions.find((c) => c.name === "primary"));
     expect(comp.motionGraphicsTemplateControllerCount).toBe(3);
     expect(
-      valueEquals(comp.motionGraphicsTemplateControllerNames, [
-        "Brightness",
-        "Layer Opacity",
-        "Background Color",
-      ]),
+      valueEquals(comp.motionGraphicsTemplateControllerNames, ["Brightness", "Layer Opacity", "Background Color"]),
     ).toBe(true);
   });
 
@@ -684,17 +654,25 @@ describe("TestEssentialGraphics", () => {
     const main = next_(project.compositions.find((c) => c.name === "main"));
     const layer = next_(main.layers.find((la) => truthy(la.essentialPropertyUuids)));
     const controllers = asInstance(layer, AVLayer).essentialPropertyControllers;
-    expect(valueEquals(controllers.map((c) => c.name), ["Brightness", "Layer Opacity", "Background Color"])).toBe(true);
+    expect(
+      valueEquals(
+        controllers.map((c) => c.name),
+        ["Brightness", "Layer Opacity", "Background Color"],
+      ),
+    ).toBe(true);
     // Each resolved controller's uuid is the override uuid at that position.
-    expect(valueEquals(controllers.map((c) => c.uuid), layer.essentialPropertyUuids)).toBe(true);
+    expect(
+      valueEquals(
+        controllers.map((c) => c.uuid),
+        layer.essentialPropertyUuids,
+      ),
+    ).toBe(true);
   });
 
   test("test_essential_property_controllers_single_override", () => {
     const project = parseProject(EG_SAMPLES_DIR.div("text_source_text.aep"));
     const layer = next_(
-      project.compositions
-        .flatMap((comp) => comp.layers)
-        .find((la) => truthy(la.essentialPropertyUuids)),
+      project.compositions.flatMap((comp) => comp.layers).find((la) => truthy(la.essentialPropertyUuids)),
     );
     const controllers = asInstance(layer, AVLayer).essentialPropertyControllers;
     expect(len(controllers)).toBe(1);
@@ -717,12 +695,27 @@ describe("TestEssentialGraphics", () => {
     const byName = new Map(comp.motionGraphicsControllers.map((c) => [c.name, c] as const));
 
     const bg = getOrThrow(byName, "Background Color").sourcePropertyPath;
-    expect(valueEquals(bg.map((n) => n.matchName), ["ADBE Effect Parade", "ADBE Fill", "ADBE Fill-0002"])).toBe(true);
-    expect(valueEquals(bg.map((n) => n.propIndex), [null, 0, 3])).toBe(true);
+    expect(
+      valueEquals(
+        bg.map((n) => n.matchName),
+        ["ADBE Effect Parade", "ADBE Fill", "ADBE Fill-0002"],
+      ),
+    ).toBe(true);
+    expect(
+      valueEquals(
+        bg.map((n) => n.propIndex),
+        [null, 0, 3],
+      ),
+    ).toBe(true);
 
     // A transform property (not an effect): every node matches by name.
     const opacity = getOrThrow(byName, "Layer Opacity").sourcePropertyPath;
-    expect(valueEquals(opacity.map((n) => n.matchName), ["ADBE Transform Group", "ADBE Opacity"])).toBe(true);
+    expect(
+      valueEquals(
+        opacity.map((n) => n.matchName),
+        ["ADBE Transform Group", "ADBE Opacity"],
+      ),
+    ).toBe(true);
     expect(opacity.every((n) => n.propIndex == null)).toBe(true);
   });
 
@@ -754,7 +747,10 @@ describe("TestEssentialGraphics", () => {
     const main = next_(project.compositions.find((c) => c.name === "main"));
     const layer = next_(main.layers.find((la) => truthy(la.essentialPropertyUuids)));
     expect(
-      valueEquals(asInstance(layer, AVLayer).essentialPropertyControllers.map((c) => c.name), ["Group", "Gaussian Blur Blurriness", "Fill Color"]),
+      valueEquals(
+        asInstance(layer, AVLayer).essentialPropertyControllers.map((c) => c.name),
+        ["Group", "Gaussian Blur Blurriness", "Fill Color"],
+      ),
     ).toBe(true);
   });
 
@@ -783,7 +779,10 @@ describe("TestEssentialGraphics", () => {
     const host = next_(project.compositions.find((c) => c.name === "image_with_alpha 2"));
     const layer = next_(host.layers.find((la) => truthy(la.essentialPropertyUuids)));
 
-    const overrides = asInstance(next_(layer.properties.find((p) => p.matchName === "ADBE Layer Overrides")), PropertyGroup);
+    const overrides = asInstance(
+      next_(layer.properties.find((p) => p.matchName === "ADBE Layer Overrides")),
+      PropertyGroup,
+    );
     expect(overrides.numProperties).toBe(1);
     const alt = asInstance(overrides.properties[0], Property);
     expect(alt.matchName).toBe("ADBE Layer Source Alternate");
@@ -802,7 +801,10 @@ describe("TestEssentialGraphics", () => {
     expect(src.containingComp.name).toBe("image_with_alpha");
 
     // The Source Options copy is an unset slot (blsi == 0).
-    const srcGroup = asInstance(next_(layer.properties.find((p) => p.matchName === "ADBE Source Options Group")), PropertyGroup);
+    const srcGroup = asInstance(
+      next_(layer.properties.find((p) => p.matchName === "ADBE Source Options Group")),
+      PropertyGroup,
+    );
     const srcAlt = asInstance(
       next_(srcGroup.properties.find((c) => c.matchName === "ADBE Layer Source Alternate")),
       Property,
@@ -868,10 +870,14 @@ describe("TestEssentialGraphics", () => {
         .find(
           (la) =>
             la.properties.some((p) => p.matchName === "ADBE Layer Overrides") &&
-            asInstance(next_(la.properties.find((p) => p.matchName === "ADBE Layer Overrides")), PropertyGroup).numProperties > 0,
+            asInstance(next_(la.properties.find((p) => p.matchName === "ADBE Layer Overrides")), PropertyGroup)
+              .numProperties > 0,
         ),
     );
-    const overrides = asInstance(next_(layer.properties.find((p) => p.matchName === "ADBE Layer Overrides")), PropertyGroup);
+    const overrides = asInstance(
+      next_(layer.properties.find((p) => p.matchName === "ADBE Layer Overrides")),
+      PropertyGroup,
+    );
     expect(overrides.numProperties).toBe(1);
     expect(overrides.isModified).toBe(true); // non-empty override group
 
@@ -895,7 +901,12 @@ describe("TestEssentialGraphics", () => {
     assert(typeof fill.maxValue === "number");
     expect(round(fill.maxValue, 2)).toBe(3921568.63);
     expect(fill.isModified).toBe(true); // override differs from source [1,0,0,1]
-    expect(valueEquals(fill.value.map((c: number) => round(c, 4)), [0.2475, 0.7255, 0.6299, 1.0])).toBe(true);
+    expect(
+      valueEquals(
+        fill.value.map((c: number) => round(c, 4)),
+        [0.2475, 0.7255, 0.6299, 1.0],
+      ),
+    ).toBe(true);
 
     // Public essential_property_source resolves the override to its source
     // Property (a different object than the override leaf).
@@ -915,10 +926,15 @@ describe("TestEssentialGraphics", () => {
       project.compositions
         .flatMap((comp) => comp.layers)
         .find((la) =>
-          la.properties.some((p) => p.matchName === "ADBE Layer Overrides" && asInstance(p, PropertyGroup).numProperties > 0),
+          la.properties.some(
+            (p) => p.matchName === "ADBE Layer Overrides" && asInstance(p, PropertyGroup).numProperties > 0,
+          ),
         ),
     );
-    const overrides = asInstance(next_(layer.properties.find((p) => p.matchName === "ADBE Layer Overrides")), PropertyGroup);
+    const overrides = asInstance(
+      next_(layer.properties.find((p) => p.matchName === "ADBE Layer Overrides")),
+      PropertyGroup,
+    );
     const leaf = asInstance(overrides.properties[0], Property);
     expect(leaf.matchName).toBe("ADBE Point Control-0001");
     expect(valueEquals(leaf.value, [500.0, 500.0])).toBe(true); // pixels, not the stored [0.5, 0.5]
@@ -936,10 +952,15 @@ describe("TestEssentialGraphics", () => {
       project.compositions
         .flatMap((comp) => comp.layers)
         .find((la) =>
-          la.properties.some((p) => p.matchName === "ADBE Layer Overrides" && asInstance(p, PropertyGroup).numProperties > 0),
+          la.properties.some(
+            (p) => p.matchName === "ADBE Layer Overrides" && asInstance(p, PropertyGroup).numProperties > 0,
+          ),
         ),
     );
-    const overrides = asInstance(next_(layer.properties.find((p) => p.matchName === "ADBE Layer Overrides")), PropertyGroup);
+    const overrides = asInstance(
+      next_(layer.properties.find((p) => p.matchName === "ADBE Layer Overrides")),
+      PropertyGroup,
+    );
     const names = overrides.properties.map((leaf) => leaf.name);
     expect(valueEquals(names, ["Brightness", "Layer Opacity", "Background Color"])).toBe(true);
   });

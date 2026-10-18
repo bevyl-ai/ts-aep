@@ -21,7 +21,6 @@ import { getComp, parseProjectFresh } from "../helpers.ts";
 import { Path, assert } from "../../src/pyrt/index.ts";
 import { approx, makeTmpPath } from "../support/pytest.ts";
 
-
 const SAMPLES_DIR = new Path(import.meta.dir).parent.parent.div("samples", "models", "layer");
 const SAMPLE = SAMPLES_DIR.div("camera_default_position.aep");
 

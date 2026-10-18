@@ -34,7 +34,9 @@ const proc = Bun.spawnSync(["uv", "run", "-q", "--project", ".", "python", "-c",
   stderr: "inherit",
 });
 if (proc.exitCode !== 0) throw new Error("CPython dump failed");
-const py: { version: string; bidirectional: [number[], string[]]; combining: [number[], number[]] } = JSON.parse(proc.stdout.toString());
+const py: { version: string; bidirectional: [number[], string[]]; combining: [number[], number[]] } = JSON.parse(
+  proc.stdout.toString(),
+);
 
 const b36 = (xs: number[]): string => xs.map((x) => x.toString(36)).join(",");
 const [bidiLengths, bidiValues] = py.bidirectional;

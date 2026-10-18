@@ -24,15 +24,38 @@ import { PropertyType } from "../../enums/index.ts";
 import { AddableKind, canAddProperty as _canAddProperty, resolveAddable } from "../../resolvers/can_add_property.ts";
 import { getAeVersionMajor, requiresVersion } from "../../ae_version.ts";
 import { Chunk, ListChunk, readChunks } from "../../binary/chunk.ts";
-import { buildDropdownControl, buildExpressionControl, buildTextAnimator, buildTextSelector, buildVectorElement, cloneChunkTree, rewriteOwnerTdpi, rewriteTimeBase } from "../../binary/mutations.ts";
-import { TDSN_SENTINEL, TdmnChunk, TdsbChunk, TdsnChunk, TdumChunk, VfdnChunk, tdb4ApplyVfAxisTemplate } from "../../binary/property_chunks.ts";
+import {
+  buildDropdownControl,
+  buildExpressionControl,
+  buildTextAnimator,
+  buildTextSelector,
+  buildVectorElement,
+  cloneChunkTree,
+  rewriteOwnerTdpi,
+  rewriteTimeBase,
+} from "../../binary/mutations.ts";
+import {
+  TDSN_SENTINEL,
+  TdmnChunk,
+  TdsbChunk,
+  TdsnChunk,
+  TdumChunk,
+  VfdnChunk,
+  tdb4ApplyVfAxisTemplate,
+} from "../../binary/property_chunks.ts";
 import type { Utf8Chunk } from "../../binary/scalar_chunks.ts";
 import { findByListTypeOrNull, indexByIdentity } from "../../binary/utils.ts";
 import { DROPDOWN_CONTROL } from "../../data/dropdown_control.ts";
 import { readDesignAxes } from "../../resolvers/font_axes.ts";
 import { resolveFontExact } from "../../svg/fonts.ts";
 import type { CameraLayer } from "../layers/camera_layer.ts";
-import { _GROUP_CHILD_SPECS, _LAYER_STYLE_CHILD_SPECS, _USE_VALUE, GroupSpec, type PropSpec } from "../../synthesis/property.ts";
+import {
+  _GROUP_CHILD_SPECS,
+  _LAYER_STYLE_CHILD_SPECS,
+  _USE_VALUE,
+  GroupSpec,
+  type PropSpec,
+} from "../../synthesis/property.ts";
 import { validateString } from "../validators.ts";
 import { _PROPERTY_MIN_MAX } from "./overrides.ts";
 import { Property, _valuesEqual, _vfTagFromStr } from "./property.ts";
@@ -40,8 +63,6 @@ import { _INDEXED_GROUP_MATCH_NAMES, PropertyBase } from "./property_base.ts";
 import type { MaskPropertyGroup } from "./mask_property_group.ts";
 import type { MatchNameTypes } from "./match_name_types.ts";
 import { late } from "../late.ts";
-
-
 
 // Mandatory empty subgroups AE writes inside some freshly added shape
 // elements, as (match name, tdsb lock flags, tdsb enable flags) triples. A
@@ -283,10 +304,7 @@ export function _reorderAndFill(
           child._unitsText = spec.unitsText;
         }
         if (child.defaultValue == null) {
-          const dv =
-            spec.defaultValue === _USE_VALUE
-              ? spec.value
-              : spec.defaultValue;
+          const dv = spec.defaultValue === _USE_VALUE ? spec.value : spec.defaultValue;
           if (dv != null) child.defaultValue = dv;
         }
       }
@@ -303,7 +321,11 @@ export function _reorderAndFill(
       });
       ordered.push(group);
     } else {
-      const [v, d] = getOr<string, [number | number[], number | number[]], [typeof _USE_VALUE, typeof _USE_VALUE]>(valueOverrides ?? new Map(), mn, [_USE_VALUE, _USE_VALUE]);
+      const [v, d] = getOr<string, [number | number[], number | number[]], [typeof _USE_VALUE, typeof _USE_VALUE]>(
+        valueOverrides ?? new Map(),
+        mn,
+        [_USE_VALUE, _USE_VALUE],
+      );
       const prop = Property._new(spec, childDepth, {
         parentProperty: container,
         value: v,
@@ -753,8 +775,7 @@ export class PropertyGroup extends PropertyBase {
       !instanceDict(this).has(name)
     ) {
       throw new AttributeError(
-        `'${this.constructor.name}' has no attribute '${name}' to set; ` +
-          "assign a child property's `value` instead",
+        `'${this.constructor.name}' has no attribute '${name}' to set; ` + "assign a child property's `value` instead",
       );
     }
     // NOTE(port): PropertyBase defines no `__setattr__`, so Python's `super().__setattr__` is `object`'s, as here.
@@ -826,8 +847,7 @@ export class PropertyGroup extends PropertyBase {
     // hold any override, independent of whether a leaf differs from its
     // source value (AE treats having an override as a modification).
     if (
-      (this.matchName === "ADBE Layer Overrides" ||
-        this.matchName === "ADBE Layer Overrides Group") &&
+      (this.matchName === "ADBE Layer Overrides" || this.matchName === "ADBE Layer Overrides Group") &&
       this.properties.length > 0
     ) {
       return true;
@@ -944,9 +964,7 @@ export class PropertyGroup extends PropertyBase {
       throw new ValueError(`The font has no ${literal(axisTag)} axis (available: ${available}).`);
     }
 
-    const slots = this.properties.filter(
-      (p): p is Property => p instanceof Property && p._isVfAxis,
-    );
+    const slots = this.properties.filter((p): p is Property => p instanceof Property && p._isVfAxis);
     for (const p of slots) {
       if (p.axisTag === axisTag) return p;
     }
@@ -1064,9 +1082,7 @@ export class PropertyGroup extends PropertyBase {
     // AE assigns a monotonic per-layer mask id (highest existing + 1),
     // not a positional count: len+1 collides after a mid-parade mask is
     // removed, or on a parsed layer whose mask ids are non-contiguous.
-    const existing = this.properties.filter(
-      (m): m is MaskPropertyGroup => m._isMaskGroup(),
-    );
+    const existing = this.properties.filter((m): m is MaskPropertyGroup => m._isMaskGroup());
     const nextId = Math.max(0, ...existing.map((m) => m._mkif.maskId)) + 1;
     // The name is numbered past the highest "Mask N" name, independently
     // of the id (AE 2026: beside "Mask 1" and a mask renamed "stored" the
@@ -1091,17 +1107,12 @@ export class PropertyGroup extends PropertyBase {
     const sameType = this.properties.filter((p) => p.matchName === matchName).length;
     const tdsnName = this._effectInstanceName(display, sameType);
 
-    const [tdmn, sspc] = buildExpressionControl(
-      matchName,
-      display,
-      Bytes.fromHex(skeleton.part),
-      {
-        tdsnName,
-        timeBase: comp._cdta.internalTimebase,
-        layerId: this._containingLayer.id,
-        layerParamName: skeleton.layerParam,
-      },
-    );
+    const [tdmn, sspc] = buildExpressionControl(matchName, display, Bytes.fromHex(skeleton.part), {
+      tdsnName,
+      timeBase: comp._cdta.internalTimebase,
+      layerId: this._containingLayer.id,
+      layerParamName: skeleton.layerParam,
+    });
     return this._attachEffect(tdmn, sspc, matchName);
   }
 
@@ -1117,9 +1128,7 @@ export class PropertyGroup extends PropertyBase {
     const comp = this._containingLayer.containingComp;
 
     const display: string = DROPDOWN_CONTROL.name;
-    const sameType = this.properties.filter((p) =>
-      p.matchName.startsWith("Pseudo/@@"),
-    ).length;
+    const sameType = this.properties.filter((p) => p.matchName.startsWith("Pseudo/@@")).length;
     const tdsnName = this._effectInstanceName(display, sameType);
 
     const [tdmn, sspc] = buildDropdownControl({
@@ -1168,11 +1177,7 @@ export class PropertyGroup extends PropertyBase {
    * one, and the parameter's keyframe times are then read against the
    * wrong base.
    */
-  private _addInstalledEffect(
-    matchName: string,
-    display: string,
-    defSspc: ListChunk,
-  ): PropertyGroup {
+  private _addInstalledEffect(matchName: string, display: string, defSspc: ListChunk): PropertyGroup {
     this._ensureMaterialized();
     const sspc = cloneChunkTree(defSspc);
     assert(sspc instanceof ListChunk);
@@ -1186,16 +1191,8 @@ export class PropertyGroup extends PropertyBase {
     const tdsnName = this._effectInstanceName(display, sameType);
     _setEffectInstanceName(sspc, tdsnName);
 
-    const engv =
-      matchName === "ADBE FreePin3"
-        ? new Chunk({ chunkType: "engv", data: _PUPPET_ENGINE_VERSION })
-        : null;
-    const effect = this._attachEffect(
-      new TdmnChunk({ value: matchName }),
-      sspc,
-      matchName,
-      engv,
-    );
+    const engv = matchName === "ADBE FreePin3" ? new Chunk({ chunkType: "engv", data: _PUPPET_ENGINE_VERSION }) : null;
+    const effect = this._attachEffect(new TdmnChunk({ value: matchName }), sspc, matchName, engv);
     _resetToDefaultValues(effect);
     return effect;
   }
@@ -1208,12 +1205,7 @@ export class PropertyGroup extends PropertyBase {
    * `engv` is the engine-version atom AE stores between an effect's
    * `tdmn` and its `sspc` (Puppet only).
    */
-  private _attachEffect(
-    tdmn: TdmnChunk,
-    sspc: ListChunk,
-    matchName: string,
-    engv: Chunk | null = null,
-  ): PropertyGroup {
+  private _attachEffect(tdmn: TdmnChunk, sspc: ListChunk, matchName: string, engv: Chunk | null = null): PropertyGroup {
     const layer = this._containingLayer;
     const comp = layer.containingComp;
     const parentTdgp = this._tdgp;
@@ -1223,15 +1215,7 @@ export class PropertyGroup extends PropertyBase {
     _insertBeforeGroupEnd(parentTdgp, sspc);
 
     const effectParamDefs = comp._project._effectParamDefs;
-    const effect = late.parseEffect(
-      sspc,
-      matchName,
-      this.propertyDepth + 1,
-      effectParamDefs,
-      comp,
-      tdmn,
-      layer,
-    );
+    const effect = late.parseEffect(sspc, matchName, this.propertyDepth + 1, effectParamDefs, comp, tdmn, layer);
     effect._parentProperty = this;
     effect._deferredAeMajor = getAeVersionMajor(layer);
     this._properties.push(effect);
@@ -1277,16 +1261,11 @@ export class PropertyGroup extends PropertyBase {
     // AE bakes a per-container, per-type numbered name into the tdsn.
     const base = _VECTOR_CREATION_NAMES.get(matchName) || (MATCH_NAME_TO_AUTO_NAME.get(matchName) ?? matchName);
     const sameType = this.properties.filter((p) => p.matchName === matchName).length;
-    const pathTimeBase =
-      matchName === "ADBE Vector Shape - Group" ? comp._cdta.internalTimebase : null;
-    const [tdmn, tdgp] = buildVectorElement(
-      matchName,
-      this._freeNumberedName(base, sameType + 1),
-      {
-        subgroups: _VECTOR_SUBGROUPS.get(matchName) ?? [],
-        pathTimeBase,
-      },
-    );
+    const pathTimeBase = matchName === "ADBE Vector Shape - Group" ? comp._cdta.internalTimebase : null;
+    const [tdmn, tdgp] = buildVectorElement(matchName, this._freeNumberedName(base, sameType + 1), {
+      subgroups: _VECTOR_SUBGROUPS.get(matchName) ?? [],
+      pathTimeBase,
+    });
     return this._attachGroup(tdmn, tdgp, matchName);
   }
 
@@ -1317,12 +1296,8 @@ export class PropertyGroup extends PropertyBase {
    */
   private _addTextAnimator(): PropertyGroup {
     this._ensureMaterialized();
-    const sameType = this.properties.filter(
-      (p) => p.matchName === "ADBE Text Animator",
-    ).length;
-    const [tdmn, tdgp] = buildTextAnimator(
-      this._freeNumberedName("Animator", sameType + 1),
-    );
+    const sameType = this.properties.filter((p) => p.matchName === "ADBE Text Animator").length;
+    const [tdmn, tdgp] = buildTextAnimator(this._freeNumberedName("Animator", sameType + 1));
     return this._attachGroup(tdmn, tdgp, "ADBE Text Animator");
   }
 
@@ -1337,11 +1312,9 @@ export class PropertyGroup extends PropertyBase {
     this._ensureMaterialized();
     const base = getOrThrow(_TEXT_SELECTOR_NAMES, matchName);
     const sameType = this.properties.filter((p) => p.matchName === matchName).length;
-    const [tdmn, tdgp] = buildTextSelector(
-      matchName,
-      this._freeNumberedName(base, sameType + 1),
-      { hasAdvanced: matchName === "ADBE Text Selector" },
-    );
+    const [tdmn, tdgp] = buildTextSelector(matchName, this._freeNumberedName(base, sameType + 1), {
+      hasAdvanced: matchName === "ADBE Text Selector",
+    });
     return this._attachGroup(tdmn, tdgp, matchName);
   }
 
@@ -1357,9 +1330,7 @@ pyClassHooks(PropertyGroup, { setattrPassesPrivate: true });
 
 // Python `@requires_version(26)` on `addVariableFontAxis`: the
 // decorator wraps the method once the class body has been evaluated.
-PropertyGroup.prototype.addVariableFontAxis = requiresVersion(26)(
-  PropertyGroup.prototype.addVariableFontAxis,
-);
+PropertyGroup.prototype.addVariableFontAxis = requiresVersion(26)(PropertyGroup.prototype.addVariableFontAxis);
 
 /** Class-level attributes (TS statics) of `ctor` and its bases, excluding Function built-ins. */
 function hasClassStatic(ctor: Function, name: string): boolean {

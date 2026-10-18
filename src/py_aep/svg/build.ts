@@ -46,10 +46,7 @@ export function _grp(prop: PropertyGroup): PropertyGroup {
  * @param drawables - Drawables in SVG document order; added in reverse so
  *     the document's last-painted shape ends up on top.
  */
-export function buildShapeLayerContents(
-  contents: PropertyGroup,
-  drawables: SvgDrawable[],
-): void {
+export function buildShapeLayerContents(contents: PropertyGroup, drawables: SvgDrawable[]): void {
   for (const drawable of [...drawables].reverse()) {
     _addDrawable(contents, drawable);
   }
@@ -161,13 +158,7 @@ export function _addFill(
   _applyPaint(inner, paint, "Fill", cx, cy, opacity);
 }
 
-export function _addStroke(
-  inner: PropertyGroup,
-  stroke: StrokeStyle,
-  cx: number,
-  cy: number,
-  opacity: number,
-): void {
+export function _addStroke(inner: PropertyGroup, stroke: StrokeStyle, cx: number, cy: number, opacity: number): void {
   const sg = _applyPaint(inner, stroke.paint, "Stroke", cx, cy, opacity);
   _leaf(sg, "ADBE Vector Stroke Width").value = stroke.width;
   _applyStrokeStyle(sg, stroke);
@@ -215,21 +206,10 @@ export function _applyStrokeStyle(sg: PropertyGroup, stroke: StrokeStyle): void 
  * Start/end points are stored relative to the group centre `(cx, cy)`,
  * matching the centred vertex encoding.
  */
-export function _applyGradient(
-  group: PropertyGroup,
-  paint: GradientPaint,
-  cx: number,
-  cy: number,
-): void {
+export function _applyGradient(group: PropertyGroup, paint: GradientPaint, cx: number, cy: number): void {
   _leaf(group, "ADBE Vector Grad Type").value = _GRAD_TYPE.get(paint.kind) ?? 1.0;
-  _leaf(group, "ADBE Vector Grad Start Pt").value = [
-    paint.start[0] - cx,
-    paint.start[1] - cy,
-  ];
-  _leaf(group, "ADBE Vector Grad End Pt").value = [
-    paint.end[0] - cx,
-    paint.end[1] - cy,
-  ];
+  _leaf(group, "ADBE Vector Grad Start Pt").value = [paint.start[0] - cx, paint.start[1] - cy];
+  _leaf(group, "ADBE Vector Grad End Pt").value = [paint.end[0] - cx, paint.end[1] - cy];
   _leaf(group, "ADBE Vector Grad Colors").value = _gradientValue(paint);
   // A radial gradientTransform's vertical stretch and rotation live in Grad
   // Scale / Grad Rotation (the start/end points only encode the x-radius);
@@ -251,9 +231,7 @@ export function _gradientValue(paint: GradientPaint): Gradient {
   if (!stops?.length) {
     return new Gradient();
   }
-  const colorStops = stops.map(
-    (s) => new GradientColorStop(s.offset, 0.5, [s.color[0], s.color[1], s.color[2]]),
-  );
+  const colorStops = stops.map((s) => new GradientColorStop(s.offset, 0.5, [s.color[0], s.color[1], s.color[2]]));
   // AE writes one alpha stop for consecutive stops sharing offset and
   // opacity (it keeps every colour stop).
   const alphaStops: GradientAlphaStop[] = [];
@@ -287,11 +265,7 @@ export function _setOptional<K extends _LeafName>(
  * Some leaves (e.g. the AE 2026 Grad Scale / Grad Rotation) are absent
  * when importing into an older project; skip them rather than raise.
  */
-export function _setIfPresent<K extends _LeafName>(
-  group: PropertyGroup,
-  matchName: K,
-  value: _LeafValue<K>,
-): void {
+export function _setIfPresent<K extends _LeafName>(group: PropertyGroup, matchName: K, value: _LeafValue<K>): void {
   if (group.properties.some((p) => p.matchName === matchName)) {
     const leaf: Property = _leaf(group, matchName);
     leaf.value = value;

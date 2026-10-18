@@ -43,9 +43,7 @@ function _state(comp: CompItem): Map<string, unknown> {
 describe("TestSeparate", () => {
   test("test_reproduces_the_ae_authored_separated_file", () => {
     const tmpPath = makeTmpPath();
-    const expected = _state(
-      parseAep(SAMPLES_DIR.div("transform_separated.aep")).project.compositions[0],
-    );
+    const expected = _state(parseAep(SAMPLES_DIR.div("transform_separated.aep")).project.compositions[0]);
 
     const project = parseProjectFresh(SAMPLES_DIR.div("transform_unseparated.aep"));
     _position(project.compositions[0]).dimensionsSeparated = true;
@@ -179,9 +177,7 @@ describe("TestGuards", () => {
     const yTimes = followers[1].keyframes.map((k) => k.time);
     expect(valueEquals(xTimes, yTimes)).toBe(false);
     const expectedTimes = sorted([...new Set([...xTimes, ...yTimes])]);
-    const expected = expectedTimes.map((time) =>
-      followers.map((follower) => follower.valueAtTime(time)),
-    );
+    const expected = expectedTimes.map((time) => followers.map((follower) => follower.valueAtTime(time)));
 
     position.dimensionsSeparated = false;
 
@@ -189,7 +185,12 @@ describe("TestGuards", () => {
     project.save(out);
     const reloaded = _position(parseAep(out).project.compositions[0]);
     expect(reloaded.dimensionsSeparated).toBe(false);
-    expect(approx(reloaded.keyframes.map((k) => k.time), expectedTimes)).toBe(true);
+    expect(
+      approx(
+        reloaded.keyframes.map((k) => k.time),
+        expectedTimes,
+      ),
+    ).toBe(true);
     for (const [index, keyframe] of enumerate(reloaded.keyframes)) {
       const composed = keyframe.value;
       expect(approx(composed.slice(0, 2), expected[index].slice(0, 2))).toBe(true);
@@ -216,11 +217,26 @@ describe("TestAnimatedSeparation", () => {
     [560.0, 100.0, 0.0],
   ];
   const TANGENTS: [number[], number[]][] = [
-    [[0.0, 0.0, 0.0], [12.0, 5.0, 0.0]],
-    [[-30.0, -8.0, 0.0], [44.0, 16.0, 0.0]],
-    [[-21.0, -9.0, 0.0], [33.0, 27.0, 0.0]],
-    [[-18.0, -24.0, 0.0], [60.0, 12.0, 0.0]],
-    [[-15.0, -7.0, 0.0], [0.0, 0.0, 0.0]],
+    [
+      [0.0, 0.0, 0.0],
+      [12.0, 5.0, 0.0],
+    ],
+    [
+      [-30.0, -8.0, 0.0],
+      [44.0, 16.0, 0.0],
+    ],
+    [
+      [-21.0, -9.0, 0.0],
+      [33.0, 27.0, 0.0],
+    ],
+    [
+      [-18.0, -24.0, 0.0],
+      [60.0, 12.0, 0.0],
+    ],
+    [
+      [-15.0, -7.0, 0.0],
+      [0.0, 0.0, 0.0],
+    ],
   ];
 
   function _authoredLeader(): Property {
@@ -276,7 +292,12 @@ describe("TestAnimatedSeparation", () => {
     for (const dimension of range(2)) {
       const follower = asInstance(position.getSeparationFollower(dimension), Property);
       expect(follower.keyframes.length).toBe(TIMES.length);
-      expect(approx(follower.keyframes.map((k) => k.time), TIMES)).toBe(true);
+      expect(
+        approx(
+          follower.keyframes.map((k) => k.time),
+          TIMES,
+        ),
+      ).toBe(true);
     }
   });
 
@@ -309,9 +330,7 @@ describe("TestLeaderIsNotWritable", () => {
    */
 
   test("test_value_write_is_rejected", () => {
-    const position = _position(
-      parseProjectFresh(SAMPLES_DIR.div("transform_separated.aep")).compositions[0],
-    );
+    const position = _position(parseProjectFresh(SAMPLES_DIR.div("transform_separated.aep")).compositions[0]);
     expect(position.dimensionsSeparated).toBe(true);
     raises(
       ValueError,
@@ -323,9 +342,7 @@ describe("TestLeaderIsNotWritable", () => {
   });
 
   test("test_set_value_at_time_is_rejected", () => {
-    const position = _position(
-      parseProjectFresh(SAMPLES_DIR.div("transform_separated.aep")).compositions[0],
-    );
+    const position = _position(parseProjectFresh(SAMPLES_DIR.div("transform_separated.aep")).compositions[0]);
     raises(
       ValueError,
       () => {
@@ -346,9 +363,7 @@ describe("TestLeaderIsNotWritable", () => {
 
   test("test_unseparated_leader_is_still_writable", () => {
     /** The guard must not leak to an ordinary Position. */
-    const position = _position(
-      parseProjectFresh(SAMPLES_DIR.div("transform_unseparated.aep")).compositions[0],
-    );
+    const position = _position(parseProjectFresh(SAMPLES_DIR.div("transform_unseparated.aep")).compositions[0]);
     expect(position.dimensionsSeparated).toBe(false);
     position.value = [11.0, 22.0, 0.0];
     expect(approx(position.value, [11.0, 22.0, 0.0])).toBe(true);

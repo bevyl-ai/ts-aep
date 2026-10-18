@@ -14,14 +14,7 @@
  */
 
 import { INSPECT, describe, compare } from "../../../pyrt/index.ts";
-import {
-  ValueError,
-  bytesEqual,
-  getOrThrow,
-  valueEquals,
-  literal,
-  zip,
-} from "../../../pyrt/index.ts";
+import { ValueError, bytesEqual, getOrThrow, valueEquals, literal, zip } from "../../../pyrt/index.ts";
 import { validateNumber } from "../validators.ts";
 import type { CurvesArbpChunk } from "../../binary/property_chunks.ts";
 
@@ -119,13 +112,7 @@ export class CurvesChannel {
   declare _usesPoints: boolean;
   declare _spline: _NaturalSpline;
 
-  constructor(
-    name: string,
-    points: Array<[number, number]>,
-    lut: Uint8Array,
-    selected: number,
-    usesPoints = true,
-  ) {
+  constructor(name: string, points: Array<[number, number]>, lut: Uint8Array, selected: number, usesPoints = true) {
     this._name = name;
     this._points = points;
     this._map = lut;
@@ -222,10 +209,7 @@ export class Curves {
           [255, lut[255]],
         ];
       }
-      obj._channels.set(
-        name,
-        new CurvesChannel(name, points, lut, record.selected, obj.usesPoints),
-      );
+      obj._channels.set(name, new CurvesChannel(name, points, lut, record.selected, obj.usesPoints));
     }
     return obj;
   }
@@ -235,9 +219,7 @@ export class Curves {
    * bytes differ by the stale points and junk AE leaves).
    */
   _sameCurves(other: Curves): boolean {
-    return Array.from(this._channels).every(([name, ch]) =>
-      ch._sameCurve(getOrThrow(other._channels, name)),
-    );
+    return Array.from(this._channels).every(([name, ch]) => ch._sameCurve(getOrThrow(other._channels, name)));
   }
 
   /**
@@ -288,9 +270,7 @@ export class Curves {
    */
   evaluate(channel: string, x: number, clamp = true): number {
     if (!CURVES_CHANNELS.includes(channel)) {
-      throw new ValueError(
-        `channel must be one of ${CURVES_CHANNELS.join(", ")}, not ${literal(channel)}`,
-      );
+      throw new ValueError(`channel must be one of ${CURVES_CHANNELS.join(", ")}, not ${literal(channel)}`);
     }
     validateNumber(x);
     const ch = getOrThrow(this._channels, channel);

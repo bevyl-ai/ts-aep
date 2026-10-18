@@ -142,7 +142,6 @@ export class ByteStream {
   close(): void {}
 }
 
-
 /**
  * `open(path, "rb")`: a read-only binary file over `node:fs` with the
  * `BufferedReader` methods the port uses (read, readline, iteration, seek,

@@ -2,7 +2,12 @@
 
 import { EnvironmentLightShadowResolution } from "../../../enums/index.ts";
 import { ChunkField } from "../../descriptors.ts";
-import { validateAdvancedQuality, validateCastingBoxCenter, validateCastingBoxSize, validateShadowSmoothness } from "../../validators.ts";
+import {
+  validateAdvancedQuality,
+  validateCastingBoxCenter,
+  validateCastingBoxSize,
+  validateShadowSmoothness,
+} from "../../validators.ts";
 import { RendererOptionsBase } from "./renderer_options_base.ts";
 import { descriptor } from "../../../../pyrt/index.ts";
 import type { AdvancedPrdaChunk } from "../../../binary/misc_chunks.ts";
@@ -25,7 +30,10 @@ import type { AdvancedPrdaChunk } from "../../../binary/misc_chunks.ts";
 export class AdvancedRendererOptions extends RendererOptionsBase {
   declare _body: AdvancedPrdaChunk;
 
-  static _SPEC: Map<string, [string, typeof EnvironmentLightShadowResolution | null]> = new Map<string, [string, typeof EnvironmentLightShadowResolution | null]>([
+  static _SPEC: Map<string, [string, typeof EnvironmentLightShadowResolution | null]> = new Map<
+    string,
+    [string, typeof EnvironmentLightShadowResolution | null]
+  >([
     ["Quality", ["quality", null]],
     ["Resolution", ["resolution", EnvironmentLightShadowResolution]],
     ["Smoothness", ["smoothness", null]],

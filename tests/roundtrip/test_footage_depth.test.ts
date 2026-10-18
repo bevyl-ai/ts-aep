@@ -55,11 +55,7 @@ function _aeLayerSources(fileName: string): Map<number, FileSource> {
   const sources = new Map<number, FileSource>();
   for (const item of parseProject(FIXTURE).footages) {
     const source = item.mainSource;
-    if (
-      item.name.endsWith("/" + fileName) &&
-      source instanceof FileSource &&
-      source._sspc.layerIndex !== 0xffffffff
-    ) {
+    if (item.name.endsWith("/" + fileName) && source instanceof FileSource && source._sspc.layerIndex !== 0xffffffff) {
       sources.set(source._sspc.layerIndex, source);
     }
   }
@@ -146,7 +142,9 @@ test("test_sequence_caches_the_frame_depth", () => {
   options.sequence = true;
   const item = asInstance(project.importFile(options), FootageItem);
   const mainSource = asInstance(item.mainSource, FileSource);
-  expect(valueEquals(_depthBytes(mainSource), _depthBytes(asInstance(getOrThrow(truth, item.name), FileSource)))).toBe(true);
+  expect(valueEquals(_depthBytes(mainSource), _depthBytes(asInstance(getOrThrow(truth, item.name), FileSource)))).toBe(
+    true,
+  );
   expect(mainSource._sspc.depth).toBe(48);
 });
 
@@ -218,7 +216,10 @@ test("test_hq_field_separation_keeps_the_container_media_bit", () => {
   item.mainSource.highQualityFieldSeparation = true;
   const out = tmpPath.div("hq.aep");
   project.save(out);
-  const reread = asInstance(asInstance(getOrThrow(parseAep(out).project.items, item.id), FootageItem).mainSource, FileSource);
+  const reread = asInstance(
+    asInstance(getOrThrow(parseAep(out).project.items, item.id), FootageItem).mainSource,
+    FileSource,
+  );
   expect(reread.highQualityFieldSeparation).toBe(true);
   expect(reread._sspc.tobytes()[0x9f]).toBe(0x09);
 });
@@ -344,7 +345,10 @@ test.each(sorted(_modeSources().keys()))("test_color_mode_import_matches_after_e
   const item = asInstance(project.importFile(new ImportOptions(ASSETS.div("depth", name))), FootageItem);
   const out = tmpPath.div("modes.aep");
   project.save(out);
-  const ours = asInstance(asInstance(getOrThrow(parseAep(out).project.items, item.id), FootageItem).mainSource, FileSource);
+  const ours = asInstance(
+    asInstance(getOrThrow(parseAep(out).project.items, item.id), FootageItem).mainSource,
+    FileSource,
+  );
   const ae = getOrThrow(_modeSources(), name);
   expect(valueEquals(ours._opti.tobytes(), ae._opti.tobytes())).toBe(true);
   expect(valueEquals(_depthBytes(ours), _depthBytes(ae))).toBe(true);
@@ -355,6 +359,8 @@ test("test_audio_and_data_files_have_no_depth", () => {
   const sources = _aeSources();
   for (const name of ["wav.wav", "mp3.mp3", "csv.csv", "mp4_av1_with_audio.mp4"]) {
     expect(getOrThrow(sources, name)._sspc.depth).toBe(0);
-    expect(valueEquals(Bytes.slice(getOrThrow(sources, name)._sspc.tobytes(), 0x40, 0x42), new Uint8Array([0x01, 0x01]))).toBe(true);
+    expect(
+      valueEquals(Bytes.slice(getOrThrow(sources, name)._sspc.tobytes(), 0x40, 0x42), new Uint8Array([0x01, 0x01])),
+    ).toBe(true);
   }
 });

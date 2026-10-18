@@ -38,11 +38,7 @@ export function chunkLabel(chunk: Chunk): string {
  * @param counters - Mutable counter dict tracking duplicates at this level.
  * @returns Full chunk path string.
  */
-export function buildChunkPath(
-  parentPath: string,
-  identifier: string,
-  counters: Map<string, number>,
-): string {
+export function buildChunkPath(parentPath: string, identifier: string, counters: Map<string, number>): string {
   const counterKey = parentPath ? parentPath + "/" + identifier : identifier;
 
   const count = counters.get(counterKey);
@@ -142,9 +138,7 @@ export function extractLeafChunks(filePath: Path): Map<string, Uint8Array> {
  * @returns A tuple `(raw_bytes_by_path, typed_chunk_by_path)`. The typed chunks let callers compare
  *   numeric fields (e.g. float coordinates) with tolerance instead of byte-exactly.
  */
-export function extractLeafChunksTyped(
-  filePath: Path,
-): [Map<string, Uint8Array>, Map<string, Chunk>] {
+export function extractLeafChunksTyped(filePath: Path): [Map<string, Uint8Array>, Map<string, Chunk>] {
   // `with open(file_path, "rb") as f:` - the file is read whole, then parsed
   // from memory (same pattern as compare.ts / inspect.ts).
   const f = new ByteStream(filePath.readBytes());
@@ -177,7 +171,7 @@ export function formatHexDump(data: Uint8Array, bytesPerLine = 16): string {
 
     const joined = right ? `${left}  ${right}` : left;
 
-    const fullWidth = (mid * 3 - 1) + 2 + (mid * 3 - 1);
+    const fullWidth = mid * 3 - 1 + 2 + (mid * 3 - 1);
     const hexStr = joined.padEnd(fullWidth);
 
     const asciiStr = Array.from(chunk, (b) => (0x20 <= b && b <= 0x7e ? String.fromCodePoint(b) : ".")).join("");

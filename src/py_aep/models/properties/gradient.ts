@@ -89,11 +89,7 @@ export class GradientColorStop {
   equals(other: unknown): boolean {
     // Python returns NotImplemented for a foreign type; py_eq treats that as False.
     if (!(other instanceof GradientColorStop)) return false;
-    return (
-      this.offset === other.offset &&
-      this.midpoint === other.midpoint &&
-      valueEquals(this.color, other.color)
-    );
+    return this.offset === other.offset && this.midpoint === other.midpoint && valueEquals(this.color, other.color);
   }
 
   static {
@@ -138,11 +134,7 @@ export class GradientAlphaStop {
   equals(other: unknown): boolean {
     // Python returns NotImplemented for a foreign type; py_eq treats that as False.
     if (!(other instanceof GradientAlphaStop)) return false;
-    return (
-      this.offset === other.offset &&
-      this.midpoint === other.midpoint &&
-      this.alpha === other.alpha
-    );
+    return this.offset === other.offset && this.midpoint === other.midpoint && this.alpha === other.alpha;
   }
 
   static {
@@ -175,10 +167,7 @@ export class Gradient {
     version: string = "1.0",
   ) {
     if (colorStops == null) {
-      colorStops = [
-        new GradientColorStop(0.0, 0.5, [1.0, 1.0, 1.0]),
-        new GradientColorStop(1.0, 0.5, [0.0, 0.0, 0.0]),
-      ];
+      colorStops = [new GradientColorStop(0.0, 0.5, [1.0, 1.0, 1.0]), new GradientColorStop(1.0, 0.5, [0.0, 0.0, 0.0])];
     }
     if (alphaStops == null) {
       alphaStops = [new GradientAlphaStop(0.0, 0.5, 1.0), new GradientAlphaStop(1.0, 0.5, 1.0)];
@@ -280,8 +269,7 @@ export class Gradient {
     validatePositiveInt(stop);
     if (stop >= this._colorStops.length) {
       throw new ValueError(
-        `color stop index ${stop} out of range ` +
-          `(gradient has ${this._colorStops.length} color stops)`,
+        `color stop index ${stop} out of range ` + `(gradient has ${this._colorStops.length} color stops)`,
       );
     }
     this._colorStops[stop]._gradient = null;
@@ -302,8 +290,7 @@ export class Gradient {
     validatePositiveInt(stop);
     if (stop >= this._alphaStops.length) {
       throw new ValueError(
-        `alpha stop index ${stop} out of range ` +
-          `(gradient has ${this._alphaStops.length} alpha stops)`,
+        `alpha stop index ${stop} out of range ` + `(gradient has ${this._alphaStops.length} alpha stops)`,
       );
     }
     this._alphaStops[stop]._gradient = null;
@@ -354,7 +341,11 @@ export class Gradient {
   }
 
   [INSPECT](): string {
-    return describe("Gradient", { colorStops: this.colorStops.length, alphaStops: this.alphaStops.length, version: this.version });
+    return describe("Gradient", {
+      colorStops: this.colorStops.length,
+      alphaStops: this.alphaStops.length,
+      version: this.version,
+    });
   }
 
   equals(other: unknown): boolean {
@@ -396,7 +387,9 @@ export function _stopsLines(kind: string, stops: number[][]): string[] {
   // LEXICOGRAPHIC key order (Stop-0, Stop-1, Stop-10, ..., Stop-15,
   // Stop-2, ...), not numeric order. Match that so gradients with >9
   // stops are byte-identical (identical for <=10 stops).
-  for (const i of [...Array.from({ length: stops.length }, (_, i) => i)].sort((a, b) => compare(String(a), String(b)))) {
+  for (const i of [...Array.from({ length: stops.length }, (_, i) => i)].sort((a, b) =>
+    compare(String(a), String(b)),
+  )) {
     const values = stops[i];
     lines.push(
       "<prop.pair>",

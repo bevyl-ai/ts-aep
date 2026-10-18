@@ -32,16 +32,16 @@ import { cubicsToSubpath, elementSubpaths } from "./shapes.ts";
 import { type CssRule, parseCss, resolveProperties } from "./style.ts";
 import { TextRun, outlineRuns, outlineTextPath } from "./text.ts";
 import { Affine, parseTransform } from "./transform.ts";
-import { GradientStop, SolidPaint, StrokeStyle, SvgDocument, SvgDrawable, type GradientPaint, type Subpath } from "./types.ts";
 import {
-  Path,
-  encode,
-  fspath,
-  isdigit,
-  warn,
-  zip,
-  type PathLike,
-} from "../../pyrt/index.ts";
+  GradientStop,
+  SolidPaint,
+  StrokeStyle,
+  SvgDocument,
+  SvgDrawable,
+  type GradientPaint,
+  type Subpath,
+} from "./types.ts";
+import { Path, encode, fspath, isdigit, warn, zip, type PathLike } from "../../pyrt/index.ts";
 
 import { Element, ParseError, fromstring } from "../../pyrt/etree.ts";
 
@@ -135,10 +135,7 @@ export function readSvg(source: string | PathLike | Uint8Array): SvgDocument {
     root = fromstring(data);
   } catch (exc) {
     if (!(exc instanceof ParseError)) throw exc;
-    throw Object.assign(
-      new UnsupportedSVGError(`Malformed SVG (not well-formed XML): ${exc.message}`),
-      { cause: exc },
-    );
+    throw Object.assign(new UnsupportedSVGError(`Malformed SVG (not well-formed XML): ${exc.message}`), { cause: exc });
   }
   if (localName(root.tag) !== "svg") {
     throw new UnsupportedSVGError(`Root element is <${localName(root.tag)}>, not <svg>`);
@@ -222,13 +219,7 @@ export class _Reader {
     return ctm;
   }
 
-  walk(
-    elem: Element,
-    ctm: Affine,
-    parentStyle: Map<string, string>,
-    opacity: number,
-    depth = 0,
-  ): SvgDrawable[] {
+  walk(elem: Element, ctm: Affine, parentStyle: Map<string, string>, opacity: number, depth = 0): SvgDrawable[] {
     if (depth > _MAX_SVG_DEPTH) throw new UnsupportedSVGError("SVG container nesting too deep");
     const out: SvgDrawable[] = [];
     for (const child of elem) {
@@ -341,18 +332,8 @@ export class _Reader {
     y: number,
   ): void {
     const ctx = this._ctx(style);
-    const width = parseLength(
-      sizing.get("width") || viewport.get("width"),
-      ctx.width,
-      ctx.width,
-      ctx.fontSize,
-    );
-    const height = parseLength(
-      sizing.get("height") || viewport.get("height"),
-      ctx.height,
-      ctx.height,
-      ctx.fontSize,
-    );
+    const width = parseLength(sizing.get("width") || viewport.get("width"), ctx.width, ctx.width, ctx.fontSize);
+    const height = parseLength(sizing.get("height") || viewport.get("height"), ctx.height, ctx.height, ctx.fontSize);
     const [tf, size] = viewportTransform(
       viewport.get("viewBox"),
       viewport.get("preserveAspectRatio"),
@@ -484,10 +465,8 @@ export class _Reader {
     const resolved = resolveFont(family, { bold, italic });
     if (resolved == null) return null;
     const [fontPath, fontNumber] = resolved;
-    const absX =
-      elem != null && elem.get("x") ? parseNumber(elem.get("x")) : null;
-    const absY =
-      elem != null && elem.get("y") ? parseNumber(elem.get("y")) : null;
+    const absX = elem != null && elem.get("x") ? parseNumber(elem.get("x")) : null;
+    const absY = elem != null && elem.get("y") ? parseNumber(elem.get("y")) : null;
     const dx = elem != null && elem.get("dx") ? parseNumber(elem.get("dx")) : 0.0;
     const dy = elem != null && elem.get("dy") ? parseNumber(elem.get("dy")) : 0.0;
     // TextRun fields in declaration order: text, font_path, font_size,
@@ -542,19 +521,12 @@ export class _Reader {
       offAbs = parseNumber(rawOff);
       offFrac = null;
     }
-    const subpaths = outlineTextPath(
-      _collapseWs(tpElem.text).trim(),
-      path,
-      run.fontPath,
-      run.fontSize,
-      ctm,
-      {
-        fontNumber: run.fontNumber,
-        startOffset: offAbs,
-        startOffsetFrac: offFrac,
-        letterSpacing: run.letterSpacing,
-      },
-    );
+    const subpaths = outlineTextPath(_collapseWs(tpElem.text).trim(), path, run.fontPath, run.fontSize, ctm, {
+      fontNumber: run.fontNumber,
+      startOffset: offAbs,
+      startOffsetFrac: offFrac,
+      letterSpacing: run.letterSpacing,
+    });
     if (!subpaths?.length) return;
     out.push(this._emit(subpaths, style, ctm, textElem.get("id"), opacity));
   }
@@ -634,8 +606,7 @@ export class _Reader {
       }
       const gradient = resolveGradient(gd, bbox, ctm, this._viewport);
       gradient.stops = gradient.stops.map(
-        (s) =>
-          new GradientStop(s.offset, [s.color[0], s.color[1], s.color[2], s.color[3] * alpha]),
+        (s) => new GradientStop(s.offset, [s.color[0], s.color[1], s.color[2], s.color[3] * alpha]),
       );
       return gradient;
     }
@@ -645,19 +616,12 @@ export class _Reader {
   }
 
   private _stroke(style: Map<string, string>, bbox: Bbox, ctm: Affine): StrokeStyle | null {
-    const paint = this._paint(
-      style.get("stroke") ?? "none",
-      style.get("stroke-opacity") ?? null,
-      bbox,
-      ctm,
-    );
+    const paint = this._paint(style.get("stroke") ?? "none", style.get("stroke-opacity") ?? null, bbox, ctm);
     if (paint == null) return null;
     const ctx = this._ctx(style);
     // A percentage width refers to the viewport's normalized diagonal
     // (AE 2026: 5 % of a 200 x 100 viewBox is 7.906).
-    const width =
-      parseLength(style.get("stroke-width") ?? null, 1.0, ctx.diagonal, ctx.fontSize) *
-      ctm.meanScale;
+    const width = parseLength(style.get("stroke-width") ?? null, 1.0, ctx.diagonal, ctx.fontSize) * ctm.meanScale;
     if (width <= 0) return null;
     if (!Number.isFinite(width)) throw new UnsupportedSVGError("SVG stroke-width is out of range");
     const cap = _CAP.get((style.get("stroke-linecap") || "").trim()) ?? 1;
@@ -665,7 +629,8 @@ export class _Reader {
     // SVG requires a miter limit >= 1 (AE's Miter Limit too); AE 2026
     // imports a smaller one clamped to 1.
     const miter = Math.max(1.0, parseNumber(style.get("stroke-miterlimit") ?? "4"));
-    const dashes = (style.get("stroke-dasharray") || "").trim()
+    const dashes = (style.get("stroke-dasharray") || "")
+      .trim()
       .split(new RegExp(`[,${_PY_WS}]+`))
       .filter((t) => !!t && t !== "none")
       .map((t) => parseNumber(t) * ctm.meanScale);

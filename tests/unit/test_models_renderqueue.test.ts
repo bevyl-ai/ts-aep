@@ -118,11 +118,7 @@ describe("TestResolveOutputFilename", () => {
   test.each([
     ["[projectName]", { project_name: "MyProject" }, "MyProject"],
     ["[compName]", { comp_name: "Comp 1" }, "Comp 1"],
-    [
-      "[renderSettingsName]",
-      { render_settings_name: "Best Settings" },
-      "Best Settings",
-    ],
+    ["[renderSettingsName]", { render_settings_name: "Best Settings" }, "Best Settings"],
     ["[outputModuleName]", { output_module_name: "Lossless" }, "Lossless"],
     ["[width]", { width: 1920 }, "1920"],
     ["[height]", { height: 1080 }, "1080"],
@@ -258,7 +254,12 @@ describe("TestRenderTemplatesDefaultIndex", () => {
     // Empty-named entry at raw index 0; raw default index 2 ("Best").
     TestRenderTemplatesDefaultIndex._write_render_prefs(tmpPath, 2, ["", "Draft", "Best"]);
     const [templates, default_] = parseRenderTemplates(tmpPath);
-    expect(valueEquals(templates.map((t) => t.cleanTemplateName), ["Draft", "Best"])).toBe(true);
+    expect(
+      valueEquals(
+        templates.map((t) => t.cleanTemplateName),
+        ["Draft", "Best"],
+      ),
+    ).toBe(true);
     expect(default_).toBe(1);
     if (default_ == null) throw new Error("no default render template");
     expect(templates[default_].cleanTemplateName).toBe("Best");
@@ -277,7 +278,12 @@ describe("TestRenderTemplatesDefaultIndex", () => {
     // _HIDDEN entry at raw index 0; raw default index 1 ("Lossless").
     TestRenderTemplatesDefaultIndex._write_output_prefs(tmpPath, 1, ["_HIDDEN X", "Lossless", "TIFF"]);
     const [templates, default_] = parseOutputTemplates(tmpPath);
-    expect(valueEquals(templates.map((t) => t.name), ["Lossless", "TIFF"])).toBe(true);
+    expect(
+      valueEquals(
+        templates.map((t) => t.name),
+        ["Lossless", "TIFF"],
+      ),
+    ).toBe(true);
     expect(default_).toBe(0);
     if (default_ == null) throw new Error("no default output template");
     expect(templates[default_].name).toBe("Lossless");

@@ -25,7 +25,11 @@ function _approxPoints(actual: number[][], expected: number[][], absTol = 1e-2):
 
 describe("TestShapeFromScratch", () => {
   test("test_closed_triangle_no_tangents", () => {
-    const verts = [[0, 0], [100, 0], [50, 80]];
+    const verts = [
+      [0, 0],
+      [100, 0],
+      [50, 80],
+    ];
     const s = new Shape(verts);
     expect(s.closed).toBe(true);
     expect(_approxPoints(s.vertices, verts)).toBe(true);
@@ -34,9 +38,18 @@ describe("TestShapeFromScratch", () => {
   });
 
   test("test_open_path_with_tangents", () => {
-    const verts = [[0, 0], [200, 100]];
-    const ins = [[-10, 0], [-20, -5]];
-    const outs = [[10, 0], [20, 5]];
+    const verts = [
+      [0, 0],
+      [200, 100],
+    ];
+    const ins = [
+      [-10, 0],
+      [-20, -5],
+    ];
+    const outs = [
+      [10, 0],
+      [20, 5],
+    ];
     const s = new Shape(verts, ins, outs, { closed: false });
     expect(s.closed).toBe(false);
     expect(_approxPoints(s.vertices, verts)).toBe(true);
@@ -51,12 +64,30 @@ describe("TestShapeFromScratch", () => {
   });
 
   test("test_mismatched_tangent_lengths_raise", () => {
-    raises(ValueError, () => new Shape([[0, 0], [1, 1]], [[0, 0]]));
+    raises(
+      ValueError,
+      () =>
+        new Shape(
+          [
+            [0, 0],
+            [1, 1],
+          ],
+          [[0, 0]],
+        ),
+    );
   });
 
   test("test_post_construction_vertices_edit", () => {
-    const s = new Shape([[0, 0], [100, 0], [50, 80]]);
-    const new_ = [[0, 0], [300, 0], [150, 240]];
+    const s = new Shape([
+      [0, 0],
+      [100, 0],
+      [50, 80],
+    ]);
+    const new_ = [
+      [0, 0],
+      [300, 0],
+      [150, 240],
+    ];
     s.vertices = new_;
     expect(_approxPoints(s.vertices, new_)).toBe(true);
   });

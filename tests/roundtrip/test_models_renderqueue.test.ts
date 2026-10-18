@@ -1,14 +1,69 @@
 /** Tests for RenderQueue model parsing. */
 
 import { describe, expect, test } from "bun:test";
-import { AssertionError, AttributeError, ByteStream, KeyError, NotImplementedError, Path, ValueError, b, Bytes, concat, contains, dictPop, fields, fspath, getMember, getOrThrow, int, len, assert, truthy, valueEquals, truthyOr, repr, StopIteration, PureWindowsPath } from "../../src/pyrt/index.ts";
+import {
+  AssertionError,
+  AttributeError,
+  ByteStream,
+  KeyError,
+  NotImplementedError,
+  Path,
+  ValueError,
+  b,
+  Bytes,
+  concat,
+  contains,
+  dictPop,
+  fields,
+  fspath,
+  getMember,
+  getOrThrow,
+  int,
+  len,
+  assert,
+  truthy,
+  valueEquals,
+  truthyOr,
+  repr,
+  StopIteration,
+  PureWindowsPath,
+} from "../../src/pyrt/index.ts";
 
 import { parse as parseAep, type Application } from "../../src/py_aep/index.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { ListChunk, readAep, writeAep } from "../../src/py_aep/binary/chunk.ts";
-import { ArsiChunk, CineonRoptChunk, JpegRoptChunk, OpenExrRoptChunk, OutputModuleSettingsItem, PngRoptChunk, ROUT_ITEMS_PER_RQ_ITEM, RenderSettingsItem, RoptChunk, RouuChunk, TargaRoptChunk, TiffRoptChunk } from "../../src/py_aep/binary/render_chunks.ts";
+import {
+  ArsiChunk,
+  CineonRoptChunk,
+  JpegRoptChunk,
+  OpenExrRoptChunk,
+  OutputModuleSettingsItem,
+  PngRoptChunk,
+  ROUT_ITEMS_PER_RQ_ITEM,
+  RenderSettingsItem,
+  RoptChunk,
+  RouuChunk,
+  TargaRoptChunk,
+  TiffRoptChunk,
+} from "../../src/py_aep/binary/render_chunks.ts";
 import { findByListType, recursiveFind } from "../../src/py_aep/binary/utils.ts";
-import { AudioBitDepth, AudioChannels, ColorManagementSystem, FieldRender, FrameRateSetting, GetSettingsFormat, LogType, MotionBlurSetting, OutputAudio, OutputColorDepth, PostRenderAction, RenderQuality, ResizeQuality, RQItemStatus, TimeSpanSource } from "../../src/py_aep/enums/index.ts";
+import {
+  AudioBitDepth,
+  AudioChannels,
+  ColorManagementSystem,
+  FieldRender,
+  FrameRateSetting,
+  GetSettingsFormat,
+  LogType,
+  MotionBlurSetting,
+  OutputAudio,
+  OutputColorDepth,
+  PostRenderAction,
+  RenderQuality,
+  ResizeQuality,
+  RQItemStatus,
+  TimeSpanSource,
+} from "../../src/py_aep/enums/index.ts";
 import { profileIdForName } from "../../src/py_aep/enums/mappings.ts";
 import { RenderQueueItem } from "../../src/py_aep/models/renderqueue/render_queue_item.ts";
 import { _parseIdHexSection } from "../../src/py_aep/parsers/templates.ts";
@@ -27,12 +82,7 @@ const OM_SAMPLES_DIR = TEST_FILE.parent.parent.parent.div("samples", "models", "
 const FO_SAMPLES_DIR = TEST_FILE.parent.parent.parent.div("samples", "models", "format_options");
 const BUGS_DIR = TEST_FILE.parent.parent.parent.div("samples", "bugs");
 const AE_PREFS_DIR: string | null = process.env.AE_PREFS_DIR ?? null;
-const OCS_SAMPLES_DIR = TEST_FILE.parent.parent.parent.div(
-  "samples",
-  "models",
-  "output_module",
-  "output_color_space",
-);
+const OCS_SAMPLES_DIR = TEST_FILE.parent.parent.parent.div("samples", "models", "output_module", "output_color_space");
 
 /** `attrs.asdict(inst)` - field name to value, in field order. */
 // NOTE(port): no pyrt attrs.asdict; OutputModuleSettingsItem fields are flat (ints, bools, bytes), so Python's recursive asdict equals this shallow copy.
@@ -63,10 +113,7 @@ function _assertRoutConsistent(app: Application): void {
     len(rout.items) === expected,
     `expected ${expected} Rout items for ${len(rq.items)} RQ items, got ${len(rout.items)}`,
   );
-  assert(
-    rout.count === len(rout.items),
-    `Rout.count=${rout.count} != len(items)=${len(rout.items)}`,
-  );
+  assert(rout.count === len(rout.items), `Rout.count=${rout.count} != len(items)=${len(rout.items)}`);
 }
 
 /** Roundtrip tests for RenderQueueItem.logType. */
@@ -86,10 +133,14 @@ describe("TestRoundtripLogType", () => {
   test("test_log_type_validation_rejects_invalid", () => {
     const project = parseAep(SAMPLES_DIR.div("render_settings.aep")).project;
     const rqi = getRqi(project, "base");
-    raises(ValueError, () => {
-      // @ts-expect-error 9999 is not a LogType; the setter must reject it at runtime
-      rqi.logType = 9999;
-    }, "Invalid value");
+    raises(
+      ValueError,
+      () => {
+        // @ts-expect-error 9999 is not a LogType; the setter must reject it at runtime
+        rqi.logType = 9999;
+      },
+      "Invalid value",
+    );
   });
 });
 
@@ -236,10 +287,14 @@ describe("TestRoundtripStartTime", () => {
   test("test_start_time_is_read_only", () => {
     const project = parseAep(SAMPLES_DIR.div("render_settings.aep")).project;
     const rqi = getRqi(project, "base");
-    raises(AttributeError, () => {
-      // NOTE(port): Date months are 0-based, so month 5 is Python's datetime(2025, 6, 15, 12, 0, 0).
-      rqi.startTime = new Date(2025, 5, 15, 12, 0, 0);
-    }, "read-only");
+    raises(
+      AttributeError,
+      () => {
+        // NOTE(port): Date months are 0-based, so month 5 is Python's datetime(2025, 6, 15, 12, 0, 0).
+        rqi.startTime = new Date(2025, 5, 15, 12, 0, 0);
+      },
+      "read-only",
+    );
   });
 
   test("test_start_time_default_is_none", () => {
@@ -254,9 +309,13 @@ describe("TestReadOnlyFields", () => {
   test("test_elapsed_seconds_is_read_only", () => {
     const project = parseAep(SAMPLES_DIR.div("render_settings.aep")).project;
     const rqi = getRqi(project, "base");
-    raises(AttributeError, () => {
-      rqi.elapsedSeconds = 999;
-    }, "read-only");
+    raises(
+      AttributeError,
+      () => {
+        rqi.elapsedSeconds = 999;
+      },
+      "read-only",
+    );
   });
 });
 
@@ -337,41 +396,61 @@ describe("TestSetSetting", () => {
   test("test_unknown_key_raises", () => {
     const project = parseAep(SAMPLES_DIR.div("render_settings.aep")).project;
     const rqi = getRqi(project, "base");
-    raises(KeyError, () => {
-      rqi.settings.set("Nonexistent", 42);
-    }, "Unknown setting");
+    raises(
+      KeyError,
+      () => {
+        rqi.settings.set("Nonexistent", 42);
+      },
+      "Unknown setting",
+    );
   });
 
   test("test_read_only_key_raises", () => {
     const project = parseAep(SAMPLES_DIR.div("render_settings.aep")).project;
     const rqi = getRqi(project, "base");
-    raises(AttributeError, () => {
-      rqi.settings.set("Use comp's frame rate", 30.0);
-    }, "read-only");
+    raises(
+      AttributeError,
+      () => {
+        rqi.settings.set("Use comp's frame rate", 30.0);
+      },
+      "read-only",
+    );
   });
 
   test("test_invalid_enum_int_raises", () => {
     const project = parseAep(SAMPLES_DIR.div("render_settings.aep")).project;
     const rqi = getRqi(project, "base");
-    raises(ValueError, () => {
-      rqi.settings.set("Quality", 9999);
-    }, "Invalid int value");
+    raises(
+      ValueError,
+      () => {
+        rqi.settings.set("Quality", 9999);
+      },
+      "Invalid int value",
+    );
   });
 
   test("test_invalid_enum_str_raises", () => {
     const project = parseAep(SAMPLES_DIR.div("render_settings.aep")).project;
     const rqi = getRqi(project, "base");
-    raises(ValueError, () => {
-      rqi.settings.set("Quality", "SuperHD");
-    }, "Invalid string");
+    raises(
+      ValueError,
+      () => {
+        rqi.settings.set("Quality", "SuperHD");
+      },
+      "Invalid string",
+    );
   });
 
   test("test_invalid_type_raises", () => {
     const project = parseAep(SAMPLES_DIR.div("render_settings.aep")).project;
     const rqi = getRqi(project, "base");
-    raises(TypeError, () => {
-      rqi.settings.set("Quality", [1, 2, 3]);
-    }, "Expected");
+    raises(
+      TypeError,
+      () => {
+        rqi.settings.set("Quality", [1, 2, 3]);
+      },
+      "Expected",
+    );
   });
 });
 
@@ -462,10 +541,14 @@ describe("TestRoundtripOutputModulePostRenderAction", () => {
     const project = parseAep(SAMPLES_DIR.div("render_settings.aep")).project;
     const rqi = getRqi(project, "base");
     const om = rqi.outputModules[0];
-    raises(ValueError, () => {
-      // @ts-expect-error 9999 is not a PostRenderAction; the setter must reject it at runtime
-      om.postRenderAction = 9999;
-    }, "Invalid value");
+    raises(
+      ValueError,
+      () => {
+        // @ts-expect-error 9999 is not a PostRenderAction; the setter must reject it at runtime
+        om.postRenderAction = 9999;
+      },
+      "Invalid value",
+    );
   });
 });
 
@@ -542,9 +625,7 @@ describe("TestRoundtripSkipFrames", () => {
     const saved = parseAep(out).project;
     const got = getRqi(saved, "skip_frames_0");
     const want = getRqi(saved, `skip_frames_${n}`);
-    expect(
-      valueEquals(got.outputModules[0]._roou.tobytes(), want.outputModules[0]._roou.tobytes()),
-    ).toBe(true);
+    expect(valueEquals(got.outputModules[0]._roou.tobytes(), want.outputModules[0]._roou.tobytes())).toBe(true);
     expect(got.skipFrames).toBe(0);
   });
 
@@ -634,10 +715,7 @@ describe("TestRoundtripRouuFrameRateAndDepth", () => {
     // the upper two bytes of 0x22 and 0x26 (a 2-byte read at 0x24/0x28
     // would see a valid 4464 x 1080): the size fields are 4 bytes.
     const body = new Uint8Array(new RouuChunk().tobytes());
-    body.set(
-      concat(Bytes.intToBytes(70000, 4, "big"), Bytes.intToBytes(66616, 4, "big")),
-      0x22,
-    );
+    body.set(concat(Bytes.intToBytes(70000, 4, "big"), Bytes.intToBytes(66616, 4, "big")), 0x22);
     const rouu = asInstance(RouuChunk.frombytes(new Uint8Array(body), { chunkType: "Roou" }), RouuChunk);
     expect(rouu instanceof RouuChunk).toBe(true);
     expect(rouu.width).toBe(70000);
@@ -655,8 +733,7 @@ describe("TestRoundtripPreserveRgb", () => {
     const out = tmpPath.div("prgb.aep");
     project.save(out);
     const got = renderQueueOf(parseAep(out).project).items[0].outputModules[0];
-    const want = renderQueueOf(parseAep(OM_SAMPLES_DIR.div("preserve_rgb_on.aep")).project).items[0]
-      .outputModules[0];
+    const want = renderQueueOf(parseAep(OM_SAMPLES_DIR.div("preserve_rgb_on.aep")).project).items[0].outputModules[0];
     expect(valueEquals(got._omLdat.tobytes(), want._omLdat.tobytes())).toBe(true);
     expect(got.settings.get("Preserve RGB")).toBe(true);
   });
@@ -902,9 +979,13 @@ describe("TestRoundtripSettingsBulkAssign", () => {
     const items = renderQueueOf(project).items;
     expect(len(items)).toBe(2);
 
-    raises(AttributeError, () => {
-      items[1].settings = items[0].settings;
-    }, "read-only");
+    raises(
+      AttributeError,
+      () => {
+        items[1].settings = items[0].settings;
+      },
+      "read-only",
+    );
   });
 });
 
@@ -927,9 +1008,13 @@ describe("TestRoundtripSettingsReadOnly", () => {
   test("test_comps_frame_rate_read_only", () => {
     const project = parseAep(SAMPLES_DIR.div("render_settings.aep")).project;
     const rqi = getRqi(project, "base");
-    raises(AttributeError, () => {
-      rqi.settings.set("Use comp's frame rate", 30.0);
-    }, "read-only");
+    raises(
+      AttributeError,
+      () => {
+        rqi.settings.set("Use comp's frame rate", 30.0);
+      },
+      "read-only",
+    );
   });
 
   test("test_unknown_key_via_dict_raises", () => {
@@ -938,9 +1023,13 @@ describe("TestRoundtripSettingsReadOnly", () => {
     raises(KeyError, () => {
       rqi.settings.get("Nonexistent");
     });
-    raises(KeyError, () => {
-      rqi.settings.set("Nonexistent", 42);
-    }, "Unknown setting");
+    raises(
+      KeyError,
+      () => {
+        rqi.settings.set("Nonexistent", 42);
+      },
+      "Unknown setting",
+    );
   });
 });
 
@@ -985,9 +1074,7 @@ describe("TestRoundtripOutputModuleResize", () => {
     const om = renderQueueOf(project).items[0].outputModules[0];
 
     om.settings.set("Resize to", [1920, 1080]);
-    expect(getOrThrow(om.getSettings(GetSettingsFormat.STRING), "Resize to")).toBe(
-      "HD  •  1920x1080 • 24 fps",
-    );
+    expect(getOrThrow(om.getSettings(GetSettingsFormat.STRING), "Resize to")).toBe("HD  •  1920x1080 • 24 fps");
     expect(om.getSetting("Resize to")).toBe("HD  •  1920x1080 • 24 fps");
 
     om.settings.set("Resize to", [960, 540]);
@@ -1058,9 +1145,13 @@ describe("TestRoundtripOutputModuleSettings", () => {
     const project = parseAep(SAMPLES_DIR.div("render_settings.aep")).project;
     const rqi = getRqi(project, "base");
     const om = rqi.outputModules[0];
-    raises(AttributeError, () => {
-      om.settings.set("Output File Info", new Map());
-    }, "read-only");
+    raises(
+      AttributeError,
+      () => {
+        om.settings.set("Output File Info", new Map());
+      },
+      "read-only",
+    );
     // "Output Color Space" is not a settings key - it is a KeyError, not
     // a read-only setting (use the OutputModule.outputColorSpace
     // property to read/write it).
@@ -1496,9 +1587,7 @@ describe("TestRQAddWithoutPreferences", () => {
     const rs = new RenderSettingsItem();
     expect(valueEquals(rs._reserved00, b("\x00\x01\x00\x00\x00\x00\x00"))).toBe(true);
     expect(valueEquals(rs._reserved06, b("\x00\x03\x00\x00"))).toBe(true);
-    expect(
-      valueEquals(rs._reserved39, concat(b("\xff\xff\xff\xff\x00\xb4"), Bytes.repeat(b("\x00"), 8))),
-    ).toBe(true);
+    expect(valueEquals(rs._reserved39, concat(b("\xff\xff\xff\xff\x00\xb4"), Bytes.repeat(b("\x00"), 8)))).toBe(true);
     expect(valueEquals(rs._reserved45, b("\x00\x00\x00\x02\xff\xff"))).toBe(true);
     expect(valueEquals(rs._reservedEnd, Bytes.repeat(b("\x00"), 16))).toBe(true);
     expect(rs.itemId).toBe(2);
@@ -1581,9 +1670,13 @@ describe("TestOMRemove", () => {
     const rqi = rq.items[0];
     expect(len(rqi.outputModules)).toBe(1);
 
-    raises(ValueError, () => {
-      rqi.outputModules[0].remove();
-    }, "last output module");
+    raises(
+      ValueError,
+      () => {
+        rqi.outputModules[0].remove();
+      },
+      "last output module",
+    );
   });
 });
 
@@ -1843,9 +1936,7 @@ describe("TestRenderQueueMissingScaffolding", () => {
     const [rifx, xmp] = readAep(new ByteStream(src.readBytes()));
     const lrdr = findByListType(rifx.chunks, "LRdr");
     lrdr.chunks = lrdr.chunks.filter(
-      (c) =>
-        c.chunkType !== "Rout" &&
-        !(c instanceof ListChunk && ["LItm", "LSIf"].includes(c.listType)),
+      (c) => c.chunkType !== "Rout" && !(c instanceof ListChunk && ["LItm", "LSIf"].includes(c.listType)),
     );
     const out = tmpPath.div("stripped.aep");
     const f = new ByteStream();
@@ -2007,9 +2098,13 @@ describe("TestRoundtripOutputColorSpace", () => {
     const project = parseAep(OCIO_SAMPLE).project;
     project.ocioConfigurationFile = fspath(OCIO_CONFIG);
     const om = renderQueueOf(project).items[0].outputModules[0];
-    raises(ValueError, () => {
-      om.outputColorSpace = "NotAColorSpaceInThisConfig";
-    }, "not a color space");
+    raises(
+      ValueError,
+      () => {
+        om.outputColorSpace = "NotAColorSpaceInThisConfig";
+      },
+      "not a color space",
+    );
   });
 });
 
@@ -2026,16 +2121,55 @@ const _16 = AudioBitDepth.SIXTEEN_BIT;
 const _32 = AudioBitDepth.THIRTY_TWO_BIT;
 const _AUDIO_CHAINS = new Map<string, [string, Map<string, SettingValue>[]]>([
   ["E0_on", ["U", [new Map<string, SettingValue>([["Output Audio", _ON]])]]],
-  ["E1_on_8", ["U", [new Map<string, SettingValue>([["Output Audio", _ON]]), new Map<string, SettingValue>([["Audio Bit Depth", _8]])]]],
-  ["E2_on_16", ["U", [new Map<string, SettingValue>([["Output Audio", _ON]]), new Map<string, SettingValue>([["Audio Bit Depth", _16]])]]],
-  ["E3_on_32", ["U", [new Map<string, SettingValue>([["Output Audio", _ON]]), new Map<string, SettingValue>([["Audio Bit Depth", _32]])]]],
+  [
+    "E1_on_8",
+    [
+      "U",
+      [
+        new Map<string, SettingValue>([["Output Audio", _ON]]),
+        new Map<string, SettingValue>([["Audio Bit Depth", _8]]),
+      ],
+    ],
+  ],
+  [
+    "E2_on_16",
+    [
+      "U",
+      [
+        new Map<string, SettingValue>([["Output Audio", _ON]]),
+        new Map<string, SettingValue>([["Audio Bit Depth", _16]]),
+      ],
+    ],
+  ],
+  [
+    "E3_on_32",
+    [
+      "U",
+      [
+        new Map<string, SettingValue>([["Output Audio", _ON]]),
+        new Map<string, SettingValue>([["Audio Bit Depth", _32]]),
+      ],
+    ],
+  ],
   [
     "E5_on_mono",
-    ["U", [new Map<string, SettingValue>([["Output Audio", _ON]]), new Map<string, SettingValue>([["Audio Channels", AudioChannels.MONO]])]],
+    [
+      "U",
+      [
+        new Map<string, SettingValue>([["Output Audio", _ON]]),
+        new Map<string, SettingValue>([["Audio Channels", AudioChannels.MONO]]),
+      ],
+    ],
   ],
   [
     "E7_on_rate",
-    ["U", [new Map<string, SettingValue>([["Output Audio", _ON]]), new Map<string, SettingValue>([["Audio Sample Rate", 44100]])]],
+    [
+      "U",
+      [
+        new Map<string, SettingValue>([["Output Audio", _ON]]),
+        new Map<string, SettingValue>([["Audio Sample Rate", 44100]]),
+      ],
+    ],
   ],
   ["E8_auto", ["U", [new Map<string, SettingValue>([["Output Audio", _AUTO]])]]],
   [
@@ -2079,11 +2213,23 @@ const _AUDIO_CHAINS = new Map<string, [string, Map<string, SettingValue>[]]>([
   ["F2_32", ["S", [new Map<string, SettingValue>([["Audio Bit Depth", _32]])]]],
   [
     "F3_32_16",
-    ["S", [new Map<string, SettingValue>([["Audio Bit Depth", _32]]), new Map<string, SettingValue>([["Audio Bit Depth", _16]])]],
+    [
+      "S",
+      [
+        new Map<string, SettingValue>([["Audio Bit Depth", _32]]),
+        new Map<string, SettingValue>([["Audio Bit Depth", _16]]),
+      ],
+    ],
   ],
   [
     "F4_32_8",
-    ["S", [new Map<string, SettingValue>([["Audio Bit Depth", _32]]), new Map<string, SettingValue>([["Audio Bit Depth", _8]])]],
+    [
+      "S",
+      [
+        new Map<string, SettingValue>([["Audio Bit Depth", _32]]),
+        new Map<string, SettingValue>([["Audio Bit Depth", _8]]),
+      ],
+    ],
   ],
   ["F5_mono", ["S", [new Map<string, SettingValue>([["Audio Channels", AudioChannels.MONO]])]]],
   ["F6_rate", ["S", [new Map<string, SettingValue>([["Audio Sample Rate", 22050]])]]],
@@ -2091,23 +2237,41 @@ const _AUDIO_CHAINS = new Map<string, [string, Map<string, SettingValue>[]]>([
   ["F8_auto", ["S", [new Map<string, SettingValue>([["Output Audio", _AUTO]])]]],
   [
     "F9_off_on",
-    ["S", [new Map<string, SettingValue>([["Output Audio", _OFF]]), new Map<string, SettingValue>([["Output Audio", _ON]])]],
+    [
+      "S",
+      [new Map<string, SettingValue>([["Output Audio", _OFF]]), new Map<string, SettingValue>([["Output Audio", _ON]])],
+    ],
   ],
   ["G4_auto_on", ["A", [new Map<string, SettingValue>([["Output Audio", _ON]])]]],
   [
     "G5_auto_off_on",
-    ["A", [new Map<string, SettingValue>([["Output Audio", _OFF]]), new Map<string, SettingValue>([["Output Audio", _ON]])]],
+    [
+      "A",
+      [new Map<string, SettingValue>([["Output Audio", _OFF]]), new Map<string, SettingValue>([["Output Audio", _ON]])],
+    ],
   ],
   ["G2_offauto_on", ["Z", [new Map<string, SettingValue>([["Output Audio", _ON]])]]],
   ["G3_offauto_auto", ["Z", [new Map<string, SettingValue>([["Output Audio", _AUTO]])]]],
   // The starting states themselves, rebuilt from U.
   [
     "S",
-    ["U", [new Map<string, SettingValue>([["Output Audio", _ON]]), new Map<string, SettingValue>([["Audio Channels", AudioChannels.STEREO]])]],
+    [
+      "U",
+      [
+        new Map<string, SettingValue>([["Output Audio", _ON]]),
+        new Map<string, SettingValue>([["Audio Channels", AudioChannels.STEREO]]),
+      ],
+    ],
   ],
   [
     "A",
-    ["U", [new Map<string, SettingValue>([["Output Audio", _AUTO]]), new Map<string, SettingValue>([["Audio Channels", AudioChannels.STEREO]])]],
+    [
+      "U",
+      [
+        new Map<string, SettingValue>([["Output Audio", _AUTO]]),
+        new Map<string, SettingValue>([["Audio Channels", AudioChannels.STEREO]]),
+      ],
+    ],
   ],
   ["Z", ["A", [new Map<string, SettingValue>([["Output Audio", _OFF]])]]],
 ]);
@@ -2162,12 +2326,20 @@ describe("TestOutputModuleAudioMatchesAfterEffects", () => {
     const project = parseAep(MATRIX).project;
     const om = _omByFileStem(project, start);
     const before = om._roou.tobytes();
-    raises(ValueError, () => {
-      om.settings.set("Audio Bit Depth", AudioBitDepth.TWENTY_FOUR_BIT);
-    }, "24-bit");
-    raises(ValueError, () => {
-      om.settings = new Map<string, SettingValue>([["Audio Bit Depth", AudioBitDepth.TWENTY_FOUR_BIT]]);
-    }, "24-bit");
+    raises(
+      ValueError,
+      () => {
+        om.settings.set("Audio Bit Depth", AudioBitDepth.TWENTY_FOUR_BIT);
+      },
+      "24-bit",
+    );
+    raises(
+      ValueError,
+      () => {
+        om.settings = new Map<string, SettingValue>([["Audio Bit Depth", AudioBitDepth.TWENTY_FOUR_BIT]]);
+      },
+      "24-bit",
+    );
     expect(valueEquals(om._roou.tobytes(), before)).toBe(true);
   });
 });

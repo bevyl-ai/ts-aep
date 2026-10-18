@@ -15,30 +15,34 @@ import type { EnumHelpers } from "../../pyrt/enum.ts";
  *
  * @see https://ae-scripting.docsforadobe.dev/item/item/#itemlabel
  */
-export const Label = defineEnum("Label", {
-  NONE: 0,
-  RED: 1,
-  YELLOW: 2,
-  AQUA: 3,
-  PINK: 4,
-  LAVENDER: 5,
-  PEACH: 6,
-  SEA_FOAM: 7,
-  BLUE: 8,
-  GREEN: 9,
-  PURPLE: 10,
-  ORANGE: 11,
-  BROWN: 12,
-  FUCHSIA: 13,
-  CYAN: 14,
-  SANDSTONE: 15,
-  DARK_GREEN: 16,
-}, {
-  /** Convert binary value to Label. */
-  fromBinary(value: number) {
-    return this.of(Math.trunc(value));
+export const Label = defineEnum(
+  "Label",
+  {
+    NONE: 0,
+    RED: 1,
+    YELLOW: 2,
+    AQUA: 3,
+    PINK: 4,
+    LAVENDER: 5,
+    PEACH: 6,
+    SEA_FOAM: 7,
+    BLUE: 8,
+    GREEN: 9,
+    PURPLE: 10,
+    ORANGE: 11,
+    BROWN: 12,
+    FUCHSIA: 13,
+    CYAN: 14,
+    SANDSTONE: 15,
+    DARK_GREEN: 16,
   },
-});
+  {
+    /** Convert binary value to Label. */
+    fromBinary(value: number) {
+      return this.of(Math.trunc(value));
+    },
+  },
+);
 export type Label = EnumValue<typeof Label>;
 
 /**
@@ -70,23 +74,27 @@ export const LayerType = defineEnum("LayerType", {
 export type LayerType = EnumValue<typeof LayerType>;
 
 /** Type of parametric mesh. */
-export const ParametricMeshType = defineEnum("ParametricMeshType", {
-  CUBE: 14612,
-  SPHERE: 14613,
-  PLANE: 14614,
-  TORUS: 14615,
-  CONE: 14616,
-  CYLINDER: 14617,
-}, {
-  /** Convert the ldta value (0-5) to ParametricMeshType. */
-  fromBinary(value: number) {
-    return this.of(value + 14612);
+export const ParametricMeshType = defineEnum(
+  "ParametricMeshType",
+  {
+    CUBE: 14612,
+    SPHERE: 14613,
+    PLANE: 14614,
+    TORUS: 14615,
+    CONE: 14616,
+    CYLINDER: 14617,
   },
-  /** Convert ParametricMeshType to the ldta value (0-5). */
-  toBinary(self: number): number {
-    return Math.trunc(self) - 14612;
+  {
+    /** Convert the ldta value (0-5) to ParametricMeshType. */
+    fromBinary(value: number) {
+      return this.of(value + 14612);
+    },
+    /** Convert ParametricMeshType to the ldta value (0-5). */
+    toBinary(self: number): number {
+      return Math.trunc(self) - 14612;
+    },
   },
-});
+);
 export type ParametricMeshType = EnumValue<typeof ParametricMeshType>;
 
 /**
@@ -94,20 +102,24 @@ export type ParametricMeshType = EnumValue<typeof ParametricMeshType>;
  *
  * @see https://ae-scripting.docsforadobe.dev/sources/footagesource/#footagesourcealphamode
  */
-export const AlphaMode = defineEnum("AlphaMode", {
-  STRAIGHT: 5412,
-  IGNORE: 5413,
-  PREMULTIPLIED: 5414,
-}, {
-  /** Convert binary value to AlphaMode. */
-  fromBinary(value: number) {
-    return _ALPHA_MODE_BINARY_MAP.get(value) ?? this.IGNORE;
+export const AlphaMode = defineEnum(
+  "AlphaMode",
+  {
+    STRAIGHT: 5412,
+    IGNORE: 5413,
+    PREMULTIPLIED: 5414,
   },
-  /** Convert AlphaMode to binary value. */
-  toBinary(self: number): number {
-    return getOrThrow(_ALPHA_MODE_TO_BINARY, self);
+  {
+    /** Convert binary value to AlphaMode. */
+    fromBinary(value: number) {
+      return _ALPHA_MODE_BINARY_MAP.get(value) ?? this.IGNORE;
+    },
+    /** Convert AlphaMode to binary value. */
+    toBinary(self: number): number {
+      return getOrThrow(_ALPHA_MODE_TO_BINARY, self);
+    },
   },
-});
+);
 export type AlphaMode = EnumValue<typeof AlphaMode>;
 
 export const _ALPHA_MODE_BINARY_MAP: Map<number, number> = new Map<number, number>([
@@ -124,20 +136,24 @@ export const _ALPHA_MODE_TO_BINARY: Map<number, number> = new Map<number, number
  *
  * @see https://ae-scripting.docsforadobe.dev/general/project/#projectbitsperchannel
  */
-export const BitsPerChannel = defineEnum("BitsPerChannel", {
-  EIGHT: 8,
-  SIXTEEN: 16,
-  THIRTY_TWO: 32,
-}, {
-  /** Convert binary value to BitsPerChannel. */
-  fromBinary(value: number) {
-    return _BITS_PER_CHANNEL_BINARY_MAP.get(value) ?? this.EIGHT;
+export const BitsPerChannel = defineEnum(
+  "BitsPerChannel",
+  {
+    EIGHT: 8,
+    SIXTEEN: 16,
+    THIRTY_TWO: 32,
   },
-  /** Convert BitsPerChannel to binary value. */
-  toBinary(self: number): number {
-    return getOrThrow(_BITS_PER_CHANNEL_TO_BINARY, self);
+  {
+    /** Convert binary value to BitsPerChannel. */
+    fromBinary(value: number) {
+      return _BITS_PER_CHANNEL_BINARY_MAP.get(value) ?? this.EIGHT;
+    },
+    /** Convert BitsPerChannel to binary value. */
+    toBinary(self: number): number {
+      return getOrThrow(_BITS_PER_CHANNEL_TO_BINARY, self);
+    },
   },
-});
+);
 export type BitsPerChannel = EnumValue<typeof BitsPerChannel>;
 
 export const _BITS_PER_CHANNEL_BINARY_MAP: Map<number, number> = new Map<number, number>([
@@ -154,21 +170,25 @@ export const _BITS_PER_CHANNEL_TO_BINARY: Map<number, number> = new Map<number, 
  *
  * @see https://ae-scripting.docsforadobe.dev/layer/layer/#layerautoorient
  */
-export const AutoOrientType = defineEnum("AutoOrientType", {
-  NO_AUTO_ORIENT: 4212,
-  ALONG_PATH: 4213,
-  CAMERA_OR_POINT_OF_INTEREST: 4214,
-  CHARACTERS_TOWARD_CAMERA: 4215,
-}, {
-  /** Convert binary value (0-3) to AutoOrientType. */
-  fromBinary(value: number) {
-    return this.of(Math.trunc(value) + 4212);
+export const AutoOrientType = defineEnum(
+  "AutoOrientType",
+  {
+    NO_AUTO_ORIENT: 4212,
+    ALONG_PATH: 4213,
+    CAMERA_OR_POINT_OF_INTEREST: 4214,
+    CHARACTERS_TOWARD_CAMERA: 4215,
   },
-  /** Convert AutoOrientType to binary value (0-3). */
-  toBinary(self: number): number {
-    return Math.trunc(self) - 4212;
+  {
+    /** Convert binary value (0-3) to AutoOrientType. */
+    fromBinary(value: number) {
+      return this.of(Math.trunc(value) + 4212);
+    },
+    /** Convert AutoOrientType to binary value (0-3). */
+    toBinary(self: number): number {
+      return Math.trunc(self) - 4212;
+    },
   },
-});
+);
 export type AutoOrientType = EnumValue<typeof AutoOrientType>;
 
 /**
@@ -176,61 +196,65 @@ export type AutoOrientType = EnumValue<typeof AutoOrientType>;
  *
  * @see https://ae-scripting.docsforadobe.dev/layer/avlayer/#avlayerblendingmode
  */
-export const BlendingMode = defineEnum("BlendingMode", {
-  NORMAL: 5212,
-  DISSOLVE: 5213,
-  DANCING_DISSOLVE: 5214,
-  DARKEN: 5215,
-  MULTIPLY: 5216,
-  LINEAR_BURN: 5217,
-  COLOR_BURN: 5218,
-  CLASSIC_COLOR_BURN: 5219,
-  ADD: 5220,
-  LIGHTEN: 5221,
-  SCREEN: 5222,
-  LINEAR_DODGE: 5223,
-  COLOR_DODGE: 5224,
-  CLASSIC_COLOR_DODGE: 5225,
-  OVERLAY: 5226,
-  SOFT_LIGHT: 5227,
-  HARD_LIGHT: 5228,
-  LINEAR_LIGHT: 5229,
-  VIVID_LIGHT: 5230,
-  PIN_LIGHT: 5231,
-  HARD_MIX: 5232,
-  DIFFERENCE: 5233,
-  CLASSIC_DIFFERENCE: 5234,
-  EXCLUSION: 5235,
-  HUE: 5236,
-  SATURATION: 5237,
-  COLOR: 5238,
-  LUMINOSITY: 5239,
-  STENCIL_ALPHA: 5240,
-  STENCIL_LUMA: 5241,
-  SILHOUETE_ALPHA: 5242, // The typo is in the ExtendScript API
-  SILHOUETTE_LUMA: 5243,
-  ALPHA_ADD: 5244,
-  LUMINESCENT_PREMUL: 5245,
-  LIGHTER_COLOR: 5246,
-  DARKER_COLOR: 5247,
-  SUBTRACT: 5248,
-  DIVIDE: 5249,
-}, {
-  /** Convert binary blending mode value to BlendingMode. */
-  fromBinary(value: number) {
-    return _BLENDING_MODE_BINARY_MAP.get(value) ?? this.NORMAL;
+export const BlendingMode = defineEnum(
+  "BlendingMode",
+  {
+    NORMAL: 5212,
+    DISSOLVE: 5213,
+    DANCING_DISSOLVE: 5214,
+    DARKEN: 5215,
+    MULTIPLY: 5216,
+    LINEAR_BURN: 5217,
+    COLOR_BURN: 5218,
+    CLASSIC_COLOR_BURN: 5219,
+    ADD: 5220,
+    LIGHTEN: 5221,
+    SCREEN: 5222,
+    LINEAR_DODGE: 5223,
+    COLOR_DODGE: 5224,
+    CLASSIC_COLOR_DODGE: 5225,
+    OVERLAY: 5226,
+    SOFT_LIGHT: 5227,
+    HARD_LIGHT: 5228,
+    LINEAR_LIGHT: 5229,
+    VIVID_LIGHT: 5230,
+    PIN_LIGHT: 5231,
+    HARD_MIX: 5232,
+    DIFFERENCE: 5233,
+    CLASSIC_DIFFERENCE: 5234,
+    EXCLUSION: 5235,
+    HUE: 5236,
+    SATURATION: 5237,
+    COLOR: 5238,
+    LUMINOSITY: 5239,
+    STENCIL_ALPHA: 5240,
+    STENCIL_LUMA: 5241,
+    SILHOUETE_ALPHA: 5242, // The typo is in the ExtendScript API
+    SILHOUETTE_LUMA: 5243,
+    ALPHA_ADD: 5244,
+    LUMINESCENT_PREMUL: 5245,
+    LIGHTER_COLOR: 5246,
+    DARKER_COLOR: 5247,
+    SUBTRACT: 5248,
+    DIVIDE: 5249,
   },
-  /**
-   * Convert BlendingMode to its binary transfer-mode value.
-   *
-   * Dancing Dissolve shares Dissolve's transfer value (3); the two are
-   * distinguished by a flag bit in the layer's `ldta`, set by
-   * `AVLayer.blendingMode`, not by this value.
-   */
-  toBinary(self: number): number {
-    return getOrThrow(_BLENDING_MODE_TO_BINARY, self);
+  {
+    /** Convert binary blending mode value to BlendingMode. */
+    fromBinary(value: number) {
+      return _BLENDING_MODE_BINARY_MAP.get(value) ?? this.NORMAL;
+    },
+    /**
+     * Convert BlendingMode to its binary transfer-mode value.
+     *
+     * Dancing Dissolve shares Dissolve's transfer value (3); the two are
+     * distinguished by a flag bit in the layer's `ldta`, set by
+     * `AVLayer.blendingMode`, not by this value.
+     */
+    toBinary(self: number): number {
+      return getOrThrow(_BLENDING_MODE_TO_BINARY, self);
+    },
   },
-});
+);
 export type BlendingMode = EnumValue<typeof BlendingMode>;
 
 // Binary values match the AE SDK `PF_Xfer` transfer-mode enum
@@ -286,34 +310,37 @@ export const _BLENDING_MODE_TO_BINARY: Map<number, number> = new Map<number, num
 // never fails; AVLayer.blendingMode sets the distinguishing flag separately.
 _BLENDING_MODE_TO_BINARY.set(BlendingMode.DANCING_DISSOLVE, 3);
 
-
 /**
  * Channel display type for a viewer.
  *
  * @see https://ae-scripting.docsforadobe.dev/other/viewoptions/#attributes
  */
-export const ChannelType = defineEnum("ChannelType", {
-  CHANNEL_RGB: 7812,
-  CHANNEL_RED: 7813,
-  CHANNEL_GREEN: 7814,
-  CHANNEL_BLUE: 7815,
-  CHANNEL_ALPHA: 7816,
-  CHANNEL_RED_COLORIZE: 7817,
-  CHANNEL_GREEN_COLORIZE: 7818,
-  CHANNEL_BLUE_COLORIZE: 7819,
-  CHANNEL_RGB_STRAIGHT: 7820,
-  CHANNEL_ALPHA_OVERLAY: 7821,
-  CHANNEL_ALPHA_BOUNDARY: 7822,
-}, {
-  /** Convert binary value to ChannelType. */
-  fromBinary(value: number) {
-    return this.ofOrNull(value + 7812) ?? this.CHANNEL_RGB;
+export const ChannelType = defineEnum(
+  "ChannelType",
+  {
+    CHANNEL_RGB: 7812,
+    CHANNEL_RED: 7813,
+    CHANNEL_GREEN: 7814,
+    CHANNEL_BLUE: 7815,
+    CHANNEL_ALPHA: 7816,
+    CHANNEL_RED_COLORIZE: 7817,
+    CHANNEL_GREEN_COLORIZE: 7818,
+    CHANNEL_BLUE_COLORIZE: 7819,
+    CHANNEL_RGB_STRAIGHT: 7820,
+    CHANNEL_ALPHA_OVERLAY: 7821,
+    CHANNEL_ALPHA_BOUNDARY: 7822,
   },
-  /** Convert ChannelType to binary value. */
-  toBinary(self: number): number {
-    return Math.trunc(self) - 7812;
+  {
+    /** Convert binary value to ChannelType. */
+    fromBinary(value: number) {
+      return this.ofOrNull(value + 7812) ?? this.CHANNEL_RGB;
+    },
+    /** Convert ChannelType to binary value. */
+    toBinary(self: number): number {
+      return Math.trunc(self) - 7812;
+    },
   },
-});
+);
 export type ChannelType = EnumValue<typeof ChannelType>;
 
 /** Color management system for the project. */
@@ -347,27 +374,31 @@ export type CloseOptions = EnumValue<typeof CloseOptions>;
  *
  * @see https://ae-scripting.docsforadobe.dev/other/viewoptions/#viewoptionsfastpreview
  */
-export const FastPreviewType = defineEnum("FastPreviewType", {
-  FP_OFF: 8012,
-  FP_ADAPTIVE_RESOLUTION: 8013,
-  FP_DRAFT: 8014,
-  FP_FAST_DRAFT: 8015,
-  FP_WIREFRAME: 8016,
-}, {
-  /** Convert binary value to FastPreviewType. */
-  fromBinary(value: number) {
-    try {
-      return this.of(Math.trunc(value) + 8012);
-    } catch (e) {
-      if (!(e instanceof ValueError)) throw e;
-      return this.FP_OFF;
-    }
+export const FastPreviewType = defineEnum(
+  "FastPreviewType",
+  {
+    FP_OFF: 8012,
+    FP_ADAPTIVE_RESOLUTION: 8013,
+    FP_DRAFT: 8014,
+    FP_FAST_DRAFT: 8015,
+    FP_WIREFRAME: 8016,
   },
-  /** Convert FastPreviewType to binary value. */
-  toBinary(self: number): number {
-    return Math.trunc(self) - 8012;
+  {
+    /** Convert binary value to FastPreviewType. */
+    fromBinary(value: number) {
+      try {
+        return this.of(Math.trunc(value) + 8012);
+      } catch (e) {
+        if (!(e instanceof ValueError)) throw e;
+        return this.FP_OFF;
+      }
+    },
+    /** Convert FastPreviewType to binary value. */
+    toBinary(self: number): number {
+      return Math.trunc(self) - 8012;
+    },
   },
-});
+);
 export type FastPreviewType = EnumValue<typeof FastPreviewType>;
 
 /**
@@ -375,20 +406,24 @@ export type FastPreviewType = EnumValue<typeof FastPreviewType>;
  *
  * @see https://ae-scripting.docsforadobe.dev/general/project/#projectfeetframesfilmtype
  */
-export const FeetFramesFilmType = defineEnum("FeetFramesFilmType", {
-  MM16: 2412,
-  MM35: 2413,
-}, {
-  /** Convert binary value (0-1) to FeetFramesFilmType. */
-  fromBinary(value: number) {
-    // Binary 0 = MM35 (2413), Binary 1 = MM16 (2412)
-    return this.of(2413 - value);
+export const FeetFramesFilmType = defineEnum(
+  "FeetFramesFilmType",
+  {
+    MM16: 2412,
+    MM35: 2413,
   },
-  /** Convert FeetFramesFilmType to binary value. */
-  toBinary(self: number): number {
-    return 2413 - Math.trunc(self);
+  {
+    /** Convert binary value (0-1) to FeetFramesFilmType. */
+    fromBinary(value: number) {
+      // Binary 0 = MM35 (2413), Binary 1 = MM16 (2412)
+      return this.of(2413 - value);
+    },
+    /** Convert FeetFramesFilmType to binary value. */
+    toBinary(self: number): number {
+      return 2413 - Math.trunc(self);
+    },
   },
-});
+);
 export type FeetFramesFilmType = EnumValue<typeof FeetFramesFilmType>;
 
 /**
@@ -396,20 +431,24 @@ export type FeetFramesFilmType = EnumValue<typeof FeetFramesFilmType>;
  *
  * @see https://ae-scripting.docsforadobe.dev/sources/footagesource/#footagesourcefieldseparationtype
  */
-export const FieldSeparationType = defineEnum("FieldSeparationType", {
-  UPPER_FIELD_FIRST: 5612,
-  OFF: 5613,
-  LOWER_FIELD_FIRST: 5614,
-}, {
-  /** Convert binary value to FieldSeparationType. */
-  fromBinary(value: number) {
-    return _FIELD_SEP_BINARY_MAP.get(value) ?? this.OFF;
+export const FieldSeparationType = defineEnum(
+  "FieldSeparationType",
+  {
+    UPPER_FIELD_FIRST: 5612,
+    OFF: 5613,
+    LOWER_FIELD_FIRST: 5614,
   },
-  /** Convert FieldSeparationType to binary value. */
-  toBinary(self: number): number {
-    return getOrThrow(_FIELD_SEP_TO_BINARY, self);
+  {
+    /** Convert binary value to FieldSeparationType. */
+    fromBinary(value: number) {
+      return _FIELD_SEP_BINARY_MAP.get(value) ?? this.OFF;
+    },
+    /** Convert FieldSeparationType to binary value. */
+    toBinary(self: number): number {
+      return getOrThrow(_FIELD_SEP_TO_BINARY, self);
+    },
   },
-});
+);
 export type FieldSeparationType = EnumValue<typeof FieldSeparationType>;
 
 export const _FIELD_SEP_BINARY_MAP: Map<number, number> = new Map<number, number>([
@@ -426,19 +465,23 @@ export const _FIELD_SEP_TO_BINARY: Map<number, number> = new Map<number, number>
  *
  * @see https://ae-scripting.docsforadobe.dev/general/project/#projectfootagetimecodedisplaystarttype
  */
-export const FootageTimecodeDisplayStartType = defineEnum("FootageTimecodeDisplayStartType", {
-  FTCS_USE_SOURCE_MEDIA: 2212,
-  FTCS_START_0: 2213,
-}, {
-  /** Convert binary value to FootageTimecodeDisplayStartType. */
-  fromBinary(value: number) {
-    return _FOOTAGE_TIMECODE_BINARY_MAP.get(value) ?? this.FTCS_START_0;
+export const FootageTimecodeDisplayStartType = defineEnum(
+  "FootageTimecodeDisplayStartType",
+  {
+    FTCS_USE_SOURCE_MEDIA: 2212,
+    FTCS_START_0: 2213,
   },
-  /** Convert FootageTimecodeDisplayStartType to binary value. */
-  toBinary(self: number): number {
-    return getOrThrow(_FOOTAGE_TIMECODE_TO_BINARY, self);
+  {
+    /** Convert binary value to FootageTimecodeDisplayStartType. */
+    fromBinary(value: number) {
+      return _FOOTAGE_TIMECODE_BINARY_MAP.get(value) ?? this.FTCS_START_0;
+    },
+    /** Convert FootageTimecodeDisplayStartType to binary value. */
+    toBinary(self: number): number {
+      return getOrThrow(_FOOTAGE_TIMECODE_TO_BINARY, self);
+    },
   },
-});
+);
 export type FootageTimecodeDisplayStartType = EnumValue<typeof FootageTimecodeDisplayStartType>;
 
 export const _FOOTAGE_TIMECODE_BINARY_MAP: Map<number, number> = new Map<number, number>([
@@ -454,20 +497,24 @@ export const _FOOTAGE_TIMECODE_TO_BINARY: Map<number, number> = new Map<number, 
  *
  * @see https://ae-scripting.docsforadobe.dev/layer/avlayer/#avlayerframeblendingtype
  */
-export const FrameBlendingType = defineEnum("FrameBlendingType", {
-  NO_FRAME_BLEND: 4012,
-  FRAME_MIX: 4013,
-  PIXEL_MOTION: 4014,
-}, {
-  /** Convert binary value (0-2) to FrameBlendingType. */
-  fromBinary(value: number) {
-    return this.of(Math.trunc(value) + 4012);
+export const FrameBlendingType = defineEnum(
+  "FrameBlendingType",
+  {
+    NO_FRAME_BLEND: 4012,
+    FRAME_MIX: 4013,
+    PIXEL_MOTION: 4014,
   },
-  /** Convert FrameBlendingType to binary value (0-2). */
-  toBinary(self: number): number {
-    return Math.trunc(self) - 4012;
+  {
+    /** Convert binary value (0-2) to FrameBlendingType. */
+    fromBinary(value: number) {
+      return this.of(Math.trunc(value) + 4012);
+    },
+    /** Convert FrameBlendingType to binary value (0-2). */
+    toBinary(self: number): number {
+      return Math.trunc(self) - 4012;
+    },
   },
-});
+);
 export type FrameBlendingType = EnumValue<typeof FrameBlendingType>;
 
 /**
@@ -475,20 +522,24 @@ export type FrameBlendingType = EnumValue<typeof FrameBlendingType>;
  *
  * @see https://ae-scripting.docsforadobe.dev/general/project/#projectframescounttype
  */
-export const FramesCountType = defineEnum("FramesCountType", {
-  FC_START_0: 2612,
-  FC_START_1: 2613,
-  FC_TIMECODE_CONVERSION: 2614,
-}, {
-  /** Convert binary value to FramesCountType. */
-  fromBinary(value: number) {
-    return this.ofOrNull(value + 2612) ?? this.FC_START_0;
+export const FramesCountType = defineEnum(
+  "FramesCountType",
+  {
+    FC_START_0: 2612,
+    FC_START_1: 2613,
+    FC_TIMECODE_CONVERSION: 2614,
   },
-  /** Convert FramesCountType to binary value. */
-  toBinary(self: number): number {
-    return Math.trunc(self) - 2612;
+  {
+    /** Convert binary value to FramesCountType. */
+    fromBinary(value: number) {
+      return this.ofOrNull(value + 2612) ?? this.FC_START_0;
+    },
+    /** Convert FramesCountType to binary value. */
+    toBinary(self: number): number {
+      return Math.trunc(self) - 2612;
+    },
   },
-});
+);
 export type FramesCountType = EnumValue<typeof FramesCountType>;
 
 /**
@@ -496,61 +547,62 @@ export type FramesCountType = EnumValue<typeof FramesCountType>;
  *
  * @see https://ae-scripting.docsforadobe.dev/general/project/#projectgpuacceltype
  */
-export const GpuAccelType = defineEnum("GpuAccelType", {
-  OPENCL: 1812,
-  CUDA: 1813,
-  METAL: 1814,
-  VULKAN: 1815,
-  SOFTWARE: 1816,
-  DIRECTX: 1817,
-}, {
-  /**
-   * Map a gpuG UUID string to a GpuAccelType enum value.
-   *
-   * Returns the UUID string itself if the UUID is not recognized.
-   */
-  fromBinary(uuid: string): number | string {
-    const result = _GPU_UUID_TO_ENUM.get(uuid) ?? null;
-    return result != null ? result : uuid;
+export const GpuAccelType = defineEnum(
+  "GpuAccelType",
+  {
+    OPENCL: 1812,
+    CUDA: 1813,
+    METAL: 1814,
+    VULKAN: 1815,
+    SOFTWARE: 1816,
+    DIRECTX: 1817,
   },
-  /**
-   * Map a GpuAccelType enum value back to its UUID string.
-   *
-   * If value is already a UUID string, validates its format and
-   * returns it as-is.
-   *
-   * @throws {@link ValueError} If the enum member has no known UUID mapping, or if a string value
-   *   is not a valid UUID.
-   */
-  toBinary(this: EnumHelpers<GpuAccelType>, value: number | string): string {
-    if (this.has(value)) {
-      const uuid = _GPU_ENUM_TO_UUID.get(value) ?? null;
-      if (uuid == null) {
-        const known = [..._GPU_UUID_TO_ENUM]
-          .map(([u, e]) => `${this.nameOf(e)} (${u})`)
-          .join(", ");
+  {
+    /**
+     * Map a gpuG UUID string to a GpuAccelType enum value.
+     *
+     * Returns the UUID string itself if the UUID is not recognized.
+     */
+    fromBinary(uuid: string): number | string {
+      const result = _GPU_UUID_TO_ENUM.get(uuid) ?? null;
+      return result != null ? result : uuid;
+    },
+    /**
+     * Map a GpuAccelType enum value back to its UUID string.
+     *
+     * If value is already a UUID string, validates its format and
+     * returns it as-is.
+     *
+     * @throws {@link ValueError} If the enum member has no known UUID mapping, or if a string value
+     *   is not a valid UUID.
+     */
+    toBinary(this: EnumHelpers<GpuAccelType>, value: number | string): string {
+      if (this.has(value)) {
+        const uuid = _GPU_ENUM_TO_UUID.get(value) ?? null;
+        if (uuid == null) {
+          const known = [..._GPU_UUID_TO_ENUM].map(([u, e]) => `${this.nameOf(e)} (${u})`).join(", ");
+          throw new ValueError(
+            `no known UUID for GpuAccelType.${this.nameOf(value)}. ` +
+              `Known values: ${known}. ` +
+              `Set a UUID string directly if you know it.`,
+          );
+        }
+        return uuid;
+      }
+      // re.match raises TypeError on non-str input
+      if (typeof value !== "string") {
+        throw new TypeError("expected a string, got " + typeName(value));
+      }
+      // Python's `$` also matches before one trailing "\n"
+      if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\n?$/i.test(value)) {
         throw new ValueError(
-          `no known UUID for GpuAccelType.${this.nameOf(value)}. ` +
-            `Known values: ${known}. ` +
-            `Set a UUID string directly if you know it.`,
+          `expected a valid UUID string ` + `(xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx), got ${literal(value)}`,
         );
       }
-      return uuid;
-    }
-    // re.match raises TypeError on non-str input
-    if (typeof value !== "string") {
-      throw new TypeError("expected a string, got " + typeName(value));
-    }
-    // Python's `$` also matches before one trailing "\n"
-    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\n?$/i.test(value)) {
-      throw new ValueError(
-        `expected a valid UUID string ` +
-          `(xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx), got ${literal(value)}`,
-      );
-    }
-    return value;
+      return value;
+    },
   },
-});
+);
 export type GpuAccelType = EnumValue<typeof GpuAccelType>;
 
 export const _GPU_UUID_TO_ENUM: Map<string, GpuAccelType> = new Map<string, GpuAccelType>([
@@ -570,19 +622,23 @@ export const _GPU_ENUM_TO_UUID: Map<GpuAccelType, string> = new Map<GpuAccelType
  *
  * **Note:** There is no ExtendScript equivalent for this enum.
  */
-export const GuideOrientationType = defineEnum("GuideOrientationType", {
-  HORIZONTAL: 0,
-  VERTICAL: 1,
-}, {
-  /** Convert binary value to GuideOrientationType. */
-  fromBinary(value: number) {
-    return _GUIDE_ORIENTATION_BINARY_MAP.get(value) ?? this.HORIZONTAL;
+export const GuideOrientationType = defineEnum(
+  "GuideOrientationType",
+  {
+    HORIZONTAL: 0,
+    VERTICAL: 1,
   },
-  /** Convert GuideOrientationType to binary value. */
-  toBinary(self: number): number {
-    return getOrThrow(_GUIDE_ORIENTATION_TO_BINARY, self);
+  {
+    /** Convert binary value to GuideOrientationType. */
+    fromBinary(value: number) {
+      return _GUIDE_ORIENTATION_BINARY_MAP.get(value) ?? this.HORIZONTAL;
+    },
+    /** Convert GuideOrientationType to binary value. */
+    toBinary(self: number): number {
+      return getOrThrow(_GUIDE_ORIENTATION_TO_BINARY, self);
+    },
   },
-});
+);
 export type GuideOrientationType = EnumValue<typeof GuideOrientationType>;
 
 export const _GUIDE_ORIENTATION_BINARY_MAP: Map<number, number> = new Map<number, number>([
@@ -630,20 +686,24 @@ export type Language = EnumValue<typeof Language>;
  *
  * @see https://ae-scripting.docsforadobe.dev/layer/avlayer/#avlayerquality
  */
-export const LayerQuality = defineEnum("LayerQuality", {
-  WIREFRAME: 4612,
-  DRAFT: 4613,
-  BEST: 4614,
-}, {
-  /** Convert binary value to LayerQuality. */
-  fromBinary(value: number) {
-    return this.ofOrNull(value + 4612) ?? this.BEST;
+export const LayerQuality = defineEnum(
+  "LayerQuality",
+  {
+    WIREFRAME: 4612,
+    DRAFT: 4613,
+    BEST: 4614,
   },
-  /** Convert LayerQuality to binary value. */
-  toBinary(self: number): number {
-    return Math.trunc(self) - 4612;
+  {
+    /** Convert binary value to LayerQuality. */
+    fromBinary(value: number) {
+      return this.ofOrNull(value + 4612) ?? this.BEST;
+    },
+    /** Convert LayerQuality to binary value. */
+    toBinary(self: number): number {
+      return Math.trunc(self) - 4612;
+    },
   },
-});
+);
 export type LayerQuality = EnumValue<typeof LayerQuality>;
 
 /**
@@ -651,19 +711,23 @@ export type LayerQuality = EnumValue<typeof LayerQuality>;
  *
  * @see https://ae-scripting.docsforadobe.dev/layer/avlayer/#avlayersamplingquality
  */
-export const LayerSamplingQuality = defineEnum("LayerSamplingQuality", {
-  BILINEAR: 4812,
-  BICUBIC: 4813,
-}, {
-  /** Convert binary value to LayerSamplingQuality. */
-  fromBinary(value: number) {
-    return this.ofOrNull(value + 4812) ?? this.BILINEAR;
+export const LayerSamplingQuality = defineEnum(
+  "LayerSamplingQuality",
+  {
+    BILINEAR: 4812,
+    BICUBIC: 4813,
   },
-  /** Convert LayerSamplingQuality to binary value. */
-  toBinary(self: number): number {
-    return Math.trunc(self) - 4812;
+  {
+    /** Convert binary value to LayerSamplingQuality. */
+    fromBinary(value: number) {
+      return this.ofOrNull(value + 4812) ?? this.BILINEAR;
+    },
+    /** Convert LayerSamplingQuality to binary value. */
+    toBinary(self: number): number {
+      return Math.trunc(self) - 4812;
+    },
   },
-});
+);
 export type LayerSamplingQuality = EnumValue<typeof LayerSamplingQuality>;
 
 /**
@@ -671,22 +735,26 @@ export type LayerSamplingQuality = EnumValue<typeof LayerSamplingQuality>;
  *
  * @see https://ae-scripting.docsforadobe.dev/layer/lightlayer/#lightlayerlighttype
  */
-export const LightType = defineEnum("LightType", {
-  PARALLEL: 4412,
-  SPOT: 4413,
-  POINT: 4414,
-  AMBIENT: 4415,
-  ENVIRONMENT: 4416,
-}, {
-  /** Convert binary value to LightType. */
-  fromBinary(value: number) {
-    return this.ofOrNull(value + 4412) ?? this.PARALLEL;
+export const LightType = defineEnum(
+  "LightType",
+  {
+    PARALLEL: 4412,
+    SPOT: 4413,
+    POINT: 4414,
+    AMBIENT: 4415,
+    ENVIRONMENT: 4416,
   },
-  /** Convert LightType to binary value. */
-  toBinary(self: number): number {
-    return Math.trunc(self) - 4412;
+  {
+    /** Convert binary value to LightType. */
+    fromBinary(value: number) {
+      return this.ofOrNull(value + 4412) ?? this.PARALLEL;
+    },
+    /** Convert LightType to binary value. */
+    toBinary(self: number): number {
+      return Math.trunc(self) - 4412;
+    },
   },
-});
+);
 export type LightType = EnumValue<typeof LightType>;
 
 /**
@@ -697,20 +765,24 @@ export type LightType = EnumValue<typeof LightType>;
  *
  * **Note:** Not exposed in ExtendScript.
  */
-export const LinearLightMode = defineEnum("LinearLightMode", {
-  OFF: 0,
-  ON: 1,
-  ON_FOR_32BPC: 2,
-}, {
-  /** Convert binary value to LinearLightMode. */
-  fromBinary(value: number) {
-    return this.ofOrNull(value) ?? this.OFF;
+export const LinearLightMode = defineEnum(
+  "LinearLightMode",
+  {
+    OFF: 0,
+    ON: 1,
+    ON_FOR_32BPC: 2,
   },
-  /** Convert LinearLightMode to binary value. */
-  toBinary(self: number): number {
-    return Math.trunc(self);
+  {
+    /** Convert binary value to LinearLightMode. */
+    fromBinary(value: number) {
+      return this.ofOrNull(value) ?? this.OFF;
+    },
+    /** Convert LinearLightMode to binary value. */
+    toBinary(self: number): number {
+      return Math.trunc(self);
+    },
   },
-});
+);
 export type LinearLightMode = EnumValue<typeof LinearLightMode>;
 
 /** Loop mode for preview playback. */
@@ -726,19 +798,23 @@ export type LoopMode = EnumValue<typeof LoopMode>;
  *
  * @see https://ae-scripting.docsforadobe.dev/property/maskpropertygroup/#maskpropertygroupmaskfeatherfalloff
  */
-export const MaskFeatherFalloff = defineEnum("MaskFeatherFalloff", {
-  FFO_SMOOTH: 7212,
-  FFO_LINEAR: 7213,
-}, {
-  /** Convert binary value to MaskFeatherFalloff. */
-  fromBinary(value: number) {
-    return this.ofOrNull(value + 7212) ?? this.FFO_SMOOTH;
+export const MaskFeatherFalloff = defineEnum(
+  "MaskFeatherFalloff",
+  {
+    FFO_SMOOTH: 7212,
+    FFO_LINEAR: 7213,
   },
-  /** Convert MaskFeatherFalloff to binary value. */
-  toBinary(self: number): number {
-    return self - 7212;
+  {
+    /** Convert binary value to MaskFeatherFalloff. */
+    fromBinary(value: number) {
+      return this.ofOrNull(value + 7212) ?? this.FFO_SMOOTH;
+    },
+    /** Convert MaskFeatherFalloff to binary value. */
+    toBinary(self: number): number {
+      return self - 7212;
+    },
   },
-});
+);
 export type MaskFeatherFalloff = EnumValue<typeof MaskFeatherFalloff>;
 
 /**
@@ -746,24 +822,28 @@ export type MaskFeatherFalloff = EnumValue<typeof MaskFeatherFalloff>;
  *
  * @see https://ae-scripting.docsforadobe.dev/property/maskpropertygroup/#maskpropertygroupmaskmode
  */
-export const MaskMode = defineEnum("MaskMode", {
-  NONE: 6812,
-  ADD: 6813,
-  SUBTRACT: 6814,
-  INTERSECT: 6815,
-  LIGHTEN: 6816,
-  DARKEN: 6817,
-  DIFFERENCE: 6818,
-}, {
-  /** Convert binary mask mode value to MaskMode. */
-  fromBinary(value: number) {
-    return this.ofOrNull(value + 6812) ?? this.NONE;
+export const MaskMode = defineEnum(
+  "MaskMode",
+  {
+    NONE: 6812,
+    ADD: 6813,
+    SUBTRACT: 6814,
+    INTERSECT: 6815,
+    LIGHTEN: 6816,
+    DARKEN: 6817,
+    DIFFERENCE: 6818,
   },
-  /** Convert MaskMode to binary value. */
-  toBinary(self: number): number {
-    return self - 6812;
+  {
+    /** Convert binary mask mode value to MaskMode. */
+    fromBinary(value: number) {
+      return this.ofOrNull(value + 6812) ?? this.NONE;
+    },
+    /** Convert MaskMode to binary value. */
+    toBinary(self: number): number {
+      return self - 6812;
+    },
   },
-});
+);
 export type MaskMode = EnumValue<typeof MaskMode>;
 
 /**
@@ -771,25 +851,29 @@ export type MaskMode = EnumValue<typeof MaskMode>;
  *
  * @see https://ae-scripting.docsforadobe.dev/property/maskpropertygroup/#maskpropertygroupmaskmotionblur
  */
-export const MaskMotionBlur = defineEnum("MaskMotionBlur", {
-  SAME_AS_LAYER: 7012,
-  ON: 7013,
-  OFF: 7014,
-}, {
-  /**
-   * Convert binary value to MaskMotionBlur.
-   *
-   * **Note:** binary 1 = Off and binary 2 = On (swapped relative
-   * to enum integer order where ON = 7013 \< OFF = 7014).
-   */
-  fromBinary(value: number) {
-    return _MASK_MOTION_BLUR_BINARY_MAP.get(value) ?? this.SAME_AS_LAYER;
+export const MaskMotionBlur = defineEnum(
+  "MaskMotionBlur",
+  {
+    SAME_AS_LAYER: 7012,
+    ON: 7013,
+    OFF: 7014,
   },
-  /** Convert MaskMotionBlur to binary value. */
-  toBinary(self: number): number {
-    return getOrThrow(_MASK_MOTION_BLUR_TO_BINARY, self);
+  {
+    /**
+     * Convert binary value to MaskMotionBlur.
+     *
+     * **Note:** binary 1 = Off and binary 2 = On (swapped relative
+     * to enum integer order where ON = 7013 \< OFF = 7014).
+     */
+    fromBinary(value: number) {
+      return _MASK_MOTION_BLUR_BINARY_MAP.get(value) ?? this.SAME_AS_LAYER;
+    },
+    /** Convert MaskMotionBlur to binary value. */
+    toBinary(self: number): number {
+      return getOrThrow(_MASK_MOTION_BLUR_TO_BINARY, self);
+    },
   },
-});
+);
 export type MaskMotionBlur = EnumValue<typeof MaskMotionBlur>;
 
 export const _MASK_MOTION_BLUR_BINARY_MAP: Map<number, number> = new Map<number, number>([
@@ -856,28 +940,32 @@ export type PulldownMethod = EnumValue<typeof PulldownMethod>;
  *
  * @see https://ae-scripting.docsforadobe.dev/sources/footagesource/#footagesourceremovepulldown
  */
-export const PulldownPhase = defineEnum("PulldownPhase", {
-  WSSWW: 5812,
-  OFF: 5813,
-  SSWWW: 5814,
-  SWWWS: 5815,
-  WWWSS: 5816,
-  WWSSW: 5817,
-  WWWSW_24P_ADVANCE: 5818,
-  WWSWW_24P_ADVANCE: 5819,
-  WSWWW_24P_ADVANCE: 5820,
-  SWWWW_24P_ADVANCE: 5821,
-  WWWWS_24P_ADVANCE: 5822,
-}, {
-  /** Convert binary value to PulldownPhase. */
-  fromBinary(value: number) {
-    return _PULLDOWN_BINARY_MAP.get(value) ?? this.OFF;
+export const PulldownPhase = defineEnum(
+  "PulldownPhase",
+  {
+    WSSWW: 5812,
+    OFF: 5813,
+    SSWWW: 5814,
+    SWWWS: 5815,
+    WWWSS: 5816,
+    WWSSW: 5817,
+    WWWSW_24P_ADVANCE: 5818,
+    WWSWW_24P_ADVANCE: 5819,
+    WSWWW_24P_ADVANCE: 5820,
+    SWWWW_24P_ADVANCE: 5821,
+    WWWWS_24P_ADVANCE: 5822,
   },
-  /** Convert PulldownPhase to binary value. */
-  toBinary(self: number): number {
-    return getOrThrow(_PULLDOWN_TO_BINARY, self);
+  {
+    /** Convert binary value to PulldownPhase. */
+    fromBinary(value: number) {
+      return _PULLDOWN_BINARY_MAP.get(value) ?? this.OFF;
+    },
+    /** Convert PulldownPhase to binary value. */
+    toBinary(self: number): number {
+      return getOrThrow(_PULLDOWN_TO_BINARY, self);
+    },
   },
-});
+);
 export type PulldownPhase = EnumValue<typeof PulldownPhase>;
 
 export const _PULLDOWN_BINARY_MAP: Map<number, number> = new Map<number, number>([
@@ -927,19 +1015,23 @@ export type ResolveType = EnumValue<typeof ResolveType>;
  *
  * @see https://ae-scripting.docsforadobe.dev/general/project/#projecttimedisplaytype
  */
-export const TimeDisplayType = defineEnum("TimeDisplayType", {
-  TIMECODE: 2012,
-  FRAMES: 2013,
-}, {
-  /** Convert binary value to TimeDisplayType. */
-  fromBinary(value: number) {
-    return this.ofOrNull(value + 2012) ?? this.TIMECODE;
+export const TimeDisplayType = defineEnum(
+  "TimeDisplayType",
+  {
+    TIMECODE: 2012,
+    FRAMES: 2013,
   },
-  /** Convert TimeDisplayType to binary value. */
-  toBinary(self: number): number {
-    return Math.trunc(self) - 2012;
+  {
+    /** Convert binary value to TimeDisplayType. */
+    fromBinary(value: number) {
+      return this.ofOrNull(value + 2012) ?? this.TIMECODE;
+    },
+    /** Convert TimeDisplayType to binary value. */
+    toBinary(self: number): number {
+      return Math.trunc(self) - 2012;
+    },
   },
-});
+);
 export type TimeDisplayType = EnumValue<typeof TimeDisplayType>;
 
 /**
@@ -995,22 +1087,26 @@ export type ToolType = EnumValue<typeof ToolType>;
  *
  * @see https://ae-scripting.docsforadobe.dev/layer/avlayer/#avlayertrackmattetype
  */
-export const TrackMatteType = defineEnum("TrackMatteType", {
-  NO_TRACK_MATTE: 5012,
-  ALPHA: 5013,
-  ALPHA_INVERTED: 5014,
-  LUMA: 5015,
-  LUMA_INVERTED: 5016,
-}, {
-  /** Convert binary value to TrackMatteType. */
-  fromBinary(value: number) {
-    return this.ofOrNull(value + 5012) ?? this.NO_TRACK_MATTE;
+export const TrackMatteType = defineEnum(
+  "TrackMatteType",
+  {
+    NO_TRACK_MATTE: 5012,
+    ALPHA: 5013,
+    ALPHA_INVERTED: 5014,
+    LUMA: 5015,
+    LUMA_INVERTED: 5016,
   },
-  /** Convert TrackMatteType to binary value. */
-  toBinary(self: number): number {
-    return Math.trunc(self) - 5012;
+  {
+    /** Convert binary value to TrackMatteType. */
+    fromBinary(value: number) {
+      return this.ofOrNull(value + 5012) ?? this.NO_TRACK_MATTE;
+    },
+    /** Convert TrackMatteType to binary value. */
+    toBinary(self: number): number {
+      return Math.trunc(self) - 5012;
+    },
   },
-});
+);
 export type TrackMatteType = EnumValue<typeof TrackMatteType>;
 
 /**
@@ -1018,28 +1114,32 @@ export type TrackMatteType = EnumValue<typeof TrackMatteType>;
  *
  * @see https://ae-scripting.docsforadobe.dev/other/viewer/#viewertype
  */
-export const ViewerType = defineEnum("ViewerType", {
-  VIEWER_COMPOSITION: 7612,
-  VIEWER_LAYER: 7613,
-  VIEWER_FOOTAGE: 7614,
-}, {
-  /**
-   * Map a viewer panel type label string to a ViewerType enum.
-   *
-   * The `fitt` chunk stores the inner tab type as an ASCII string
-   * (e.g. `"AE Composition"`). This converts that string to the
-   * corresponding ViewerType value. Handles null-terminated strings
-   * and empty input.
-   *
-   * @throws {@link ValueError} If the label is not recognized.
-   */
-  fromString(label: string | null): ViewerType {
-    if (!label) label = "";
-    const viewerType = _VIEWER_STRING_MAP.get(label);
-    if (viewerType === undefined) throw new ValueError(`Unknown viewer type label: ${literal(label)}`);
-    return viewerType;
+export const ViewerType = defineEnum(
+  "ViewerType",
+  {
+    VIEWER_COMPOSITION: 7612,
+    VIEWER_LAYER: 7613,
+    VIEWER_FOOTAGE: 7614,
   },
-});
+  {
+    /**
+     * Map a viewer panel type label string to a ViewerType enum.
+     *
+     * The `fitt` chunk stores the inner tab type as an ASCII string
+     * (e.g. `"AE Composition"`). This converts that string to the
+     * corresponding ViewerType value. Handles null-terminated strings
+     * and empty input.
+     *
+     * @throws {@link ValueError} If the label is not recognized.
+     */
+    fromString(label: string | null): ViewerType {
+      if (!label) label = "";
+      const viewerType = _VIEWER_STRING_MAP.get(label);
+      if (viewerType === undefined) throw new ValueError(`Unknown viewer type label: ${literal(label)}`);
+      return viewerType;
+    },
+  },
+);
 export type ViewerType = EnumValue<typeof ViewerType>;
 
 export const _VIEWER_STRING_MAP: Map<string, ViewerType> = new Map<string, ViewerType>([

@@ -28,12 +28,7 @@
  */
 
 import { PREFType } from "../enums/general.ts";
-import {
-  Bytes,
-  decode,
-  encode,
-  getOrInsert,
-  ValueError, compare } from "../../pyrt/index.ts";
+import { Bytes, decode, encode, getOrInsert, ValueError, compare } from "../../pyrt/index.ts";
 import type { Path } from "../../pyrt/index.ts";
 
 // One glob per preference file category; file names embed the AE version.

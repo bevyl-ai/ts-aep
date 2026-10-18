@@ -9,13 +9,7 @@
 
 import { NUMBER_RE } from "./_util.ts";
 import { UnsupportedSVGError } from "./errors.ts";
-import {
-  islower,
-  isspace,
-  valueEquals,
-  radians,
-  literal,
-  patternMatch, hypot } from "../../pyrt/index.ts";
+import { islower, isspace, valueEquals, radians, literal, patternMatch, hypot } from "../../pyrt/index.ts";
 
 /** A cubic segment: start, control 1, control 2, end. */
 export type CubicSeg = [number, number, number, number, number, number, number, number];
@@ -283,15 +277,7 @@ export class _PathParser {
   }
 
   /** Convert an SVG elliptical arc to cubic segments (W3C algorithm). */
-  private _arcTo(
-    rx: number,
-    ry: number,
-    phiDeg: number,
-    large: boolean,
-    sweep: boolean,
-    x: number,
-    y: number,
-  ): void {
+  private _arcTo(rx: number, ry: number, phiDeg: number, large: boolean, sweep: boolean, x: number, y: number): void {
     const x1 = this.cx;
     const y1 = this.cy;
     if (rx === 0 || ry === 0) {
@@ -336,7 +322,7 @@ export class _PathParser {
       const dot = ux * vx + uy * vy;
       const ln = hypot(ux, uy) * hypot(vx, vy);
       const ang = ln !== 0 ? Math.acos(Math.max(-1.0, Math.min(1.0, dot / ln))) : 0.0;
-      return (ux * vy - uy * vx) < 0 ? -ang : ang;
+      return ux * vy - uy * vx < 0 ? -ang : ang;
     };
 
     const theta1 = angle(1, 0, (x1p - cxp) / rx, (y1p - cyp) / ry);

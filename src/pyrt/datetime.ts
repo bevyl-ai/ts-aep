@@ -37,12 +37,21 @@ function parseDigits(b: Buf, p: number, n: number): [number, number] | null {
 
 const isLeap = (y: number): boolean => y % 4 === 0 && (y % 100 !== 0 || y % 400 === 0);
 const DAYS_BEFORE_MONTH = [0, 0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334];
-const daysInMonth = (y: number, m: number): number => (m === 2 && isLeap(y) ? 29 : [0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][m]);
+const daysInMonth = (y: number, m: number): number =>
+  m === 2 && isLeap(y) ? 29 : [0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][m];
 
 /** Proleptic Gregorian ordinal, 0001-01-01 = 1. */
 function ymd2ord(y: number, m: number, d: number): number {
   const y1 = y - 1;
-  return y1 * 365 + Math.floor(y1 / 4) - Math.floor(y1 / 100) + Math.floor(y1 / 400) + DAYS_BEFORE_MONTH[m] + (m > 2 && isLeap(y) ? 1 : 0) + d;
+  return (
+    y1 * 365 +
+    Math.floor(y1 / 4) -
+    Math.floor(y1 / 100) +
+    Math.floor(y1 / 400) +
+    DAYS_BEFORE_MONTH[m] +
+    (m > 2 && isLeap(y) ? 1 : 0) +
+    d
+  );
 }
 
 function ord2ymd(ordinal: number): [number, number, number] {

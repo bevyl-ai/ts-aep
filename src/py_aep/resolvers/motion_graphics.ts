@@ -333,10 +333,7 @@ export function fontCapsJson(prop: Property): string {
  * Source Options), both nodes by name.
  */
 export function mediaControllerPath(): [PathNode[], string] {
-  const nodes = [
-    new PathNode("ADBE Source Options Group", null),
-    new PathNode("ADBE Layer Source Alternate", null),
-  ];
+  const nodes = [new PathNode("ADBE Source Options Group", null), new PathNode("ADBE Layer Source Alternate", null)];
   return [nodes, _pathJson(nodes)];
 }
 

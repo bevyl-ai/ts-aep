@@ -55,7 +55,9 @@ declare module "../../pyrt/attrs.ts" {
 export type FmtAttribute = Attribute & { readonly metadata: { readonly fmt: string } };
 
 /** An `itemsField`, which always stores the item class and size. */
-type ItemsAttribute = Attribute & { readonly metadata: { readonly itemCls: typeof FmtItem; readonly itemSize: number } };
+type ItemsAttribute = Attribute & {
+  readonly metadata: { readonly itemCls: typeof FmtItem; readonly itemSize: number };
+};
 
 function _isFmtField(f: Attribute): f is FmtAttribute {
   return f.metadata["fmt"] != null;
@@ -211,7 +213,10 @@ export function fmtField(fmt: string, kw: FmtFieldOptions = {}) {
  * @param itemCls - Class used to deserialize each item.
  * @param itemSize - Fixed byte size of each serialized item.
  */
-export function itemsField<T extends FmtItem>(itemCls: (new (kw: InitKwargs) => T) & typeof FmtItem, itemSize: number): FieldSpec<T[]> {
+export function itemsField<T extends FmtItem>(
+  itemCls: (new (kw: InitKwargs) => T) & typeof FmtItem,
+  itemSize: number,
+): FieldSpec<T[]> {
   const md = {
     items: true,
     itemCls: itemCls,
@@ -225,32 +230,44 @@ export function itemsField<T extends FmtItem>(itemCls: (new (kw: InitKwargs) => 
 // ---------------------------------------------------------------------------
 
 /** Unsigned 1-byte integer field (`struct.unpack("B")`). */
-export function u1Field<V extends number | boolean | null = number>(kw: FmtFieldOptions<V> = {}): FieldSpec<NoInfer<V>> {
+export function u1Field<V extends number | boolean | null = number>(
+  kw: FmtFieldOptions<V> = {},
+): FieldSpec<NoInfer<V>> {
   return fmtField("B", kw);
 }
 
 /** Unsigned 2-byte integer field (`struct.unpack("H")`). */
-export function u2Field<V extends number | boolean | null = number>(kw: FmtFieldOptions<V> = {}): FieldSpec<NoInfer<V>> {
+export function u2Field<V extends number | boolean | null = number>(
+  kw: FmtFieldOptions<V> = {},
+): FieldSpec<NoInfer<V>> {
   return fmtField("H", kw);
 }
 
 /** Unsigned 4-byte integer field (`struct.unpack("I")`). */
-export function u4Field<V extends number | boolean | null = number>(kw: FmtFieldOptions<V> = {}): FieldSpec<NoInfer<V>> {
+export function u4Field<V extends number | boolean | null = number>(
+  kw: FmtFieldOptions<V> = {},
+): FieldSpec<NoInfer<V>> {
   return fmtField("I", kw);
 }
 
 /** Unsigned 8-byte integer field (`struct.unpack("Q")`). */
-export function u8Field<V extends number | bigint | null = number | bigint>(kw: FmtFieldOptions<V> = {}): FieldSpec<NoInfer<V>> {
+export function u8Field<V extends number | bigint | null = number | bigint>(
+  kw: FmtFieldOptions<V> = {},
+): FieldSpec<NoInfer<V>> {
   return fmtField("Q", kw);
 }
 
 /** Signed 2-byte integer field (`struct.unpack("h")`). */
-export function s2Field<V extends number | boolean | null = number>(kw: FmtFieldOptions<V> = {}): FieldSpec<NoInfer<V>> {
+export function s2Field<V extends number | boolean | null = number>(
+  kw: FmtFieldOptions<V> = {},
+): FieldSpec<NoInfer<V>> {
   return fmtField("h", kw);
 }
 
 /** Signed 4-byte integer field (`struct.unpack("i")`). */
-export function s4Field<V extends number | boolean | null = number>(kw: FmtFieldOptions<V> = {}): FieldSpec<NoInfer<V>> {
+export function s4Field<V extends number | boolean | null = number>(
+  kw: FmtFieldOptions<V> = {},
+): FieldSpec<NoInfer<V>> {
   return fmtField("i", kw);
 }
 
@@ -265,7 +282,10 @@ export function f8Field<V extends number | null = number>(kw: FmtFieldOptions<V>
 }
 
 /** Fixed-size raw bytes field (`struct.unpack("Ns")`). */
-export function bytesField<V extends Uint8Array | null = Uint8Array>(n: number, kw: FmtFieldOptions<V> = {}): FieldSpec<NoInfer<V>> {
+export function bytesField<V extends Uint8Array | null = Uint8Array>(
+  n: number,
+  kw: FmtFieldOptions<V> = {},
+): FieldSpec<NoInfer<V>> {
   return fmtField(`${n}s`, kw);
 }
 
@@ -279,7 +299,10 @@ export function strField<V extends string | null = string>(
 }
 
 /** Fixed-size ASCII string field. */
-export function asciiField<V extends string | null = string>(n: number, kw: FmtFieldOptions<V> = {}): FieldSpec<NoInfer<V>> {
+export function asciiField<V extends string | null = string>(
+  n: number,
+  kw: FmtFieldOptions<V> = {},
+): FieldSpec<NoInfer<V>> {
   return fmtField(`${n}s`, { ...kw, encoding: "ascii" });
 }
 
@@ -352,13 +375,10 @@ export function _structInfoUncached(cls: Function): _StructInfo | null {
   if (fmtParts.length > 0) {
     // Validate format/field count match at cache time
     combined = fmtParts.join("");
-    const nValues = struct
-      .unpack(">" + combined, new Uint8Array(struct.calcsize(">" + combined)))
-      .length;
+    const nValues = struct.unpack(">" + combined, new Uint8Array(struct.calcsize(">" + combined))).length;
     if (nValues !== dataFields.length) {
       throw new ValueError(
-        `${cls.name}: struct format yields ${nValues} values ` +
-          `but has ${dataFields.length} fmtField fields`,
+        `${cls.name}: struct format yields ${nValues} values ` + `but has ${dataFields.length} fmtField fields`,
       );
     }
   }
@@ -366,11 +386,7 @@ export function _structInfoUncached(cls: Function): _StructInfo | null {
   const initNames = dataFields.map((f) => _initName(f.name));
   // Simple chunks have no string encodings, endian overrides, optional
   // fields, or items. Coerces are handled inline in the fast path.
-  const simple =
-    encodings.size === 0 &&
-    endians.size === 0 &&
-    itemsInfo == null &&
-    optionalStart === dataFields.length;
+  const simple = encodings.size === 0 && endians.size === 0 && itemsInfo == null && optionalStart === dataFields.length;
   const expectedSize = combined ? struct.calcsize(">" + combined) : 0;
 
   return [
@@ -557,18 +573,8 @@ export class FmtItem extends AttrsBase {
   static frombytes<T extends FmtItem>(this: (new (kw: InitKwargs) => T) & typeof FmtItem, data: Uint8Array): T {
     const info = _structInfo(this);
     if (info == null) throw new TypeError(`${this.name} has no fmtField metadata`);
-    const [
-      fmt,
-      dataFields,
-      encodings,
-      _optionalStart,
-      endians,
-      _itemsInfo,
-      coerces,
-      initNames,
-      simple,
-      expected,
-    ] = info;
+    const [fmt, dataFields, encodings, _optionalStart, endians, _itemsInfo, coerces, initNames, simple, expected] =
+      info;
     let values: struct.PackValue[];
     if (endians?.size > 0) {
       values = [];
@@ -605,18 +611,8 @@ export class FmtItem extends AttrsBase {
     if (info == null) {
       throw new TypeError(`${this.constructor.name} has no fmtField metadata`);
     }
-    const [
-      fmt,
-      dataFields,
-      encodings,
-      _optionalStart,
-      endians,
-      _itemsInfo,
-      coerces,
-      _initNames,
-      _simple,
-      _expected,
-    ] = info;
+    const [fmt, dataFields, encodings, _optionalStart, endians, _itemsInfo, coerces, _initNames, _simple, _expected] =
+      info;
     if (endians?.size > 0) {
       const parts: Uint8Array[] = [];
       for (const [i, f] of dataFields.entries()) {

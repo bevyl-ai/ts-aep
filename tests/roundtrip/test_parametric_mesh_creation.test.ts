@@ -31,32 +31,38 @@ function _saveReparse(project: Project, tmpPath: Path) {
 }
 
 describe("TestAddParametricMesh", () => {
-  test.each(ParametricMeshType.members().map((m) => [m]))("test_creates_correct_type[%#]", (meshType: ParametricMeshType) => {
-    const project = parseAep(BASE_AEP).project;
-    const comp = project.compositions[0];
-    const layer = comp.addParametricMesh(undefined, { meshType: meshType });
-    expect(layer instanceof ParametricMeshLayer).toBe(true);
-    expect(layer.parametricMeshType).toBe(meshType);
-    expect(layer._ldta.layerType).toBe(LayerType.PARAMETRIC_MESH);
-    expect(layer.threeDLayer).toBe(true);
-  });
+  test.each(ParametricMeshType.members().map((m) => [m]))(
+    "test_creates_correct_type[%#]",
+    (meshType: ParametricMeshType) => {
+      const project = parseAep(BASE_AEP).project;
+      const comp = project.compositions[0];
+      const layer = comp.addParametricMesh(undefined, { meshType: meshType });
+      expect(layer instanceof ParametricMeshLayer).toBe(true);
+      expect(layer.parametricMeshType).toBe(meshType);
+      expect(layer._ldta.layerType).toBe(LayerType.PARAMETRIC_MESH);
+      expect(layer.threeDLayer).toBe(true);
+    },
+  );
 
-  test.each(ParametricMeshType.members().map((m) => [m]))("test_type_and_value_persist_through_save[%#]", (meshType: ParametricMeshType) => {
-    const tmpPath = makeTmpPath();
-    const project = parseAep(BASE_AEP).project;
-    const comp = project.compositions[0];
-    const layer = comp.addParametricMesh(`M ${ParametricMeshType.nameOf(meshType)}`, { meshType: meshType });
-    const field = getOrThrow(_FIRST_FIELD, meshType);
-    setMember(layer.parametricMeshOptions, field, 321.0);
+  test.each(ParametricMeshType.members().map((m) => [m]))(
+    "test_type_and_value_persist_through_save[%#]",
+    (meshType: ParametricMeshType) => {
+      const tmpPath = makeTmpPath();
+      const project = parseAep(BASE_AEP).project;
+      const comp = project.compositions[0];
+      const layer = comp.addParametricMesh(`M ${ParametricMeshType.nameOf(meshType)}`, { meshType: meshType });
+      const field = getOrThrow(_FIRST_FIELD, meshType);
+      setMember(layer.parametricMeshOptions, field, 321.0);
 
-    const fresh = _saveReparse(project, tmpPath);
-    const freshLayer = asInstance(
-      fresh.compositions[0].layers.find((lyr) => lyr.name === `M ${ParametricMeshType.nameOf(meshType)}`),
-      ParametricMeshLayer,
-    );
-    expect(freshLayer.parametricMeshType).toBe(meshType);
-    expect(approx(getMember(freshLayer.parametricMeshOptions, field), 321.0)).toBe(true);
-  });
+      const fresh = _saveReparse(project, tmpPath);
+      const freshLayer = asInstance(
+        fresh.compositions[0].layers.find((lyr) => lyr.name === `M ${ParametricMeshType.nameOf(meshType)}`),
+        ParametricMeshLayer,
+      );
+      expect(freshLayer.parametricMeshType).toBe(meshType);
+      expect(approx(getMember(freshLayer.parametricMeshOptions, field), 321.0)).toBe(true);
+    },
+  );
 
   test("test_auto_name_clears_name_set", () => {
     const project = parseAep(BASE_AEP).project;

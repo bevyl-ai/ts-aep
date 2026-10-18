@@ -9,9 +9,13 @@
 
 import { describe, expect, test } from "bun:test";
 
-
 import { b, Bytes, encode, getOrThrow, len, assert, valueEquals } from "../../src/pyrt/index.ts";
-import { STD14_EXTENT, STD14_FIRST_CODE, STD14_STANDARD_QUOTES, STD14_WIDTHS } from "../../src/py_aep/data/std14_metrics.ts";
+import {
+  STD14_EXTENT,
+  STD14_FIRST_CODE,
+  STD14_STANDARD_QUOTES,
+  STD14_WIDTHS,
+} from "../../src/py_aep/data/std14_metrics.ts";
 import { EMPTY_BOX, footageSize, readAiLayerBounds } from "../../src/py_aep/resolvers/ai_bounds.ts";
 import { UnsupportedAiLayersError } from "../../src/py_aep/resolvers/ai_layers.ts";
 import { approx as pytestApprox, raises, warns } from "../support/pytest.ts";
@@ -115,10 +119,7 @@ describe("TestFills", () => {
   });
 
   test("test_open_subpath_fill_is_measured", () => {
-    expectApprox(
-      measure("400 300 m 460 300 l 460 360 l f"),
-      approx([399.75, 299.75, 460.25, 360.25]),
-    );
+    expectApprox(measure("400 300 m 460 300 l 460 360 l f"), approx([399.75, 299.75, 460.25, 360.25]));
   });
 
   test("test_unpainted_path_contributes_nothing", () => {
@@ -128,41 +129,26 @@ describe("TestFills", () => {
   test("test_control_point_hull_not_curve_bounds", () => {
     // The cubic peaks 112.5 above its ends; its control points sit 150
     // above, and After Effects measures the control points.
-    expectApprox(
-      measure("40 480 m 240 630 -60 630 140 480 c f"),
-      approx([-60.25, 479.75, 240.25, 630.25]),
-    );
+    expectApprox(measure("40 480 m 240 630 -60 630 140 480 c f"), approx([-60.25, 479.75, 240.25, 630.25]));
   });
 
   test("test_contributions_union", () => {
-    expectApprox(
-      measure("20 160 40 40 re f 200 560 30 30 re f"),
-      approx([19.75, 159.75, 230.25, 590.25]),
-    );
+    expectApprox(measure("20 160 40 40 re f 200 560 30 30 re f"), approx([19.75, 159.75, 230.25, 590.25]));
   });
 });
 
 describe("TestStrokes", () => {
   test("test_single_straight_segment_has_no_join_term", () => {
-    expectApprox(
-      measure("10 w 50 250 m 150 250 l S"),
-      approx([45.0, 245.0, 155.0, 255.0]),
-    );
+    expectApprox(measure("10 w 50 250 m 150 250 l S"), approx([45.0, 245.0, 155.0, 255.0]));
   });
 
   test.each([0, 1, 2])("test_cap_style_is_ignored[%#]", (cap) => {
-    expectApprox(
-      measure(`10 w ${cap} J 50 250 m 150 250 l S`),
-      approx([45.0, 245.0, 155.0, 255.0]),
-    );
+    expectApprox(measure(`10 w ${cap} J 50 250 m 150 250 l S`), approx([45.0, 245.0, 155.0, 255.0]));
   });
 
   test.each([0, 1, 2])("test_join_style_is_ignored[%#]", (join) => {
     // All three joins expand by the same worst-case miter term.
-    expectApprox(
-      measure(`10 w 4 M ${join} j 40 400 m 70 440 l 100 400 l S`),
-      approx([30.0, 390.0, 110.0, 450.0]),
-    );
+    expectApprox(measure(`10 w 4 M ${join} j 40 400 m 70 440 l 100 400 l S`), approx([30.0, 390.0, 110.0, 450.0]));
   });
 
   test.each<[number, Box]>([
@@ -175,35 +161,23 @@ describe("TestStrokes", () => {
 
   test("test_stroked_rectangle_takes_the_exact_right_angle_miter", () => {
     // sqrt(2) * lw / 2, not the worst-case miter-limit expansion.
-    expectApprox(
-      measure("10 w 10 M 480 40 60 40 re S"),
-      approx([472.9289, 32.9289, 547.0711, 87.0711]),
-    );
+    expectApprox(measure("10 w 10 M 480 40 60 40 re S"), approx([472.9289, 32.9289, 547.0711, 87.0711]));
   });
 
   test("test_line_width_scales_with_the_matrix", () => {
-    expectApprox(
-      measure("q 2 0 0 2 0 0 cm 10 w 10 280 m 40 280 l S Q"),
-      approx([10.0, 550.0, 90.0, 570.0]),
-    );
+    expectApprox(measure("q 2 0 0 2 0 0 cm 10 w 10 280 m 40 280 l S Q"), approx([10.0, 550.0, 90.0, 570.0]));
   });
 
   test("test_expansion_is_per_axis_not_a_single_scale", () => {
     // A 4x/1x matrix expands x by 20 and y by 5; a geometric-mean scale
     // would give 10 for both.
-    expectApprox(
-      measure("q 4 0 0 1 0 0 cm 10 w 5 500 m 35 500 l S Q"),
-      approx([0.0, 495.0, 160.0, 505.0]),
-    );
+    expectApprox(measure("q 4 0 0 1 0 0 cm 10 w 5 500 m 35 500 l S Q"), approx([0.0, 495.0, 160.0, 505.0]));
   });
 
   test("test_fill_and_stroke_uses_the_stroke_rule_outright", () => {
     // The 0.25 fill pad is not also applied and no max() is taken: at
     // lw 0.04 with miter 4 the expansion is 0.04, well under 0.25.
-    expectApprox(
-      measure("0.04 w 4 M 400 200 m 460 200 l 460 260 l h B"),
-      approx([399.96, 199.96, 460.04, 260.04]),
-    );
+    expectApprox(measure("0.04 w 4 M 400 200 m 460 200 l 460 260 l h B"), approx([399.96, 199.96, 460.04, 260.04]));
   });
 });
 
@@ -233,10 +207,7 @@ describe("TestShadings", () => {
   });
 
   test("test_a_clip_restored_by_Q_widens_again", () => {
-    expectApprox(
-      _shade("q 0 0 100 100 re W n q 0 0 20 20 re W n Q /Sh0 sh Q"),
-      approx([-0.25, -0.25, 100.25, 100.25]),
-    );
+    expectApprox(_shade("q 0 0 100 100 re W n q 0 0 20 20 re W n Q /Sh0 sh Q"), approx([-0.25, -0.25, 100.25, 100.25]));
   });
 });
 
@@ -244,10 +215,7 @@ describe("TestState", () => {
   test("test_graphics_state_spans_layer_boundaries", () => {
     // A `q` pushed in one layer is popped by the next layer's `Q`, so the
     // measurer has to run one state machine over the whole stream.
-    const boxes = readAiLayerBounds(
-      "probe.pdf",
-      buildPdf("q 1 0 0 1 100 100 cm 0 0 40 40 re f", "Q 0 0 40 40 re f"),
-    );
+    const boxes = readAiLayerBounds("probe.pdf", buildPdf("q 1 0 0 1 100 100 cm 0 0 40 40 re f", "Q 0 0 40 40 re f"));
     expectApprox(boxes[0], approx([99.75, 99.75, 140.25, 140.25]));
     expectApprox(boxes[1], approx([-0.25, -0.25, 40.25, 40.25]));
   });
@@ -260,10 +228,7 @@ describe("TestState", () => {
   test("test_clip_is_ignored_except_for_shadings", () => {
     // Illustrator pre-trims the geometry it writes, and After Effects
     // measures straight through a residual clip.
-    expectApprox(
-      measure("q 0 0 10 10 re W n 50 200 100 80 re f Q"),
-      approx([49.75, 199.75, 150.25, 280.25]),
-    );
+    expectApprox(measure("q 0 0 10 10 re W n 50 200 100 80 re f Q"), approx([49.75, 199.75, 150.25, 280.25]));
   });
 
   test("test_saturates_at_the_fixed_point_range", () => {
@@ -306,10 +271,7 @@ describe("TestXObjects", () => {
     const ctm = "q 40 0 0 30 100 100 cm";
     const inline = measure(`${ctm} BI /W 1 /H 1 /CS /G /BPC 8 ID \x00 EI Q`);
     expectApprox(inline, approx([100.0, 100.0, 140.0, 130.0]));
-    expectApprox(
-      inline,
-      approx(measure(`${ctm} /Im0 Do Q`, { extra_objects: _IMAGE, resources: _RES })),
-    );
+    expectApprox(inline, approx(measure(`${ctm} /Im0 Do Q`, { extra_objects: _IMAGE, resources: _RES })));
   });
 
   test("test_a_layer_may_mix_padded_and_unpadded_contributions", () => {
@@ -326,17 +288,13 @@ describe("TestXObjects", () => {
 
 /** A font dictionary with neither `/Widths` nor a `/FontDescriptor`. */
 function _bareFont(name: string, encoding = ""): string {
-  return (
-    `20 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /${name}` +
-    `${encoding} >>\nendobj\n`
-  );
+  return `20 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /${name}` + `${encoding} >>\nendobj\n`;
 }
 
 describe("TestText", () => {
   const _RES = "/Font << /F1 20 0 R >>";
   const _HELVETICA =
-    "20 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica " +
-    "/Encoding /WinAnsiEncoding >>\nendobj\n";
+    "20 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica " + "/Encoding /WinAnsiEncoding >>\nendobj\n";
   // /Ascent and /Descent deliberately disagree with /FontBBox.
   const _PROBE_FONT =
     "20 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /ProbeFont " +
@@ -368,18 +326,14 @@ describe("TestText", () => {
     const plain = _probe("BT /F1 24 Tf 40 100 Td (Hg) Tj ET");
     const spaced = _probe("BT /F1 24 Tf 5 Tc 40 100 Td (Hg) Tj ET");
     assert(plain != null && spaced != null);
-    expect(
-      pytestApprox((spaced[2] - spaced[0]) - (plain[2] - plain[0]), 10.0, { abs: 1e-3 }),
-    ).toBe(true);
+    expect(pytestApprox(spaced[2] - spaced[0] - (plain[2] - plain[0]), 10.0, { abs: 1e-3 })).toBe(true);
   });
 
   test("test_horizontal_scaling_widens_only_the_advance", () => {
     const plain = _probe("BT /F1 24 Tf 40 100 Td (Hg) Tj ET");
     const scaled = _probe("BT /F1 24 Tf 200 Tz 40 100 Td (Hg) Tj ET");
     assert(plain != null && scaled != null);
-    expect(pytestApprox(scaled[2] - scaled[0], 2 * (plain[2] - plain[0]), { abs: 1e-3 })).toBe(
-      true,
-    );
+    expect(pytestApprox(scaled[2] - scaled[0], 2 * (plain[2] - plain[0]), { abs: 1e-3 })).toBe(true);
     expect(pytestApprox(scaled[3] - scaled[1], plain[3] - plain[1], { abs: 1e-3 })).toBe(true);
   });
 
@@ -414,20 +368,17 @@ describe("TestText", () => {
     },
   );
 
-  test.each(["Courier", "Times-Roman", "ZapfDingbats"])(
-    "test_built_in_widths_set_the_advance[%#]",
-    (font: string) => {
-      // Code 72 is "H"; the table is indexed from STD14_FIRST_CODE.
-      const expected = getOrThrow(STD14_WIDTHS, font)[72 - STD14_FIRST_CODE];
-      const box = measure("BT /F1 50 Tf 40 300 Td <48> Tj ET", {
-        extra_objects: _bareFont(font),
-        resources: _RES,
-      });
-      assert(box != null);
-      expect(pytestApprox(box[0], 40.0)).toBe(true);
-      expect(pytestApprox(box[2], 40.0 + expected / 20.0)).toBe(true);
-    },
-  );
+  test.each(["Courier", "Times-Roman", "ZapfDingbats"])("test_built_in_widths_set_the_advance[%#]", (font: string) => {
+    // Code 72 is "H"; the table is indexed from STD14_FIRST_CODE.
+    const expected = getOrThrow(STD14_WIDTHS, font)[72 - STD14_FIRST_CODE];
+    const box = measure("BT /F1 50 Tf 40 300 Td <48> Tj ET", {
+      extra_objects: _bareFont(font),
+      resources: _RES,
+    });
+    assert(box != null);
+    expect(pytestApprox(box[0], 40.0)).toBe(true);
+    expect(pytestApprox(box[2], 40.0 + expected / 20.0)).toBe(true);
+  });
 
   test("test_an_absent_encoding_uses_the_standard_quote_widths", () => {
     // Codes 39 and 96 are the only two in the tabulated range where
@@ -503,30 +454,18 @@ describe("TestText", () => {
 
 describe("TestUnsupported", () => {
   test("test_not_a_pdf_raises", () => {
-    raises(
-      UnsupportedAiLayersError,
-      () => readAiLayerBounds("probe.ai", b("not a pdf at all")),
-      "PDF-compatible",
-    );
+    raises(UnsupportedAiLayersError, () => readAiLayerBounds("probe.ai", b("not a pdf at all")), "PDF-compatible");
   });
 
   test("test_no_layers_raises", () => {
-    raises(
-      UnsupportedAiLayersError,
-      () => readAiLayerBounds("probe.pdf", b("%PDF-1.5\nnothing here\n")),
-      "no layers",
-    );
+    raises(UnsupportedAiLayersError, () => readAiLayerBounds("probe.pdf", b("%PDF-1.5\nnothing here\n")), "no layers");
   });
 
   test("test_object_streams_raise", () => {
     const data = buildPdf("50 200 100 80 re f", {
       extra_objects: "9 0 obj\n<< /Type /ObjStm >>\nendobj\n",
     });
-    raises(
-      UnsupportedAiLayersError,
-      () => readAiLayerBounds("probe.pdf", data),
-      "object streams",
-    );
+    raises(UnsupportedAiLayersError, () => readAiLayerBounds("probe.pdf", data), "object streams");
   });
 
   test("test_encrypted_raises", () => {
@@ -549,8 +488,7 @@ describe("TestMultipleArtboards", () => {
     // NOTE(port): pyrt bytes_.replace has no count argument; the pattern occurs once in build_pdf output, so replace-all equals Python's `.replace(..., 1)`.
     const data = Bytes.replace(
       buildPdf("50 200 100 80 re f", {
-        extra_objects:
-          "30 0 obj\n<< /Type /Page /Parent 2 0 R " + "/MediaBox [0 0 200 200] >>\nendobj\n",
+        extra_objects: "30 0 obj\n<< /Type /Page /Parent 2 0 R " + "/MediaBox [0 0 200 200] >>\nendobj\n",
       }),
       b("/Kids [3 0 R] /Count 1"),
       b("/Kids [3 0 R 30 0 R] /Count 2"),
@@ -575,12 +513,9 @@ describe("TestFootageSize", () => {
     expect(valueEquals(footageSize([112.748, 239.5073, 593.931, 675.999]), [482, 437])).toBe(true);
   });
 
-  test.each([0.0, 1e-12, -1e-12])(
-    "test_float_noise_around_an_integer_does_not_add_a_pixel[%#]",
-    (noise: number) => {
-      // The box reaches AE as signed 16.16, so the extent is quantized
-      // before it is ceilinged: 80 + 1e-12 must not measure 81 pixels.
-      expect(valueEquals(footageSize([10.0, 20.0, 90.0 + noise, 40.0 + noise]), [80, 20])).toBe(true);
-    },
-  );
+  test.each([0.0, 1e-12, -1e-12])("test_float_noise_around_an_integer_does_not_add_a_pixel[%#]", (noise: number) => {
+    // The box reaches AE as signed 16.16, so the extent is quantized
+    // before it is ceilinged: 80 + 1e-12 must not measure 81 pixels.
+    expect(valueEquals(footageSize([10.0, 20.0, 90.0 + noise, 40.0 + noise]), [80, 20])).toBe(true);
+  });
 });

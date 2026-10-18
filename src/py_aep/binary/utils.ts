@@ -2,14 +2,7 @@
 
 import { DeferredListChunk, ListChunk } from "./chunk.ts";
 import { U4LeChunk, Utf8Chunk } from "./scalar_chunks.ts";
-import {
-  AepError,
-  ValueError,
-  stringifyJson,
-  parseJson,
-  typeName,
-  type JsonValue,
-} from "../../pyrt/index.ts";
+import { AepError, ValueError, stringifyJson, parseJson, typeName, type JsonValue } from "../../pyrt/index.ts";
 import { Chunk } from "./chunk.ts";
 import type { ChunkOf } from "./chunk_types.ts";
 
@@ -18,7 +11,7 @@ export class ChunkNotFoundError extends AepError {
 }
 
 /** Sentinel value indicating an undefined frame number in the binary format. */
-export const UNDEFINED_FRAME = 0xFFFFFFFF;
+export const UNDEFINED_FRAME = 0xffffffff;
 
 /** `getattr(chunk, "list_type", None)`: the list type of a LIST chunk, else `null`. */
 export function listTypeOf(chunk: Chunk | null | undefined): string | null {
@@ -75,9 +68,7 @@ export function filterByType<K extends string>(chunks: Chunk[], chunkType: K): C
 
 /** Return all ListChunks with matching `listType`. */
 export function filterByListType(chunks: Chunk[], listType: string): ListChunk[] {
-  return chunks.filter(
-    (c): c is ListChunk => c instanceof ListChunk && c.listType === listType,
-  );
+  return chunks.filter((c): c is ListChunk => c instanceof ListChunk && c.listType === listType);
 }
 
 /**
@@ -107,11 +98,7 @@ export function indexByIdentity<_T>(chunks: readonly _T[], target: object | null
  * @param boundaryListTypes - `listType` values that mark the beginning of the next block.
  * @throws {@link ValueError} If `target` is not found in `chunks`.
  */
-export function blockSlice(
-  chunks: Chunk[],
-  target: Chunk,
-  boundaryListTypes: ReadonlySet<string>,
-): [number, number] {
+export function blockSlice(chunks: Chunk[], target: Chunk, boundaryListTypes: ReadonlySet<string>): [number, number] {
   const start = indexByIdentity(chunks, target);
   for (let end = start + 1; end < chunks.length; end++) {
     const c = chunks[end];
@@ -156,11 +143,7 @@ export function _findAnchorIndex(chunks: Chunk[], anchorType: string): number {
  *
  * @throws {@link ChunkNotFoundError} If no chunk with `beforeType` is found.
  */
-export function findChunksBefore<K extends string>(
-  chunks: Chunk[],
-  chunkType: K,
-  beforeType: string,
-): ChunkOf<K>[] {
+export function findChunksBefore<K extends string>(chunks: Chunk[], chunkType: K, beforeType: string): ChunkOf<K>[] {
   const anchor = _findAnchorIndex(chunks, beforeType);
   const result: ChunkOf<K>[] = [];
   for (let i = anchor - 1; i >= 0; i--) {
@@ -185,11 +168,7 @@ export function findChunksBefore<K extends string>(
  *
  * @throws {@link ChunkNotFoundError} If no chunk with `afterType` is found.
  */
-export function findChunksAfter<K extends string>(
-  chunks: Chunk[],
-  chunkType: K,
-  afterType: string,
-): ChunkOf<K>[] {
+export function findChunksAfter<K extends string>(chunks: Chunk[], chunkType: K, afterType: string): ChunkOf<K>[] {
   const anchor = _findAnchorIndex(chunks, afterType);
   const result: ChunkOf<K>[] = [];
   for (let i = anchor + 1; i < chunks.length; i++) {
@@ -208,11 +187,7 @@ export function findChunksAfter<K extends string>(
  *
  * Chunks that fall outside any group are ignored.
  */
-export function groupChunks(
-  chunks: Chunk[],
-  startType: string,
-  endType: string,
-): Chunk[][] {
+export function groupChunks(chunks: Chunk[], startType: string, endType: string): Chunk[][] {
   const groups: Chunk[][] = [];
   let current: Chunk[] | null = null;
   for (const chunk of chunks) {
@@ -333,10 +308,7 @@ export function dumpAlas(data: AlasData): string {
  * @param kw - Options:
  * - `targetIsFolder`: `true` when `fullpath` is a sequence folder.
  */
-export function buildAls2List(
-  fullpath: string,
-  kw: { targetIsFolder: boolean },
-): ListChunk {
+export function buildAls2List(fullpath: string, kw: { targetIsFolder: boolean }): ListChunk {
   const { targetIsFolder } = kw;
   const data: AlasData = new Map<string, JsonValue>([
     ["ascendcount_base", PENDING_ASCENDCOUNT],
@@ -359,10 +331,7 @@ export function buildStvcList(fileNames: string[]): ListChunk {
   const names: Chunk[] = fileNames.map((name) => new Utf8Chunk({ value: name }));
   return new ListChunk({
     listType: "StVc",
-    chunks: [
-      new U4LeChunk({ chunkType: "StVS", value: fileNames.length }),
-      ...names,
-    ],
+    chunks: [new U4LeChunk({ chunkType: "StVS", value: fileNames.length }), ...names],
   });
 }
 
@@ -416,9 +385,7 @@ export function toggleFlagChunk(
   const existing = container.chunks.flatMap((c, i) => (c.chunkType === chunkType ? [i] : []));
   if (enable && existing.length === 0) {
     const newChunk = new Chunk({ chunkType, data: Uint8Array.of(0x01) });
-    const anchors = container.chunks.flatMap((c, i) =>
-      afterTypes.includes(c.chunkType) ? [i] : [],
-    );
+    const anchors = container.chunks.flatMap((c, i) => (afterTypes.includes(c.chunkType) ? [i] : []));
     if (anchors.length > 0) {
       container.chunks.splice(anchors[anchors.length - 1] + 1, 0, newChunk);
     } else {

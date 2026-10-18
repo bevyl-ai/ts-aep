@@ -25,7 +25,6 @@ import { getOrThrow, Path, assert, valueEquals, StopIteration } from "../../src/
 import { makeTmpPath } from "../support/pytest.ts";
 import { sorted } from "../support/python.ts";
 
-
 // `Path(__file__).parent.parent.parent / "samples"`: `import.meta.dir` is already
 // the directory of this file (tests/roundtrip), so two `.parent` reach the package root.
 const SAMPLES = new Path(import.meta.dir).parent.parent.div("samples");
@@ -68,9 +67,7 @@ for (const year of sorted(_VERSIONS.keys())) {
 test.each(importRows)("test_import_writes_the_versions_color_records[%#]", (year, label) => {
   const tmpPath = makeTmpPath();
   const ae = new Map(
-    parseProject(IMPORT_DIR.div(`clrs_ae${year}.aep`)).footages.map(
-      (item) => [item.name, item.mainSource] as const,
-    ),
+    parseProject(IMPORT_DIR.div(`clrs_ae${year}.aep`)).footages.map((item) => [item.name, item.mainSource] as const),
   );
   const project = py_aep.newProject(getOrThrow(_VERSIONS, year), { platform: "windows" }).project;
   const item = project.importFile(new ImportOptions(getOrThrow(_FILES, label)));

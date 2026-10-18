@@ -12,7 +12,20 @@ import type { ByteStream } from "../../pyrt/index.ts";
 import { readBytes } from "./bin_utils.ts";
 import { BitField } from "./bitfield.ts";
 import { Chunk } from "./chunk.ts";
-import { FmtItem, asciiField, boolField, bytesField, f4Field, f8Field, itemsField, s2Field, s4Field, u1Field, u2Field, u4Field } from "./fmt_field.ts";
+import {
+  FmtItem,
+  asciiField,
+  boolField,
+  bytesField,
+  f4Field,
+  f8Field,
+  itemsField,
+  s2Field,
+  s4Field,
+  u1Field,
+  u2Field,
+  u4Field,
+} from "./fmt_field.ts";
 import { register } from "./registry.ts";
 
 // ---------------------------------------------------------------------------
@@ -97,11 +110,7 @@ register("pgui")(PguiChunk);
 export class PrdaChunk extends Chunk {
   declare chunkType: string;
 
-  static read(
-    fp: ByteStream,
-    size: number,
-    kw: { chunkType?: string; rendererMatchName?: string } = {},
-  ): PrdaChunk {
+  static read(fp: ByteStream, size: number, kw: { chunkType?: string; rendererMatchName?: string } = {}): PrdaChunk {
     const { chunkType = "", rendererMatchName = "" } = kw;
     if (this !== PrdaChunk) {
       const result = super.read(fp, size, { chunkType });
@@ -275,9 +284,9 @@ export class MkifChunk extends Chunk {
   }
 
   set color(value: number[]) {
-    this.colorR = (Math.round(value[0] * 255) + 0);
-    this.colorG = (Math.round(value[1] * 255) + 0);
-    this.colorB = (Math.round(value[2] * 255) + 0);
+    this.colorR = Math.round(value[0] * 255) + 0;
+    this.colorG = Math.round(value[1] * 255) + 0;
+    this.colorB = Math.round(value[2] * 255) + 0;
   }
 }
 define(MkifChunk, {
@@ -383,7 +392,7 @@ export class NmhdChunk extends Chunk {
   }
 
   set durationSeconds(value: number) {
-    this.durationValue = (Math.round(value * 600) + 0);
+    this.durationValue = Math.round(value * 600) + 0;
     this.durationScale = 600;
   }
 
@@ -578,11 +587,7 @@ export class PardChunk extends Chunk {
     return 0;
   }
 
-  static read(
-    fp: ByteStream,
-    size: number,
-    kw: { chunkType?: string } = {},
-  ): PardChunk {
+  static read(fp: ByteStream, size: number, kw: { chunkType?: string } = {}): PardChunk {
     const { chunkType = "" } = kw;
     if (this !== PardChunk) {
       const result = super.read(fp, size, { chunkType });
@@ -676,7 +681,8 @@ export function _bytesFromInts(value: number[]): Uint8Array {
   const out = new Uint8Array(value.length);
   for (let i = 0; i < value.length; i++) {
     const v = value[i];
-    if (typeof v !== "number" || !Number.isInteger(v)) throw new TypeError(`'${typeof v}' object cannot be interpreted as an integer`);
+    if (typeof v !== "number" || !Number.isInteger(v))
+      throw new TypeError(`'${typeof v}' object cannot be interpreted as an integer`);
     if (v < 0 || v > 255) throw new ValueError("bytes must be in range(0, 256)");
     out[i] = v;
   }

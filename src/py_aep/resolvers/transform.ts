@@ -387,9 +387,7 @@ export function buildWorldMatrix(
       spaceAspect = 1.0;
     } else {
       const sourceAspect = layerSourceAspect(lyr);
-      m = m.multiply(
-        _layerLocalMatrix(lyr, time, flatten2d, autoOrient, sourceAspect, spaceAspect),
-      );
+      m = m.multiply(_layerLocalMatrix(lyr, time, flatten2d, autoOrient, sourceAspect, spaceAspect));
       spaceAspect = sourceAspect;
     }
   }
@@ -423,7 +421,9 @@ export function aspectScale(aspect: number): Mat4 {
  * map square pixels to square pixels (so its rotation can be read).
  */
 export function squarePixels(matrix: Mat4, compAspect: number, spaceAspect: number): Mat4 {
-  return aspectScale(compAspect).multiply(matrix).multiply(aspectScale(1.0 / spaceAspect));
+  return aspectScale(compAspect)
+    .multiply(matrix)
+    .multiply(aspectScale(1.0 / spaceAspect));
 }
 
 /**
@@ -520,8 +520,7 @@ function _isAvLayer(layer: Layer): layer is AVLayer {
 export function rigAimsAtPoi(layer: Layer): boolean {
   const layerType = layer._ldta.layerType;
   if (!_RIG_TYPES.has(layerType)) return false;
-  const aims =
-    layerType === LayerType.CAMERA || (_isLight(layer) && _AIMED_LIGHTS.has(layer.lightType));
+  const aims = layerType === LayerType.CAMERA || (_isLight(layer) && _AIMED_LIGHTS.has(layer.lightType));
   return aims && layer.autoOrient === AutoOrientType.CAMERA_OR_POINT_OF_INTEREST;
 }
 
@@ -652,12 +651,9 @@ export function _vec3Norm(v: number[]): number {
 /** Determinant of the upper-left 3x3 of a 4x4 matrix. */
 export function _mat3Det(m: Mat4): number {
   return (
-    m.row(0)[0] *
-      (m.row(1)[1] * m.row(2)[2] - m.row(1)[2] * m.row(2)[1]) -
-    m.row(0)[1] *
-      (m.row(1)[0] * m.row(2)[2] - m.row(1)[2] * m.row(2)[0]) +
-    m.row(0)[2] *
-      (m.row(1)[0] * m.row(2)[1] - m.row(1)[1] * m.row(2)[0])
+    m.row(0)[0] * (m.row(1)[1] * m.row(2)[2] - m.row(1)[2] * m.row(2)[1]) -
+    m.row(0)[1] * (m.row(1)[0] * m.row(2)[2] - m.row(1)[2] * m.row(2)[0]) +
+    m.row(0)[2] * (m.row(1)[0] * m.row(2)[1] - m.row(1)[1] * m.row(2)[0])
   );
 }
 
@@ -705,9 +701,7 @@ export function rotationPart(matrix: Mat4): Mat4 {
  * does not depend on them.
  */
 export function composeOrientation(orientation: number[], delta: Mat4): number[] {
-  const current = _rotateX(orientation[0])
-    .multiply(_rotateY(orientation[1]))
-    .multiply(_rotateZ(orientation[2]));
+  const current = _rotateX(orientation[0]).multiply(_rotateY(orientation[1])).multiply(_rotateZ(orientation[2]));
   const combined = delta.multiply(current);
   const angles = _eulerXyz(
     combined.row(0)[0],
@@ -765,10 +759,7 @@ export function stripOrientation(matrix: Mat4, orientation: number[]): Mat4 {
  * @returns A tuple of `(position, scale_pct, rotation_z, rotate_x, rotate_y)` where `scalePct` is
  *   in percentage units (100 = 1x).
  */
-export function decomposeTransform(
-  matrix: Mat4,
-  anchor: number[],
-): [number[], number[], number, number, number] {
+export function decomposeTransform(matrix: Mat4, anchor: number[]): [number[], number[], number, number, number] {
   const ax = anchor[0];
   const ay = anchor[1];
   const az = anchor.length > 2 ? anchor[2] : 0.0;
@@ -929,15 +920,7 @@ export function transformFromPoints(
   const yHat = yOrtho.map((c) => c / yOrthoLen);
   const zHat = _vec3Cross(xHat, yHat);
 
-  const [rxDeg, ryDeg, rzDeg] = _eulerXyz(
-    xHat[0],
-    yHat[0],
-    zHat[0],
-    xHat[1],
-    yHat[1],
-    zHat[1],
-    zHat[2],
-  );
+  const [rxDeg, ryDeg, rzDeg] = _eulerXyz(xHat[0], yHat[0], zHat[0], xHat[1], yHat[1], zHat[1], zHat[2]);
 
   return {
     anchor_point: [0.0, 0.0, 0.0],
@@ -1073,11 +1056,7 @@ export function cameraRay(
 
   // The image plane is in square pixels; the rig matrix narrows the ray
   // back into comp pixels (see `buildLocalMatrix`).
-  const direction = world.transformVector([
-    (compPoint[0] - cx) * pixelAspect,
-    compPoint[1] - cy,
-    zoom,
-  ]);
+  const direction = world.transformVector([(compPoint[0] - cx) * pixelAspect, compPoint[1] - cy, zoom]);
   return [[...position], direction];
 }
 

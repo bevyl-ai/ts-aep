@@ -16,13 +16,7 @@ import { PlaceholderSource } from "../sources/placeholder.ts";
 import { SolidSource } from "../sources/solid.ts";
 import { validateName, validateOneOf, validatePixelAspect, validatePositiveInt } from "../validators.ts";
 import { AVItem } from "./av_item.ts";
-import {
-  Path,
-  ValueError,
-  assert,
-  literal,
-  compositeKey,
-  type PathLike, compare } from "../../../pyrt/index.ts";
+import { Path, ValueError, assert, literal, compositeKey, type PathLike, compare } from "../../../pyrt/index.ts";
 import type { Project } from "../project.ts";
 import type { FolderItem } from "./folder.ts";
 
@@ -86,7 +80,7 @@ export class FootageItem extends AVItem {
   /**
    * The pixel aspect ratio of the item (1.0 is square). Read / Write.
    *
-   * **Note:** 
+   * **Note:**
    * Unlike After Effects, which snaps a written value to the nearest
    * preset ratio (1.09 becomes the 1.0940 of D1/DV PAL), the value
    * is stored as given.
@@ -170,18 +164,8 @@ export class FootageItem extends AVItem {
     mainSource: FileSource | SolidSource | PlaceholderSource;
     proxySource: FileSource | SolidSource | PlaceholderSource | null;
   }) {
-    const {
-      _idta,
-      _nameUtf8,
-      _cmta,
-      _itemList,
-      _gide,
-      _pinChunks,
-      project,
-      parentFolder,
-      mainSource,
-      proxySource,
-    } = kw;
+    const { _idta, _nameUtf8, _cmta, _itemList, _gide, _pinChunks, project, parentFolder, mainSource, proxySource } =
+      kw;
     super({
       _idta,
       _nameUtf8,
@@ -243,9 +227,7 @@ export class FootageItem extends AVItem {
       return "placeholder";
     } else {
       // TODO(port): Python formats `type(src)` as `<class 'py_aep.<module>.<Name>'>`; JS has no module path, so only the bare class name is printed. Affects only this unreachable-in-practice error message.
-      throw new TypeError(
-        `Unexpected source type for ${this.name}: ${mainSource?.constructor?.name}`,
-      );
+      throw new TypeError(`Unexpected source type for ${this.name}: ${mainSource?.constructor?.name}`);
     }
   }
 
@@ -494,7 +476,7 @@ export class FootageItem extends AVItem {
    * current source has no PSD layer binding. Like `layerDimensions`, it
    * is ignored when `layerIndex` is `null`.
    *
-   * **Note:** 
+   * **Note:**
    * Unlike ExtendScript, if the specified file has an unlabeled alpha channel,
    * this method does not estimate the alpha interpretation.
    *
@@ -533,9 +515,7 @@ export class FootageItem extends AVItem {
     layerStyles: string | _CurrentValue = CURRENT_VALUE,
   ): void {
     if (layerIndex == null) {
-      this._replaceMainSource(
-        FileSource._fromFile(file, { windows: this._project._windows }),
-      );
+      this._replaceMainSource(FileSource._fromFile(file, { windows: this._project._windows }));
       return;
     }
     if (!(layerIndex instanceof _CurrentValue)) {
@@ -549,10 +529,7 @@ export class FootageItem extends AVItem {
     }
     const suffix = new Path(file).suffix.toLowerCase();
     if (!PSD_COMP_EXTENSIONS.has(suffix) && !AI_COMP_EXTENSIONS.has(suffix)) {
-      throw new ValueError(
-        `layerIndex requires a layered .psd/.psb/.ai/.pdf ` +
-          `file, got ${literal(suffix)}`,
-      );
+      throw new ValueError(`layerIndex requires a layered .psd/.psb/.ai/.pdf ` + `file, got ${literal(suffix)}`);
     }
     if (!PSD_COMP_EXTENSIONS.has(suffix) && !(layerStyles instanceof _CurrentValue)) {
       throw new ValueError("layerStyles applies to Photoshop (.psd/.psb) targets only");
@@ -561,8 +538,7 @@ export class FootageItem extends AVItem {
       const current = this._mainSource;
       if (!(current instanceof FileSource && current.layerName)) {
         throw new ValueError(
-          "CURRENT_VALUE requires the current source to reference " +
-            "a single layer of a layered file",
+          "CURRENT_VALUE requires the current source to reference " + "a single layer of a layered file",
         );
       }
       layerIndex = layerIndexForStored(file, current._sspc.layerIndex);
@@ -572,11 +548,7 @@ export class FootageItem extends AVItem {
       // Preserve the Document/Layer Size choice of the current binding.
       dimensions = null;
       const current = this._mainSource;
-      if (
-        current instanceof FileSource &&
-        current.layerName &&
-        !current._sspc.fullFrame
-      ) {
+      if (current instanceof FileSource && current.layerName && !current._sspc.fullFrame) {
         dimensions = "layer";
       }
     } else {
@@ -612,7 +584,7 @@ export class FootageItem extends AVItem {
    * The method preserves interpretation parameters from the previous `mainSource`
    * object.
    *
-   * **Note:** 
+   * **Note:**
    * Unlike ExtendScript, if the specified file has an unlabeled alpha channel,
    * this method does not estimate the alpha interpretation.
    *

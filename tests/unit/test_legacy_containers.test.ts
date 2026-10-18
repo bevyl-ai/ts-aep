@@ -9,7 +9,14 @@
 import { expect, test } from "bun:test";
 import "../../src/py_aep/binary/_register.ts";
 import * as py_aep from "../../src/py_aep/index.ts";
-import { type Chunk, ContainerChunk, ListChunk, readChunks, writeAep, writeChunk } from "../../src/py_aep/binary/chunk.ts";
+import {
+  type Chunk,
+  ContainerChunk,
+  ListChunk,
+  readChunks,
+  writeAep,
+  writeChunk,
+} from "../../src/py_aep/binary/chunk.ts";
 import { HeadChunk, NhedChunk } from "../../src/py_aep/binary/item_chunks.ts";
 import { DwgaChunk } from "../../src/py_aep/binary/misc_chunks.ts";
 import { TDSN_SENTINEL, TdsnChunk } from "../../src/py_aep/binary/property_chunks.ts";
@@ -19,10 +26,22 @@ import { BitsPerChannel, GpuAccelType } from "../../src/py_aep/enums/index.ts";
 import { RenderQueue } from "../../src/py_aep/models/renderqueue/render_queue.ts";
 import { _nnhdFromNhed } from "../../src/py_aep/parsers/project.ts";
 import { asInstance } from "../helpers.ts";
-import { AttributeError, ByteStream, ValueError, b, Bytes, concat, decode, encode, len, truthy, valueEquals, struct } from "../../src/pyrt/index.ts";
+import {
+  AttributeError,
+  ByteStream,
+  ValueError,
+  b,
+  Bytes,
+  concat,
+  decode,
+  encode,
+  len,
+  truthy,
+  valueEquals,
+  struct,
+} from "../../src/pyrt/index.ts";
 import { makeTmpPath, raises } from "../support/pytest.ts";
 import { range } from "../support/python.ts";
-
 
 function _chunk(chunkType: string, body: Uint8Array): Uint8Array {
   const pad = len(body) & 1 ? b("\x00") : b("");
@@ -42,12 +61,14 @@ function _write(chunks: Chunk[]): Uint8Array {
 }
 
 test("test_a_one_byte_tdsn_does_not_swallow_the_next_chunk", () => {
-  const data = concat(
-    _chunk("tdsn", b("\x00")),
-    _chunk("tdmn", Bytes.padEnd(b("ADBE Transform Group"), 40, 0)),
-  );
+  const data = concat(_chunk("tdsn", b("\x00")), _chunk("tdmn", Bytes.padEnd(b("ADBE Transform Group"), 40, 0)));
   const chunks = _read(data);
-  expect(valueEquals(chunks.map((c) => c.chunkType), ["tdsn", "tdmn"])).toBe(true);
+  expect(
+    valueEquals(
+      chunks.map((c) => c.chunkType),
+      ["tdsn", "tdmn"],
+    ),
+  ).toBe(true);
   const tdsn = asInstance(chunks[0], TdsnChunk);
   expect(tdsn instanceof TdsnChunk).toBe(true);
   // An empty legacy name is an unnamed property.
@@ -57,11 +78,7 @@ test("test_a_one_byte_tdsn_does_not_swallow_the_next_chunk", () => {
 });
 
 test("test_a_legacy_fnam_reads_its_string", () => {
-  const body = Bytes.slice(
-    concat(b("Color Control\x00ol\x00\x00"), Uint8Array.from(range(1, 32))),
-    0,
-    48,
-  );
+  const body = Bytes.slice(concat(b("Color Control\x00ol\x00\x00"), Uint8Array.from(range(1, 32))), 0, 48);
   const data = _chunk("fnam", body);
   const fnam = asInstance(_read(data)[0], ContainerChunk);
   expect(fnam instanceof ContainerChunk).toBe(true);
@@ -98,12 +115,7 @@ test("test_nnhd_stands_in_from_nhed", () => {
   nhed.timecodeDefaultBase = 25;
   const nnhd = _nnhdFromNhed(nhed);
   expect(nnhd.synthetic).toBe(true);
-  expect(
-    valueEquals(
-      [nnhd.bitsPerChannel, nnhd.framesCountType, nnhd.timecodeDefaultBase],
-      [1, 1, 25],
-    ),
-  ).toBe(true);
+  expect(valueEquals([nnhd.bitsPerChannel, nnhd.framesCountType, nnhd.timecodeDefaultBase], [1, 1, 25])).toBe(true);
 });
 
 test("test_a_legacy_fnam_with_a_four_letter_name_reads_its_string", () => {
@@ -128,9 +140,7 @@ test("test_a_renamed_one_byte_tdsn_grows_to_its_name", () => {
 test("test_a_renamed_legacy_tdsn_keeps_whole_characters", () => {
   const tdsn = asInstance(_read(_chunk("tdsn", b("abc\x00")))[0], TdsnChunk);
   tdsn.utf8.value = "abcdefé";
-  expect(
-    valueEquals(_write([tdsn]), _chunk("tdsn", concat(encode("abcdefé"), b("\x00")))),
-  ).toBe(true);
+  expect(valueEquals(_write([tdsn]), _chunk("tdsn", concat(encode("abcdefé"), b("\x00"))))).toBe(true);
 });
 
 test("test_a_legacy_tdsn_reset_to_unnamed_writes_the_empty_name", () => {
@@ -148,9 +158,13 @@ test("test_a_renamed_legacy_pdnm_grows_to_its_items", () => {
 test("test_a_legacy_fnam_too_long_for_its_buffer_raises", () => {
   const fnam = asInstance(_read(_chunk("fnam", Bytes.padEnd(b("Glow"), 48, 0)))[0], ContainerChunk);
   asInstance(fnam.chunks[0], Utf8Chunk).value = "x".repeat(48);
-  raises(ValueError, () => {
-    _write([fnam]);
-  }, "48-byte fnam");
+  raises(
+    ValueError,
+    () => {
+      _write([fnam]);
+    },
+    "48-byte fnam",
+  );
 });
 
 /**
@@ -176,9 +190,13 @@ test("test_cc12_settings_synced_to_nhed_write_through", () => {
 
 test("test_cc12_working_gamma_has_nowhere_to_go_and_raises", () => {
   const project = _asCc12Project();
-  raises(AttributeError, () => {
-    project.workingGamma = 2.4;
-  }, "requires AE 13");
+  raises(
+    AttributeError,
+    () => {
+      project.workingGamma = 2.4;
+    },
+    "requires AE 13",
+  );
 });
 
 test("test_cc12_timecode_default_base_synced_to_nhed", () => {
@@ -223,10 +241,7 @@ test("test_new_names_in_an_older_project_are_written_as_strings", () => {
     ["fnam", "Glow"],
     ["pdnm", "On|Off"],
     ["RCom", "note"],
-  ].map(
-    ([chunkType, value]) =>
-      new ContainerChunk({ chunkType: chunkType, chunks: [new Utf8Chunk({ value })] }),
-  );
+  ].map(([chunkType, value]) => new ContainerChunk({ chunkType: chunkType, chunks: [new Utf8Chunk({ value })] }));
   names.push(new TdsnChunk({ chunks: [new Utf8Chunk({ value: TDSN_SENTINEL })] }));
   const data = _olderProjectBytes(names, 91);
   expect(Bytes.includes(data, b("Utf8"))).toBe(false);
@@ -252,9 +267,7 @@ test("test_names_edited_in_an_older_project_read_back", () => {
   const out = tmpPath.div("older.aep");
   project.save(out);
   const back = py_aep.parse(out).project;
-  const names = ["tdsn", "fnam", "pdnm", "RCom"].flatMap((chunkType) =>
-    recursiveFind(back._rifx.chunks, chunkType),
-  );
+  const names = ["tdsn", "fnam", "pdnm", "RCom"].flatMap((chunkType) => recursiveFind(back._rifx.chunks, chunkType));
   expect(len(names) > 4).toBe(true);
   expect(names.every((chunk) => truthy(chunk.data))).toBe(true);
   const [layer] = back.compositions[0].layers;
@@ -276,8 +289,12 @@ test("test_names_edited_in_an_older_project_read_back", () => {
 test("test_an_older_project_cannot_be_relabelled", () => {
   const app = py_aep.newProject("15.0x1");
   app._head.fileFormatVersion = 91;
-  raises(ValueError, () => {
-    app.version = "16.0x1";
-  }, "older format");
+  raises(
+    ValueError,
+    () => {
+      app.version = "16.0x1";
+    },
+    "older format",
+  );
   expect(valueEquals(app.version, "15.0x1")).toBe(true);
 });

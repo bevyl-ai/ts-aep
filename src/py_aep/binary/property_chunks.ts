@@ -7,11 +7,34 @@
  * have variable-length or context-dependent layouts.
  */
 
-import { ByteStream, Factory, ValueError, Bytes, decode, define, descriptor, encode, field, objectSetattr, assert, struct } from "../../pyrt/index.ts";
+import {
+  ByteStream,
+  Factory,
+  ValueError,
+  Bytes,
+  decode,
+  define,
+  descriptor,
+  encode,
+  field,
+  objectSetattr,
+  assert,
+  struct,
+} from "../../pyrt/index.ts";
 import { readBytes, writeBytes } from "./bin_utils.ts";
 import { BitField } from "./bitfield.ts";
 import { Chunk, ContainerChunk, type ChunkReadKwargs } from "./chunk.ts";
-import { FmtItem, boolField, bytesField, f8Field, itemsField, s4Field, u1Field, u2Field, u4Field } from "./fmt_field.ts";
+import {
+  FmtItem,
+  boolField,
+  bytesField,
+  f8Field,
+  itemsField,
+  s4Field,
+  u1Field,
+  u2Field,
+  u4Field,
+} from "./fmt_field.ts";
 import { register } from "./registry.ts";
 import { Utf8Chunk, _StringChunkBase } from "./scalar_chunks.ts";
 import { findByType } from "./utils.ts";
@@ -405,11 +428,7 @@ export class CdatChunk extends Chunk {
    */
   declare pad: Uint8Array;
 
-  static read(
-    fp: ByteStream,
-    size: number,
-    kw: ChunkReadKwargs = {},
-  ): CdatChunk {
+  static read(fp: ByteStream, size: number, kw: ChunkReadKwargs = {}): CdatChunk {
     const { chunkType = "", isLe = false } = kw;
     const count = Math.floor(size / 8);
     if (count === 0) {
@@ -466,11 +485,7 @@ export class TdumChunk extends Chunk {
   declare isColor: boolean;
   declare isInteger: boolean;
 
-  static read(
-    fp: ByteStream,
-    size: number,
-    kw: ChunkReadKwargs = {},
-  ): TdumChunk {
+  static read(fp: ByteStream, size: number, kw: ChunkReadKwargs = {}): TdumChunk {
     const { chunkType = "", isColor = false } = kw;
     let { isInteger = false } = kw;
     const raw = readBytes(fp, size);

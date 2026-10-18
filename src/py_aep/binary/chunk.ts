@@ -6,9 +6,41 @@
  */
 
 import { INSPECT, describe } from "../../pyrt/index.ts";
-import { AttrsBase, ByteStream, ContextVar, Factory, NO_INIT, OSError, StopIteration, ValueError, attrsEq, Bytes, decode, define, encode, field, fields, getMember, valueEquals, literal, struct, type ClassAttributes } from "../../pyrt/index.ts";
+import {
+  AttrsBase,
+  ByteStream,
+  ContextVar,
+  Factory,
+  NO_INIT,
+  OSError,
+  StopIteration,
+  ValueError,
+  attrsEq,
+  Bytes,
+  decode,
+  define,
+  encode,
+  field,
+  fields,
+  getMember,
+  valueEquals,
+  literal,
+  struct,
+  type ClassAttributes,
+} from "../../pyrt/index.ts";
 import { _structFor, readBytes, readFmt, readPad, writeBytes, writePad } from "./bin_utils.ts";
-import { _decodeFields, _encodeValue, _fieldEncoder, _structInfo, type Coerce, type FieldKwargs, type FieldValue, type FmtAttribute, type FmtItem, type InitKwargs } from "./fmt_field.ts";
+import {
+  _decodeFields,
+  _encodeValue,
+  _fieldEncoder,
+  _structInfo,
+  type Coerce,
+  type FieldKwargs,
+  type FieldValue,
+  type FmtAttribute,
+  type FmtItem,
+  type InitKwargs,
+} from "./fmt_field.ts";
 import { CHUNK_TYPES, register, registered } from "./registry.ts";
 import type { HeadChunk } from "./item_chunks.ts";
 import type { LdatItemType } from "./ldat_chunks.ts";
@@ -19,7 +51,12 @@ const _PREFIX_STRUCTS = new WeakMap<readonly FmtAttribute[], struct.Struct[]>();
 function _prefixStruct(dataFields: readonly FmtAttribute[], n: number): struct.Struct {
   let byN = _PREFIX_STRUCTS.get(dataFields);
   if (byN === undefined) _PREFIX_STRUCTS.set(dataFields, (byN = []));
-  return (byN[n] ??= _structFor(dataFields.slice(0, n).map((f) => f.metadata["fmt"]).join("")));
+  return (byN[n] ??= _structFor(
+    dataFields
+      .slice(0, n)
+      .map((f) => f.metadata["fmt"])
+      .join(""),
+  ));
 }
 
 /** The required-field format and each optional field's format and size. */
@@ -34,7 +71,9 @@ function _optionalLayout(dataFields: readonly FmtAttribute[], optionalStart: num
     layout = {
       reqFmt,
       reqSize: reqFmt !== null ? struct.calcsize(">" + reqFmt) : 0,
-      optional: dataFields.slice(optionalStart).map((f) => [f.metadata["fmt"], struct.calcsize(">" + f.metadata["fmt"])]),
+      optional: dataFields
+        .slice(optionalStart)
+        .map((f) => [f.metadata["fmt"], struct.calcsize(">" + f.metadata["fmt"])]),
     };
     _OPTIONAL_LAYOUTS.set(dataFields, layout);
   }
@@ -93,18 +132,7 @@ export class Chunk extends AttrsBase {
       const data = readBytes(fp, size);
       return new cls({ chunkType, data });
     }
-    const [
-      fmt,
-      dataFields,
-      encodings,
-      optionalStart,
-      endians,
-      itemsInfo,
-      coerces,
-      initNames,
-      simple,
-      expected,
-    ] = info;
+    const [fmt, dataFields, encodings, optionalStart, endians, itemsInfo, coerces, initNames, simple, expected] = info;
     const mixedEndian = endians?.size > 0;
 
     if (simple && size >= expected) {
@@ -157,8 +185,7 @@ export class Chunk extends AttrsBase {
           remainingMe -= fSize;
         } else if (i < optionalStart) {
           throw new OSError(
-            `${chunkType} body too short: expected >= ` +
-              `${size - remainingMe + fSize} bytes, got ${size}`,
+            `${chunkType} body too short: expected >= ` + `${size - remainingMe + fSize} bytes, got ${size}`,
           );
         } else {
           break;
@@ -173,10 +200,7 @@ export class Chunk extends AttrsBase {
     } else {
       const { reqFmt, reqSize, optional } = _optionalLayout(dataFields, optionalStart);
       if (size < reqSize) {
-        throw new OSError(
-          `${chunkType} body too short: expected >= ${reqSize} ` +
-            `bytes, got ${size}`,
-        );
+        throw new OSError(`${chunkType} body too short: expected >= ${reqSize} ` + `bytes, got ${size}`);
       }
       values = reqFmt !== null ? [...readFmt(reqFmt, fp)] : [];
       let remaining = size - reqSize;
@@ -219,18 +243,7 @@ export class Chunk extends AttrsBase {
   write(fp: ByteStream): number {
     const info = _structInfo(this.constructor);
     if (info == null) return writeBytes(fp, this.data);
-    const [
-      ,
-      dataFields,
-      encodings,
-      optionalStart,
-      endians,
-      itemsInfo,
-      coerces,
-      _initNames,
-      _simple,
-      _expected,
-    ] = info;
+    const [, dataFields, encodings, optionalStart, endians, itemsInfo, coerces, _initNames, _simple, _expected] = info;
     const mixedEndian = endians?.size > 0;
 
     // Find last non-None optional field to determine write boundary
@@ -298,7 +311,14 @@ export class Chunk extends AttrsBase {
 
   [INSPECT](): string {
     // attrs' repr=True fields, in declaration order.
-    return describe(this.constructor.name, Object.fromEntries(fields(this.constructor).filter((f) => f.repr).map((f) => [f.name, Reflect.get(this, f.name)])));
+    return describe(
+      this.constructor.name,
+      Object.fromEntries(
+        fields(this.constructor)
+          .filter((f) => f.repr)
+          .map((f) => [f.name, Reflect.get(this, f.name)]),
+      ),
+    );
   }
 }
 
@@ -325,11 +345,7 @@ export class ListChunk extends Chunk {
 
   static _nests = true;
 
-  static read(
-    fp: ByteStream,
-    size: number,
-    kwargs: ChunkReadKwargs = {},
-  ): ListChunk {
+  static read(fp: ByteStream, size: number, kwargs: ChunkReadKwargs = {}): ListChunk {
     const { chunkType = "LIST", deferListTypes = null } = kwargs;
     if (size < 4) throw new OSError(`${chunkType} body too small: ${size}`);
     const ctx = kwargs.ctx ?? EMPTY_CTX;
@@ -428,12 +444,7 @@ export class DeferredListChunk extends ListChunk {
     } = {},
   ) {
     super(NO_INIT);
-    const {
-      chunkType = "LIST",
-      listType = "",
-      rawBody = new Uint8Array(),
-      rawCtx = null,
-    } = kwargs;
+    const { chunkType = "LIST", listType = "", rawBody = new Uint8Array(), rawCtx = null } = kwargs;
     this.chunkType = chunkType;
     this.listType = listType;
     this.data = new Uint8Array();
@@ -506,11 +517,7 @@ export class ContainerChunk extends Chunk {
 
   static _nests = true;
 
-  static read(
-    fp: ByteStream,
-    size: number,
-    kwargs: ChunkReadKwargs = {},
-  ): ContainerChunk {
+  static read(fp: ByteStream, size: number, kwargs: ChunkReadKwargs = {}): ContainerChunk {
     const { chunkType = "" } = kwargs;
     const ctx = kwargs.ctx ?? EMPTY_CTX;
     if (!_tilesAsChunks(fp, size)) {
@@ -683,11 +690,7 @@ export class ReadContext {
   grandparentListType: string;
   parentSiblings: Chunk[] | null;
 
-  constructor(
-    parentListType = "",
-    grandparentListType = "",
-    parentSiblings: Chunk[] | null = null,
-  ) {
+  constructor(parentListType = "", grandparentListType = "", parentSiblings: Chunk[] | null = null) {
     this.parentListType = parentListType;
     this.grandparentListType = grandparentListType;
     this.parentSiblings = parentSiblings;
@@ -738,11 +741,7 @@ export function _resolveLdatContext(siblings: Chunk[], ctx: ReadContext): Resolv
     count: lhd3.count,
   };
   // Check spatial flag for potential three_d -> three_d_spatial promotion
-  if (
-    ctx.grandparentListType === "tdbs" &&
-    ctx.parentSiblings != null &&
-    ctx.parentSiblings.length > 2
-  ) {
+  if (ctx.grandparentListType === "tdbs" && ctx.parentSiblings != null && ctx.parentSiblings.length > 2) {
     // `hasattr(tdb4_sibling, "is_spatial")`: only Tdb4Chunk declares it.
     const tdb4Sibling = ctx.parentSiblings[2];
     if (tdb4Sibling instanceof registered("tdb4")) {
@@ -775,14 +774,13 @@ export function _resolvePrdaContext(siblings: Chunk[], ctx: ReadContext): Resolv
   return {};
 }
 
-export const _CONTEXT_RESOLVERS: Map<string, (siblings: Chunk[], ctx: ReadContext) => ResolvedContext> =
-  new Map([
-    ["cdat", _resolveCdatContext],
-    ["ldat", _resolveLdatContext],
-    ["prda", _resolvePrdaContext],
-    ["tdum", _resolveTdumContext],
-    ["tduM", _resolveTdumContext],
-  ]);
+export const _CONTEXT_RESOLVERS: Map<string, (siblings: Chunk[], ctx: ReadContext) => ResolvedContext> = new Map([
+  ["cdat", _resolveCdatContext],
+  ["ldat", _resolveLdatContext],
+  ["prda", _resolvePrdaContext],
+  ["tdum", _resolveTdumContext],
+  ["tduM", _resolveTdumContext],
+]);
 
 /** Compute kwargs for parameterized chunk types. */
 export function _resolveContext(chunkType: string, siblings: Chunk[], ctx: ReadContext): ResolvedContext {

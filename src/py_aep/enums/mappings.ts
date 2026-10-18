@@ -15,10 +15,7 @@ import { OutputAudio } from "./output_module.ts";
  * @param audioEnabled - Whether audio is enabled.
  * @param audioAuto - Whether audio is set to auto.
  */
-export function mapOutputAudio(
-  audioEnabled: boolean,
-  audioAuto: boolean,
-): OutputAudio {
+export function mapOutputAudio(audioEnabled: boolean, audioAuto: boolean): OutputAudio {
   if (!audioEnabled) {
     return OutputAudio.OFF;
   }
@@ -215,10 +212,7 @@ export function mapOutputColorSpace(
  * @returns `"Working Color Space"` when `ipwsEnabled` is True, `"Embedded"` when the profile ID is
  *   all `0xFF` (no override), or the resolved profile name.
  */
-export function mapMediaColorSpace(
-  ipwsEnabled: boolean,
-  overrideProfileId: Uint8Array,
-): string {
+export function mapMediaColorSpace(ipwsEnabled: boolean, overrideProfileId: Uint8Array): string {
   if (ipwsEnabled) {
     return "Working Color Space";
   }

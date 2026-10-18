@@ -60,9 +60,10 @@ export const _ADDABLE_ANIMATOR_PROPERTY_MATCH_NAMES: ReadonlySet<string> = new S
   TEXT_ANIMATOR_POOL.filter((e) => !e.mn.startsWith("ADBE Text VF Axis")).map((e) => e.mn),
 );
 export const _ANIMATOR_PROPERTY_DISPLAY_TO_MATCH: Map<string, string> = new Map(
-  TEXT_ANIMATOR_POOL.filter(
-    (e) => e.name && !e.mn.startsWith("ADBE Text VF Axis"),
-  ).map((e): [string, string] => [e.name, e.mn]),
+  TEXT_ANIMATOR_POOL.filter((e) => e.name && !e.mn.startsWith("ADBE Text VF Axis")).map((e): [string, string] => [
+    e.name,
+    e.mn,
+  ]),
 );
 
 // Shape elements that can be added to a Root Vectors Group (Contents).
@@ -111,10 +112,7 @@ export const _ADDABLE_BY_GROUP = new Map<string, readonly [ReadonlySet<string>, 
   ["ADBE Text Selectors", [_ADDABLE_TEXT_SELECTOR_MATCH_NAMES, AddableKind.TEXT_SELECTOR]],
   ["ADBE Root Vectors Group", [_ADDABLE_SHAPE_MATCH_NAMES, AddableKind.SHAPE]],
   ["ADBE Vectors Group", [_ADDABLE_SHAPE_MATCH_NAMES, AddableKind.SHAPE]],
-  [
-    "ADBE Text Animator Properties",
-    [_ADDABLE_ANIMATOR_PROPERTY_MATCH_NAMES, AddableKind.ANIMATOR_PROPERTY],
-  ],
+  ["ADBE Text Animator Properties", [_ADDABLE_ANIMATOR_PROPERTY_MATCH_NAMES, AddableKind.ANIMATOR_PROPERTY]],
 ]);
 
 // Addable groups that are NAMED (not indexed) - the ExtendScript
@@ -150,12 +148,9 @@ export function resolveAddable(
   }
 
   if (matchName === "ADBE Effect Parade") {
-    const resolved = _ADDABLE_EFFECT_MATCH_NAMES.has(name)
-      ? name
-      : _EFFECT_DISPLAY_TO_MATCH.get(name) ?? null;
+    const resolved = _ADDABLE_EFFECT_MATCH_NAMES.has(name) ? name : (_EFFECT_DISPLAY_TO_MATCH.get(name) ?? null);
     if (resolved == null) return null;
-    const kind =
-      resolved === "ADBE Dropdown Control" ? AddableKind.DROPDOWN : AddableKind.EXPRESSION_CONTROL;
+    const kind = resolved === "ADBE Dropdown Control" ? AddableKind.DROPDOWN : AddableKind.EXPRESSION_CONTROL;
     return [resolved, kind];
   }
 
@@ -167,8 +162,8 @@ export function resolveAddable(
   // animator Properties group, since their registry names diverge).
   const resolved =
     kind === AddableKind.ANIMATOR_PROPERTY
-      ? _ANIMATOR_PROPERTY_DISPLAY_TO_MATCH.get(name) ?? null
-      : _ADDABLE_DISPLAY_TO_MATCH.get(name) ?? null;
+      ? (_ANIMATOR_PROPERTY_DISPLAY_TO_MATCH.get(name) ?? null)
+      : (_ADDABLE_DISPLAY_TO_MATCH.get(name) ?? null);
   if (resolved != null && allowed.has(resolved)) return [resolved, kind];
   return null;
 }
@@ -185,10 +180,6 @@ export function resolveAddable(
  * @param propertyType - The property type of the parent group.
  * @param name - A match name or display name to check.
  */
-export function canAddProperty(
-  matchName: string,
-  propertyType: PropertyType,
-  name: string,
-): boolean {
+export function canAddProperty(matchName: string, propertyType: PropertyType, name: string): boolean {
   return resolveAddable(matchName, propertyType, name) !== null;
 }

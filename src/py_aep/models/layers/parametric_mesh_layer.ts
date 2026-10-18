@@ -90,7 +90,7 @@ export class ParametricMeshLayer extends AVLayer {
     const timeBase = containingComp._cdta.internalTimebase;
     layer._ldta.startTimeDivisor = timeBase;
     layer._ldta.inPointDivisor = timeBase;
-    layer._ldta.outPointDividend = (Math.round(duration * timeBase) + 0);
+    layer._ldta.outPointDividend = Math.round(duration * timeBase) + 0;
     layer._ldta.outPointDivisor = timeBase;
     layer.parametricMeshType = meshType;
     // AE writes the active mesh type's option/bevel groups expanded
@@ -145,9 +145,13 @@ export class ParametricMeshLayer extends AVLayer {
 
   static {
     // Class-body `ChunkField` assignment in Python, installed as a descriptor.
-    descriptor(this, "parametricMeshType", ChunkField.enum(ParametricMeshType, "_ldta", "lightAndMeshType", {
-      postSet: (obj: ParametricMeshLayer) => obj._updateOptions(),
-    }));
+    descriptor(
+      this,
+      "parametricMeshType",
+      ChunkField.enum(ParametricMeshType, "_ldta", "lightAndMeshType", {
+        postSet: (obj: ParametricMeshLayer) => obj._updateOptions(),
+      }),
+    );
   }
 }
 
@@ -220,7 +224,8 @@ export class ParametricMeshOptions {
     // Python casts both lookups; a wrong kind fails at its next attribute read.
     if (this._group == null) {
       const group = this._layer.property(this.constructor._matchName);
-      if (!(group instanceof PropertyGroup)) throw new AttributeError(`'${typeName(group)}' object has no attribute 'property'`);
+      if (!(group instanceof PropertyGroup))
+        throw new AttributeError(`'${typeName(group)}' object has no attribute 'property'`);
       this._group = group;
     }
     const child = this._group.property(name);

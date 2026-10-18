@@ -9,9 +9,7 @@ import type { ListChunk } from "../binary/chunk.ts";
  *
  * @param pinChunk - A `LIST:Pin` chunk containing sspc + opti sub-chunks.
  */
-export function parseSource(
-  pinChunk: ListChunk,
-): FileSource | SolidSource | PlaceholderSource {
+export function parseSource(pinChunk: ListChunk): FileSource | SolidSource | PlaceholderSource {
   const pinChildChunks = pinChunk.chunks;
   const sspcChunk = findByType(pinChildChunks, "sspc");
   const optiChunk = findByType(pinChildChunks, "opti");

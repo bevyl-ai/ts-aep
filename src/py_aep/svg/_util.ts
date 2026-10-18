@@ -67,7 +67,7 @@ export function localName(tag: string): string {
  * Clamp a float to the `[0.0, 1.0]` range.
  */
 export function clamp01(value: number): number {
-  return value < 0.0 ? 0.0 : (value > 1.0 ? 1.0 : value);
+  return value < 0.0 ? 0.0 : value > 1.0 ? 1.0 : value;
 }
 
 /**

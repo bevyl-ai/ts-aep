@@ -8,7 +8,6 @@
 
 import { afterEach, expect, test } from "bun:test";
 
-
 import { KeyError, NotImplementedError, Path, assert, valueEquals } from "../../src/pyrt/index.ts";
 import * as reader_mod from "../../src/py_aep/svg/reader.ts";
 import { SolidPaint, readSvg, type Subpath, type SvgDocument } from "../../src/py_aep/svg/index.ts";
@@ -170,8 +169,12 @@ test("test_reader_tspan_per_run_fill", () => {
     '<tspan fill="#ff0000">B</tspan></text></svg>';
   const doc = readSvg(svg);
   expect(doc.drawables.length).toBe(2);
-  expect(valueEquals(Array.from(asInstance(doc.drawables[0].fill, SolidPaint).color.slice(0, 3)), [0.0, 0.0, 0.0])).toBe(true);
-  expect(valueEquals(Array.from(asInstance(doc.drawables[1].fill, SolidPaint).color.slice(0, 3)), [1.0, 0.0, 0.0])).toBe(true);
+  expect(
+    valueEquals(Array.from(asInstance(doc.drawables[0].fill, SolidPaint).color.slice(0, 3)), [0.0, 0.0, 0.0]),
+  ).toBe(true);
+  expect(
+    valueEquals(Array.from(asInstance(doc.drawables[1].fill, SolidPaint).color.slice(0, 3)), [1.0, 0.0, 0.0]),
+  ).toBe(true);
 });
 
 test("test_reader_tspan_inherits_font_size", () => {
@@ -190,21 +193,14 @@ test("test_reader_tspan_inherits_font_size", () => {
 
 test("test_reader_text_skipped_without_font", () => {
   monkeypatchSetattr(reader_mod, "resolve_font", (...a) => null);
-  const svg =
-    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">' +
-    '<text x="0" y="50">hi</text></svg>';
+  const svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">' + '<text x="0" y="50">hi</text></svg>';
   expect(valueEquals(readSvg(svg).drawables, [])).toBe(true);
 });
 
 test("test_letter_spacing", () => {
   const testFont = fixtureTestFont();
   // letter-spacing adds to each glyph's advance: 'B' shifts by 60 + 20.
-  const [subs] = outlineRuns(
-    [new TextRun("AB", testFont, 100.0, 20.0)],
-    0.0,
-    0.0,
-    IDENTITY,
-  );
+  const [subs] = outlineRuns([new TextRun("AB", testFont, 100.0, 20.0)], 0.0, 0.0, IDENTITY);
   expect(valueEquals(_xrange(subs[0]), [10.0, 50.0])).toBe(true);
   expect(valueEquals(_xrange(subs[1]), [90.0, 130.0])).toBe(true);
 });
@@ -355,9 +351,7 @@ test("test_reader_collapses_indentation_whitespace", () => {
   const head = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 200">';
 
   const minX = (svg: string): number =>
-    Math.min(
-      ...readSvg(svg).drawables[0].subpaths.flatMap((sp) => sp.vertices.map((v) => v[0])),
-    );
+    Math.min(...readSvg(svg).drawables[0].subpaths.flatMap((sp) => sp.vertices.map((v) => v[0])));
 
   const flush = head + '<text x="0" y="100" font-size="100">AB</text></svg>';
   const indented = head + '<text x="0" y="100" font-size="100">\n   AB\n  </text></svg>';

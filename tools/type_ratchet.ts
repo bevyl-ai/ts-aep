@@ -61,7 +61,12 @@ for (const abs of walk(path.join(ROOT, "src"))) {
   };
   visit(sf);
   if (c.unknown > (UNKNOWN_BUDGET.get(rel) ?? 0)) {
-    found.push({ file: rel, line: 0, kind: "unknown", text: `${c.unknown} uses (budget ${UNKNOWN_BUDGET.get(rel) ?? 0})` });
+    found.push({
+      file: rel,
+      line: 0,
+      kind: "unknown",
+      text: `${c.unknown} uses (budget ${UNKNOWN_BUDGET.get(rel) ?? 0})`,
+    });
   }
 }
 

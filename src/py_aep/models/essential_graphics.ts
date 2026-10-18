@@ -112,14 +112,7 @@ export class EssentialGraphicsController {
     sourceCompId?: number | null;
     sourceLayerId?: number | null;
   }) {
-    const {
-      _nameUtf8,
-      _ctyp,
-      uuid,
-      sourcePropertyPath,
-      sourceCompId = null,
-      sourceLayerId = null,
-    } = kw;
+    const { _nameUtf8, _ctyp, uuid, sourcePropertyPath, sourceCompId = null, sourceLayerId = null } = kw;
     this._nameUtf8 = _nameUtf8;
     this._ctyp = _ctyp;
     this.uuid = uuid;

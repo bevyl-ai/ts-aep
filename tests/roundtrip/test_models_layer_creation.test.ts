@@ -97,13 +97,14 @@ describe("TestAddNull", () => {
     // solid.
     const tmpPath = makeTmpPath();
     const app = parseAep(SAMPLES_DIR.div("layer", "layer_misc.aep"));
-    const aeSolid = asInstance(app.project.footages.find((f) => f.name === "Null 1"), FootageItem);
+    const aeSolid = asInstance(
+      app.project.footages.find((f) => f.name === "Null 1"),
+      FootageItem,
+    );
     const layer = app.project.compositions[0].addNull();
     app.project.save(tmpPath.div("out.aep"));
     const solid = asInstance(
-      parseAep(tmpPath.div("out.aep")).project.footages.find(
-        (f) => f.id === asInstance(layer.source, FootageItem).id,
-      ),
+      parseAep(tmpPath.div("out.aep")).project.footages.find((f) => f.id === asInstance(layer.source, FootageItem).id),
       FootageItem,
     );
     const solidColor = asInstance(solid.mainSource, SolidSource).color;
@@ -260,7 +261,7 @@ describe("TestAddCamera", () => {
     comp.pixelAspect = 2.0;
     const cam = comp.addCamera("Cam");
     const pos = cam.transform.property("ADBE Position");
-    expect(approx(pos.value[2], -comp.width * 2.0 / 0.72)).toBe(true);
+    expect(approx(pos.value[2], (-comp.width * 2.0) / 0.72)).toBe(true);
   });
 
   test("test_roundtrip", () => {
@@ -319,7 +320,7 @@ describe("TestAddLight", () => {
     comp.pixelAspect = 2.0;
     const light = comp.addLight("L");
     const pos = light.transform.property("ADBE Position");
-    expect(approx(pos.value[2], -comp.width * 2.0 / 0.72 / 2)).toBe(true);
+    expect(approx(pos.value[2], (-comp.width * 2.0) / 0.72 / 2)).toBe(true);
   });
 
   test("test_roundtrip", () => {
@@ -410,8 +411,7 @@ describe("TestAddSolid", () => {
     const app = parseAep(EMPTY_COMP_AEP);
     const comp = app.project.compositions[0];
     const layer = comp.addSolid([0.0, 0.0, 0.0], "BlackSolid");
-    const solidsFolder =
-      app.project.rootFolder.items.find((item) => item.name === "Solids") ?? null;
+    const solidsFolder = app.project.rootFolder.items.find((item) => item.name === "Solids") ?? null;
     expect(solidsFolder != null).toBe(true);
     expect(contains(asInstance(solidsFolder, FolderItem).items, layer.source)).toBe(true);
   });
@@ -437,7 +437,12 @@ describe("TestAddSolid", () => {
     comp = project.compositions[0];
     const second = comp.addSolid([0.0, 1.0, 0.0], "B");
     expect(asInstance(asInstance(second.source, FootageItem).parentFolder, FolderItem).name).toBe("Renamed");
-    expect(valueEquals(project.rootFolder.folders.map((f) => f.name), ["Holder"])).toBe(true);
+    expect(
+      valueEquals(
+        project.rootFolder.folders.map((f) => f.name),
+        ["Holder"],
+      ),
+    ).toBe(true);
   });
 
   /**

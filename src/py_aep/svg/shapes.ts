@@ -15,12 +15,7 @@ import { RawSubpath, parsePath } from "./path_data.ts";
 import type { CubicSeg } from "./path_data.ts";
 import type { Affine } from "./transform.ts";
 import { Subpath } from "./types.ts";
-import {
-  getMember,
-  valueEquals,
-  pySlice,
-  zip,
-} from "../../pyrt/index.ts";
+import { getMember, valueEquals, pySlice, zip } from "../../pyrt/index.ts";
 
 // Control-point distance for a 90-degree circular arc as a cubic bezier.
 export const _KAPPA = 0.5522847498307936;
@@ -48,12 +43,7 @@ export const _PERCENT_AXIS: Record<string, string> = {
  * A geometry attribute in user units: units converted and a percentage
  * resolved against `ctx` (kept as the bare number without one).
  */
-export function _f(
-  attrs: Map<string, string>,
-  key: string,
-  ctx: LengthContext | null,
-  default_: number = 0.0,
-): number {
+export function _f(attrs: Map<string, string>, key: string, ctx: LengthContext | null, default_: number = 0.0): number {
   if (ctx == null) return parseLength(attrs.get(key) ?? null, default_);
   const ref = getMember(ctx, _PERCENT_AXIS[key]);
   return parseLength(attrs.get(key) ?? null, default_, ref, ctx.fontSize);
@@ -160,11 +150,7 @@ export function _rect(attrs: Map<string, string>, ctx: LengthContext | null): Ra
   return [new RawSubpath(segs, true)];
 }
 
-export function _ellipse(
-  tag: string,
-  attrs: Map<string, string>,
-  ctx: LengthContext | null,
-): RawSubpath[] {
+export function _ellipse(tag: string, attrs: Map<string, string>, ctx: LengthContext | null): RawSubpath[] {
   const cx = _f(attrs, "cx", ctx);
   const cy = _f(attrs, "cy", ctx);
   let rx: number;

@@ -8,7 +8,14 @@ import { describe, expect, test } from "bun:test";
 import { parseApp } from "../conftest.ts";
 
 import type { Application } from "../../src/py_aep/index.ts";
-import { buildProjectNode, formatDot, formatJson, formatMermaid, formatText, type Node } from "../../src/py_aep/cli/visualize.ts";
+import {
+  buildProjectNode,
+  formatDot,
+  formatJson,
+  formatMermaid,
+  formatText,
+  type Node,
+} from "../../src/py_aep/cli/visualize.ts";
 import { Path, len } from "../../src/pyrt/index.ts";
 import { StringIO } from "../support/python.ts";
 
@@ -131,7 +138,9 @@ describe("TestFormatJson", () => {
     for (const child of parsed["children"] ?? []) {
       const children = child["children"];
       // Either no children, empty list, or a truncation message string
-      expect(children == null || (Array.isArray(children) && children.length === 0) || typeof children === "string").toBe(true);
+      expect(
+        children == null || (Array.isArray(children) && children.length === 0) || typeof children === "string",
+      ).toBe(true);
     }
   });
 });

@@ -2,7 +2,13 @@ import { ValueError } from "../../pyrt/index.ts";
 import type { ListChunk } from "../binary/chunk.ts";
 import type { CmtaChunk, IdtaChunk } from "../binary/item_chunks.ts";
 import type { Utf8Chunk } from "../binary/scalar_chunks.ts";
-import { filterByListType, findByListType, findByListTypeOrNull, findByType, findByTypeOrNull } from "../binary/utils.ts";
+import {
+  filterByListType,
+  findByListType,
+  findByListTypeOrNull,
+  findByType,
+  findByTypeOrNull,
+} from "../binary/utils.ts";
 import { ItemType } from "../enums/index.ts";
 import { Guide } from "../models/guide.ts";
 import { FolderItem } from "../models/items/folder.ts";
@@ -38,28 +44,9 @@ export function parseItem(
 
   let item: FolderItem | FootageItem | CompItem;
   if (itemType === ItemType.FOLDER) {
-    item = parseFolder(
-      false,
-      childChunks,
-      project,
-      idta,
-      nameUtf8,
-      cmta,
-      itemChunk,
-      gide,
-      parentFolder,
-    );
+    item = parseFolder(false, childChunks, project, idta, nameUtf8, cmta, itemChunk, gide, parentFolder);
   } else if (itemType === ItemType.FOOTAGE) {
-    item = parseFootage(
-      childChunks,
-      idta,
-      nameUtf8,
-      cmta,
-      itemChunk,
-      gide,
-      project,
-      parentFolder,
-    );
+    item = parseFootage(childChunks, idta, nameUtf8, cmta, itemChunk, gide, project, parentFolder);
   } else if (itemType === ItemType.COMPOSITION) {
     item = parseComposition(
       childChunks,

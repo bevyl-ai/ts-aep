@@ -83,9 +83,10 @@ describe("TestThreeDLayerRefreshesTransform", () => {
     app.project.save(out);
 
     const app2 = parseAppFresh(out);
-    const reparsed = asInstance(app2.project.compositions[0].layers[0].property("Transform"), py_aep.PropertyGroup).property(
-      "ADBE Rotate Z",
-    );
+    const reparsed = asInstance(
+      app2.project.compositions[0].layers[0].property("Transform"),
+      py_aep.PropertyGroup,
+    ).property("ADBE Rotate Z");
     const reparsedName = str(reparsed.name);
     expect(inMemory).toBe(reparsedName);
     expect(reparsedName).toBe("Z Rotation");
@@ -231,7 +232,10 @@ describe("TestRecombineResetsFollowers", () => {
         for (const comp of app.project.compositions)
           for (const layer of comp.layers)
             for (const p of _walk(layer))
-              if (getMember(p, "matchName", null) === "ADBE Position" && truthy(asInstance(p, py_aep.Property).dimensionsSeparated))
+              if (
+                getMember(p, "matchName", null) === "ADBE Position" &&
+                truthy(asInstance(p, py_aep.Property).dimensionsSeparated)
+              )
                 yield asInstance(p, py_aep.Property);
       })(),
     );
@@ -292,11 +296,15 @@ describe("TestPrecomposedEffectPoint", () => {
   test("test_anchor_point_still_survives_precompose", () => {
     const app = parseAppFresh(PROPERTY_DIR.div("keyframe_1D.aep"));
     const comp = app.project.compositions[0];
-    const before = [...asInstance(comp.layers[0].property("Transform"), py_aep.PropertyGroup).property("ADBE Anchor Point").value];
+    const before = [
+      ...asInstance(comp.layers[0].property("Transform"), py_aep.PropertyGroup).property("ADBE Anchor Point").value,
+    ];
 
     const newComp = comp.precompose([0], "Pre");
 
-    const after = asInstance(newComp.layers[0].property("Transform"), py_aep.PropertyGroup).property("ADBE Anchor Point").value;
+    const after = asInstance(newComp.layers[0].property("Transform"), py_aep.PropertyGroup).property(
+      "ADBE Anchor Point",
+    ).value;
     expect(approx(after, before)).toBe(true);
   });
 });
@@ -315,7 +323,10 @@ describe("TestEaseSpeedsAreNotLayerTime", () => {
     const comp = app.project.rootFolder.addComp("C", 320, 240, 1.0, 40.0, 24.0);
     const layer = comp.addSolid([1, 1, 1], "L", 320, 240, 1.0);
     layer.stretch = stretch;
-    const op = asInstance(asInstance(layer.property("Transform"), py_aep.PropertyGroup).property("Opacity"), py_aep.Property);
+    const op = asInstance(
+      asInstance(layer.property("Transform"), py_aep.PropertyGroup).property("Opacity"),
+      py_aep.Property,
+    );
     op.setValueAtTime(1.0, 0.0);
     op.setValueAtTime(5.0, 100.0);
     for (const kf of op.keyframes) {

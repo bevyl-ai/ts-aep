@@ -97,26 +97,24 @@ export function _parseController(cctlChunk: ListChunk): EssentialGraphicsControl
  * @returns A tuple of (template_name_utf8_chunk, controllers) if an Essential Graphics container is
  *   found, otherwise `null`.
  */
-export const parseEssentialGraphics = _suppressMaterialization().decorate(
-  function parse_essential_graphics(
-    childChunks: Chunk[],
-  ): [Utf8Chunk, EssentialGraphicsController[]] | null {
-    let cif: ListChunk | null = null;
-    for (const listType of ["CIF3", "CIF2", "CIFO"]) {
-      cif = findByListTypeOrNull(childChunks, listType);
-      if (cif !== null) break;
-    }
-    if (cif == null) return null;
+export const parseEssentialGraphics = _suppressMaterialization().decorate(function parse_essential_graphics(
+  childChunks: Chunk[],
+): [Utf8Chunk, EssentialGraphicsController[]] | null {
+  let cif: ListChunk | null = null;
+  for (const listType of ["CIF3", "CIF2", "CIFO"]) {
+    cif = findByListTypeOrNull(childChunks, listType);
+    if (cif !== null) break;
+  }
+  if (cif == null) return null;
 
-    const cifChunks = cif.chunks;
+  const cifChunks = cif.chunks;
 
-    // Template name from the first LIST:CpS2
-    const cps2 = findByListType(cifChunks, "CpS2");
-    const templateNameUtf8 = filterByType(cps2.chunks, "Utf8")[0];
+  // Template name from the first LIST:CpS2
+  const cps2 = findByListType(cifChunks, "CpS2");
+  const templateNameUtf8 = filterByType(cps2.chunks, "Utf8")[0];
 
-    const cctlChunks = filterByListType(cifChunks, "CCtl");
-    const controllers = cctlChunks.map((cctl) => _parseController(cctl));
+  const cctlChunks = filterByListType(cifChunks, "CCtl");
+  const controllers = cctlChunks.map((cctl) => _parseController(cctl));
 
-    return [templateNameUtf8, controllers];
-  },
-);
+  return [templateNameUtf8, controllers];
+});

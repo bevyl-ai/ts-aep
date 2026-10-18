@@ -51,9 +51,7 @@ export function readDesignAxes(fontFile: _PathLike, fontNumber: number = 0): Fon
   const opened = dep("fontkit").create(host.fs.readFileSync(String(fontFile)));
   const faces = opened.fonts;
   if (faces != null && faces[fontNumber] == null) {
-    throw new Error(
-      `specify a font number between 0 and ${faces.length - 1} (inclusive)`,
-    );
+    throw new Error(`specify a font number between 0 and ${faces.length - 1} (inclusive)`);
   }
   const font = faces != null ? faces[fontNumber] : opened;
   try {
@@ -74,15 +72,7 @@ export function readDesignAxes(fontFile: _PathLike, fontNumber: number = 0): Fon
         // for the axis (Python picks another language, fontkit gives no name).
         axisName = info.name;
       }
-      axes.push(
-        new FontDesignAxis(
-          axisTag,
-          (axisName || axisTag),
-          info.min,
-          info.default,
-          info.max,
-        ),
-      );
+      axes.push(new FontDesignAxis(axisTag, axisName || axisTag, info.min, info.default, info.max));
     }
     return axes;
   } finally {

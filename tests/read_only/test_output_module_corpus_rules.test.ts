@@ -30,11 +30,14 @@ const _CORPUS: Path[] = sorted(
 
 // pytest `ids=` are sample paths relative to SAMPLES_DIR; carried as the `%s` row label.
 const _SAMPLES_PREFIX = `${String(SAMPLES_DIR)}/`;
-test.each(_CORPUS.map((p) => [String(p).slice(_SAMPLES_PREFIX.length), p] as const))("test_ae_written_state_passes_our_tables[%s]", (_id: string, aepPath: Path) => {
-  const app = parseApp(aepPath);
-  for (const rqi of asInstance(app.project.renderQueue, RenderQueue).items) {
-    for (const om of rqi.outputModules) {
-      expect(valueEquals(om.validateState(), [])).toBe(true);
+test.each(_CORPUS.map((p) => [String(p).slice(_SAMPLES_PREFIX.length), p] as const))(
+  "test_ae_written_state_passes_our_tables[%s]",
+  (_id: string, aepPath: Path) => {
+    const app = parseApp(aepPath);
+    for (const rqi of asInstance(app.project.renderQueue, RenderQueue).items) {
+      for (const om of rqi.outputModules) {
+        expect(valueEquals(om.validateState(), [])).toBe(true);
+      }
     }
-  }
-});
+  },
+);

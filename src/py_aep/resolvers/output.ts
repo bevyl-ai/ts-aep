@@ -155,9 +155,7 @@ export function _expandTemplate(template: string, match: string): string {
           isoctal = true;
           const code = parseInt(this_.slice(1), 8);
           if (code > 0o377) {
-            throw new PatternError(
-              `octal escape value ${this_} outside of range 0-0o377 at position ${start}`,
-            );
+            throw new PatternError(`octal escape value ${this_} outside of range 0-0o377 at position ${start}`);
           }
           out.push(String.fromCharCode(code));
         }
@@ -331,46 +329,25 @@ export function resolveOutputFilename(
     ["width", width != null ? `${width}` : null],
     ["height", height != null ? `${height}` : null],
     ["frameRate", frameRateStr],
-    [
-      "aspectRatio",
-      width != null && height != null ? calculateAspectRatio(width, height) : null,
-    ],
+    ["aspectRatio", width != null && height != null ? calculateAspectRatio(width, height) : null],
     ["startFrame", startFrame != null ? formatFrameNumber(startFrame, fps) : null],
     ["endFrame", endFrame != null ? formatFrameNumber(endFrame, fps) : null],
-    [
-      "durationFrames",
-      durationFrames != null ? formatFrameNumber(durationFrames, fps) : null,
-    ],
-    [
-      "startTimecode",
-      startTime != null ? formatTimecode(startTime, fps, false) : null,
-    ],
+    ["durationFrames", durationFrames != null ? formatFrameNumber(durationFrames, fps) : null],
+    ["startTimecode", startTime != null ? formatTimecode(startTime, fps, false) : null],
     ["endTimecode", endTime != null ? formatTimecode(endTime, fps, false) : null],
-    [
-      "durationTimecode",
-      durationTime != null ? formatTimecode(durationTime, fps, true) : null,
-    ],
-    [
-      "channels",
-      channels != null ? OUTPUT_CHANNELS_NAMES.get(channels) ?? "RGB" : null,
-    ],
+    ["durationTimecode", durationTime != null ? formatTimecode(durationTime, fps, true) : null],
+    ["channels", channels != null ? (OUTPUT_CHANNELS_NAMES.get(channels) ?? "RGB") : null],
     [
       "projectColorDepth",
-      projectColorDepth != null ? PROJECT_COLOR_DEPTH_NAMES.get(projectColorDepth) ?? "8bit" : null,
+      projectColorDepth != null ? (PROJECT_COLOR_DEPTH_NAMES.get(projectColorDepth) ?? "8bit") : null,
     ],
     [
       "outputColorDepth",
-      outputColorDepth != null ? OUTPUT_COLOR_DEPTH_NAMES.get(outputColorDepth) ?? "Millions" : null,
+      outputColorDepth != null ? (OUTPUT_COLOR_DEPTH_NAMES.get(outputColorDepth) ?? "Millions") : null,
     ],
     ["compressor", compressor],
-    [
-      "fieldOrder",
-      fieldRender != null ? FIELD_ORDER_NAMES.get(fieldRender) ?? "Off" : null,
-    ],
-    [
-      "pulldownPhase",
-      pulldownPhase != null ? PULLDOWN_PHASE_NAMES.get(pulldownPhase) ?? "Off" : null,
-    ],
+    ["fieldOrder", fieldRender != null ? (FIELD_ORDER_NAMES.get(fieldRender) ?? "Off") : null],
+    ["pulldownPhase", pulldownPhase != null ? (PULLDOWN_PHASE_NAMES.get(pulldownPhase) ?? "Off") : null],
     ["projectFolder", ""], // Always resolves to empty string
     ["fileExtension", fileExtension],
   ]);
@@ -379,9 +356,7 @@ export function resolveOutputFilename(
   for (const [key, value] of substitutions) {
     if (value != null) {
       _expandTemplate(value, ""); // re.sub compiles the template eagerly (raises on bad escapes)
-      result = result.replace(new RegExp(`\\[${key}\\]`, "gi"), (match: string) =>
-        _expandTemplate(value, match),
-      );
+      result = result.replace(new RegExp(`\\[${key}\\]`, "gi"), (match: string) => _expandTemplate(value, match));
     }
   }
 
@@ -423,16 +398,15 @@ export function resolveTimeSpan(
     timeSpanStart = 0.0;
     durationTime = comp.duration;
     timeSpanEnd = comp.duration;
-    durationFrames = (Math.round(comp.duration * effectiveFrameRate) + 0);
+    durationFrames = Math.round(comp.duration * effectiveFrameRate) + 0;
     firstRenderedFrame = Math.trunc(comp.displayStartTime * effectiveFrameRate);
   } else {
     timeSpanStart = rqSettings.get("Time Span Start");
     durationTime = rqSettings.get("Time Span Duration");
     timeSpanEnd = rqSettings.get("Time Span End");
-    durationFrames = (Math.round(durationTime * effectiveFrameRate) + 0);
+    durationFrames = Math.round(durationTime * effectiveFrameRate) + 0;
     firstRenderedFrame =
-      Math.trunc(comp.displayStartTime * effectiveFrameRate) +
-      Math.trunc(timeSpanStart * effectiveFrameRate);
+      Math.trunc(comp.displayStartTime * effectiveFrameRate) + Math.trunc(timeSpanStart * effectiveFrameRate);
   }
 
   const startFrame = firstRenderedFrame;

@@ -7,14 +7,21 @@ import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 
 import "../../src/py_aep/binary/_register.ts";
-import { ValidationResult, _getFieldNames, _getPropertyNames, compareMarker, compareValues, getEnumValue, main } from "../../src/py_aep/cli/validate.ts";
+import {
+  ValidationResult,
+  _getFieldNames,
+  _getPropertyNames,
+  compareMarker,
+  compareValues,
+  getEnumValue,
+  main,
+} from "../../src/py_aep/cli/validate.ts";
 import { BlendingMode } from "../../src/py_aep/enums/index.ts";
 import { KeyframeEase } from "../../src/py_aep/models/properties/keyframe_ease.ts";
 import { Property } from "../../src/py_aep/models/properties/property.ts";
 import { AssertionError, Path, getOrThrow, len, assert, valueEquals, repr, str } from "../../src/pyrt/index.ts";
 import { makeTmpPath, skip } from "../support/pytest.ts";
 import { range, sorted, strip } from "../support/python.ts";
-
 
 /** Path(__file__).parent.parent.parent / "samples" */
 const SAMPLES_DIR = new Path(import.meta.path).parent.parent.parent.div("samples");
@@ -182,7 +189,7 @@ describe("TestTraversalOrder", () => {
     const runs = await Promise.all([...range(3)].map(() => promisify(execFile)(process.execPath, ["-e", script])));
     const counts = new Set(runs.map((r) => strip(r.stdout)));
     assert(len(counts) === 1, `validate_aep is not deterministic: ${repr([...counts])}`);
- }, 120_000);
+  }, 120_000);
 });
 
 describe("TestMain", () => {

@@ -2,7 +2,7 @@ import { LayerType, LightType } from "../../enums/index.ts";
 
 import { LdtaChunk } from "../../binary/layer_chunks.ts";
 import { defaultCameraZoom } from "../../resolvers/transform.ts";
-import {ChunkField, type EffectParamDefs} from "../descriptors.ts";
+import { ChunkField, type EffectParamDefs } from "../descriptors.ts";
 import { labelIndex } from "../preferences.ts";
 import { AVLayer } from "./av_layer.ts";
 import { _UNDEFINED_ID, Layer, _noSourceId, type LiveDefaultGroup, type LiveDefaultProperty } from "./layer.ts";
@@ -14,8 +14,7 @@ export function _requireEnvironmentLights(comp: CompItem, what: string): void {
   const head = comp._project._head;
   if (compare([head.aeVersionMajor, head.aeVersionMinor], [24, 3]) < 0) {
     throw new AttributeError(
-      `${what} requires AE 24.3+ file format (file is AE ` +
-        `${head.aeVersionMajor}.${head.aeVersionMinor}).`,
+      `${what} requires AE 24.3+ file format (file is AE ` + `${head.aeVersionMajor}.${head.aeVersionMinor}).`,
     );
   }
 }
@@ -70,11 +69,7 @@ export class LightLayer extends Layer {
   _defaultPosition(): number[] {
     const comp = this.containingComp;
     const zoom = defaultCameraZoom(comp.width, comp.pixelAspect);
-    return [
-      comp.width / 2.0 + 0.03 * zoom,
-      comp.height / 2.0 - 0.03 * zoom,
-      -zoom / 4.0,
-    ];
+    return [comp.width / 2.0 + 0.03 * zoom, comp.height / 2.0 - 0.03 * zoom, -zoom / 4.0];
   }
 
   /** The type of light. Read / Write. */
@@ -101,24 +96,13 @@ export class LightLayer extends Layer {
     effectParamDefs?: EffectParamDefs | null;
   }): LightLayer {
     // NOTE(port): Python `# type: ignore[override]` is type-only; the `never` overload above keeps Layer._new's signatures uncallable.
-    const {
-      name,
-      layerId,
-      duration,
-      containingComp,
-      lightType = 1,
-      effectParamDefs = null,
-    } = kw;
+    const { name, layerId, duration, containingComp, lightType = 1, effectParamDefs = null } = kw;
     const nameCps = Array.from(name);
     const layerName = nameCps.length > 31 ? nameCps.slice(0, 31).join("") : name;
     const ldta = new LdtaChunk({
       layerId,
       sourceId: _noSourceId(containingComp),
-      label: labelIndex(
-        containingComp._project._preferences,
-        "Light Label Index 2",
-        6,
-      ),
+      label: labelIndex(containingComp._project._preferences, "Light Label Index 2", 6),
       layerType: LayerType.LIGHT,
       lightAndMeshType: lightType,
       layerFlags2: 0x01,
@@ -145,7 +129,7 @@ export class LightLayer extends Layer {
    * layer of another composition, or a source on a spot or point light
    * raises `ValueError`.
    *
-   * **Warning:** 
+   * **Warning:**
    * Added in After Effects 24.3.
    */
   get lightSource(): Layer | null {
@@ -175,26 +159,31 @@ export class LightLayer extends Layer {
     if (this.lightType === LightType.SPOT || this.lightType === LightType.POINT) {
       // AE 2026 refuses these two ("Invalid light source specified")
       // and stores a source on a parallel light.
-      throw new ValueError(
-        "Invalid light source specified for a spot or point light.",
-      );
+      throw new ValueError("Invalid light source specified for a spot or point light.");
     }
     if (value.threeDLayer || value.nullLayer || value.adjustmentLayer) {
       throw new ValueError(
-        "Invalid light source specified: 3D, null and adjustment layers " +
-          "cannot be used as a light source.",
+        "Invalid light source specified: 3D, null and adjustment layers " + "cannot be used as a light source.",
       );
     }
     this._lightSourceId = value.id;
   }
 
   static {
-    descriptor(this, "lightType", ChunkField.enum(LightType, "_ldta", "lightAndMeshType", {
-      validate: _validateLightType,
-    }));
-    descriptor(this, "_lightSourceId", new ChunkField("_ldta", "sourceId", {
-      transform: (v: number) => (v === _UNDEFINED_ID ? 0 : v),
-      reverse: (v: number) => (v === 0 ? _UNDEFINED_ID : v),
-    }));
+    descriptor(
+      this,
+      "lightType",
+      ChunkField.enum(LightType, "_ldta", "lightAndMeshType", {
+        validate: _validateLightType,
+      }),
+    );
+    descriptor(
+      this,
+      "_lightSourceId",
+      new ChunkField("_ldta", "sourceId", {
+        transform: (v: number) => (v === _UNDEFINED_ID ? 0 : v),
+        reverse: (v: number) => (v === 0 ? _UNDEFINED_ID : v),
+      }),
+    );
   }
 }

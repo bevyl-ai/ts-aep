@@ -47,7 +47,9 @@ type ChunkFieldKey<O, A extends string> = [keyof ChunkBody<O, A> & string] exten
   : keyof ChunkBody<O, A> & string;
 
 /** The type of field `F` on that body. */
-type RawField<O, A extends string, F extends string> = F extends keyof ChunkBody<O, A> ? ChunkBody<O, A>[F] : FieldValue;
+type RawField<O, A extends string, F extends string> = F extends keyof ChunkBody<O, A>
+  ? ChunkBody<O, A>[F]
+  : FieldValue;
 
 /**
  * The model object a `ChunkField` reads through: its chunk body is found by
@@ -95,7 +97,9 @@ type ChunkFieldKw<T, O, Raw> = object extends O
       ([Raw] extends [T] ? { transform?: ((value: Raw) => T) | null } : { transform: (value: Raw) => T });
 
 /** `ChunkField.enum` options: `transform` reads the chunk field's real type and defaults to the enum's `fromBinary`. */
-type ChunkFieldEnumKw<T, O, Raw> = Omit<ChunkFieldOptions<T, O>, "transform"> & { transform?: ((value: Raw) => T) | null };
+type ChunkFieldEnumKw<T, O, Raw> = Omit<ChunkFieldOptions<T, O>, "transform"> & {
+  transform?: ((value: Raw) => T) | null;
+};
 
 export const _SENTINEL: unique symbol = Symbol("_SENTINEL");
 
@@ -227,8 +231,7 @@ export function _validateEnumMember(enumCls: EnumHelpers<number>, value: unknown
         .map((m) => `${enumCls.nameOf(m)} (${m})`)
         .join(", ");
       throw new ValueError(
-        `Invalid value ${literal(value)} for ${literal(publicName)}. ` +
-          `Valid ${enumCls.enumName} values: ${members}`,
+        `Invalid value ${literal(value)} for ${literal(publicName)}. ` + `Valid ${enumCls.enumName} values: ${members}`,
       );
     }
   } else {
@@ -280,11 +283,7 @@ export class ChunkField<
    * (`descriptor(...)` supplies it): the field's type, or what `transform`
    * returns when the stored type is wider.
    */
-  constructor(
-    chunkAttr: A & NoInfer<AttrName<O>>,
-    field: F,
-    kw?: ChunkFieldKw<T, O, RawField<O, A, F>>,
-  );
+  constructor(chunkAttr: A & NoInfer<AttrName<O>>, field: F, kw?: ChunkFieldKw<T, O, RawField<O, A, F>>);
   constructor(chunkAttr: string, field: string, kw: ChunkFieldOptions<T, O> = {}) {
     const {
       transform = null,
@@ -331,7 +330,7 @@ export class ChunkField<
       throw new AttributeError(`chunk body ${literal(this.chunkAttr)} is null`);
     }
     const value = getMember(body, this.field);
-    return (this.transform ? this.transform(value) : value);
+    return this.transform ? this.transform(value) : value;
   }
 
   set(obj: O & ChunkOwner, value: T): void {
@@ -347,9 +346,7 @@ export class ChunkField<
         major = null;
       }
       if (major != null && major < this.minVersion) {
-        throw new AttributeError(
-          `${literal(this.publicName)} requires AE ${this.minVersion}+ file format.`,
-        );
+        throw new AttributeError(`${literal(this.publicName)} requires AE ${this.minVersion}+ file format.`);
       }
     }
     if (!_materializationAllowed.get()) {
@@ -409,7 +406,11 @@ export class ChunkField<
    * first). For a bool backed by a generic integer chunk field (e.g.
    * `U1Chunk.value`) add `transform=bool, reverse=int`.
    */
-  static bool<O extends object = object, A extends AttrName<O> = AttrName<O>, F extends ChunkFieldKey<O, A> = ChunkFieldKey<O, A>>(
+  static bool<
+    O extends object = object,
+    A extends AttrName<O> = AttrName<O>,
+    F extends ChunkFieldKey<O, A> = ChunkFieldKey<O, A>,
+  >(
     chunkAttr: A & NoInfer<AttrName<O>>,
     field: F,
     kwargs?: ChunkFieldKw<boolean, O, RawField<O, A, F>>,

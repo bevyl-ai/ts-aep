@@ -1,0 +1,14 @@
+{
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "printWidth": 120,
+  "ignorePatterns": [
+    // Generated: tools/gen_*.ts rewrite these, and their --check compares the bytes.
+    "src/py_aep/binary/chunk_types.ts",
+    "src/py_aep/data/text_animator_pool.ts",
+    "src/pyrt/codepages.ts",
+    "src/pyrt/unicodedata_tables.ts",
+    "samples/**",
+    ".upstream/**",
+    "dist/**",
+  ],
+}

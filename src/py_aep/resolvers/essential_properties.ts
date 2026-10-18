@@ -46,7 +46,10 @@ export function resolveEssentialPropertyControllers(layer: AVLayer): EssentialGr
  * Returns `null` when the controller stores no source comp/layer, the comp
  * is missing, or no layer matches the stored `layerId`.
  */
-export function _resolveControllerSourceLayer(project: Project, controller: EssentialGraphicsController): AVLayer | null {
+export function _resolveControllerSourceLayer(
+  project: Project,
+  controller: EssentialGraphicsController,
+): AVLayer | null {
   if (controller.sourceCompId == null || controller.sourceLayerId == null) return null;
   const comp = project.items.get(controller.sourceCompId) ?? null;
   if (!(comp instanceof _composition.CompItem)) return null;
@@ -67,7 +70,11 @@ export function _resolveControllerSourceLayer(project: Project, controller: Esse
  * name - a disagreement (stale index) returns `null` so the caller falls
  * back to by-name resolution.
  */
-export function _resolveIndexedChild(group: PropertyGroup, ref: SourcePropertyRef, project: Project): Property | PropertyGroup | null {
+export function _resolveIndexedChild(
+  group: PropertyGroup,
+  ref: SourcePropertyRef,
+  project: Project,
+): Property | PropertyGroup | null {
   if (ref.propIndex == null) return null;
   if (group.isEffect) {
     const defs = project._effectParamDefs.get(group.matchName);

@@ -26,7 +26,6 @@ import { _eulerXyz } from "./transform.ts";
 import type { Keyframe, PropertyValue } from "../models/properties/keyframe.ts";
 import type { KeyframeEase } from "../models/properties/keyframe_ease.ts";
 
-
 export const _DEFAULT_INFLUENCE = 100.0 / 6.0; // 16.6667 %
 
 // ---------------------------------------------------------------------------
@@ -531,10 +530,7 @@ export function _unit(x: number, y: number): _Point2 {
 
 export function _fitPoint(curve: _Point2[], u: number): _Point2 {
   const [p0, p1, p2, p3] = curve;
-  return [
-    _cubic1d(p0[0], p1[0], p2[0], p3[0], u),
-    _cubic1d(p0[1], p1[1], p2[1], p3[1], u),
-  ];
+  return [_cubic1d(p0[0], p1[0], p2[0], p3[0], u), _cubic1d(p0[1], p1[1], p2[1], p3[1], u)];
 }
 
 /** Schneider's chord-length parameterization of `points[first:last+1]`. */
@@ -707,12 +703,7 @@ export function _tOnAxis(curve: _Point2[], axis: number, value: number): number 
   if (value > v3 || Math.abs(value - v3) < _EPS) return 1.0;
   const v1 = curve[1][axis];
   const v2 = curve[2][axis];
-  const t = _solveCubic(
-    (v1 - v2) * 3.0 - v0 + v3,
-    (v0 - (v1 + v1) + v2) * 3.0,
-    (v1 - v0) * 3.0,
-    v0 - value,
-  );
+  const t = _solveCubic((v1 - v2) * 3.0 - v0 + v3, (v0 - (v1 + v1) + v2) * 3.0, (v1 - v0) * 3.0, v0 - value);
   // No root in [0, 1] only happens on a degenerate curve; AE's result is
   // undefined there, so take the linear estimate instead.
   return t == null ? (value - v0) / (v3 - v0) : t;
@@ -1099,9 +1090,7 @@ export function rovingKeyframeTimes(keyframes: Keyframe[], metric: ArcMetric): M
   // the first anchor leaves the flag on the key that becomes first, and AE
   // 2026 keeps it there and times the run from that key.
   const final = keyframes.length - 1;
-  const anchors = [...keyframes.entries()]
-    .filter(([i, kf]) => !kf.roving || [0, final].includes(i))
-    .map(([i]) => i);
+  const anchors = [...keyframes.entries()].filter(([i, kf]) => !kf.roving || [0, final].includes(i)).map(([i]) => i);
   if (anchors.length < 2) return result;
   for (let k = 0; k < anchors.length - 1; k++) {
     const start = anchors[k];
@@ -1120,20 +1109,9 @@ export function rovingKeyframeTimes(keyframes: Keyframe[], metric: ArcMetric): M
     const held = [outType, inType].includes(KeyframeInterpolationType.HOLD);
     let curve: _Point2[] | null = null;
     let timebase = 0.0;
-    if (
-      !held &&
-      !(outType === KeyframeInterpolationType.LINEAR && inType === KeyframeInterpolationType.LINEAR)
-    ) {
+    if (!held && !(outType === KeyframeInterpolationType.LINEAR && inType === KeyframeInterpolationType.LINEAR)) {
       timebase = first._timebase;
-      curve = _distanceCurve(
-        (units1 - units0) / timebase,
-        total,
-        first,
-        last,
-        outType,
-        inType,
-        metric.speedDivisor,
-      );
+      curve = _distanceCurve((units1 - units0) / timebase, total, first, last, outType, inType, metric.speedDivisor);
     }
     let travelled = 0.0;
     for (let index = start + 1; index < end; index++) {
@@ -1173,7 +1151,11 @@ export function _rovingUnits(
  * asked for (and an auto-bezier key's neighbours) are read: evaluating
  * one segment must not walk every keyframe of a long track.
  */
-export function _spatialTangents(keyframes: Keyframe[], first: number, last: number): Map<number, [number[], number[]]> {
+export function _spatialTangents(
+  keyframes: Keyframe[],
+  first: number,
+  last: number,
+): Map<number, [number[], number[]]> {
   const result = new Map<number, [number[], number[]]>();
   for (let i = first; i <= last; i++) {
     const kf = keyframes[i];
@@ -1186,7 +1168,10 @@ export function _spatialTangents(keyframes: Keyframe[], first: number, last: num
     const zero = new Array<number>((kf._storedValue as number[]).length).fill(0.0);
     const outTangent = kf.outSpatialTangent;
     const inTangent = kf.inSpatialTangent;
-    result.set(i, [outTangent != null && outTangent.length > 0 ? outTangent : zero, inTangent != null && inTangent.length > 0 ? inTangent : zero]);
+    result.set(i, [
+      outTangent != null && outTangent.length > 0 ? outTangent : zero,
+      inTangent != null && inTangent.length > 0 ? inTangent : zero,
+    ]);
   }
   return result;
 }
@@ -1252,7 +1237,12 @@ export function _segmentSpline(
  * The arc splines of the segments from `keyframes[start]` to
  * `keyframes[end]`, and their total length (summed left to right).
  */
-export function _runSplines(keyframes: Keyframe[], start: number, end: number, metric: ArcMetric): [_ArcSpline[], number] {
+export function _runSplines(
+  keyframes: Keyframe[],
+  start: number,
+  end: number,
+  metric: ArcMetric,
+): [_ArcSpline[], number] {
   const tangents = _spatialTangents(keyframes, start, end);
   const splines: _ArcSpline[] = [];
   for (let i = start; i < end; i++) splines.push(_segmentSpline(keyframes, i, tangents, metric));
@@ -1342,7 +1332,12 @@ export function _pathSpeed(keyframes: Keyframe[], low: number, high: number, met
  * @returns `(index, u)`: the segment starting at `keyframes[index]`, and the curve parameter along
  *   it.
  */
-export function spatialLocation(time: number, keyframes: Keyframe[], left: number, metric: ArcMetric): [number, number] {
+export function spatialLocation(
+  time: number,
+  keyframes: Keyframe[],
+  left: number,
+  metric: ArcMetric,
+): [number, number] {
   const [start, end] = _runBounds(keyframes, left);
   const [splines, total] = _runSplines(keyframes, start, end, metric);
   const first = keyframes[start];
@@ -1390,12 +1385,20 @@ export function motionPathDirection(time: number, keyframes: Keyframe[], metric:
   const mt = 1 - u;
   let direction = Array.from(
     { length: p0.length },
-    (_v, d) =>
-      3 * mt * mt * (p1[d] - p0[d]) + 6 * mt * u * (p2[d] - p1[d]) + 3 * u * u * (p3[d] - p2[d]),
+    (_v, d) => 3 * mt * mt * (p1[d] - p0[d]) + 6 * mt * u * (p2[d] - p1[d]) + 3 * u * u * (p3[d] - p2[d]),
   );
   // A handle of zero length stalls the curve at its end: the path then
   // heads toward the next control point along.
-  const fallbacks: [number[], number[]][] = u < 0.5 ? [[p2, p0], [p3, p0]] : [[p3, p1], [p3, p0]];
+  const fallbacks: [number[], number[]][] =
+    u < 0.5
+      ? [
+          [p2, p0],
+          [p3, p0],
+        ]
+      : [
+          [p3, p1],
+          [p3, p0],
+        ];
   for (const [head, tail] of fallbacks) {
     if (direction.some((c) => Math.abs(c) > 1e-9)) break;
     direction = Array.from({ length: p0.length }, (_v, d) => head[d] - tail[d]);
@@ -1429,25 +1432,15 @@ export function motionPathDirection(time: number, keyframes: Keyframe[], metric:
  * @param t0 - `kfLeft`'s layer time.
  * @param t1 - `kfRight`'s layer time.
  */
-export function _singleProgress(
-  kfLeft: Keyframe,
-  kfRight: Keyframe,
-  time: number,
-  t0: number,
-  t1: number,
-): number {
+export function _singleProgress(kfLeft: Keyframe, kfRight: Keyframe, time: number, t0: number, t1: number): number {
   // Bound to locals: `in/out_temporal_ease` re-derives its list on every
   // read, and this runs once per interpolated frame.
   const outEase = kfLeft.outTemporalEase;
   const inEase = kfRight.inTemporalEase;
-  const easing = _progressEasing(
-    outEase?.length > 0 ? outEase[0] : null,
-    inEase?.length > 0 ? inEase[0] : null,
-    {
-      outLinear: kfLeft.outInterpolationType === KeyframeInterpolationType.LINEAR,
-      inLinear: kfRight.inInterpolationType === KeyframeInterpolationType.LINEAR,
-    },
-  );
+  const easing = _progressEasing(outEase?.length > 0 ? outEase[0] : null, inEase?.length > 0 ? inEase[0] : null, {
+    outLinear: kfLeft.outInterpolationType === KeyframeInterpolationType.LINEAR,
+    inLinear: kfRight.inInterpolationType === KeyframeInterpolationType.LINEAR,
+  });
   const x = (time - t0) / (t1 - t0);
   return easing != null ? easing.get(x) : x;
 }
@@ -1548,9 +1541,7 @@ export function slerpOrientation(start: number[], end: number[], progress: numbe
   const sinTheta = Math.sin(theta);
   const s0 = Math.sin((1.0 - progress) * theta) / sinTheta;
   const s1 = Math.sin(progress * theta) / sinTheta;
-  return quaternionToEuler(
-    q0.map((a, i) => a * s0 + q1[i] * s1),
-  );
+  return quaternionToEuler(q0.map((a, i) => a * s0 + q1[i] * s1));
 }
 
 export function _lerpPoints(a: number[][], b: number[][], progress: number): number[][] {
@@ -1661,12 +1652,7 @@ export function _resamplePath(
       }
       continue;
     }
-    let cubic: _Cubic = [
-      start,
-      [start[0] + outT[0], start[1] + outT[1]],
-      [end[0] + inT[0], end[1] + inT[1]],
-      end,
-    ];
+    let cubic: _Cubic = [start, [start[0] + outT[0], start[1] + outT[1]], [end[0] + inT[0], end[1] + inT[1]], end];
     let consumed = 0.0;
     for (const cut of cuts[index]) {
       const [left, right] = _splitCubic(cubic, (cut - consumed) / (1.0 - consumed));
@@ -1724,10 +1710,7 @@ export function interpolateShapes(start: Shape, end: Shape, progress: number): S
   // blended at the same progress (measured on AE 2026); each key's come
   // from its handles as stored, before any resampling.
   const tensions = start._isRotoBezier()
-    ? [
-        keyframeTensions(start._ownTensions(), inA, outA),
-        keyframeTensions(end._ownTensions(), inB, outB),
-      ]
+    ? [keyframeTensions(start._ownTensions(), inA, outA), keyframeTensions(end._ownTensions(), inB, outB)]
     : null;
   const target = Math.max(vertsA.length, vertsB.length);
   if (vertsA.length < target) {
@@ -1951,7 +1934,7 @@ export function interpolateKeyframes(
   // side facing an EASED in side still gets that ease (measured on AE
   // 2026: Opacity 0->100 over 2 s with a LINEAR out and a 90 % influence in
   // side reaches 87.5 at t=1, where a lerp gives 50).
-  if ((outType === KeyframeInterpolationType.BEZIER || outType === KeyframeInterpolationType.LINEAR)) {
+  if (outType === KeyframeInterpolationType.BEZIER || outType === KeyframeInterpolationType.LINEAR) {
     // Non-spatial: per-dimension 1D bezier
     if (isColor && Array.isArray(v0) && Array.isArray(v1)) {
       return _interpolateColor(kfLeft, kfRight, time, t0, t1, v0, v1);
@@ -1989,10 +1972,8 @@ export function interpolateKeyframes(
           result.push(v0[d]);
           continue;
         }
-        const outE =
-          d < kfLeft.outTemporalEase.length ? kfLeft.outTemporalEase[d] : kfLeft.outTemporalEase[0];
-        const inE =
-          d < kfRight.inTemporalEase.length ? kfRight.inTemporalEase[d] : kfRight.inTemporalEase[0];
+        const outE = d < kfLeft.outTemporalEase.length ? kfLeft.outTemporalEase[d] : kfLeft.outTemporalEase[0];
+        const inE = d < kfRight.inTemporalEase.length ? kfRight.inTemporalEase[d] : kfRight.inTemporalEase[0];
         result.push(_interpolateBezier1d(time, t0, t1, v0[d], v1[d], outE, inE));
       }
       return result;

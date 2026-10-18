@@ -43,14 +43,65 @@ import {
 } from "../../../pyrt/index.ts";
 import { CosField, CosName, cosGet, runSpans } from "../../cos/index.ts";
 import type { CosDict, CosNode } from "../../cos/cos.ts";
-import { _extract, boolField, enumField, floatField, intField, enumFromCos, type CosEnum, type CosFieldExtras, type InstanceValue } from "../../cos/descriptors.ts";
-import { cosDict, cosFloat, cosGetOr, cosIn, cosInsert, cosInt, cosIter, cosNum, cosPop, cosSetdefault, cosSetitem, is, pyAdd, pyInt, pyNum, pyNumber, pySub, type PyNum } from "../../cos/kinds.ts";
+import {
+  _extract,
+  boolField,
+  enumField,
+  floatField,
+  intField,
+  enumFromCos,
+  type CosEnum,
+  type CosFieldExtras,
+  type InstanceValue,
+} from "../../cos/descriptors.ts";
+import {
+  cosDict,
+  cosFloat,
+  cosGetOr,
+  cosIn,
+  cosInsert,
+  cosInt,
+  cosIter,
+  cosNum,
+  cosPop,
+  cosSetdefault,
+  cosSetitem,
+  is,
+  pyAdd,
+  pyInt,
+  pyNum,
+  pyNumber,
+  pySub,
+  type PyNum,
+} from "../../cos/kinds.ts";
 import { cacheLine, charStyle, fontRef, read } from "../../cos/schema.ts";
-import { AutoKernType, BaselineDirection, DigitSet, FontBaselineOption, FontCapsOption, LeadingType, LineJoinType, ParagraphDirection, ParagraphJustification } from "../../enums/index.ts";
+import {
+  AutoKernType,
+  BaselineDirection,
+  DigitSet,
+  FontBaselineOption,
+  FontCapsOption,
+  LeadingType,
+  LineJoinType,
+  ParagraphDirection,
+  ParagraphJustification,
+} from "../../enums/index.ts";
 import type { ComposerEngine } from "../../enums/index.ts";
 import { CompositionUnsupported, composeLines } from "../../resolvers/text_composition.ts";
 import { fontVersionString } from "../../svg/fonts.ts";
-import { validateBool, validateEnum, validateFontName, validateNormalizedFloat, validateNumber, validatePositiveNonzeroNumber, validatePositiveNumber, validateRgbColor, validateS4, validateText, type InstanceValidator } from "../validators.ts";
+import {
+  validateBool,
+  validateEnum,
+  validateFontName,
+  validateNormalizedFloat,
+  validateNumber,
+  validatePositiveNonzeroNumber,
+  validatePositiveNumber,
+  validateRgbColor,
+  validateS4,
+  validateText,
+  type InstanceValidator,
+} from "../validators.ts";
 import { FontObject } from "./font_object.ts";
 import type { TextDocument } from "./text_document.ts";
 
@@ -326,7 +377,13 @@ export function _buildFontEntry(postScriptName: string): CosDict {
       "0",
       new Map<string, CosNode>([
         ["99", new CosName("CoolTypeFont")],
-        ["0", new Map<string, CosNode>([["0", postScriptName], ["2", 1]])],
+        [
+          "0",
+          new Map<string, CosNode>([
+            ["0", postScriptName],
+            ["2", 1],
+          ]),
+        ],
       ]),
     ],
   ]);
@@ -401,7 +458,7 @@ export function _registerFontAt(
   if (Array.isArray(sessions)) {
     let appended = false;
     for (const session of sessions) {
-      const records = session instanceof Map ? session.get("4") ?? null : null;
+      const records = session instanceof Map ? (session.get("4") ?? null) : null;
       if (!Array.isArray(records)) continue;
       for (const record of records) {
         if (record instanceof Map) bump(record);
@@ -438,9 +495,7 @@ export function _replaceLayerFont(docs: TextDocument[], fromName: string, toName
     if (font.postScriptName === fromName) fromIndices.add(i);
   }
   if (!fromIndices.size) return false;
-  const referenced = docs.some((doc) =>
-    _charRunSpans(doc).some(([, , style]) => cosIn(style.get("0"), fromIndices)),
-  );
+  const referenced = docs.some((doc) => _charRunSpans(doc).some(([, , style]) => cosIn(style.get("0"), fromIndices)));
   if (!referenced) return false;
 
   let toIndex: number | null = null;
@@ -484,7 +539,7 @@ export function _repointUsedFontRecord(
   const sessions = cosGet(doc._cosData, "1", "5");
   if (!Array.isArray(sessions)) return;
   for (const session of sessions) {
-    const records = session instanceof Map ? session.get("4") ?? null : null;
+    const records = session instanceof Map ? (session.get("4") ?? null) : null;
     if (!Array.isArray(records)) continue;
     for (const record of records) {
       if (!(record instanceof Map) || !cosIn(record.get("0"), fromIndices)) continue;
@@ -697,10 +752,20 @@ export function _rebuildKernRuns(doc: TextDocument, values: CosNode[]): void {
     if (values[i] == null) {
       let j = i;
       while (j < total && values[j] == null) j += 1;
-      runs.push(new Map<string, CosNode>([["0", new Map()], ["1", j - i]]));
+      runs.push(
+        new Map<string, CosNode>([
+          ["0", new Map()],
+          ["1", j - i],
+        ]),
+      );
       i = j;
     } else {
-      runs.push(new Map<string, CosNode>([["0", new Map([["0", values[i]]])], ["1", 1]]));
+      runs.push(
+        new Map<string, CosNode>([
+          ["0", new Map([["0", values[i]]])],
+          ["1", 1],
+        ]),
+      );
       i += 1;
     }
   }
@@ -974,7 +1039,11 @@ export class RangeField<T extends InstanceValue> {
    * probed AE 2026).
    */
   static int(kind: RangeKind, key: string, kwargs: RangeFieldExtras<number> = {}): RangeField<number> {
-    return new RangeField<number>(kind, key, { transform: cosInt, reverse: (x: number) => Math.round(x) + 0, ...kwargs });
+    return new RangeField<number>(kind, key, {
+      transform: cosInt,
+      reverse: (x: number) => Math.round(x) + 0,
+      ...kwargs,
+    });
   }
 
   /**
@@ -983,7 +1052,12 @@ export class RangeField<T extends InstanceValue> {
    * `fromBinary`. Without the check a stray int serializes a value
    * that reads back as `None`/undefined.
    */
-  static enum<V extends number>(enumCls: CosEnum<V>, kind: RangeKind, key: string, kwargs: RangeFieldExtras<V> = {}): RangeField<V> {
+  static enum<V extends number>(
+    enumCls: CosEnum<V>,
+    kind: RangeKind,
+    key: string,
+    kwargs: RangeFieldExtras<V> = {},
+  ): RangeField<V> {
     return new RangeField<V>(kind, key, {
       transform: (raw: CosNode) => enumFromCos(enumCls, raw),
       reverse: (value: V) => enumCls.toBinary(value),
@@ -1032,17 +1106,29 @@ export class DocumentWideCosField<T extends InstanceValue> extends CosField<T, S
   }
 
   /** `CosField.bool`: a boolean flag on the document's first char / para style. */
-  static bool<D extends boolean | null>(dictAttr: StyleAttr, key: string, kw: CosFieldExtras<D, TextDocument>): DocumentWideCosField<boolean | D> {
+  static bool<D extends boolean | null>(
+    dictAttr: StyleAttr,
+    key: string,
+    kw: CosFieldExtras<D, TextDocument>,
+  ): DocumentWideCosField<boolean | D> {
     return new DocumentWideCosField(dictAttr, key, boolField(kw));
   }
 
   /** `CosField.float`: a float style key, coerced to float in both directions. */
-  static float<D extends number | null>(dictAttr: StyleAttr, key: string, kw: CosFieldExtras<D, TextDocument>): DocumentWideCosField<number | D> {
+  static float<D extends number | null>(
+    dictAttr: StyleAttr,
+    key: string,
+    kw: CosFieldExtras<D, TextDocument>,
+  ): DocumentWideCosField<number | D> {
     return new DocumentWideCosField(dictAttr, key, floatField(kw));
   }
 
   /** `CosField.int`: an integer-stored style key. */
-  static int<D extends number | null>(dictAttr: StyleAttr, key: string, kw: CosFieldExtras<D, TextDocument>): DocumentWideCosField<number | D> {
+  static int<D extends number | null>(
+    dictAttr: StyleAttr,
+    key: string,
+    kw: CosFieldExtras<D, TextDocument>,
+  ): DocumentWideCosField<number | D> {
     return new DocumentWideCosField(dictAttr, key, intField(kw));
   }
 
@@ -1052,7 +1138,12 @@ export class DocumentWideCosField<T extends InstanceValue> extends CosField<T, S
    * not validate, so a stray int would serialize a value that reads back
    * as `null`/undefined. Reads stay tolerant via `fromBinary`.
    */
-  static enum<V extends number, D extends V | null>(enumCls: CosEnum<V>, dictAttr: StyleAttr, key: string, kw: CosFieldExtras<D, TextDocument>): DocumentWideCosField<V | D> {
+  static enum<V extends number, D extends V | null>(
+    enumCls: CosEnum<V>,
+    dictAttr: StyleAttr,
+    key: string,
+    kw: CosFieldExtras<D, TextDocument>,
+  ): DocumentWideCosField<V | D> {
     return new DocumentWideCosField(dictAttr, key, enumField(enumCls, { validate: validateEnum(enumCls), ...kw }));
   }
 }
@@ -1290,7 +1381,13 @@ export class CharacterRange extends _TextRange {
    * Uniform value -\> that value; disagreement -\> `null`; every run
    * gated out -\> `null`.
    */
-  _resolveMixed<T>(kind: RangeKind, key: string, transform: (raw: CosNode) => T, default_: T | null, gate: string | null): T | null {
+  _resolveMixed<T>(
+    kind: RangeKind,
+    key: string,
+    transform: (raw: CosNode) => T,
+    default_: T | null,
+    gate: string | null,
+  ): T | null {
     let payloads = this._overlapping(this._spansFor(kind));
     if (gate != null) {
       payloads = payloads.filter((p) => truthy(p.get(gate) ?? null));
@@ -1658,14 +1755,26 @@ export class CharacterRange extends _TextRange {
     descriptor(this, "fontCapsOption", RangeField.enum(FontCapsOption, "char", "12"));
     descriptor(this, "fontBaselineOption", RangeField.enum(FontBaselineOption, "char", "13"));
     descriptor(this, "ligature", RangeField.bool("char", "18", { default: false }));
-    descriptor(this, "baselineDirection", RangeField.enum(BaselineDirection, "char", "35", { default: BaselineDirection.BASELINE_WITH_STREAM }));
+    descriptor(
+      this,
+      "baselineDirection",
+      RangeField.enum(BaselineDirection, "char", "35", { default: BaselineDirection.BASELINE_WITH_STREAM }),
+    );
     descriptor(this, "tsume", RangeField.float("char", "36", { default: 0.0, validate: validateNormalizedFloat }));
     descriptor(this, "noBreak", RangeField.bool("char", "52", { default: false }));
     descriptor(this, "applyFill", RangeField.bool("char", "56"));
     descriptor(this, "applyStroke", RangeField.bool("char", "57", { default: false }));
     descriptor(this, "strokeOverFill", RangeField.bool("char", "58", { default: true }));
-    descriptor(this, "lineJoinType", RangeField.enum(LineJoinType, "char", "62", { default: LineJoinType.LINE_JOIN_MITER }));
-    descriptor(this, "strokeWidth", RangeField.float("char", "63", { default: 1.0, validate: validatePositiveNonzeroNumber }));
+    descriptor(
+      this,
+      "lineJoinType",
+      RangeField.enum(LineJoinType, "char", "62", { default: LineJoinType.LINE_JOIN_MITER }),
+    );
+    descriptor(
+      this,
+      "strokeWidth",
+      RangeField.float("char", "63", { default: 1.0, validate: validatePositiveNonzeroNumber }),
+    );
     descriptor(this, "digitSet", RangeField.enum(DigitSet, "char", "70", { default: DigitSet.DEFAULT_DIGITS }));
     descriptor(this, "justification", RangeField.enum(ParagraphJustification, "para", "0"));
     descriptor(this, "firstLineIndent", RangeField.float("para", "1", { default: 0.0, validate: validateNumber }));
@@ -1673,23 +1782,39 @@ export class CharacterRange extends _TextRange {
     descriptor(this, "endIndent", RangeField.float("para", "3", { default: 0.0, validate: validateNumber }));
     descriptor(this, "spaceBefore", RangeField.float("para", "4", { default: 0.0, validate: validateNumber }));
     descriptor(this, "spaceAfter", RangeField.float("para", "5", { default: 0.0, validate: validateNumber }));
-    descriptor(this, "leadingType", RangeField.enum(LeadingType, "para", "8", { default: LeadingType.ROMAN_LEADING_TYPE }));
+    descriptor(
+      this,
+      "leadingType",
+      RangeField.enum(LeadingType, "para", "8", { default: LeadingType.ROMAN_LEADING_TYPE }),
+    );
     descriptor(this, "autoHyphenate", RangeField.bool("para", "9"));
     descriptor(this, "hangingRoman", RangeField.bool("para", "21", { default: false }));
     descriptor(this, "everyLineComposer", RangeField.bool("para", "29", { default: false }));
-    descriptor(this, "direction", RangeField.enum(ParagraphDirection, "para", "33", { default: ParagraphDirection.DIRECTION_LEFT_TO_RIGHT }));
-    descriptor(this, "fillColor", new RangeField("char", "53", {
-      transform: _parseColor,
-      gate: "56",
-      reverse: _buildColorPaint,
-      validate: validateRgbColor,
-    }));
-    descriptor(this, "strokeColor", new RangeField("char", "54", {
-      transform: _parseColor,
-      gate: "57",
-      reverse: _buildColorPaint,
-      validate: validateRgbColor,
-    }));
+    descriptor(
+      this,
+      "direction",
+      RangeField.enum(ParagraphDirection, "para", "33", { default: ParagraphDirection.DIRECTION_LEFT_TO_RIGHT }),
+    );
+    descriptor(
+      this,
+      "fillColor",
+      new RangeField("char", "53", {
+        transform: _parseColor,
+        gate: "56",
+        reverse: _buildColorPaint,
+        validate: validateRgbColor,
+      }),
+    );
+    descriptor(
+      this,
+      "strokeColor",
+      new RangeField("char", "54", {
+        transform: _parseColor,
+        gate: "57",
+        reverse: _buildColorPaint,
+        validate: validateRgbColor,
+      }),
+    );
   }
 }
 

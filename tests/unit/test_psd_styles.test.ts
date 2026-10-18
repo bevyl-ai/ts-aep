@@ -2,20 +2,19 @@
 
 import { describe, expect, test } from "bun:test";
 
-
-import {
-  NotImplementedError,
-  Path,
-  contains,
-  getOrThrow,
-  len,
-  assert,
-  valueEquals,
-} from "../../src/pyrt/index.ts";
+import { NotImplementedError, Path, contains, getOrThrow, len, assert, valueEquals } from "../../src/pyrt/index.ts";
 import { Gradient } from "../../src/py_aep/models/properties/gradient.ts";
 import { PsdLayer, readPsdLayers, type PsdNode } from "../../src/py_aep/resolvers/psd_layers.ts";
 import { asInstance } from "../helpers.ts";
-import { type _Value, type PsdLayerStyles, _instanceBox, hasEnabledStyles, mergedStylesBounds, parseLayerStyles, readGlobalLight } from "../../src/py_aep/resolvers/psd_styles.ts";
+import {
+  type _Value,
+  type PsdLayerStyles,
+  _instanceBox,
+  hasEnabledStyles,
+  mergedStylesBounds,
+  parseLayerStyles,
+  readGlobalLight,
+} from "../../src/py_aep/resolvers/psd_styles.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { raises, warns } from "../support/pytest.ts";
 
@@ -153,15 +152,16 @@ describe("TestParseLayerStyles", () => {
     expect(contains(styles.enabled, "outerGlow")).toBe(false);
     expect(contains(styles.disabled, "outerGlow")).toBe(false);
     // A present=False pattern overlay is a plain skeleton (no params).
-    expect(
-      [...styles.values.keys()].some((mn: string) => mn.startsWith("patternFill/")),
-    ).toBe(false);
+    expect([...styles.values.keys()].some((mn: string) => mn.startsWith("patternFill/"))).toBe(false);
   });
 
   test("test_present_true_disabled_shadow_imports", () => {
     // present=True + enab=False: parameters import and the prefix lands
     // in `disabled` (AE writes tdsb 0x00 - psd_fill_opacity fixture).
-    const leaf = asInstance(getOrThrow(_leaves(ASSETS.div("psd_fill_opacity.psd")), "fill plus disabled shadow"), PsdLayer);
+    const leaf = asInstance(
+      getOrThrow(_leaves(ASSETS.div("psd_fill_opacity.psd")), "fill plus disabled shadow"),
+      PsdLayer,
+    );
     const styles = parseLayerStyles(leaf, [120.0, 30.0]);
     assert(styles != null);
     expect(contains(styles.disabled, "dropShadow")).toBe(true);
@@ -296,23 +296,11 @@ describe("TestMergedStylesBounds", () => {
     ["DrSh", new Map<string, _Value>([..._DS, ["blur", 10.0]]), [12, 12, 12, 12]],
     ["DrSh", new Map<string, _Value>([..._DS, ["blur", 0.0]]), [5, 5, 4, 4]],
     ["DrSh", new Map<string, _Value>([..._DS, ["blur", 1.0], ["Ckmt", 50.0]]), [8, 8, 7, 7]],
-    [
-      "DrSh",
-      new Map<string, _Value>([..._DS, ["blur", 10.0], ["Ckmt", 0.0], ["AntA", false]]),
-      [9, 9, 10, 10],
-    ],
+    ["DrSh", new Map<string, _Value>([..._DS, ["blur", 10.0], ["Ckmt", 0.0], ["AntA", false]]), [9, 9, 10, 10]],
     // Distance 11 along a 30 degree light: offsets (-9.53, 5.5) round
     // half away from zero to (-10, 6).
-    [
-      "DrSh",
-      new Map<string, _Value>([..._DS, ["blur", 35.0], ["Dstn", 11.0], ["lagl", 30.0]]),
-      [47, 31, 27, 43],
-    ],
-    [
-      "OrGl",
-      new Map<string, _Value>([..._OG, ["blur", 7.0], ["Ckmt", 8.0], ["GlwT", "PrBL"]]),
-      [12, 12, 11, 11],
-    ],
+    ["DrSh", new Map<string, _Value>([..._DS, ["blur", 35.0], ["Dstn", 11.0], ["lagl", 30.0]]), [47, 31, 27, 43]],
+    ["OrGl", new Map<string, _Value>([..._OG, ["blur", 7.0], ["Ckmt", 8.0], ["GlwT", "PrBL"]]), [12, 12, 11, 11]],
     ["OrGl", new Map<string, _Value>([..._OG, ["blur", 43.0], ["Ckmt", 50.0]]), [45, 45, 45, 45]],
     [
       "FrFX",
@@ -332,16 +320,8 @@ describe("TestMergedStylesBounds", () => {
       ]),
       [14, 14, 14, 14],
     ],
-    [
-      "ebbl",
-      new Map<string, _Value>([..._BV, ["bvlS", "Embs"], ["bvlT", "PrBL"], ["blur", 27.0]]),
-      [19, 19, 17, 17],
-    ],
-    [
-      "ebbl",
-      new Map<string, _Value>([..._BV, ["bvlS", "OtrB"], ["bvlT", "SfBL"], ["blur", 0.0]]),
-      [3, 3, 1, 1],
-    ],
+    ["ebbl", new Map<string, _Value>([..._BV, ["bvlS", "Embs"], ["bvlT", "PrBL"], ["blur", 27.0]]), [19, 19, 17, 17]],
+    ["ebbl", new Map<string, _Value>([..._BV, ["bvlS", "OtrB"], ["bvlT", "SfBL"], ["blur", 0.0]]), [3, 3, 1, 1]],
     [
       "ebbl",
       new Map<string, _Value>([..._BV, ["bvlS", "OtrB"], ["bvlT", "SfBL"], ["blur", 9.0], ["Sftn", 5.0]]),
@@ -349,13 +329,7 @@ describe("TestMergedStylesBounds", () => {
     ],
     [
       "ebbl",
-      new Map<string, _Value>([
-        ..._BV,
-        ["bvlS", "Embs"],
-        ["bvlT", "SfBL"],
-        ["blur", 9.0],
-        ["useShape", false],
-      ]),
+      new Map<string, _Value>([..._BV, ["bvlS", "Embs"], ["bvlT", "SfBL"], ["blur", 9.0], ["useShape", false]]),
       [6, 6, 6, 6],
     ],
   ])("test_style_pads_match_ae[%#]", (key: string, instance: Map<string, _Value>, pads: number[]) => {
@@ -365,13 +339,31 @@ describe("TestMergedStylesBounds", () => {
   });
 
   test.each([
-    ["FrFX", new Map<string, _Value>([["enab", true], ["Styl", "InsF"], ["Sz  ", 6.0]])],
     [
-      "ebbl",
-      new Map<string, _Value>([..._BV, ["bvlS", "InrB"], ["bvlT", "SfBL"], ["blur", 9.0], ["Sftn", 5.0]]),
+      "FrFX",
+      new Map<string, _Value>([
+        ["enab", true],
+        ["Styl", "InsF"],
+        ["Sz  ", 6.0],
+      ]),
     ],
-    ["IrSh", new Map<string, _Value>([["enab", true], ["blur", 21.0], ["Dstn", 10.0]])],
-    ["ChFX", new Map<string, _Value>([["enab", true], ["blur", 101.0], ["Dstn", 69.0]])],
+    ["ebbl", new Map<string, _Value>([..._BV, ["bvlS", "InrB"], ["bvlT", "SfBL"], ["blur", 9.0], ["Sftn", 5.0]])],
+    [
+      "IrSh",
+      new Map<string, _Value>([
+        ["enab", true],
+        ["blur", 21.0],
+        ["Dstn", 10.0],
+      ]),
+    ],
+    [
+      "ChFX",
+      new Map<string, _Value>([
+        ["enab", true],
+        ["blur", 101.0],
+        ["Dstn", 69.0],
+      ]),
+    ],
   ])("test_styles_inside_the_layer_do_not_grow_it[%#]", (key: string, instance: Map<string, _Value>) => {
     expect(_instanceBox(key, instance, [0, 0, 24, 25], 120.0, "Layer 1") == null).toBe(true);
   });
@@ -385,11 +377,7 @@ describe("TestMergedStylesBounds", () => {
 
   test("test_stroke_emboss_is_refused", () => {
     const instance = new Map<string, _Value>([..._BV, ["bvlS", "strokeEmboss"], ["bvlT", "SfBL"], ["blur", 9.0]]);
-    raises(
-      NotImplementedError,
-      () => _instanceBox("ebbl", instance, [0, 0, 24, 25], 120.0, "Layer 1"),
-      "strokeEmboss",
-    );
+    raises(NotImplementedError, () => _instanceBox("ebbl", instance, [0, 0, 24, 25], 120.0, "Layer 1"), "strokeEmboss");
   });
 
   test("test_sample_document_matches_ae", () => {
@@ -398,7 +386,10 @@ describe("TestMergedStylesBounds", () => {
     const angle = readGlobalLight(STYLED)[0];
     for (const name of ["Layer 1", "Layer 1 copy"]) {
       expect(
-        valueEquals(mergedStylesBounds(asInstance(getOrThrow(_leaves(STYLED), name), PsdLayer), angle), [-45, -45, 69, 70]),
+        valueEquals(
+          mergedStylesBounds(asInstance(getOrThrow(_leaves(STYLED), name), PsdLayer), angle),
+          [-45, -45, 69, 70],
+        ),
       ).toBe(true);
     }
   });

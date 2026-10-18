@@ -8,7 +8,16 @@
 
 import { describe, expect, test } from "bun:test";
 
-import { Path, contains, getOrThrow, KeyError, len, valueEquals, StopIteration, ValueError } from "../../src/pyrt/index.ts";
+import {
+  Path,
+  contains,
+  getOrThrow,
+  KeyError,
+  len,
+  valueEquals,
+  StopIteration,
+  ValueError,
+} from "../../src/pyrt/index.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { getRqi, loadExpected, parseProject } from "../conftest.ts";
 import { ConvertToLinearLight, GetSettingsFormat } from "../../src/py_aep/enums/index.ts";

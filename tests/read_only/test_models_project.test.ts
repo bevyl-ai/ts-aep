@@ -335,7 +335,12 @@ describe("TestDynamicLinkGUID", () => {
     if (first.done) throw new StopIteration();
     const guid = first.value.dynamicLinkGuid;
     const groups = split(guid, "-");
-    expect(valueEquals(groups.map((g) => len(g)), [8, 4, 4, 4, 12])).toBe(true);
+    expect(
+      valueEquals(
+        groups.map((g) => len(g)),
+        [8, 4, 4, 4, 12],
+      ),
+    ).toBe(true);
     expect(guid).toBe(guid.toLowerCase());
   });
 });

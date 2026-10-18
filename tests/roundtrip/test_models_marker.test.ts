@@ -145,9 +145,7 @@ describe("TestRoundtripMarkerDuration", () => {
     const comp2 = getComp(parseProjectFresh(out), "label_3");
     const new_ = comp2.markers.find((m) => m.comment === "w_new");
     if (new_ === undefined) throw new StopIteration();
-    expect(
-      valueEquals(Bytes.slice(new_._nmhd.tobytes(), 8, 16), Bytes.fromHex("000005dc00000258")),
-    ).toBe(true);
+    expect(valueEquals(Bytes.slice(new_._nmhd.tobytes(), 8, 16), Bytes.fromHex("000005dc00000258"))).toBe(true);
     expect(new_.duration).toBe(2.5);
   });
 });
@@ -295,8 +293,26 @@ describe("TestRoundtripMarkerCuePointName", () => {
 describe("TestMarkerParams", () => {
   /** Tests for MarkerValue cue-point params. */
   test("test_constructor_params", () => {
-    const marker = new MarkerValue("c", undefined, undefined, undefined, undefined, new Map([["k1", "v1"], ["k2", "v2"]]));
-    expect(valueEquals(marker.params, new Map([["k1", "v1"], ["k2", "v2"]]))).toBe(true);
+    const marker = new MarkerValue(
+      "c",
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      new Map([
+        ["k1", "v1"],
+        ["k2", "v2"],
+      ]),
+    );
+    expect(
+      valueEquals(
+        marker.params,
+        new Map([
+          ["k1", "v1"],
+          ["k2", "v2"],
+        ]),
+      ),
+    ).toBe(true);
   });
 
   test("test_constructor_params_default_empty", () => {
@@ -321,7 +337,17 @@ describe("TestMarkerParams", () => {
     const mp = comp.layers[0].property("ADBE Marker");
     mp.setValueAtTime(
       at(mp.keyframes, -1).time + 1.0,
-      new MarkerValue("with params", undefined, undefined, undefined, undefined, new Map([["k1", "v1"], ["k2", "v2"]])),
+      new MarkerValue(
+        "with params",
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        new Map([
+          ["k1", "v1"],
+          ["k2", "v2"],
+        ]),
+      ),
     );
     const out = tmpPath.div("marker_params.aep");
     project.save(out);
@@ -330,7 +356,15 @@ describe("TestMarkerParams", () => {
     const kf2 = mp2.keyframes.find((k) => k.value.comment === "with params");
     if (kf2 === undefined) throw new StopIteration();
     const marker2 = kf2.value;
-    expect(valueEquals(marker2.params, new Map([["k1", "v1"], ["k2", "v2"]]))).toBe(true);
+    expect(
+      valueEquals(
+        marker2.params,
+        new Map([
+          ["k1", "v1"],
+          ["k2", "v2"],
+        ]),
+      ),
+    ).toBe(true);
     // AE ignores params unless NmHd carries the pair count.
     expect(marker2._nmhd.numParams).toBe(2);
   });
@@ -341,12 +375,23 @@ describe("TestMarkerParams", () => {
     const marker = getFirstLayerMarker(project, "layer_multiple_markers");
     expect(valueEquals(marker.params, new Map())).toBe(true);
 
-    marker.params = new Map([["k1", "v1"], ["k2", "v2"]]);
+    marker.params = new Map([
+      ["k1", "v1"],
+      ["k2", "v2"],
+    ]);
     const out = tmpPath.div("marker_params_grow.aep");
     project.save(out);
     const project2 = parseProjectFresh(out);
     const marker2 = getFirstLayerMarker(project2, "layer_multiple_markers");
-    expect(valueEquals(marker2.params, new Map([["k1", "v1"], ["k2", "v2"]]))).toBe(true);
+    expect(
+      valueEquals(
+        marker2.params,
+        new Map([
+          ["k1", "v1"],
+          ["k2", "v2"],
+        ]),
+      ),
+    ).toBe(true);
     // AE ignores params unless NmHd carries the pair count.
     expect(marker2._nmhd.numParams).toBe(2);
 
@@ -375,7 +420,10 @@ describe("TestMarkerParams", () => {
     const boundKf = mp.keyframes.find((k) => k.value.comment === "late");
     if (boundKf === undefined) throw new StopIteration();
     const bound = boundKf.value;
-    bound.params = new Map([["a", "1"], ["b", "2"]]);
+    bound.params = new Map([
+      ["a", "1"],
+      ["b", "2"],
+    ]);
     const out = tmpPath.div("marker_params_late.aep");
     project.save(out);
     const comp2 = getComp(parseProjectFresh(out), "layer_multiple_markers");
@@ -383,7 +431,15 @@ describe("TestMarkerParams", () => {
     const kf2 = mp2.keyframes.find((k) => k.value.comment === "late");
     if (kf2 === undefined) throw new StopIteration();
     const marker2 = kf2.value;
-    expect(valueEquals(marker2.params, new Map([["a", "1"], ["b", "2"]]))).toBe(true);
+    expect(
+      valueEquals(
+        marker2.params,
+        new Map([
+          ["a", "1"],
+          ["b", "2"],
+        ]),
+      ),
+    ).toBe(true);
   });
 
   test("test_params_set_on_unbound_marker", () => {

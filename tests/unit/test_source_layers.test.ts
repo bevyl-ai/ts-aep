@@ -12,7 +12,6 @@ import { psdLeafLayers, resolveAiLayer, resolvePsdLayer } from "../../src/py_aep
 import { Path, valueEquals, compositeKey, ValueError } from "../../src/pyrt/index.ts";
 import { raises } from "../support/pytest.ts";
 
-
 // Python: Path(__file__).parent.parent.parent / "samples" / "assets" (file is in tests/unit).
 const ASSETS = new Path(import.meta.dir).parent.parent.div("samples").div("assets");
 
@@ -67,12 +66,21 @@ describe("TestResolvePsdLayer", () => {
   });
 
   test.each([[-1], [4]])("test_out_of_range_lists_available[%#]", (index) => {
-    raises(ValueError, () => resolvePsdLayer(ASSETS.div("choose_layer.psd"), index), String.raw`\['twin', 'inner', 'twin', 'solo'\]`);
+    raises(
+      ValueError,
+      () => resolvePsdLayer(ASSETS.div("choose_layer.psd"), index),
+      String.raw`\['twin', 'inner', 'twin', 'solo'\]`,
+    );
   });
 
   test("test_leaves_are_document_order", () => {
     const leaves = psdLeafLayers(ASSETS.div("choose_layer.psd"));
-    expect(valueEquals(leaves.map((leaf) => leaf.recordIndex), [0, 1, 3, 5])).toBe(true);
+    expect(
+      valueEquals(
+        leaves.map((leaf) => leaf.recordIndex),
+        [0, 1, 3, 5],
+      ),
+    ).toBe(true);
   });
 });
 
@@ -83,19 +91,22 @@ describe("TestResolvePsdLayer", () => {
  * surface every 16-bit layered PSD as FlattenedPsdError.
  */
 describe("TestPsd16BitLayers", () => {
-  test.each([["psd_layer_styles.psd"], ["psd_layer_styles_variant.psd"]])("test_16bit_leaves_read_from_lr16[%#]", (name) => {
-    const leaves = psdLeafLayers(ASSETS.div(name));
-    expect(
-      valueEquals(
-        leaves.map((leaf) => [leaf.name, leaf.layerId, leaf.recordIndex]),
-        [
-          ["Layer 1", 2, 0],
-          ["Layer 1 copy", 4, 1],
-        ],
-      ),
-    ).toBe(true);
-    expect(leaves.every((leaf) => valueEquals(leaf.bounds, [0, 0, 24, 25]))).toBe(true);
-  });
+  test.each([["psd_layer_styles.psd"], ["psd_layer_styles_variant.psd"]])(
+    "test_16bit_leaves_read_from_lr16[%#]",
+    (name) => {
+      const leaves = psdLeafLayers(ASSETS.div(name));
+      expect(
+        valueEquals(
+          leaves.map((leaf) => [leaf.name, leaf.layerId, leaf.recordIndex]),
+          [
+            ["Layer 1", 2, 0],
+            ["Layer 1 copy", 4, 1],
+          ],
+        ),
+      ).toBe(true);
+      expect(leaves.every((leaf) => valueEquals(leaf.bounds, [0, 0, 24, 25]))).toBe(true);
+    },
+  );
 
   test("test_32bit_leaves_read_from_lr32", () => {
     // A 32-bit document keeps its records in the global Lr32 block.
@@ -123,7 +134,10 @@ describe("TestResolveAiLayer", () => {
     // is bottom-first.
     const layers = [new AiLayer(35, "Calque 1", true), new AiLayer(36, "Calque 2", true)];
     // AiLayer is a NamedTuple (tuple equality); py_eq has no __eq__ on it, so compare as plain tuples.
-    const asTuples = ([ls, i]: [AiLayer[], number]): [(number | string | boolean)[][], number] => [ls.map((l) => [...l]), i];
+    const asTuples = ([ls, i]: [AiLayer[], number]): [(number | string | boolean)[][], number] => [
+      ls.map((l) => [...l]),
+      i,
+    ];
     expect(valueEquals(asTuples(resolveAiLayer(ASSETS.div("ai.ai"), 0)), asTuples([layers, 1]))).toBe(true);
     expect(valueEquals(asTuples(resolveAiLayer(ASSETS.div("ai.ai"), 1)), asTuples([layers, 0]))).toBe(true);
   });

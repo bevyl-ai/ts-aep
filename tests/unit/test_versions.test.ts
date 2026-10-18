@@ -9,7 +9,6 @@ import { validateAep } from "../../src/py_aep/cli/validate.ts";
 import { Path, warn } from "../../src/pyrt/index.ts";
 import { skip } from "../support/pytest.ts";
 
-
 /** Path(__file__).parent.parent.parent / "samples" / "versions" */
 const VERSIONS_DIR = new Path(import.meta.path).parent.parent.parent.div("samples", "versions");
 

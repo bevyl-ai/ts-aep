@@ -46,9 +46,7 @@ export const MAC_EPOCH_OFFSET = 2082844800;
  */
 export function toDividendDivisor(value: number): [number, number] {
   if (!(_INT32_MIN <= value && value <= _INT32_MAX)) {
-    throw new ValueError(
-      `ratio value ${floatRepr(value)} is out of range (must be within +/-${_INT32_MAX})`,
-    );
+    throw new ValueError(`ratio value ${floatRepr(value)} is out of range (must be within +/-${_INT32_MAX})`);
   }
   // |dividend| ~= |value| * denominator, so capping the denominator at
   // INT32_MAX // (|value| + 2) keeps the dividend strictly inside int32.
@@ -138,7 +136,11 @@ export type WriteFmtOptions = { endian?: string };
 function _isWriteFmtOptions(v: struct.PackValue | WriteFmtOptions | undefined): v is WriteFmtOptions {
   return v != null && typeof v === "object" && Object.getPrototypeOf(v) === Object.prototype;
 }
-export function writeFmt(fp: ByteStream, fmt: string, ...args: struct.PackValue[] | [...struct.PackValue[], WriteFmtOptions]): number {
+export function writeFmt(
+  fp: ByteStream,
+  fmt: string,
+  ...args: struct.PackValue[] | [...struct.PackValue[], WriteFmtOptions]
+): number {
   const items: (struct.PackValue | WriteFmtOptions)[] = args;
   const last = items[items.length - 1];
   const opts = _isWriteFmtOptions(last) ? last : {};

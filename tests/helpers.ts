@@ -401,8 +401,8 @@ function _expectedText(samplesDir: string, sampleName: string): string {
 }
 
 // Python `Path` hashes by value; `lru_cache` here keys by identity, so key on the path string.
-const _loadExpectedCached = lruCache(
-  (samplesDir: string, sampleName: string): ExpectedProject => JSON.parse(_expectedText(samplesDir, sampleName)),
+const _loadExpectedCached = lruCache((samplesDir: string, sampleName: string): ExpectedProject =>
+  JSON.parse(_expectedText(samplesDir, sampleName)),
 );
 
 /** Load the expected JSON for a sample. */
@@ -410,9 +410,8 @@ export function loadExpected(samplesDir: Path, sampleName: string): ExpectedProj
   return _loadExpectedCached(String(samplesDir), sampleName);
 }
 
-const _loadExpectedValueAtTimeCached = lruCache(
-  (samplesDir: string, sampleName: string): ExpectedValueAtTime =>
-    JSON.parse(_expectedText(samplesDir, sampleName)),
+const _loadExpectedValueAtTimeCached = lruCache((samplesDir: string, sampleName: string): ExpectedValueAtTime =>
+  JSON.parse(_expectedText(samplesDir, sampleName)),
 );
 
 /**
@@ -440,7 +439,9 @@ export function getSampleFiles(samplesDir: Path): string[] {
  */
 export function asInstance<T>(value: unknown, cls: abstract new (...args: never[]) => T): T {
   if (!(value instanceof cls)) {
-    throw new AssertionError(`expected a ${cls.name}, got ${value === null ? "null" : typeof value === "object" ? value.constructor.name : typeof value}`);
+    throw new AssertionError(
+      `expected a ${cls.name}, got ${value === null ? "null" : typeof value === "object" ? value.constructor.name : typeof value}`,
+    );
   }
   return value;
 }
@@ -468,8 +469,7 @@ export function getComp(project: Project, name: string): CompItem {
     if (comp.name === name) return comp;
   }
   throw new ValueError(
-    `Composition '${name}' not found. ` +
-      `Available: ${repr(project.compositions.map((c) => c.name))}`,
+    `Composition '${name}' not found. ` + `Available: ${repr(project.compositions.map((c) => c.name))}`,
   );
 }
 
@@ -487,9 +487,7 @@ export function getFootage(project: Project, name: string): FootageItem {
   for (const item of project.footages) {
     if (item.name === name) return item;
   }
-  throw new ValueError(
-    `Footage '${name}' not found. Available: ${repr(project.footages.map((f) => f.name))}`,
-  );
+  throw new ValueError(`Footage '${name}' not found. Available: ${repr(project.footages.map((f) => f.name))}`);
 }
 
 /** Get a folder by name. */
@@ -497,9 +495,7 @@ export function getFolder(project: Project, name: string): FolderItem {
   for (const folder of project.folders) {
     if (folder.name === name) return folder;
   }
-  throw new ValueError(
-    `Folder '${name}' not found. Available: ${repr(project.folders.map((f) => f.name))}`,
-  );
+  throw new ValueError(`Folder '${name}' not found. Available: ${repr(project.folders.map((f) => f.name))}`);
 }
 
 /** Get a render queue item by its composition name. */

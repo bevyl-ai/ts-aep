@@ -46,14 +46,35 @@ function checksum(b: Uint8Array): number {
 
 class W {
   bytes: number[] = [];
-  u8(v: number) { this.bytes.push(v & 0xff); return this; }
-  u16(v: number) { this.u8(v >> 8).u8(v); return this; }
-  i16(v: number) { return this.u16(v & 0xffff); }
-  u32(v: number) { this.u16(Math.floor(v / 65536) & 0xffff).u16(v & 0xffff); return this; }
-  i32(v: number) { return this.u32(v >>> 0); }
-  tag(t: string) { for (const c of t) this.u8(c.charCodeAt(0)); return this; }
-  raw(b: ArrayLike<number>) { for (let i = 0; i < b.length; i++) this.u8(b[i]); return this; }
-  done() { return Uint8Array.from(this.bytes); }
+  u8(v: number) {
+    this.bytes.push(v & 0xff);
+    return this;
+  }
+  u16(v: number) {
+    this.u8(v >> 8).u8(v);
+    return this;
+  }
+  i16(v: number) {
+    return this.u16(v & 0xffff);
+  }
+  u32(v: number) {
+    this.u16(Math.floor(v / 65536) & 0xffff).u16(v & 0xffff);
+    return this;
+  }
+  i32(v: number) {
+    return this.u32(v >>> 0);
+  }
+  tag(t: string) {
+    for (const c of t) this.u8(c.charCodeAt(0));
+    return this;
+  }
+  raw(b: ArrayLike<number>) {
+    for (let i = 0; i < b.length; i++) this.u8(b[i]);
+    return this;
+  }
+  done() {
+    return Uint8Array.from(this.bytes);
+  }
 }
 
 export class FontBuilder {
@@ -65,19 +86,30 @@ export class FontBuilder {
   private descent = 0;
   private names: Record<string, string> = {};
 
-  constructor(private readonly unitsPerEm: number, _opts: { isTTF?: boolean } = {}) {}
+  constructor(
+    private readonly unitsPerEm: number,
+    _opts: { isTTF?: boolean } = {},
+  ) {}
 
-  setupGlyphOrder(order: string[]): void { this.glyphOrder = [...order]; }
+  setupGlyphOrder(order: string[]): void {
+    this.glyphOrder = [...order];
+  }
   setupCharacterMap(m: Record<number, string>): void {
     for (const [k, v] of Object.entries(m)) this.cmap.set(Number(k), v);
   }
-  setupGlyf(g: Record<string, TTGlyph>): void { this.glyphs = g; }
-  setupHorizontalMetrics(m: Record<string, [number, number]>): void { this.hmtx = m; }
+  setupGlyf(g: Record<string, TTGlyph>): void {
+    this.glyphs = g;
+  }
+  setupHorizontalMetrics(m: Record<string, [number, number]>): void {
+    this.hmtx = m;
+  }
   setupHorizontalHeader(o: { ascent: number; descent: number }): void {
     this.ascent = o.ascent;
     this.descent = o.descent;
   }
-  setupNameTable(n: { familyName: string; styleName: string }): void { this.names = { ...n }; }
+  setupNameTable(n: { familyName: string; styleName: string }): void {
+    this.names = { ...n };
+  }
   setupOS2(): void {}
   setupPost(): void {}
 
@@ -107,15 +139,28 @@ export class FontBuilder {
         const xs = pts.map((p) => p[0]);
         const ys = pts.map((p) => p[1]);
         const w = new W();
-        w.i16(contours.length).i16(Math.min(...xs)).i16(Math.min(...ys)).i16(Math.max(...xs)).i16(Math.max(...ys));
+        w.i16(contours.length)
+          .i16(Math.min(...xs))
+          .i16(Math.min(...ys))
+          .i16(Math.max(...xs))
+          .i16(Math.max(...ys));
         let end = -1;
-        for (const c of contours) { end += c.length; w.u16(end); }
+        for (const c of contours) {
+          end += c.length;
+          w.u16(end);
+        }
         w.u16(0); // instructionLength
         for (let i = 0; i < pts.length; i++) w.u8(1); // on-curve, 16-bit deltas
         let px = 0;
-        for (const p of pts) { w.i16(p[0] - px); px = p[0]; }
+        for (const p of pts) {
+          w.i16(p[0] - px);
+          px = p[0];
+        }
         let py = 0;
-        for (const p of pts) { w.i16(p[1] - py); py = p[1]; }
+        for (const p of pts) {
+          w.i16(p[1] - py);
+          py = p[1];
+        }
         const b = pad4(w.done());
         glyfParts.push(b);
         off += b.length;
@@ -128,34 +173,105 @@ export class FontBuilder {
     for (const o of loca) locaW.u32(o);
 
     const head = new W()
-      .u32(0x00010000).u32(0x00010000).u32(0).u32(0x5f0f3cf5).u16(0x000b).u16(this.unitsPerEm)
-      .u32(0).u32(0).u32(0).u32(0) // created/modified (longdatetime x2)
-      .i16(xMin).i16(yMin).i16(xMax).i16(yMax).u16(0).u16(8).i16(2).i16(1).i16(0);
+      .u32(0x00010000)
+      .u32(0x00010000)
+      .u32(0)
+      .u32(0x5f0f3cf5)
+      .u16(0x000b)
+      .u16(this.unitsPerEm)
+      .u32(0)
+      .u32(0)
+      .u32(0)
+      .u32(0) // created/modified (longdatetime x2)
+      .i16(xMin)
+      .i16(yMin)
+      .i16(xMax)
+      .i16(yMax)
+      .u16(0)
+      .u16(8)
+      .i16(2)
+      .i16(1)
+      .i16(0);
 
     const hhea = new W()
-      .u32(0x00010000).i16(this.ascent).i16(this.descent).i16(0)
+      .u32(0x00010000)
+      .i16(this.ascent)
+      .i16(this.descent)
+      .i16(0)
       .u16(Math.max(...this.glyphOrder.map((g) => this.hmtx[g][0])))
-      .i16(0).i16(0).i16(xMax).i16(1).i16(0).i16(0)
-      .i16(0).i16(0).i16(0).i16(0).i16(0).u16(n);
+      .i16(0)
+      .i16(0)
+      .i16(xMax)
+      .i16(1)
+      .i16(0)
+      .i16(0)
+      .i16(0)
+      .i16(0)
+      .i16(0)
+      .i16(0)
+      .i16(0)
+      .u16(n);
 
     const hmtx = new W();
     for (const g of this.glyphOrder) hmtx.u16(this.hmtx[g][0]).i16(this.hmtx[g][1]);
 
     const maxp = new W()
-      .u32(0x00010000).u16(n).u16(maxPts).u16(maxCont).u16(0).u16(0)
-      .u16(2).u16(0).u16(0).u16(0).u16(0).u16(0).u16(0).u16(0);
+      .u32(0x00010000)
+      .u16(n)
+      .u16(maxPts)
+      .u16(maxCont)
+      .u16(0)
+      .u16(0)
+      .u16(2)
+      .u16(0)
+      .u16(0)
+      .u16(0)
+      .u16(0)
+      .u16(0)
+      .u16(0)
+      .u16(0);
 
     const os2 = new W()
-      .u16(4).i16(Math.round(this.unitsPerEm / 2)).u16(400).u16(5).u16(0)
-      .i16(0).i16(0).i16(0).i16(0).i16(0).i16(0).i16(0).i16(0).i16(0).i16(0).i16(0)
-      .i16(0).i16(0).i16(0);
+      .u16(4)
+      .i16(Math.round(this.unitsPerEm / 2))
+      .u16(400)
+      .u16(5)
+      .u16(0)
+      .i16(0)
+      .i16(0)
+      .i16(0)
+      .i16(0)
+      .i16(0)
+      .i16(0)
+      .i16(0)
+      .i16(0)
+      .i16(0)
+      .i16(0)
+      .i16(0)
+      .i16(0)
+      .i16(0)
+      .i16(0);
     // sFamilyClass(2) + panose(10) + ulUnicodeRange1-4(16) + achVendID(4)
     os2.u16(0);
     for (let i = 0; i < 10; i++) os2.u8(0);
     for (let i = 0; i < 4; i++) os2.u32(0);
-    os2.tag("NONE").u16(0x40).u16(Math.min(...[...this.cmap.keys()])).u16(Math.max(...[...this.cmap.keys()]))
-      .i16(this.ascent).i16(this.descent).i16(0).u16(this.ascent).u16(-this.descent)
-      .u32(0).u32(0).i16(0).i16(0).u16(0).u16(0).u16(0);
+    os2
+      .tag("NONE")
+      .u16(0x40)
+      .u16(Math.min(...[...this.cmap.keys()]))
+      .u16(Math.max(...[...this.cmap.keys()]))
+      .i16(this.ascent)
+      .i16(this.descent)
+      .i16(0)
+      .u16(this.ascent)
+      .u16(-this.descent)
+      .u32(0)
+      .u32(0)
+      .i16(0)
+      .i16(0)
+      .u16(0)
+      .u16(0)
+      .u16(0);
 
     // cmap format 4 (BMP) from codepoints
     const cps = [...this.cmap.keys()].sort((a, b) => a - b);
@@ -171,7 +287,14 @@ export class FontBuilder {
     segs.push([0xffff, 0xffff, 1]);
     const sc = segs.length;
     const pow = 2 ** Math.floor(Math.log2(sc));
-    const f4 = new W().u16(4).u16(16 + sc * 8).u16(0).u16(sc * 2).u16(pow * 2).u16(Math.log2(pow)).u16(sc * 2 - pow * 2);
+    const f4 = new W()
+      .u16(4)
+      .u16(16 + sc * 8)
+      .u16(0)
+      .u16(sc * 2)
+      .u16(pow * 2)
+      .u16(Math.log2(pow))
+      .u16(sc * 2 - pow * 2);
     for (const s of segs) f4.u16(s[1]);
     f4.u16(0);
     for (const s of segs) f4.u16(s[0]);
@@ -184,14 +307,20 @@ export class FontBuilder {
     const fam = this.names.familyName ?? "";
     const sty = this.names.styleName ?? "Regular";
     const recs: [number, string][] = [
-      [1, fam], [2, sty], [4, `${fam} ${sty}`], [6, `${fam}-${sty}`.replace(/ /g, "")],
+      [1, fam],
+      [2, sty],
+      [4, `${fam} ${sty}`],
+      [6, `${fam}-${sty}`.replace(/ /g, "")],
     ];
     const strs = recs.map(([, s]) => {
       const b = new W();
       for (const c of s) b.u16(c.charCodeAt(0));
       return b.done();
     });
-    const nameW = new W().u16(0).u16(recs.length).u16(6 + recs.length * 12);
+    const nameW = new W()
+      .u16(0)
+      .u16(recs.length)
+      .u16(6 + recs.length * 12);
     let so = 0;
     recs.forEach(([id], i) => {
       nameW.u16(3).u16(1).u16(0x409).u16(id).u16(strs[i].length).u16(so);
@@ -199,18 +328,27 @@ export class FontBuilder {
     });
     for (const s of strs) nameW.raw(s);
 
-    const post = new W()
-      .u32(0x00030000).u32(0).i16(-100).i16(50).u32(0).u32(0).u32(0).u32(0).u32(0);
+    const post = new W().u32(0x00030000).u32(0).i16(-100).i16(50).u32(0).u32(0).u32(0).u32(0).u32(0);
 
     const tables: [string, Uint8Array][] = [
-      ["OS/2", os2.done()], ["cmap", cmap.done()], ["glyf", glyf.done()], ["head", head.done()],
-      ["hhea", hhea.done()], ["hmtx", hmtx.done()], ["loca", locaW.done()], ["maxp", maxp.done()],
-      ["name", nameW.done()], ["post", post.done()],
+      ["OS/2", os2.done()],
+      ["cmap", cmap.done()],
+      ["glyf", glyf.done()],
+      ["head", head.done()],
+      ["hhea", hhea.done()],
+      ["hmtx", hmtx.done()],
+      ["loca", locaW.done()],
+      ["maxp", maxp.done()],
+      ["name", nameW.done()],
+      ["post", post.done()],
     ];
     const nt = tables.length;
     const out = new W().u32(0x00010000).u16(nt);
     const p2 = 2 ** Math.floor(Math.log2(nt));
-    out.u16(p2 * 16).u16(Math.log2(p2)).u16(nt * 16 - p2 * 16);
+    out
+      .u16(p2 * 16)
+      .u16(Math.log2(p2))
+      .u16(nt * 16 - p2 * 16);
     let pos = 12 + nt * 16;
     const headIdx = tables.findIndex((t) => t[0] === "head");
     for (const [t, d] of tables) {

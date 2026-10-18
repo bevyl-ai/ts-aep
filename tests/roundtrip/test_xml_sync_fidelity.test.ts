@@ -20,7 +20,11 @@ import { parse, type Project } from "../../src/py_aep/index.ts";
 import { asInstance } from "../helpers.ts";
 import { XmlFormatOptions } from "../../src/py_aep/models/renderqueue/format_options/index.ts";
 import { RenderQueue } from "../../src/py_aep/models/renderqueue/render_queue.ts";
-import { _LEN_BODY_OFFSET, _LEN_XML_OFFSET, _XML_TERMINATOR } from "../../src/py_aep/models/renderqueue/format_options/xml.ts";
+import {
+  _LEN_BODY_OFFSET,
+  _LEN_XML_OFFSET,
+  _XML_TERMINATOR,
+} from "../../src/py_aep/models/renderqueue/format_options/xml.ts";
 import { makeTmpPath } from "../support/pytest.ts";
 
 const FORMAT_DIR = new Path(import.meta.filename).parent.parent.parent.div("samples", "models", "format_options");
@@ -40,15 +44,15 @@ const PER_FORMAT: [Path, string][] = [
 
 function _options(path: Path): [Project, XmlFormatOptions] {
   const project = parse(path).project;
-  const opts = asInstance(asInstance(project.renderQueue, RenderQueue).items[0].outputModules[0].formatOptions, XmlFormatOptions);
+  const opts = asInstance(
+    asInstance(project.renderQueue, RenderQueue).items[0].outputModules[0].formatOptions,
+    XmlFormatOptions,
+  );
   return [project, opts];
 }
 
 function _headerLengths(body: Uint8Array): [number, number] {
-  return [
-    struct.unpackFrom(">I", body, _LEN_BODY_OFFSET)[0],
-    struct.unpackFrom(">I", body, _LEN_XML_OFFSET)[0],
-  ];
+  return [struct.unpackFrom(">I", body, _LEN_BODY_OFFSET)[0], struct.unpackFrom(">I", body, _LEN_XML_OFFSET)[0]];
 }
 
 /**

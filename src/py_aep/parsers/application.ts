@@ -26,10 +26,7 @@ export function* _collectViewers(folder: FolderItem): Generator<Viewer> {
  * @param rifx - The parsed binary RIFX root chunk.
  * @param project - The already-parsed {@link Project}.
  */
-export const parseApp = _suppressMaterialization()(function parse_app(
-  rifx: ListChunk,
-  project: Project,
-): Application {
+export const parseApp = _suppressMaterialization()(function parse_app(rifx: ListChunk, project: Project): Application {
   const rootChunks = rifx.chunks;
   const headChunk = findByType(rootChunks, "head");
 

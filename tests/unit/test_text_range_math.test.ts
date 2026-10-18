@@ -13,9 +13,31 @@ import "../../src/py_aep/binary/_register.ts";
 import { CosField, CosName } from "../../src/py_aep/cos/index.ts";
 import { CosString, type CosDict, type CosNode } from "../../src/py_aep/cos/cos.ts";
 import { cosAt, cosItem, cosIter, cosNum, cosSetitem } from "../../src/py_aep/cos/kinds.ts";
-import { CHARACTER_RANGE_OOB, CharacterRange, ComposedLineRange, RangeField, _composedLineSpans, _mergeAdjacentRuns, _snapToPairs, _splitRunArray, u16Len, u16Slice } from "../../src/py_aep/models/text/ranges.ts";
+import {
+  CHARACTER_RANGE_OOB,
+  CharacterRange,
+  ComposedLineRange,
+  RangeField,
+  _composedLineSpans,
+  _mergeAdjacentRuns,
+  _snapToPairs,
+  _splitRunArray,
+  u16Len,
+  u16Slice,
+} from "../../src/py_aep/models/text/ranges.ts";
 import { TextDocument } from "../../src/py_aep/models/text/text_document.ts";
-import { ValueError, deepcopy, descriptorsOf, getOr, getDescriptor, valueEquals, truthyOr, repr, setMember, str } from "../../src/pyrt/index.ts";
+import {
+  ValueError,
+  deepcopy,
+  descriptorsOf,
+  getOr,
+  getDescriptor,
+  valueEquals,
+  truthyOr,
+  repr,
+  setMember,
+  str,
+} from "../../src/pyrt/index.ts";
 import { asInstance } from "../helpers.ts";
 import { raises } from "../support/pytest.ts";
 import { sum } from "../support/python.ts";
@@ -33,7 +55,12 @@ describe("TestWriteEnginePrimitives", () => {
     ];
     const original = runs[0];
     _splitRunArray(runs, new Set([3, 7]));
-    expect(valueEquals(runs.map((r) => cosItem(r, "1")), [3, 4, 3])).toBe(true);
+    expect(
+      valueEquals(
+        runs.map((r) => cosItem(r, "1")),
+        [3, 4, 3],
+      ),
+    ).toBe(true);
     // Run 0 keeps its object (and its style dict) as the left piece.
     expect(runs[0]).toBe(original);
     expect(cosItem(cosItem(cosItem(runs[0], "0"), "0"), "6")).toBe(style);
@@ -44,15 +71,24 @@ describe("TestWriteEnginePrimitives", () => {
 
   test("test_merge_keeps_first_object", () => {
     const a = new Map<string, CosNode>([
-      ["0", new Map<string, CosNode>([["0", new Map<string, CosNode>([["6", new Map<string, CosNode>([["1", 72.0]])]])]])],
+      [
+        "0",
+        new Map<string, CosNode>([["0", new Map<string, CosNode>([["6", new Map<string, CosNode>([["1", 72.0]])]])]]),
+      ],
       ["1", 3],
     ]);
     const b = new Map<string, CosNode>([
-      ["0", new Map<string, CosNode>([["0", new Map<string, CosNode>([["6", new Map<string, CosNode>([["1", 72.0]])]])]])],
+      [
+        "0",
+        new Map<string, CosNode>([["0", new Map<string, CosNode>([["6", new Map<string, CosNode>([["1", 72.0]])]])]]),
+      ],
       ["1", 4],
     ]);
     const c = new Map<string, CosNode>([
-      ["0", new Map<string, CosNode>([["0", new Map<string, CosNode>([["6", new Map<string, CosNode>([["1", 36.0]])]])]])],
+      [
+        "0",
+        new Map<string, CosNode>([["0", new Map<string, CosNode>([["6", new Map<string, CosNode>([["1", 36.0]])]])]]),
+      ],
       ["1", 4],
     ]);
     const runs: CosNode[] = [a, b, c];
@@ -117,7 +153,15 @@ describe("TestWriteEnginePrimitives", () => {
     const doc = makeDoc("AVAW\r");
     new CharacterRange(doc, 2, 4).kerning = 100;
     const runs = cosItem(cosItem(cosItem(doc._doc, "0"), "8"), "0");
-    expect(valueEquals(cosAt(runs, -1), new Map<string, CosNode>([["0", new Map<string, CosNode>()], ["1", 1]]))).toBe(true);
+    expect(
+      valueEquals(
+        cosAt(runs, -1),
+        new Map<string, CosNode>([
+          ["0", new Map<string, CosNode>()],
+          ["1", 1],
+        ]),
+      ),
+    ).toBe(true);
     expect(sum(cosIter(runs).map((r) => cosNum(cosItem(r, "1"))))).toBe(5);
   });
 });
@@ -204,11 +248,24 @@ describe("TestComposedLineSpans", () => {
     const cache = [
       new Map<string, CosNode>([
         ["99", new CosName("PC")],
-        ["6", [new Map<string, CosNode>([["99", new CosName("F")], ["6", [line(3, 2), line(4)]]])]],
+        [
+          "6",
+          [
+            new Map<string, CosNode>([
+              ["99", new CosName("F")],
+              ["6", [line(3, 2), line(4)]],
+            ]),
+          ],
+        ],
       ]),
     ];
     const doc = makeDoc("abcdefgh\r", null, null, cache);
-    expect(valueEquals(_composedLineSpans(doc), [[0, 5], [5, 9]])).toBe(true);
+    expect(
+      valueEquals(_composedLineSpans(doc), [
+        [0, 5],
+        [5, 9],
+      ]),
+    ).toBe(true);
   });
 
   test("test_multiple_frames", () => {
@@ -218,14 +275,25 @@ describe("TestComposedLineSpans", () => {
         [
           "6",
           [
-            new Map<string, CosNode>([["99", new CosName("F")], ["6", [line(4)]]]),
-            new Map<string, CosNode>([["99", new CosName("F")], ["6", [line(5)]]]),
+            new Map<string, CosNode>([
+              ["99", new CosName("F")],
+              ["6", [line(4)]],
+            ]),
+            new Map<string, CosNode>([
+              ["99", new CosName("F")],
+              ["6", [line(5)]],
+            ]),
           ],
         ],
       ]),
     ];
     const doc = makeDoc("abcdefgh\r", null, null, cache);
-    expect(valueEquals(_composedLineSpans(doc), [[0, 4], [4, 9]])).toBe(true);
+    expect(
+      valueEquals(_composedLineSpans(doc), [
+        [0, 4],
+        [4, 9],
+      ]),
+    ).toBe(true);
   });
 
   test("test_box_without_cache", () => {
@@ -241,7 +309,12 @@ describe("TestComposedLineSpans", () => {
       [3, new Map<string, CosNode>()],
       [3, new Map<string, CosNode>()],
     ]);
-    expect(valueEquals(_composedLineSpans(doc), [[0, 3], [3, 6]])).toBe(true);
+    expect(
+      valueEquals(_composedLineSpans(doc), [
+        [0, 3],
+        [3, 6],
+      ]),
+    ).toBe(true);
   });
 
   test("test_stale_cache_clamps_and_raises", () => {
@@ -249,7 +322,15 @@ describe("TestComposedLineSpans", () => {
     const cache = [
       new Map<string, CosNode>([
         ["99", new CosName("PC")],
-        ["6", [new Map<string, CosNode>([["99", new CosName("F")], ["6", [line(5), line(4)]]])]],
+        [
+          "6",
+          [
+            new Map<string, CosNode>([
+              ["99", new CosName("F")],
+              ["6", [line(5), line(4)]],
+            ]),
+          ],
+        ],
       ]),
     ];
     const doc = makeDoc("ab\r", null, null, cache);
@@ -304,15 +385,39 @@ describe("TestCharacterRangeMath", () => {
   test("test_gated_color_resolution", () => {
     const red = new Map<string, CosNode>([
       ["99", new CosName("SimplePaint")],
-      ["0", new Map<string, CosNode>([["0", 1], ["1", [1.0, 1.0, 0.0, 0.0]]])],
+      [
+        "0",
+        new Map<string, CosNode>([
+          ["0", 1],
+          ["1", [1.0, 1.0, 0.0, 0.0]],
+        ]),
+      ],
     ]);
     const black = new Map<string, CosNode>([
       ["99", new CosName("SimplePaint")],
-      ["0", new Map<string, CosNode>([["0", 1], ["1", [1.0, 0.0, 0.0, 0.0]]])],
+      [
+        "0",
+        new Map<string, CosNode>([
+          ["0", 1],
+          ["1", [1.0, 0.0, 0.0, 0.0]],
+        ]),
+      ],
     ]);
     const doc = makeDoc("abcdef\r", [
-      [3, new Map<string, CosNode>([["57", false], ["54", black]])],
-      [4, new Map<string, CosNode>([["57", true], ["54", red]])],
+      [
+        3,
+        new Map<string, CosNode>([
+          ["57", false],
+          ["54", black],
+        ]),
+      ],
+      [
+        4,
+        new Map<string, CosNode>([
+          ["57", true],
+          ["54", red],
+        ]),
+      ],
     ]);
     // Only the applyStroke run participates: uniform red, not mixed.
     expect(valueEquals(new CharacterRange(doc, 0, 6).strokeColor, [1.0, 0.0, 0.0])).toBe(true);
@@ -360,21 +465,17 @@ describe("TestSpecConsistency", () => {
       const cosField = getDescriptor(TextDocument, name);
       if (!(cosField instanceof CosField)) continue;
       if (field.key !== cosField.key) {
-        mismatches.push(
-          `${name}: RangeField key ${repr(field.key)} != CosField key ${repr(cosField.key)}`,
-        );
+        mismatches.push(`${name}: RangeField key ${repr(field.key)} != CosField key ${repr(cosField.key)}`);
       }
       const expectedDictAttr = getOr(KIND_TO_DICT_ATTR, field.kind);
       if (cosField.dictAttr !== expectedDictAttr) {
         mismatches.push(
-          `${name}: RangeField kind ${repr(field.kind)} vs CosField dict ` +
-            `${repr(cosField.dictAttr)}`,
+          `${name}: RangeField kind ${repr(field.kind)} vs CosField dict ` + `${repr(cosField.dictAttr)}`,
         );
       }
       if (!field.readOnly && field.validate !== cosField.validate) {
         mismatches.push(
-          `${name}: RangeField validate ${repr(field.validate)} != ` +
-            `CosField validate ${repr(cosField.validate)}`,
+          `${name}: RangeField validate ${repr(field.validate)} != ` + `CosField validate ${repr(cosField.validate)}`,
         );
       }
     }

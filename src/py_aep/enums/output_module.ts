@@ -19,16 +19,20 @@ import type { EnumValue } from "../../pyrt/index.ts";
  *
  * Not documented in AE scripting reference.
  */
-export const OutputChannels = defineEnum("OutputChannels", {
-  RGB: 0,
-  RGBA: 1,
-  ALPHA: 2,
-}, {
-  /** ExtendScript STRING format label. */
-  label(self: OutputChannels): string {
-    return _OUTPUT_CHANNELS_LABELS[self];
+export const OutputChannels = defineEnum(
+  "OutputChannels",
+  {
+    RGB: 0,
+    RGBA: 1,
+    ALPHA: 2,
   },
-});
+  {
+    /** ExtendScript STRING format label. */
+    label(self: OutputChannels): string {
+      return _OUTPUT_CHANNELS_LABELS[self];
+    },
+  },
+);
 export type OutputChannels = EnumValue<typeof OutputChannels>;
 
 export const _OUTPUT_CHANNELS_LABELS: Readonly<Record<OutputChannels, string>> = {
@@ -48,22 +52,26 @@ export const _OUTPUT_CHANNELS_LABELS: Readonly<Record<OutputChannels, string>> =
  *
  * Not documented in AE scripting reference.
  */
-export const OutputColorDepth = defineEnum("OutputColorDepth", {
-  FLOATING_POINT_GRAY: -32, // 32 bpc gray (single channel float)
-  COLORS_256: 8, // 8 bpc indexed (256 colors)
-  MILLIONS_OF_COLORS: 24, // 8 bpc RGB (24 bpp)
-  MILLIONS_OF_COLORS_PLUS: 32, // 8 bpc RGBA (32 bpp)
-  GRAYS_256: 40, // 8 bpc grayscale (256 grays)
-  TRILLIONS_OF_COLORS: 48, // 16 bpc RGB (48 bpp)
-  TRILLIONS_OF_COLORS_PLUS: 64, // 16 bpc RGBA (64 bpp)
-  FLOATING_POINT: 96, // 32 bpc RGB (96 bpp)
-  FLOATING_POINT_PLUS: 128, // 32 bpc RGBA (128 bpp)
-}, {
-  /** ExtendScript STRING format label. */
-  label(self: OutputColorDepth): string {
-    return _OUTPUT_COLOR_DEPTH_LABELS[self];
+export const OutputColorDepth = defineEnum(
+  "OutputColorDepth",
+  {
+    FLOATING_POINT_GRAY: -32, // 32 bpc gray (single channel float)
+    COLORS_256: 8, // 8 bpc indexed (256 colors)
+    MILLIONS_OF_COLORS: 24, // 8 bpc RGB (24 bpp)
+    MILLIONS_OF_COLORS_PLUS: 32, // 8 bpc RGBA (32 bpp)
+    GRAYS_256: 40, // 8 bpc grayscale (256 grays)
+    TRILLIONS_OF_COLORS: 48, // 16 bpc RGB (48 bpp)
+    TRILLIONS_OF_COLORS_PLUS: 64, // 16 bpc RGBA (64 bpp)
+    FLOATING_POINT: 96, // 32 bpc RGB (96 bpp)
+    FLOATING_POINT_PLUS: 128, // 32 bpc RGBA (128 bpp)
   },
-});
+  {
+    /** ExtendScript STRING format label. */
+    label(self: OutputColorDepth): string {
+      return _OUTPUT_COLOR_DEPTH_LABELS[self];
+    },
+  },
+);
 export type OutputColorDepth = EnumValue<typeof OutputColorDepth>;
 
 export const _OUTPUT_COLOR_DEPTH_LABELS: Readonly<Record<OutputColorDepth, string>> = {
@@ -85,15 +93,19 @@ export const _OUTPUT_COLOR_DEPTH_LABELS: Readonly<Record<OutputColorDepth, strin
  *
  * Not documented in AE scripting reference.
  */
-export const OutputColorMode = defineEnum("OutputColorMode", {
-  STRAIGHT_UNMATTED: 0,
-  PREMULTIPLIED: 1,
-}, {
-  /** ExtendScript STRING format label. */
-  label(self: OutputColorMode): string {
-    return _OUTPUT_COLOR_MODE_LABELS[self];
+export const OutputColorMode = defineEnum(
+  "OutputColorMode",
+  {
+    STRAIGHT_UNMATTED: 0,
+    PREMULTIPLIED: 1,
   },
-});
+  {
+    /** ExtendScript STRING format label. */
+    label(self: OutputColorMode): string {
+      return _OUTPUT_COLOR_MODE_LABELS[self];
+    },
+  },
+);
 export type OutputColorMode = EnumValue<typeof OutputColorMode>;
 
 export const _OUTPUT_COLOR_MODE_LABELS: Readonly<Record<OutputColorMode, string>> = {
@@ -108,16 +120,20 @@ export const _OUTPUT_COLOR_MODE_LABELS: Readonly<Record<OutputColorMode, string>
  *
  * Not documented in AE scripting reference.
  */
-export const OutputAudio = defineEnum("OutputAudio", {
-  OFF: 1,
-  ON: 2,
-  AUTO: 3,
-}, {
-  /** ExtendScript STRING format label. */
-  label(self: OutputAudio): string {
-    return _OUTPUT_AUDIO_LABELS[self];
+export const OutputAudio = defineEnum(
+  "OutputAudio",
+  {
+    OFF: 1,
+    ON: 2,
+    AUTO: 3,
   },
-});
+  {
+    /** ExtendScript STRING format label. */
+    label(self: OutputAudio): string {
+      return _OUTPUT_AUDIO_LABELS[self];
+    },
+  },
+);
 export type OutputAudio = EnumValue<typeof OutputAudio>;
 
 export const _OUTPUT_AUDIO_LABELS: Readonly<Record<OutputAudio, string>> = {
@@ -154,58 +170,62 @@ export type FormatKind = EnumValue<typeof FormatKind>;
  *
  * Not documented in AE scripting reference.
  */
-export const OutputFormat = defineEnum("OutputFormat", {
-  AIFF: 0,
-  AVI: 1,
-  DPX_CINEON_SEQUENCE: 2,
-  H264: 3,
-  IFF_SEQUENCE: 4,
-  JPEG_SEQUENCE: 5,
-  MP3: 6,
-  OPENEXR_SEQUENCE: 7,
-  PNG_SEQUENCE: 8,
-  PHOTOSHOP_SEQUENCE: 9,
-  QUICKTIME: 10,
-  RADIANCE_SEQUENCE: 11,
-  SGI_SEQUENCE: 12,
-  TIFF_SEQUENCE: 13,
-  TARGA_SEQUENCE: 14,
-  WAV: 15,
-}, {
-  /** ExtendScript STRING format label. */
-  label(self: keyof typeof _OUTPUT_FORMAT_LABELS): string {
-    return _OUTPUT_FORMAT_LABELS[self];
+export const OutputFormat = defineEnum(
+  "OutputFormat",
+  {
+    AIFF: 0,
+    AVI: 1,
+    DPX_CINEON_SEQUENCE: 2,
+    H264: 3,
+    IFF_SEQUENCE: 4,
+    JPEG_SEQUENCE: 5,
+    MP3: 6,
+    OPENEXR_SEQUENCE: 7,
+    PNG_SEQUENCE: 8,
+    PHOTOSHOP_SEQUENCE: 9,
+    QUICKTIME: 10,
+    RADIANCE_SEQUENCE: 11,
+    SGI_SEQUENCE: 12,
+    TIFF_SEQUENCE: 13,
+    TARGA_SEQUENCE: 14,
+    WAV: 15,
   },
+  {
+    /** ExtendScript STRING format label. */
+    label(self: keyof typeof _OUTPUT_FORMAT_LABELS): string {
+      return _OUTPUT_FORMAT_LABELS[self];
+    },
 
-  /**
-   * Whether this format is an audio file, a movie, or a still
-   * sequence. See {@link FormatKind}. 
-   */
-  kind(self: number): FormatKind {
-    return getOrThrow(_OUTPUT_FORMAT_KINDS, self);
-  },
+    /**
+     * Whether this format is an audio file, a movie, or a still
+     * sequence. See {@link FormatKind}.
+     */
+    kind(self: number): FormatKind {
+      return getOrThrow(_OUTPUT_FORMAT_KINDS, self);
+    },
 
-  /**
-   * Convert a Roou 4-char format identifier to OutputFormat.
-   *
-   * @param formatId - The 4-char format identifier from the Roou chunk (e.g. `"H264"`, `"TIF "`,
-   *   `"png!"`).
-   * @throws {@link ValueError} If the format identifier is not recognised.
-   */
-  fromFormatId(formatId: string | Uint8Array): OutputFormat {
-    if (formatId instanceof Uint8Array) {
-      formatId = decode(formatId, "ascii");
-    }
-    const format = _FORMAT_ID_TO_OUTPUT_FORMAT.get(formatId);
-    if (format === undefined) throw new ValueError(`Unknown output format identifier: ${literal(formatId)}`);
-    return format;
-  },
+    /**
+     * Convert a Roou 4-char format identifier to OutputFormat.
+     *
+     * @param formatId - The 4-char format identifier from the Roou chunk (e.g. `"H264"`, `"TIF "`,
+     *   `"png!"`).
+     * @throws {@link ValueError} If the format identifier is not recognised.
+     */
+    fromFormatId(formatId: string | Uint8Array): OutputFormat {
+      if (formatId instanceof Uint8Array) {
+        formatId = decode(formatId, "ascii");
+      }
+      const format = _FORMAT_ID_TO_OUTPUT_FORMAT.get(formatId);
+      if (format === undefined) throw new ValueError(`Unknown output format identifier: ${literal(formatId)}`);
+      return format;
+    },
 
-  /** Convert OutputFormat to a Roou 4-char format identifier. */
-  toFormatId(self: number): string {
-    return getOrThrow(_OUTPUT_FORMAT_TO_FORMAT_ID, self);
+    /** Convert OutputFormat to a Roou 4-char format identifier. */
+    toFormatId(self: number): string {
+      return getOrThrow(_OUTPUT_FORMAT_TO_FORMAT_ID, self);
+    },
   },
-});
+);
 export type OutputFormat = EnumValue<typeof OutputFormat>;
 
 export const _OUTPUT_FORMAT_LABELS = {
@@ -278,29 +298,33 @@ export const _OUTPUT_FORMAT_TO_FORMAT_ID: Map<number, string> = new Map<number, 
  *
  * Not documented in AE scripting reference.
  */
-export const AudioBitDepth = defineEnum("AudioBitDepth", {
-  EIGHT_BIT: 1,
-  SIXTEEN_BIT: 2,
-  /**
-   * Read only: After Effects has no 24-bit audio output, so writing it
-   * raises `ValueError`.
-   */
-  TWENTY_FOUR_BIT: 3,
-  THIRTY_TWO_BIT: 4,
-}, {
-  /** ExtendScript STRING format label. */
-  label(self: AudioBitDepth): string {
-    return _AUDIO_BIT_DEPTH_LABELS[self];
+export const AudioBitDepth = defineEnum(
+  "AudioBitDepth",
+  {
+    EIGHT_BIT: 1,
+    SIXTEEN_BIT: 2,
+    /**
+     * Read only: After Effects has no 24-bit audio output, so writing it
+     * raises `ValueError`.
+     */
+    TWENTY_FOUR_BIT: 3,
+    THIRTY_TWO_BIT: 4,
   },
+  {
+    /** ExtendScript STRING format label. */
+    label(self: AudioBitDepth): string {
+      return _AUDIO_BIT_DEPTH_LABELS[self];
+    },
 
-  /** Convert binary value to AudioBitDepth. */
-  fromBinary(value: number) {
-    if (this.has(value)) {
-      return this.of(value);
-    }
-    return this.THIRTY_TWO_BIT;
+    /** Convert binary value to AudioBitDepth. */
+    fromBinary(value: number) {
+      if (this.has(value)) {
+        return this.of(value);
+      }
+      return this.THIRTY_TWO_BIT;
+    },
   },
-});
+);
 export type AudioBitDepth = EnumValue<typeof AudioBitDepth>;
 
 export const _AUDIO_BIT_DEPTH_LABELS: Readonly<Record<AudioBitDepth, string>> = {
@@ -317,23 +341,27 @@ export const _AUDIO_BIT_DEPTH_LABELS: Readonly<Record<AudioBitDepth, string>> = 
  *
  * Not documented in AE scripting reference.
  */
-export const AudioChannels = defineEnum("AudioChannels", {
-  MONO: 1,
-  STEREO: 2,
-}, {
-  /** ExtendScript STRING format label. */
-  label(self: AudioChannels): string {
-    return _AUDIO_CHANNELS_LABELS[self];
+export const AudioChannels = defineEnum(
+  "AudioChannels",
+  {
+    MONO: 1,
+    STEREO: 2,
   },
+  {
+    /** ExtendScript STRING format label. */
+    label(self: AudioChannels): string {
+      return _AUDIO_CHANNELS_LABELS[self];
+    },
 
-  /** Convert binary value to AudioChannels (0 or unknown defaults to STEREO). */
-  fromBinary(value: number) {
-    if (value === 1) {
-      return this.MONO;
-    }
-    return this.STEREO;
+    /** Convert binary value to AudioChannels (0 or unknown defaults to STEREO). */
+    fromBinary(value: number) {
+      if (value === 1) {
+        return this.MONO;
+      }
+      return this.STEREO;
+    },
   },
-});
+);
 export type AudioChannels = EnumValue<typeof AudioChannels>;
 
 export const _AUDIO_CHANNELS_LABELS: Readonly<Record<AudioChannels, string>> = {
@@ -348,15 +376,19 @@ export const _AUDIO_CHANNELS_LABELS: Readonly<Record<AudioChannels, string>> = {
  *
  * Not documented in AE scripting reference.
  */
-export const ResizeQuality = defineEnum("ResizeQuality", {
-  LOW: 0,
-  HIGH: 1,
-}, {
-  /** ExtendScript STRING format label. */
-  label(self: ResizeQuality): string {
-    return _RESIZE_QUALITY_LABELS[self];
+export const ResizeQuality = defineEnum(
+  "ResizeQuality",
+  {
+    LOW: 0,
+    HIGH: 1,
   },
-});
+  {
+    /** ExtendScript STRING format label. */
+    label(self: ResizeQuality): string {
+      return _RESIZE_QUALITY_LABELS[self];
+    },
+  },
+);
 export type ResizeQuality = EnumValue<typeof ResizeQuality>;
 
 export const _RESIZE_QUALITY_LABELS: Readonly<Record<ResizeQuality, string>> = {
@@ -374,53 +406,57 @@ export const _RESIZE_QUALITY_LABELS: Readonly<Record<ResizeQuality, string>> = {
  *
  * Not documented in AE scripting reference.
  */
-export const AudioSampleRate = defineEnum("AudioSampleRate", {
-  OFF: -1,
-  RATE_8000: 8000,
-  RATE_11025: 11025,
-  /**
-   * Only reachable through MP3 mono at 18/20 kbps (AE-saved evidence);
-   * no other format offers it.
-   */
-  RATE_12000: 12000,
-  RATE_16000: 16000,
-  RATE_22050: 22050,
-  RATE_24000: 24000,
-  RATE_32000: 32000,
-  RATE_44100: 44100,
-  RATE_48000: 48000,
-  RATE_88200: 88200,
-  RATE_96000: 96000,
-}, {
-  /** ExtendScript STRING format label (e.g. `"48.000 kHz"`). */
-  label(self: number): string {
-    if (self <= 0) {
-      return "";
-    }
-    return `${(self / 1000).toFixed(3)} kHz`;
+export const AudioSampleRate = defineEnum(
+  "AudioSampleRate",
+  {
+    OFF: -1,
+    RATE_8000: 8000,
+    RATE_11025: 11025,
+    /**
+     * Only reachable through MP3 mono at 18/20 kbps (AE-saved evidence);
+     * no other format offers it.
+     */
+    RATE_12000: 12000,
+    RATE_16000: 16000,
+    RATE_22050: 22050,
+    RATE_24000: 24000,
+    RATE_32000: 32000,
+    RATE_44100: 44100,
+    RATE_48000: 48000,
+    RATE_88200: 88200,
+    RATE_96000: 96000,
   },
+  {
+    /** ExtendScript STRING format label (e.g. `"48.000 kHz"`). */
+    label(self: number): string {
+      if (self <= 0) {
+        return "";
+      }
+      return `${(self / 1000).toFixed(3)} kHz`;
+    },
 
-  /**
-   * Convert binary audio sample rate value.
-   *
-   * The binary field is stored as `f8` (float).
-   *
-   * Unknown or negative values (e.g. `-1` when audio is disabled)
-   * are mapped to `OFF`.
-   */
-  fromBinary(value: number) {
-    const intValue = Math.round(value) + 0;
-    if (this.has(intValue)) {
-      return this.of(intValue);
-    }
-    return this.OFF;
-  },
+    /**
+     * Convert binary audio sample rate value.
+     *
+     * The binary field is stored as `f8` (float).
+     *
+     * Unknown or negative values (e.g. `-1` when audio is disabled)
+     * are mapped to `OFF`.
+     */
+    fromBinary(value: number) {
+      const intValue = Math.round(value) + 0;
+      if (this.has(intValue)) {
+        return this.of(intValue);
+      }
+      return this.OFF;
+    },
 
-  /** Convert to binary float for the `f8` field. */
-  toBinary(value: number): number {
-    return Math.round(value) + 0;
+    /** Convert to binary float for the `f8` field. */
+    toBinary(value: number): number {
+      return Math.round(value) + 0;
+    },
   },
-});
+);
 export type AudioSampleRate = EnumValue<typeof AudioSampleRate>;
 
 /**
@@ -434,16 +470,20 @@ export type AudioSampleRate = EnumValue<typeof AudioSampleRate>;
  *
  * Not documented in AE scripting reference.
  */
-export const ConvertToLinearLight = defineEnum("ConvertToLinearLight", {
-  OFF: 0,
-  ON: 1,
-  ON_FOR_32_BPC: 2,
-}, {
-  /** ExtendScript STRING format label. */
-  label(self: ConvertToLinearLight): string {
-    return _CONVERT_TO_LINEAR_LIGHT_LABELS[self];
+export const ConvertToLinearLight = defineEnum(
+  "ConvertToLinearLight",
+  {
+    OFF: 0,
+    ON: 1,
+    ON_FOR_32_BPC: 2,
   },
-});
+  {
+    /** ExtendScript STRING format label. */
+    label(self: ConvertToLinearLight): string {
+      return _CONVERT_TO_LINEAR_LIGHT_LABELS[self];
+    },
+  },
+);
 export type ConvertToLinearLight = EnumValue<typeof ConvertToLinearLight>;
 
 export const _CONVERT_TO_LINEAR_LIGHT_LABELS: Readonly<Record<ConvertToLinearLight, string>> = {
@@ -453,20 +493,24 @@ export const _CONVERT_TO_LINEAR_LIGHT_LABELS: Readonly<Record<ConvertToLinearLig
 };
 
 /** Action after rendering completes. */
-export const PostRenderAction = defineEnum("PostRenderAction", {
-  NONE: 3612,
-  IMPORT: 3613,
-  IMPORT_AND_REPLACE_USAGE: 3614,
-  SET_PROXY: 3615,
-}, {
-  /** Convert binary value to PostRenderAction. */
-  fromBinary(value: number) {
-    return this.ofOrNull(value + 3612) ?? this.NONE;
+export const PostRenderAction = defineEnum(
+  "PostRenderAction",
+  {
+    NONE: 3612,
+    IMPORT: 3613,
+    IMPORT_AND_REPLACE_USAGE: 3614,
+    SET_PROXY: 3615,
   },
+  {
+    /** Convert binary value to PostRenderAction. */
+    fromBinary(value: number) {
+      return this.ofOrNull(value + 3612) ?? this.NONE;
+    },
 
-  /** Convert PostRenderAction to binary value. */
-  toBinary(self: number): number {
-    return Math.trunc(self) - 3612;
+    /** Convert PostRenderAction to binary value. */
+    toBinary(self: number): number {
+      return Math.trunc(self) - 3612;
+    },
   },
-});
+);
 export type PostRenderAction = EnumValue<typeof PostRenderAction>;

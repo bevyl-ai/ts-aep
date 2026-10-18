@@ -25,21 +25,25 @@ export type GetSettingsFormat = EnumValue<typeof GetSettingsFormat>;
  *
  * @see https://ae-scripting.docsforadobe.dev/renderqueue/renderqueueitem/#renderqueueitemlogtype
  */
-export const LogType = defineEnum("LogType", {
-  ERRORS_ONLY: 3212,
-  ERRORS_AND_SETTINGS: 3213,
-  ERRORS_AND_PER_FRAME_INFO: 3214,
-}, {
-  /** Convert binary value to LogType. */
-  fromBinary(value: number) {
-    return this.ofOrNull(value + 3212) ?? this.ERRORS_ONLY;
+export const LogType = defineEnum(
+  "LogType",
+  {
+    ERRORS_ONLY: 3212,
+    ERRORS_AND_SETTINGS: 3213,
+    ERRORS_AND_PER_FRAME_INFO: 3214,
   },
+  {
+    /** Convert binary value to LogType. */
+    fromBinary(value: number) {
+      return this.ofOrNull(value + 3212) ?? this.ERRORS_ONLY;
+    },
 
-  /** Convert LogType to binary value. */
-  toBinary(self: number): number {
-    return Math.trunc(self) - 3212;
+    /** Convert LogType to binary value. */
+    toBinary(self: number): number {
+      return Math.trunc(self) - 3212;
+    },
   },
-});
+);
 export type LogType = EnumValue<typeof LogType>;
 
 /**
@@ -47,24 +51,28 @@ export type LogType = EnumValue<typeof LogType>;
  *
  * @see https://ae-scripting.docsforadobe.dev/renderqueue/renderqueueitem/#renderqueueitemstatus
  */
-export const RQItemStatus = defineEnum("RQItemStatus", {
-  WILL_CONTINUE: 3012,
-  NEEDS_OUTPUT: 3013,
-  UNQUEUED: 3014,
-  QUEUED: 3015,
-  RENDERING: 3016,
-  USER_STOPPED: 3017,
-  ERR_STOPPED: 3018,
-  DONE: 3019,
-}, {
-  /** Convert binary value to RQItemStatus. */
-  fromBinary(value: number) {
-    return this.ofOrNull(value + 3013) ?? this.UNQUEUED;
+export const RQItemStatus = defineEnum(
+  "RQItemStatus",
+  {
+    WILL_CONTINUE: 3012,
+    NEEDS_OUTPUT: 3013,
+    UNQUEUED: 3014,
+    QUEUED: 3015,
+    RENDERING: 3016,
+    USER_STOPPED: 3017,
+    ERR_STOPPED: 3018,
+    DONE: 3019,
   },
+  {
+    /** Convert binary value to RQItemStatus. */
+    fromBinary(value: number) {
+      return this.ofOrNull(value + 3013) ?? this.UNQUEUED;
+    },
 
-  /** Convert RQItemStatus to binary value. */
-  toBinary(self: number): number {
-    return Math.trunc(self) - 3013;
+    /** Convert RQItemStatus to binary value. */
+    toBinary(self: number): number {
+      return Math.trunc(self) - 3013;
+    },
   },
-});
+);
 export type RQItemStatus = EnumValue<typeof RQItemStatus>;

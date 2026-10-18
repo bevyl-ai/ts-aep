@@ -20,8 +20,7 @@ import { PropertyGroup } from "../../src/py_aep/models/properties/property_group
 import { asInstance, parseProjectFresh } from "../helpers.ts";
 import { makeTmpPath } from "../support/pytest.ts";
 
-const SAMPLE = new Path(import.meta.path)
-  .parent.parent.parent.div("samples", "models", "property", "curves.aep");
+const SAMPLE = new Path(import.meta.path).parent.parent.parent.div("samples", "models", "property", "curves.aep");
 
 function _layer(project: Project, name: string): Layer {
   const found = project.compositions[0].layers.find((ly) => ly.name === name);

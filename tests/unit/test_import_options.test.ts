@@ -2,7 +2,6 @@
 
 import { describe, expect, test } from "bun:test";
 
-
 import { Path, ValueError, int, repr } from "../../src/pyrt/index.ts";
 import { ImportAsType } from "../../src/py_aep/enums/index.ts";
 import { CURRENT_VALUE, ImportOptions } from "../../src/py_aep/models/index.ts";
@@ -70,14 +69,8 @@ describe("TestImportOptions", () => {
     [".aif", new Set([ImportAsType.FOOTAGE])],
     [".wav", new Set([ImportAsType.FOOTAGE])],
     // Layered Photoshop: footage, comp, and comp-cropped.
-    [
-      ".psd",
-      new Set([ImportAsType.FOOTAGE, ImportAsType.COMP, ImportAsType.COMP_CROPPED_LAYERS]),
-    ],
-    [
-      ".psb",
-      new Set([ImportAsType.FOOTAGE, ImportAsType.COMP, ImportAsType.COMP_CROPPED_LAYERS]),
-    ],
+    [".psd", new Set([ImportAsType.FOOTAGE, ImportAsType.COMP, ImportAsType.COMP_CROPPED_LAYERS])],
+    [".psb", new Set([ImportAsType.FOOTAGE, ImportAsType.COMP, ImportAsType.COMP_CROPPED_LAYERS])],
     // Multi-channel EXR: footage or comp-cropped, but NOT plain comp.
     [".exr", new Set([ImportAsType.FOOTAGE, ImportAsType.COMP_CROPPED_LAYERS])],
     // SVG: comp-cropped only - not even footage.
@@ -90,12 +83,7 @@ describe("TestImportOptions", () => {
   ]);
 
   test("test_can_import_as_matches_matrix", () => {
-    const allTypes = [
-      ImportAsType.FOOTAGE,
-      ImportAsType.COMP,
-      ImportAsType.COMP_CROPPED_LAYERS,
-      ImportAsType.PROJECT,
-    ];
+    const allTypes = [ImportAsType.FOOTAGE, ImportAsType.COMP, ImportAsType.COMP_CROPPED_LAYERS, ImportAsType.PROJECT];
     for (const [ext, expected] of _MATRIX.entries()) {
       // can_import_as is gated by what py_aep can actually import, so an
       // AE-capable extension with no implemented format yields False.

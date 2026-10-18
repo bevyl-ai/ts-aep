@@ -105,10 +105,7 @@ export function requiresVersion(minMajor: number) {
     const wrapper = function (this: T, ...args: A): R {
       const major = getAeVersionMajor(this);
       if (major < minMajor) {
-        throw new AttributeError(
-          `${method.name}() requires AE ${minMajor}+ ` +
-            `file format (file is AE ${major}).`,
-        );
+        throw new AttributeError(`${method.name}() requires AE ${minMajor}+ ` + `file format (file is AE ${major}).`);
       }
       return method.call(this, ...args);
     };

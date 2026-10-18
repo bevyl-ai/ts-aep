@@ -94,7 +94,10 @@ const _hbjs: HbLoad = await (async (): Promise<HbLoad> => {
       import("harfbuzzjs/hb.js"),
       import("harfbuzzjs/hbjs.js"),
     ]);
-    return { hb: hbjs(await hbWasm({ locateFile: (file: string) => new URL(file, import.meta.url).href })), fail: null };
+    return {
+      hb: hbjs(await hbWasm({ locateFile: (file: string) => new URL(file, import.meta.url).href })),
+      fail: null,
+    };
   } catch (e) {
     return {
       hb: null,
@@ -162,9 +165,7 @@ class _HbBuffer {
     return this._buf.json().map((g) => ({ codepoint: g.g, cluster: g.cl }));
   }
   get glyphPositions(): { xAdvance: number; yAdvance: number; xOffset: number; yOffset: number }[] {
-    return this._buf
-      .json()
-      .map((g) => ({ xAdvance: g.ax, yAdvance: g.ay, xOffset: g.dx, yOffset: g.dy }));
+    return this._buf.json().map((g) => ({ xAdvance: g.ax, yAdvance: g.ay, xOffset: g.dx, yOffset: g.dy }));
   }
 }
 
@@ -344,9 +345,7 @@ export class _CharStyle {
 /** Raise {@link CompositionUnsupported} outside the verified envelope. */
 export function _checkEnvelope(doc: TextDocument, raw: string): void {
   if (hb == null) {
-    throw new CompositionUnsupported(
-      "composition requires uharfbuzz, which is unavailable on Python 3.7",
-    );
+    throw new CompositionUnsupported("composition requires uharfbuzz, which is unavailable on Python 3.7");
   }
   const orientation = cosGet(doc._cosData, "0", "8", "0", 0, "0", "2", "1");
   if (!(orientation == null || valueEquals(orientation, 0))) {
@@ -476,9 +475,7 @@ export function _shapeGlyphs(text: string, style: _CharStyle): [_HbBuffer, numbe
   hb.shape(font, buf, { liga: false, clig: false });
   for (const info of buf.glyphInfos) {
     if (info.codepoint === 0) {
-      throw new CompositionUnsupported(
-        `glyph missing from ${literal(style.font)} for a character in ${literal(text)}`,
-      );
+      throw new CompositionUnsupported(`glyph missing from ${literal(style.font)} for a character in ${literal(text)}`);
     }
   }
   return [buf, style.size / upem];
@@ -495,7 +492,10 @@ export function _glyphAdvances(text: string, style: _CharStyle, buf: _HbBuffer, 
   // Text here is BMP-only (`_checkEnvelope` refuses astral characters
   // first), so UTF-16 indexing matches Python's code-point indexing.
   const perCluster: number[] = new Array<number>(text.length).fill(0.0);
-  for (const [info, pos] of zip<[_HbBuffer["glyphInfos"], _HbBuffer["glyphPositions"]]>(buf.glyphInfos, buf.glyphPositions)) {
+  for (const [info, pos] of zip<[_HbBuffer["glyphInfos"], _HbBuffer["glyphPositions"]]>(
+    buf.glyphInfos,
+    buf.glyphPositions,
+  )) {
     perCluster[info.cluster] += pos.xAdvance * scale;
   }
   const advances: number[] = [];
@@ -655,11 +655,13 @@ export function composeLines(doc: TextDocument): ComposedLines {
   const baselines: number[] = [];
   let y = 0.0;
   for (const [lineNo, [start, end]] of spans.entries()) {
-    const lineStyles = styles.slice(start, Math.min(end, styles.length))?.length ? styles.slice(start, Math.min(end, styles.length)) : [styles.at(-1)!];
+    const lineStyles = styles.slice(start, Math.min(end, styles.length))?.length
+      ? styles.slice(start, Math.min(end, styles.length))
+      : [styles.at(-1)!];
     if (lineNo === 0) {
-      y += Math.max(...lineStyles.map(
-          (s) => (_ascenderRatio(s.font) + (s.fauxbold ? _FAUX_BOLD_ADVANCE / 2 : 0.0)) * s.size,
-        ));
+      y += Math.max(
+        ...lineStyles.map((s) => (_ascenderRatio(s.font) + (s.fauxbold ? _FAUX_BOLD_ADVANCE / 2 : 0.0)) * s.size),
+      );
     } else {
       y += Math.max(...lineStyles.map((s) => s.leading));
     }

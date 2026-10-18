@@ -11,16 +11,7 @@
  * Rouu chunk data (154 bytes per entry) for each output module template.
  */
 
-import {
-  Bytes,
-  concat,
-  decode,
-  assert,
-  patternMatch,
-  pyRe,
-  reEscape,
-  reMatch,
-} from "../../pyrt/index.ts";
+import { Bytes, concat, decode, assert, patternMatch, pyRe, reEscape, reMatch } from "../../pyrt/index.ts";
 import type { Path } from "../../pyrt/index.ts";
 import { OutputModuleSettingsItem, RenderSettingsItem } from "../binary/render_chunks.ts";
 import { collapseContinuationLines, parseHexValue } from "./prefs.ts";
@@ -125,9 +116,7 @@ export function parseRenderTemplates(prefsDir: Path): [RenderSettingsItem[], num
   for (let idx = 0; idx < count; idx++) {
     const offset = _HEADER_SIZE + idx * _RS_PREFS_ITEM_SIZE;
     const itemData = raw.slice(offset, offset + _RS_PREFS_ITEM_SIZE);
-    const item = RenderSettingsItem.frombytes(
-      concat(itemData, Bytes.repeat(new Uint8Array(1), _RS_ITEM_SIZE_DIFF)),
-    );
+    const item = RenderSettingsItem.frombytes(concat(itemData, Bytes.repeat(new Uint8Array(1), _RS_ITEM_SIZE_DIFF)));
     assert(item instanceof RenderSettingsItem);
     if (!item.cleanTemplateName) {
       continue;
@@ -183,16 +172,8 @@ export function parseOutputTemplates(prefsDir: Path): [OutputModuleTemplate[], n
 
   // Rouu header bytes ("Output File Info") and the format-specific Ropt
   // bytes ("Output File Options"), both keyed by the same template index.
-  const formatInfos = _parseIdHexSection(
-    text,
-    "Output File Info Preference Section",
-    "Output File Info",
-  );
-  const formatOpts = _parseIdHexSection(
-    text,
-    "Output File Options Preference Section",
-    "Output File Options",
-  );
+  const formatInfos = _parseIdHexSection(text, "Output File Info Preference Section", "Output File Info");
+  const formatOpts = _parseIdHexSection(text, "Output File Options Preference Section", "Output File Options");
 
   const rawDefaultIndex = _extractIntValue(lines, "Default OM Index");
 
@@ -214,14 +195,7 @@ export function parseOutputTemplates(prefsDir: Path): [OutputModuleTemplate[], n
     if (idx === rawDefaultIndex) {
       defaultIndex = templates.length;
     }
-    templates.push(
-      new OutputModuleTemplate(
-        item,
-        name,
-        formatInfos.get(idx) ?? null,
-        formatOpts.get(idx) ?? null,
-      ),
-    );
+    templates.push(new OutputModuleTemplate(item, name, formatInfos.get(idx) ?? null, formatOpts.get(idx) ?? null));
   }
 
   return [templates, defaultIndex];

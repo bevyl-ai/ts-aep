@@ -250,9 +250,7 @@ export class Item {
   removeGuide(guideIndex: number): void {
     if (this._guides.length === 0) throw new IndexError("No guides to remove");
     if (!(0 <= guideIndex && guideIndex < this._guides.length)) {
-      throw new IndexError(
-        `Guide index ${guideIndex} out of range [0, ${this._guides.length - 1}]`,
-      );
+      throw new IndexError(`Guide index ${guideIndex} out of range [0, ${this._guides.length - 1}]`);
     }
     assert(this._lhd3 != null);
     assert(this._ldat != null);
@@ -345,11 +343,7 @@ export class Item {
     const parent = this._parentFolder;
     assert(parent != null);
     const container = parent._childrenContainer;
-    const [start, end] = blockSlice(
-      container,
-      this._itemList,
-      this.constructor._ITEM_BOUNDARY_LIST_TYPES,
-    );
+    const [start, end] = blockSlice(container, this._itemList, this.constructor._ITEM_BOUNDARY_LIST_TYPES);
     const block = container.slice(start, end);
     container.splice(start, end - start);
     return block;

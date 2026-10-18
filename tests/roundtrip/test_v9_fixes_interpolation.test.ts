@@ -9,10 +9,30 @@
  */
 
 import { describe, expect, test } from "bun:test";
-import { Path, StopIteration, ValueError, float, getMember, getOrThrow, assert, valueEquals, setMember } from "../../src/pyrt/index.ts";
+import {
+  Path,
+  StopIteration,
+  ValueError,
+  float,
+  getMember,
+  getOrThrow,
+  assert,
+  valueEquals,
+  setMember,
+} from "../../src/pyrt/index.ts";
 
 import * as py_aep from "../../src/py_aep/index.ts";
-import { AVLayer, CompItem, Keyframe, KeyframeEase, Layer, Property, PropertyGroup, Shape, parse } from "../../src/py_aep/index.ts";
+import {
+  AVLayer,
+  CompItem,
+  Keyframe,
+  KeyframeEase,
+  Layer,
+  Property,
+  PropertyGroup,
+  Shape,
+  parse,
+} from "../../src/py_aep/index.ts";
 import type { PropertyValue } from "../../src/py_aep/models/properties/keyframe.ts";
 import { TdumChunk } from "../../src/py_aep/binary/property_chunks.ts";
 import { KfNoValue } from "../../src/py_aep/binary/ldat_chunks.ts";
@@ -32,7 +52,9 @@ const SAMPLES = new Path(import.meta.path).parent.parent.parent.div("samples");
 function _leaves(group: PropertyGroup): Property[] {
   const out: Property[] = [];
   for (const prop of group.properties) {
-    out.push(...(hasMember(prop, "properties") ? _leaves(asInstance(prop, PropertyGroup)) : [asInstance(prop, Property)]));
+    out.push(
+      ...(hasMember(prop, "properties") ? _leaves(asInstance(prop, PropertyGroup)) : [asInstance(prop, Property)]),
+    );
   }
   return out;
 }
@@ -163,17 +185,77 @@ describe("TestTemporalAutoBezierParallelKinds", () => {
     const layer = _solid(comp, 3000, 200);
     const path = asInstance(layer.masks, PropertyGroup).addProperty("ADBE Mask Atom").property("ADBE Mask Shape");
     _keys(path, [
-      [0, new Shape([[0, 0], [100, 0], [100, 100]], undefined, undefined, { closed: true })],
-      [1, new Shape([[20, 10], [150, 0], [120, 140]], undefined, undefined, { closed: true })],
-      [2, new Shape([[50, 50], [160, 30], [100, 180]], undefined, undefined, { closed: true })],
+      [
+        0,
+        new Shape(
+          [
+            [0, 0],
+            [100, 0],
+            [100, 100],
+          ],
+          undefined,
+          undefined,
+          { closed: true },
+        ),
+      ],
+      [
+        1,
+        new Shape(
+          [
+            [20, 10],
+            [150, 0],
+            [120, 140],
+          ],
+          undefined,
+          undefined,
+          { closed: true },
+        ),
+      ],
+      [
+        2,
+        new Shape(
+          [
+            [50, 50],
+            [160, 30],
+            [100, 180],
+          ],
+          undefined,
+          undefined,
+          { closed: true },
+        ),
+      ],
     ]);
     const kf = path.keyframes[1];
     kf.temporalAutoBezier = true;
     expect(kf.temporalContinuous).toBe(true);
     expect(_eqApprox(_speeds(kf.inTemporalEase), _approx([[1.0, 100 / 6]]))).toBe(true);
     expect(_eqApprox(_speeds(kf.outTemporalEase), _approx([[1.0, 100 / 6]]))).toBe(true);
-    expect(_eqApprox(_verts(path.valueAtTime(0.5)), _approx([[10, 5], [125, 0], [110, 120]], 1e-4))).toBe(true);
-    expect(_eqApprox(_verts(path.valueAtTime(1.5)), _approx([[35, 30], [155, 15], [110, 160]], 1e-4))).toBe(true);
+    expect(
+      _eqApprox(
+        _verts(path.valueAtTime(0.5)),
+        _approx(
+          [
+            [10, 5],
+            [125, 0],
+            [110, 120],
+          ],
+          1e-4,
+        ),
+      ),
+    ).toBe(true);
+    expect(
+      _eqApprox(
+        _verts(path.valueAtTime(1.5)),
+        _approx(
+          [
+            [35, 30],
+            [155, 15],
+            [110, 160],
+          ],
+          1e-4,
+        ),
+      ),
+    ).toBe(true);
   });
 
   test("test_orientation_auto_bezier", () => {
@@ -188,7 +270,10 @@ describe("TestTemporalAutoBezierParallelKinds", () => {
     kf.temporalAutoBezier = true;
     expect(_eqApprox(_speeds(kf.inTemporalEase), _approx([[1.0, 100 / 6]]))).toBe(true);
     expect(
-      _eqApprox(orient.valueAtTime(1.208333333), _approx([52.6749651539118, 31.754058708850526, 1.4806168873979855], 1e-4)),
+      _eqApprox(
+        orient.valueAtTime(1.208333333),
+        _approx([52.6749651539118, 31.754058708850526, 1.4806168873979855], 1e-4),
+      ),
     ).toBe(true);
   });
 });
@@ -261,14 +346,61 @@ describe("TestInHoldSegments", () => {
 
   test("test_mask_path", () => {
     const [_app, comp] = _comp();
-    const path = asInstance(_solid(comp).masks, PropertyGroup).addProperty("ADBE Mask Atom").property("ADBE Mask Shape");
+    const path = asInstance(_solid(comp).masks, PropertyGroup)
+      .addProperty("ADBE Mask Atom")
+      .property("ADBE Mask Shape");
     _keys(path, [
-      [0, new Shape([[0, 0], [100, 0], [100, 100]], undefined, undefined, { closed: true })],
-      [1, new Shape([[20, 10], [150, 0], [120, 140]], undefined, undefined, { closed: true })],
-      [2, new Shape([[50, 50], [160, 30], [100, 180]], undefined, undefined, { closed: true })],
+      [
+        0,
+        new Shape(
+          [
+            [0, 0],
+            [100, 0],
+            [100, 100],
+          ],
+          undefined,
+          undefined,
+          { closed: true },
+        ),
+      ],
+      [
+        1,
+        new Shape(
+          [
+            [20, 10],
+            [150, 0],
+            [120, 140],
+          ],
+          undefined,
+          undefined,
+          { closed: true },
+        ),
+      ],
+      [
+        2,
+        new Shape(
+          [
+            [50, 50],
+            [160, 30],
+            [100, 180],
+          ],
+          undefined,
+          undefined,
+          { closed: true },
+        ),
+      ],
     ]);
     _types(path.keyframes[1], HOLD, HOLD);
-    expect(_eqApprox(_verts(path.valueAtTime(0.5)), _approx([[0, 0], [100, 0], [100, 100]]))).toBe(true);
+    expect(
+      _eqApprox(
+        _verts(path.valueAtTime(0.5)),
+        _approx([
+          [0, 0],
+          [100, 0],
+          [100, 100],
+        ]),
+      ),
+    ).toBe(true);
   });
 });
 
@@ -297,7 +429,10 @@ describe("TestColourModel", () => {
     _ease(color.keyframes[0], [[0, 80]], [[0, 80]]);
     _types(color.keyframes[1], LIN, LIN);
     expect(
-      _eqApprox(color.valueAtTime(1.708333333), _approx([0.3087938606486835, 0.34560306967565824, 0.6912061393513165, 1.0])),
+      _eqApprox(
+        color.valueAtTime(1.708333333),
+        _approx([0.3087938606486835, 0.34560306967565824, 0.6912061393513165, 1.0]),
+      ),
     ).toBe(true);
     expect(_eqApprox(_speeds(color.keyframes[1].inTemporalEase), _approx([[191.25, 100 / 6]]))).toBe(true);
   });
@@ -334,7 +469,17 @@ describe("TestRangeClamp", () => {
       [0, [10, 10]],
       [2, [50, 60]],
     ]);
-    _ease(feather.keyframes[0], [[0, 30], [0, 30]], [[-300, 60], [200, 60]]);
+    _ease(
+      feather.keyframes[0],
+      [
+        [0, 30],
+        [0, 30],
+      ],
+      [
+        [-300, 60],
+        [200, 60],
+      ],
+    );
     expect(_eqApprox(feather.valueAtTime(0.25), _approx([0.0, 55.58876065072549]))).toBe(true);
     const expansion = _keys(mask.property("ADBE Mask Offset"), [
       [0, 10],
@@ -377,7 +522,12 @@ describe("TestRejectedWritesDoNotMutate", () => {
     expect(_eqApprox(_speeds(new_.outTemporalEase), _approx([[179.03961789599282, 61.1377297149683]]))).toBe(true);
     expect(_eqApprox(_speeds(op.keyframes[0].outTemporalEase), _approx([[300.0, 35.131134850035764]]))).toBe(true);
     const again = _reparse(app, tmpPath).property(TG).property("ADBE Opacity");
-    expect(valueEquals(again.keyframes.map((k) => k.value), [10.0, 100.0, 90.0])).toBe(true);
+    expect(
+      valueEquals(
+        again.keyframes.map((k) => k.value),
+        [10.0, 100.0, 90.0],
+      ),
+    ).toBe(true);
   });
 });
 
@@ -506,8 +656,18 @@ describe("TestRovingRunAfterHoldAnchor", () => {
     const pos = _rovingRun(comp);
     _types(pos.keyframes[0], HOLD, HOLD);
     const k = pos.keyframes;
-    expect(_eqApprox([1, 2].map((i) => k[i].time), _approx([3.90625e-05, 7.8125e-05]))).toBe(true);
-    expect(valueEquals([1, 2, 3].map((i) => k[i].inTemporalEase[0].speed), Array(3).fill(0.0))).toBe(true);
+    expect(
+      _eqApprox(
+        [1, 2].map((i) => k[i].time),
+        _approx([3.90625e-5, 7.8125e-5]),
+      ),
+    ).toBe(true);
+    expect(
+      valueEquals(
+        [1, 2, 3].map((i) => k[i].inTemporalEase[0].speed),
+        Array(3).fill(0.0),
+      ),
+    ).toBe(true);
     for (const i of [1, 2]) {
       expect(_eqApprox(k[i].outTemporalEase[0].speed, _approx(204.14457215491265, 1e-4))).toBe(true);
     }
@@ -527,10 +687,20 @@ describe("TestRovingRunRetimedByAnchorEase", () => {
     pos.keyframes[3].spatialAutoBezier = true;
     _ease(pos.keyframes[0], [[0, 80]], [[0, 80]]);
     const want = [1.9925759092425759, 2.6412245578912246];
-    expect(_eqApprox(pos.keyframes.slice(1, 3).map((k) => k.time), _approx(want))).toBe(true);
+    expect(
+      _eqApprox(
+        pos.keyframes.slice(1, 3).map((k) => k.time),
+        _approx(want),
+      ),
+    ).toBe(true);
     const compAgain = _reparseComp(app, tmpPath);
     const again = compAgain.layers[0].property(TG).property("ADBE Position");
-    expect(_eqApprox(again.keyframes.slice(1, 3).map((k) => k.time), _approx(want))).toBe(true);
+    expect(
+      _eqApprox(
+        again.keyframes.slice(1, 3).map((k) => k.time),
+        _approx(want),
+      ),
+    ).toBe(true);
   });
 
   test("test_auto_bezier_anchors", () => {
@@ -539,7 +709,10 @@ describe("TestRovingRunRetimedByAnchorEase", () => {
     pos.keyframes[0].temporalAutoBezier = true;
     pos.keyframes[3].temporalAutoBezier = true;
     expect(
-      _eqApprox(pos.keyframes.slice(1, 3).map((k) => k.time), _approx([0.9633383383383384, 2.267559225892559])),
+      _eqApprox(
+        pos.keyframes.slice(1, 3).map((k) => k.time),
+        _approx([0.9633383383383384, 2.267559225892559]),
+      ),
     ).toBe(true);
   });
 });
@@ -657,21 +830,71 @@ describe("TestMaskPathAddKey", () => {
   test("test_in_between_shape", () => {
     const tmpPath = makeTmpPath();
     const [app, comp] = _comp(640, 480, 1.5, 25.0);
-    const path = asInstance(_solid(comp).masks, PropertyGroup).addProperty("ADBE Mask Atom").property("ADBE Mask Shape");
+    const path = asInstance(_solid(comp).masks, PropertyGroup)
+      .addProperty("ADBE Mask Atom")
+      .property("ADBE Mask Shape");
     _keys(path, [
-      [0, new Shape([[0, 0], [100, 0], [100, 100]], undefined, undefined, { closed: true })],
-      [2, new Shape([[20, 10], [150, 0], [120, 140]], undefined, undefined, { closed: true })],
+      [
+        0,
+        new Shape(
+          [
+            [0, 0],
+            [100, 0],
+            [100, 100],
+          ],
+          undefined,
+          undefined,
+          { closed: true },
+        ),
+      ],
+      [
+        2,
+        new Shape(
+          [
+            [20, 10],
+            [150, 0],
+            [120, 140],
+          ],
+          undefined,
+          undefined,
+          { closed: true },
+        ),
+      ],
     ]);
     path.addKey(0.7);
-    const want = [[7.0, 3.5], [117.5, 0.0], [107.0, 114.0]];
+    const want = [
+      [7.0, 3.5],
+      [117.5, 0.0],
+      [107.0, 114.0],
+    ];
     expect(_eqApprox(_verts(path.keyframes[1].value), _approx(want, 1e-3))).toBe(true);
-    const again = asInstance(getMember(_reparse(app, tmpPath).masks, "properties")[0], PropertyGroup).property("ADBE Mask Shape");
+    const again = asInstance(getMember(_reparse(app, tmpPath).masks, "properties")[0], PropertyGroup).property(
+      "ADBE Mask Shape",
+    );
     expect(_eqApprox(_verts(again.keyframes[1].value), _approx(want, 1e-3))).toBe(true);
   });
 });
 
-const TRI0 = new Shape([[0, 0], [100, 0], [100, 100]], undefined, undefined, { closed: true });
-const TRI1 = new Shape([[20, 10], [150, 0], [120, 140]], undefined, undefined, { closed: true });
+const TRI0 = new Shape(
+  [
+    [0, 0],
+    [100, 0],
+    [100, 100],
+  ],
+  undefined,
+  undefined,
+  { closed: true },
+);
+const TRI1 = new Shape(
+  [
+    [20, 10],
+    [150, 0],
+    [120, 140],
+  ],
+  undefined,
+  undefined,
+  { closed: true },
+);
 const _T = new Map<string, KIT>([
   ["L", LIN],
   ["B", BEZ],
@@ -686,7 +909,9 @@ describe("TestParallelAddKeyTypes", () => {
 
   const _path = (keys: [number, Shape][]) => {
     const [_app, comp] = _comp();
-    const path = asInstance(_solid(comp).masks, PropertyGroup).addProperty("ADBE Mask Atom").property("ADBE Mask Shape");
+    const path = asInstance(_solid(comp).masks, PropertyGroup)
+      .addProperty("ADBE Mask Atom")
+      .property("ADBE Mask Shape");
     return _keys(path, keys);
   };
 
@@ -835,7 +1060,12 @@ describe("TestRemoveKeyNextToRovingRun", () => {
     const [_app, comp] = _comp(640, 480, 1.0, 25.0);
     const pos = _rovingRun(comp);
     pos.removeKey(0);
-    expect(_eqApprox(pos.keyframes.map((k) => k.time), _approx([1.00984375, 2.2587109375, 3.0, 5.0], 1e-9))).toBe(true);
+    expect(
+      _eqApprox(
+        pos.keyframes.map((k) => k.time),
+        _approx([1.00984375, 2.2587109375, 3.0, 5.0], 1e-9),
+      ),
+    ).toBe(true);
     expect(pos.keyframes[0].roving).toBe(true);
   });
 });
@@ -940,7 +1170,15 @@ describe("TestSynthesizedBoundChunks", () => {
           return [tdum.chunkType, [tdum.values, tdum.isInteger]];
         }),
     );
-    expect(valueEquals(bounds, new Map<string, [number[], boolean]>([["tdum", [[0.0], false]], ["tduM", [[100.0], false]]]))).toBe(true);
+    expect(
+      valueEquals(
+        bounds,
+        new Map<string, [number[], boolean]>([
+          ["tdum", [[0.0], false]],
+          ["tduM", [[100.0], false]],
+        ]),
+      ),
+    ).toBe(true);
     const again = asInstance(
       asInstance(getMember(_reparse(app, tmpPath).effects, "properties")[0], PropertyGroup).properties[0],
       Property,

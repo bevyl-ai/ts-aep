@@ -26,7 +26,9 @@ const Z_DATA_ERROR = -3;
 const Z_BUF_ERROR = -5;
 
 function _fail(code: number, msg: string | null): never {
-  throw new error(msg == null ? `Error ${code} while decompressing data` : `Error ${code} while decompressing data: ${msg}`);
+  throw new error(
+    msg == null ? `Error ${code} while decompressing data` : `Error ${code} while decompressing data: ${msg}`,
+  );
 }
 
 // fflate error codes from `inflt` -> zlib's messages for the same faults.
@@ -63,7 +65,7 @@ function _checkHeader(data: Uint8Array, truncatedIsError: boolean): number | nul
 function _adler32(data: Uint8Array): number {
   let a = 1,
     b = 0;
-  for (let i = 0; i < data.length; ) {
+  for (let i = 0; i < data.length;) {
     const end = Math.min(i + 5552, data.length);
     for (; i < end; i++) {
       a += data[i];
@@ -138,7 +140,7 @@ export function decompress(data: Uint8Array): Uint8Array {
   const r = _inflate(data.subarray(start), -1, Math.max(data.length, 1));
   if (r.rest == null || r.rest.length < 4) _fail(Z_BUF_ERROR, "incomplete or truncated stream");
   const t = r.rest;
-  if ((((t[0] << 24) | (t[1] << 16) | (t[2] << 8) | t[3]) >>> 0) !== _adler32(r.out)) {
+  if (((t[0] << 24) | (t[1] << 16) | (t[2] << 8) | t[3]) >>> 0 !== _adler32(r.out)) {
     _fail(Z_DATA_ERROR, "incorrect data check");
   }
   return r.out;
@@ -158,7 +160,7 @@ export function decompressobj(): { decompress(data: Uint8Array, maxLength?: numb
       if (limit >= 0 && r.out.length > limit) return r.out.slice(0, limit);
       if (r.rest != null && r.rest.length >= 4) {
         const t = r.rest;
-        if ((((t[0] << 24) | (t[1] << 16) | (t[2] << 8) | t[3]) >>> 0) !== _adler32(r.out)) {
+        if (((t[0] << 24) | (t[1] << 16) | (t[2] << 8) | t[3]) >>> 0 !== _adler32(r.out)) {
           _fail(Z_DATA_ERROR, "incorrect data check");
         }
       }

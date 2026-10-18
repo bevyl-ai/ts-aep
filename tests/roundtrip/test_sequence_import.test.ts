@@ -17,7 +17,6 @@ import { UNDEFINED_FRAME, findByListType } from "../../src/py_aep/binary/utils.t
 import { Path, ValueError, b, assert, valueEquals } from "../../src/pyrt/index.ts";
 import { makeTmpPath, raises } from "../support/pytest.ts";
 
-
 const ASSETS = new Path(import.meta.dir, "..", "..", "samples", "assets");
 const BASE = new Path(import.meta.dir, "..", "..", "samples", "models", "folder", "folder.aep");
 
@@ -56,15 +55,7 @@ class TestAlphabeticalSequence {
    * Every .png, case-insensitively by name (n_10 before n_2); x.jpg and the
    * subfolder's file are left out.
    */
-  static ORDER = [
-    "a_001.png",
-    "a_002.png",
-    "b.png",
-    "c_010.png",
-    "D.PNG",
-    "n_10.png",
-    "n_2.png",
-  ];
+  static ORDER = ["a_001.png", "a_002.png", "b.png", "c_010.png", "D.PNG", "n_10.png", "n_2.png"];
 
   static _mixed(tmpPath: Path): Path {
     const folder = _folder(tmpPath, ...this.ORDER, "x.jpg");
@@ -158,40 +149,12 @@ describe("TestSequencePadding", () => {
    */
 
   test.each([
-    [
-      Array.from({ length: 12 }, (_, i) => `s${i + 1}.png`),
-      "s12.png",
-      "s[1-12].png",
-      "s1.png",
-      1,
-      b("\x00"),
-    ],
-    [
-      ["p410.png", "p411.png", "p412.png"],
-      "p410.png",
-      "p[410-412].png",
-      "p410.png",
-      3,
-      b("\x00"),
-    ],
-    [
-      ["z_0410.png", "z_0411.png", "z_0412.png"],
-      "z_0411.png",
-      "z_[0410-0412].png",
-      "z_0410.png",
-      4,
-      b("\x01"),
-    ],
+    [Array.from({ length: 12 }, (_, i) => `s${i + 1}.png`), "s12.png", "s[1-12].png", "s1.png", 1, b("\x00")],
+    [["p410.png", "p411.png", "p412.png"], "p410.png", "p[410-412].png", "p410.png", 3, b("\x00")],
+    [["z_0410.png", "z_0411.png", "z_0412.png"], "z_0411.png", "z_[0410-0412].png", "z_0410.png", 4, b("\x01")],
   ])(
     "test_matches_ae[%#]",
-    (
-      names: string[],
-      picked: string,
-      name: string,
-      first: string,
-      padding: number,
-      zeroPadded: Uint8Array,
-    ) => {
+    (names: string[], picked: string, name: string, first: string, padding: number, zeroPadded: Uint8Array) => {
       const tmpPath = makeTmpPath();
       const [project, item] = _import(_folder(tmpPath, ...names).div(picked), { alphabetical: false });
       const reparsed = _reparsed(project, item, tmpPath);
@@ -207,19 +170,16 @@ describe("TestSequenceConformFrameRate", () => {
   test.each([
     [24.0, 3, 24],
     [29.97, 300, 2997],
-  ])(
-    "test_stores_unreduced_frames_over_the_rate[%#]",
-    (rate: number, dividend: number, divisor: number) => {
-      /** The frame count over the rate to the nearest thousandth. */
-      const tmpPath = makeTmpPath();
-      const folder = _folder(tmpPath, "shot_0001.png", "shot_0002.png", "shot_0003.png");
-      const [, item] = _import(folder.div("shot_0001.png"), { alphabetical: false });
-      item.mainSource.conformFrameRate = rate;
-      const sspc = item.mainSource._sspc;
-      expect(valueEquals([sspc.durationDividend, sspc.durationDivisor], [dividend, divisor])).toBe(true);
-      expect(sspc.conformFrameRate).toBe(0.0);
-    },
-  );
+  ])("test_stores_unreduced_frames_over_the_rate[%#]", (rate: number, dividend: number, divisor: number) => {
+    /** The frame count over the rate to the nearest thousandth. */
+    const tmpPath = makeTmpPath();
+    const folder = _folder(tmpPath, "shot_0001.png", "shot_0002.png", "shot_0003.png");
+    const [, item] = _import(folder.div("shot_0001.png"), { alphabetical: false });
+    item.mainSource.conformFrameRate = rate;
+    const sspc = item.mainSource._sspc;
+    expect(valueEquals([sspc.durationDividend, sspc.durationDivisor], [dividend, divisor])).toBe(true);
+    expect(sspc.conformFrameRate).toBe(0.0);
+  });
 });
 
 /**

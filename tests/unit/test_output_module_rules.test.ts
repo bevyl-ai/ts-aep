@@ -16,7 +16,16 @@ import {
   type Constraints,
   type RuleValue,
 } from "../../src/py_aep/data/output_module_rules.ts";
-import { AudioChannels, AudioCodec, FormatKind, OutputAudio, OutputChannels, OutputColorDepth, OutputColorMode, OutputFormat } from "../../src/py_aep/enums/index.ts";
+import {
+  AudioChannels,
+  AudioCodec,
+  FormatKind,
+  OutputAudio,
+  OutputChannels,
+  OutputColorDepth,
+  OutputColorMode,
+  OutputFormat,
+} from "../../src/py_aep/enums/index.ts";
 import { _DEPTH_MINUS, _DEPTH_PLUS, OM_SETTINGS } from "../../src/py_aep/models/renderqueue/output_module.ts";
 import { getOr, getOrThrow, int, assert, truthy, valueEquals, truthyOr, repr } from "../../src/pyrt/index.ts";
 import { sorted } from "../support/python.ts";
@@ -167,9 +176,7 @@ test("test_forced_color_values_are_color_modes", () => {
 test("test_allowed_values_kind_and_format_merge", () => {
   expect(valueEquals(allowedValues(OutputFormat.MP3, "Video Output"), new Set([false]))).toBe(true);
   expect(valueEquals(allowedValues(OutputFormat.MP3, "Output Audio"), new Set([OutputAudio.ON]))).toBe(true);
-  expect(
-    valueEquals(allowedValues(OutputFormat.TIFF_SEQUENCE, "Output Audio"), new Set([OutputAudio.OFF])),
-  ).toBe(true);
+  expect(valueEquals(allowedValues(OutputFormat.TIFF_SEQUENCE, "Output Audio"), new Set([OutputAudio.OFF]))).toBe(true);
   // Movies leave both toggles free.
   expect(allowedValues(OutputFormat.AVI, "Video Output") == null).toBe(true);
   expect(allowedValues(OutputFormat.AVI, "Output Audio") == null).toBe(true);
@@ -182,17 +189,9 @@ test("test_allowed_values_conditional_replaces_format_row", () => {
   // conditional row replaces it.
   const union = allowedValues(OutputFormat.WAV, "Audio Sample Rate");
   expect(union != null && union.has(96000)).toBe(true);
-  const gsm = allowedValues(
-    OutputFormat.WAV,
-    "Audio Sample Rate",
-    new Map([["Audio Codec", AudioCodec.GSM_6_10]]),
-  );
+  const gsm = allowedValues(OutputFormat.WAV, "Audio Sample Rate", new Map([["Audio Codec", AudioCodec.GSM_6_10]]));
   expect(valueEquals(gsm, new Set([8000, 11025, 22050, 44100]))).toBe(true);
-  const channels = allowedValues(
-    OutputFormat.WAV,
-    "Audio Channels",
-    new Map([["Audio Codec", AudioCodec.GSM_6_10]]),
-  );
+  const channels = allowedValues(OutputFormat.WAV, "Audio Channels", new Map([["Audio Codec", AudioCodec.GSM_6_10]]));
   expect(valueEquals(channels, new Set([AudioChannels.MONO]))).toBe(true);
 });
 

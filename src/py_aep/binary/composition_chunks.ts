@@ -302,9 +302,9 @@ export class CdtaChunk extends Chunk {
   }
 
   set bgColor(value: number[]) {
-    this.bgColorR = (Math.round(value[0] * 255) + 0);
-    this.bgColorG = (Math.round(value[1] * 255) + 0);
-    this.bgColorB = (Math.round(value[2] * 255) + 0);
+    this.bgColorR = Math.round(value[0] * 255) + 0;
+    this.bgColorG = Math.round(value[1] * 255) + 0;
+    this.bgColorB = Math.round(value[2] * 255) + 0;
   }
 
   /** Resolution factor as [horizontal, vertical]. */

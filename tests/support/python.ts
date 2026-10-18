@@ -1,6 +1,19 @@
 // Python builtins the ported tests use and the library does not.
-import { AttributeError, BoxedFloat, MIN_NORMAL, shortestDigits, OverflowError, ValueError, compare, floatAsRatio, floatRepr, isKeyedMapping, truthy, unbox, type KeyedMapping } from "../../src/pyrt/index.ts";
-
+import {
+  AttributeError,
+  BoxedFloat,
+  MIN_NORMAL,
+  shortestDigits,
+  OverflowError,
+  ValueError,
+  compare,
+  floatAsRatio,
+  floatRepr,
+  isKeyedMapping,
+  truthy,
+  unbox,
+  type KeyedMapping,
+} from "../../src/pyrt/index.ts";
 
 /** `x & mask` for non-negative operands up to 2**53. */
 export function and(x: number, mask: number): number {
@@ -418,4 +431,3 @@ export class StringIO {
 
   close(): void {}
 }
-

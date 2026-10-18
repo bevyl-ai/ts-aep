@@ -13,7 +13,17 @@
 
 import { expect, test } from "bun:test";
 
-import { Path, StopIteration, ValueError, bytesEqual, getOrThrow, len, assert, truthy, valueEquals } from "../../src/pyrt/index.ts";
+import {
+  Path,
+  StopIteration,
+  ValueError,
+  bytesEqual,
+  getOrThrow,
+  len,
+  assert,
+  truthy,
+  valueEquals,
+} from "../../src/pyrt/index.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { Curves } from "../../src/py_aep/models/properties/curves.ts";
 import { Property } from "../../src/py_aep/models/properties/property.ts";
@@ -94,12 +104,20 @@ test("test_untouched_curves_equal_the_parT_default", () => {
 
 test("test_curves_are_read_only", () => {
   const prop = _curvesProperty("pencil");
-  raises(ValueError, () => {
-    prop.value = prop.value;
-  }, "read-only");
-  raises(ValueError, () => {
-    prop.setValueAtTime(1.0, prop.value);
-  }, "read-only");
+  raises(
+    ValueError,
+    () => {
+      prop.value = prop.value;
+    },
+    "read-only",
+  );
+  raises(
+    ValueError,
+    () => {
+      prop.setValueAtTime(1.0, prop.value);
+    },
+    "read-only",
+  );
 });
 
 /** The edited channels whose map the rounded spline reproduces. */
@@ -129,7 +147,13 @@ test("test_point_curves_reproduce_their_maps", () => {
       [255, 255],
     ]),
   ).toBe(true);
-  expect(valueEquals(getOrThrow(curves.channels, "red").points, [[0, 0], [131, 184], [255, 255]])).toBe(true);
+  expect(
+    valueEquals(getOrThrow(curves.channels, "red").points, [
+      [0, 0],
+      [131, 184],
+      [255, 255],
+    ]),
+  ).toBe(true);
   // No half-level tie on these curves: every level is exact.
   expect(valueEquals(_roundedSplineIsTheMap(curves), ["rgb", "red"])).toBe(true);
 });
@@ -146,7 +170,12 @@ function _keyedJson(): ExpectedKeyframe[] {
 test("test_keyed_curves_decode_each_key", () => {
   const prop = _curvesProperty("keyed");
   const keysJson = _keyedJson();
-  expect(approx(prop.keyframes.map((kf) => kf.time), keysJson.map((k) => k.time))).toBe(true);
+  expect(
+    approx(
+      prop.keyframes.map((kf) => kf.time),
+      keysJson.map((k) => k.time),
+    ),
+  ).toBe(true);
   const middles: Array<[number, number]> = [];
   for (const kf of prop.keyframes) {
     const curves = asInstance(kf.value, Curves);
@@ -154,7 +183,13 @@ test("test_keyed_curves_decode_each_key", () => {
     expect(valueEquals(_roundedSplineIsTheMap(curves), ["rgb"])).toBe(true);
     middles.push(getOrThrow(curves.channels, "rgb").points[1]);
   }
-  expect(valueEquals(middles, [[103, 164], [211, 166], [173, 89]])).toBe(true);
+  expect(
+    valueEquals(middles, [
+      [103, 164],
+      [211, 166],
+      [173, 89],
+    ]),
+  ).toBe(true);
 });
 
 test("test_keyed_curves_at_a_time", () => {
@@ -180,15 +215,27 @@ test("test_keyed_curves_at_a_time", () => {
 
 test("test_keyed_curves_keys_are_read_only", () => {
   const prop = _curvesProperty("keyed");
-  raises(ValueError, () => {
-    prop.removeKey(0);
-  }, "read-only");
-  raises(ValueError, () => {
-    prop.removeAllKeys();
-  }, "read-only");
-  raises(ValueError, () => {
-    prop.keyframes[0].value = prop.keyframes[1].value;
-  }, "read-only");
+  raises(
+    ValueError,
+    () => {
+      prop.removeKey(0);
+    },
+    "read-only",
+  );
+  raises(
+    ValueError,
+    () => {
+      prop.removeAllKeys();
+    },
+    "read-only",
+  );
+  raises(
+    ValueError,
+    () => {
+      prop.keyframes[0].value = prop.keyframes[1].value;
+    },
+    "read-only",
+  );
   assert(prop._arbs != null);
   expect(len(prop.keyframes)).toBe(len(prop._arbs.chunks));
   expect(len(prop.keyframes)).toBe(3);

@@ -5,7 +5,16 @@
  */
 
 import { describe, expect, test } from "bun:test";
-import { getMember, len, assert, truthy, valueEquals, StopIteration, ValueError, type Path } from "../../src/pyrt/index.ts";
+import {
+  getMember,
+  len,
+  assert,
+  truthy,
+  valueEquals,
+  StopIteration,
+  ValueError,
+  type Path,
+} from "../../src/pyrt/index.ts";
 
 import { findByType } from "../../src/py_aep/binary/utils.ts";
 import { PropertyType } from "../../src/py_aep/enums/index.ts";
@@ -202,17 +211,21 @@ describe("TestCopyToCompTransform", () => {
     const comps = app.project.compositions;
     const source = comps.find((c) => truthy(c.layers));
     if (source == null) throw new StopIteration();
-    const target = comps.find(
-      (c) => c !== source && !valueEquals([c.width, c.height], [source.width, source.height]),
-    );
+    const target = comps.find((c) => c !== source && !valueEquals([c.width, c.height], [source.width, source.height]));
     if (target == null) throw new StopIteration();
     const layer = source.layers[0];
-    const before = asInstance(asInstance(layer.property("Transform"), PropertyGroup).property("Position"), Property).value;
+    const before = asInstance(
+      asInstance(layer.property("Transform"), PropertyGroup).property("Position"),
+      Property,
+    ).value;
 
     const copy = layer.copyToComp(target);
 
     expect(
-      valueEquals(asInstance(asInstance(copy.property("Transform"), PropertyGroup).property("Position"), Property).value, before),
+      valueEquals(
+        asInstance(asInstance(copy.property("Transform"), PropertyGroup).property("Position"), Property).value,
+        before,
+      ),
     ).toBe(true);
   });
 

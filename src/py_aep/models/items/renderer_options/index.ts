@@ -4,7 +4,12 @@
  * One wrapper class per renderer, selected from the `prda` chunk variant dispatch.
  */
 
-import { AdvancedPrdaChunk, Cinema4DPrdaChunk, ClassicPrdaChunk, RayTracedPrdaChunk } from "../../../binary/misc_chunks.ts";
+import {
+  AdvancedPrdaChunk,
+  Cinema4DPrdaChunk,
+  ClassicPrdaChunk,
+  RayTracedPrdaChunk,
+} from "../../../binary/misc_chunks.ts";
 import { AdvancedRendererOptions } from "./advanced.ts";
 import { Cinema4DRendererOptions } from "./cinema_4d.ts";
 import { ClassicRendererOptions } from "./classic.ts";
@@ -40,4 +45,10 @@ export function rendererOptionsFor(body: Chunk, comp: CompItem): RendererOptions
   return new wrapperCls({ body, comp });
 }
 
-export { AdvancedRendererOptions, Cinema4DRendererOptions, ClassicRendererOptions, RayTracedRendererOptions, RendererOptionsBase };
+export {
+  AdvancedRendererOptions,
+  Cinema4DRendererOptions,
+  ClassicRendererOptions,
+  RayTracedRendererOptions,
+  RendererOptionsBase,
+};

@@ -12,7 +12,8 @@ import { smoke } from "./smoke.js";
 const root = path.resolve(import.meta.dir, "../..");
 const all = fs.globSync("samples/**/*.aep", { cwd: root }).sort();
 const n = Number(process.argv[2] ?? 40);
-const samples = n > 0 && n < all.length ? Array.from({ length: n }, (_, i) => all[Math.floor((i * all.length) / n)]) : all;
+const samples =
+  n > 0 && n < all.length ? Array.from({ length: n }, (_, i) => all[Math.floor((i * all.length) / n)]) : all;
 
 const saved = globalThis.process;
 (globalThis as any).process = undefined;

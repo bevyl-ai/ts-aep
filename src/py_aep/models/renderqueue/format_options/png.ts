@@ -211,6 +211,10 @@ export class PngFormatOptions extends FormatOptionsBase {
     descriptor(this, "width", new ChunkField("_body", "width", { readOnly: true }));
     descriptor(this, "height", new ChunkField("_body", "height", { readOnly: true }));
     descriptor(this, "bitDepth", new ChunkField("_body", "bitDepth", { validate: validateOneOf([8, 16]) }));
-    descriptor(this, "compression", ChunkField.enum(PngCompression, "_body", "compression", { allowOutOfEnumValues: true }));
+    descriptor(
+      this,
+      "compression",
+      ChunkField.enum(PngCompression, "_body", "compression", { allowOutOfEnumValues: true }),
+    );
   }
 }

@@ -328,9 +328,7 @@ describe("TestRoundtripUseDisplayColorManagement", () => {
   /** Roundtrip tests for ViewOptions.useDisplayColorManagement. */
   test("test_toggle_display_color_management", () => {
     const tmpPath = makeTmpPath();
-    const [app, opts] = _getActiveAppAndOptions(
-      SAMPLES_DIR.div("channels_use_display_color_management_off.aep"),
-    );
+    const [app, opts] = _getActiveAppAndOptions(SAMPLES_DIR.div("channels_use_display_color_management_off.aep"));
     expect(opts.useDisplayColorManagement).toBe(false);
 
     opts.useDisplayColorManagement = true;

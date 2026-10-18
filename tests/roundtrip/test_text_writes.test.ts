@@ -13,21 +13,26 @@
 import { describe, expect, test } from "bun:test";
 import "../../src/py_aep/binary/_register.ts";
 import { parseAppFresh } from "../helpers.ts";
-import { AttributeError, getOr, deepcopy, getMember, len, Path, assert, valueEquals, truthyOr, repr, StopIteration, ValueError, zip } from "../../src/pyrt/index.ts";
+import {
+  AttributeError,
+  getOr,
+  deepcopy,
+  getMember,
+  len,
+  Path,
+  assert,
+  valueEquals,
+  truthyOr,
+  repr,
+  StopIteration,
+  ValueError,
+  zip,
+} from "../../src/pyrt/index.ts";
 
 import { serialize } from "../../src/py_aep/cos/index.ts";
 // noqa: F401 (documents the data source)
 import { type CosDict, type CosNode } from "../../src/py_aep/cos/cos.ts";
-import {
-  cosAt,
-  cosContains,
-  cosDict,
-  cosGetOr,
-  cosItem,
-  cosIter,
-  cosLen,
-  cosPop,
-} from "../../src/py_aep/cos/kinds.ts";
+import { cosAt, cosContains, cosDict, cosGetOr, cosItem, cosIter, cosLen, cosPop } from "../../src/py_aep/cos/kinds.ts";
 import type { Application } from "../../src/py_aep/models/application.ts";
 import type { TextDocument } from "../../src/py_aep/models/text/text_document.ts";
 import { AutoKernType, ParagraphJustification } from "../../src/py_aep/enums/index.ts";
@@ -111,8 +116,7 @@ function _assertByteParity(pyDoc: TextDocument, fixtureApp: Application, opName:
   const expected = _docFor(fixtureApp, opName);
   assert(
     valueEquals(_maskedBytes(pyDoc._cosData), _maskedBytes(expected._cosData)),
-    `${opName}: py-written btdk diverges from the AE fixture ` +
-      `(outside the masked /PC cache)`,
+    `${opName}: py-written btdk diverges from the AE fixture ` + `(outside the masked /PC cache)`,
   );
 }
 
@@ -279,7 +283,12 @@ describe("TestColorFontLeadingWrites", () => {
     const [_app, doc] = _baseDoc();
     const before = doc._fonts.map((f) => f.postScriptName);
     doc.characterRange(3, 7).font = before[0];
-    expect(valueEquals(doc._fonts.map((f) => f.postScriptName), before)).toBe(true);
+    expect(
+      valueEquals(
+        doc._fonts.map((f) => f.postScriptName),
+        before,
+      ),
+    ).toBe(true);
   });
 
   test("test_fill_color_write_and_clear", () => {
@@ -500,9 +509,7 @@ describe("TestPasteFrom", () => {
     const pastedStyle = cosDict(_cosPath(pasted._doc, "0", "6", "0", 1, "0", "0", "6"), "get");
     const sourceStyle = cosDict(_cosPath(source._doc, "0", "6", "0", 0, "0", "0", "6"), "get");
     const keys = new Set<string>([...pastedStyle.keys(), ...sourceStyle.keys()]);
-    const diffKeys = new Set(
-      [...keys].filter((k) => !valueEquals(getOr(pastedStyle, k), getOr(sourceStyle, k))),
-    );
+    const diffKeys = new Set([...keys].filter((k) => !valueEquals(getOr(pastedStyle, k), getOr(sourceStyle, k))));
     expect([...diffKeys].every((k) => k === "0")).toBe(true);
   });
 });

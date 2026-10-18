@@ -10,10 +10,7 @@ import { _channelFlags } from "../../src/py_aep/resolvers/psd_layers.ts";
 import { range } from "../support/python.ts";
 
 function _delta(data: Uint8Array): Uint8Array {
-  return Uint8Array.from(
-    zip(Array.from(concat(b("\x00"), data)), Array.from(data)),
-    ([a, b_]) => (b_ - a) & 0xff,
-  );
+  return Uint8Array.from(zip(Array.from(concat(b("\x00"), data)), Array.from(data)), ([a, b_]) => (b_ - a) & 0xff);
 }
 
 /**
@@ -30,9 +27,7 @@ function _zipPredicted(rows: number[][], depth: number): Uint8Array {
       out = concat(out, struct.pack(`>${len(row)}H`, ...deltas));
     } else {
       const raw = struct.pack(`>${len(row)}f`, ...row);
-      const planes = Bytes.join(
-        Array.from(range(4), (k) => raw.filter((_, i) => i % 4 === k)),
-      );
+      const planes = Bytes.join(Array.from(range(4), (k) => raw.filter((_, i) => i % 4 === k)));
       out = concat(out, _delta(planes));
     }
   }
@@ -42,12 +37,7 @@ function _zipPredicted(rows: number[][], depth: number): Uint8Array {
 describe("TestChannelFlags", () => {
   test("test_raw_8bit", () => {
     const chunk = concat(struct.pack(">H", 0), new Uint8Array([0, 7, 0, 255, 0, 0]));
-    expect(
-      valueEquals(_channelFlags(chunk, 3, 2, 8, false), [
-        b("\x00\x01\x00"),
-        b("\x01\x00\x00"),
-      ]),
-    ).toBe(true);
+    expect(valueEquals(_channelFlags(chunk, 3, 2, 8, false), [b("\x00\x01\x00"), b("\x01\x00\x00")])).toBe(true);
   });
 
   test("test_rle_8bit", () => {
@@ -55,12 +45,7 @@ describe("TestChannelFlags", () => {
     const row1 = new Uint8Array([256 - 2, 9]);
     const row2 = new Uint8Array([2, 0, 4, 0]);
     const chunk = concat(struct.pack(">HHH", 1, len(row1), len(row2)), row1, row2);
-    expect(
-      valueEquals(_channelFlags(chunk, 3, 2, 8, false), [
-        b("\x01\x01\x01"),
-        b("\x00\x01\x00"),
-      ]),
-    ).toBe(true);
+    expect(valueEquals(_channelFlags(chunk, 3, 2, 8, false), [b("\x01\x01\x01"), b("\x00\x01\x00")])).toBe(true);
   });
 
   test("test_zip_predicted_16bit", () => {
@@ -69,12 +54,9 @@ describe("TestChannelFlags", () => {
       [256, 0, 0, 1],
     ];
     const chunk = _zipPredicted(rows, 16);
-    expect(
-      valueEquals(_channelFlags(chunk, 4, 2, 16, false), [
-        b("\x00\x01\x00\x01"),
-        b("\x01\x00\x00\x01"),
-      ]),
-    ).toBe(true);
+    expect(valueEquals(_channelFlags(chunk, 4, 2, 16, false), [b("\x00\x01\x00\x01"), b("\x01\x00\x00\x01")])).toBe(
+      true,
+    );
   });
 
   test("test_zip_predicted_32bit", () => {
@@ -83,21 +65,13 @@ describe("TestChannelFlags", () => {
       [2.0, 0.0, 1e-30, 0.0],
     ];
     const chunk = _zipPredicted(rows, 32);
-    expect(
-      valueEquals(_channelFlags(chunk, 4, 2, 32, false), [
-        b("\x00\x01\x00\x01"),
-        b("\x01\x00\x01\x00"),
-      ]),
-    ).toBe(true);
+    expect(valueEquals(_channelFlags(chunk, 4, 2, 32, false), [b("\x00\x01\x00\x01"), b("\x01\x00\x01\x00")])).toBe(
+      true,
+    );
   });
 
   test("test_zip_predicted_8bit", () => {
-    const chunk = concat(
-      struct.pack(">H", 3),
-      zlib.deflateSync(_delta(new Uint8Array([0, 5, 5, 0]))),
-    );
-    expect(
-      valueEquals(_channelFlags(chunk, 4, 1, 8, false), [b("\x00\x01\x01\x00")]),
-    ).toBe(true);
+    const chunk = concat(struct.pack(">H", 3), zlib.deflateSync(_delta(new Uint8Array([0, 5, 5, 0]))));
+    expect(valueEquals(_channelFlags(chunk, 4, 1, 8, false), [b("\x00\x01\x01\x00")])).toBe(true);
   });
 });

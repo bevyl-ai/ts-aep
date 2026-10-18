@@ -23,7 +23,6 @@ import { PropertyGroup } from "../../src/py_aep/models/properties/property_group
 import { Path, assert, setMember } from "../../src/pyrt/index.ts";
 import { approx, makeTmpPath } from "../support/pytest.ts";
 
-
 // `Path(__file__).parent.parent.parent / "samples" / ...` in Python is the
 // package root's `samples/`; from this file's directory that is two `.parent`s.
 const SAMPLES_DIR = new Path(import.meta.dir).parent.parent.div("samples", "models", "layer");

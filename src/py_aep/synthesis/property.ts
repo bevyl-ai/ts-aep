@@ -35,8 +35,7 @@ type PropSpecField = PropSpec[
   | "chunkBoundsAreHints"
   | "hintBounds"
   | "propertyCategory"
-  | "pad2a"
-];
+  | "pad2a"];
 
 type GroupSpecField = GroupSpec["matchName" | "autoName" | "minMajor" | "enableFlags"];
 
@@ -1052,10 +1051,16 @@ export const _VECTOR_FILL_RULE: PropSpec = _spec("ADBE Vector Fill Rule", "Fill 
   maxValue: 2,
   canVaryOverTime: false,
 });
-export const _VECTOR_FILL_OPACITY: PropSpec = _spec("ADBE Vector Fill Opacity", "Opacity", 100.0, PropertyValueType.OneD, {
-  minValue: 0,
-  maxValue: 100,
-});
+export const _VECTOR_FILL_OPACITY: PropSpec = _spec(
+  "ADBE Vector Fill Opacity",
+  "Opacity",
+  100.0,
+  PropertyValueType.OneD,
+  {
+    minValue: 0,
+    maxValue: 100,
+  },
+);
 export const _VECTOR_GRAD_TYPE: PropSpec = _spec("ADBE Vector Grad Type", "Type", 1.0, PropertyValueType.OneD, {
   minValue: 1,
   maxValue: 2,
@@ -1092,33 +1097,75 @@ export const _VECTOR_GRAD_HILITE_ANGLE: PropSpec = _spec(
 // Grad Scale / Grad Rotation were added to the gradient fill/stroke groups in
 // AE 2026 (major 26); 2018-2025 stop at HiLite Angle -> Colors. Probed across
 // AE CC 2018, 2022, 2023, 2024, 2025, 2026 (only 26.0 exposes them).
-export const _VECTOR_GRAD_SCALE: PropSpec = _spec("ADBE Vector Grad Scale", "Scale", [100.0, 100.0], PropertyValueType.TwoD, {
-  minMajor: 26,
-});
-export const _VECTOR_GRAD_ROTATION: PropSpec = _spec("ADBE Vector Grad Rotation", "Rotation", 0.0, PropertyValueType.OneD, {
-  minMajor: 26,
-});
-export const _VECTOR_GRAD_COLORS: PropSpec = _spec("ADBE Vector Grad Colors", "Colors", null, PropertyValueType.NO_VALUE, {
-  isSpatial: true,
-});
-export const _VECTOR_STROKE_OPACITY: PropSpec = _spec("ADBE Vector Stroke Opacity", "Opacity", 100.0, PropertyValueType.OneD, {
-  minValue: 0,
-  maxValue: 100,
-});
-export const _VECTOR_STROKE_WIDTH: PropSpec = _spec("ADBE Vector Stroke Width", "Stroke Width", 2.0, PropertyValueType.OneD, {
-  minValue: 0,
-  chunkBoundsAreHints: true,
-});
-export const _VECTOR_STROKE_LINE_CAP: PropSpec = _spec("ADBE Vector Stroke Line Cap", "Line Cap", 1.0, PropertyValueType.OneD, {
-  minValue: 1,
-  maxValue: 3,
-  canVaryOverTime: false,
-});
-export const _VECTOR_STROKE_LINE_JOIN: PropSpec = _spec("ADBE Vector Stroke Line Join", "Line Join", 1.0, PropertyValueType.OneD, {
-  minValue: 1,
-  maxValue: 3,
-  canVaryOverTime: false,
-});
+export const _VECTOR_GRAD_SCALE: PropSpec = _spec(
+  "ADBE Vector Grad Scale",
+  "Scale",
+  [100.0, 100.0],
+  PropertyValueType.TwoD,
+  {
+    minMajor: 26,
+  },
+);
+export const _VECTOR_GRAD_ROTATION: PropSpec = _spec(
+  "ADBE Vector Grad Rotation",
+  "Rotation",
+  0.0,
+  PropertyValueType.OneD,
+  {
+    minMajor: 26,
+  },
+);
+export const _VECTOR_GRAD_COLORS: PropSpec = _spec(
+  "ADBE Vector Grad Colors",
+  "Colors",
+  null,
+  PropertyValueType.NO_VALUE,
+  {
+    isSpatial: true,
+  },
+);
+export const _VECTOR_STROKE_OPACITY: PropSpec = _spec(
+  "ADBE Vector Stroke Opacity",
+  "Opacity",
+  100.0,
+  PropertyValueType.OneD,
+  {
+    minValue: 0,
+    maxValue: 100,
+  },
+);
+export const _VECTOR_STROKE_WIDTH: PropSpec = _spec(
+  "ADBE Vector Stroke Width",
+  "Stroke Width",
+  2.0,
+  PropertyValueType.OneD,
+  {
+    minValue: 0,
+    chunkBoundsAreHints: true,
+  },
+);
+export const _VECTOR_STROKE_LINE_CAP: PropSpec = _spec(
+  "ADBE Vector Stroke Line Cap",
+  "Line Cap",
+  1.0,
+  PropertyValueType.OneD,
+  {
+    minValue: 1,
+    maxValue: 3,
+    canVaryOverTime: false,
+  },
+);
+export const _VECTOR_STROKE_LINE_JOIN: PropSpec = _spec(
+  "ADBE Vector Stroke Line Join",
+  "Line Join",
+  1.0,
+  PropertyValueType.OneD,
+  {
+    minValue: 1,
+    maxValue: 3,
+    canVaryOverTime: false,
+  },
+);
 export const _VECTOR_STROKE_MITER_LIMIT: PropSpec = _spec(
   "ADBE Vector Stroke Miter Limit",
   "Miter Limit",
@@ -2175,7 +2222,11 @@ export const _STYLE_ENUM_SUFFIXES: ReadonlySet<string> = new Set([
   "align",
   "style",
 ]);
-export const _STYLE_ANGLE_SUFFIXES: ReadonlySet<string> = new Set(["localLightingAngle", "localLightingAltitude", "angle"]);
+export const _STYLE_ANGLE_SUFFIXES: ReadonlySet<string> = new Set([
+  "localLightingAngle",
+  "localLightingAltitude",
+  "angle",
+]);
 export const _STYLE_HINT_BOUNDS: Map<string, [number, number]> = new Map<string, [number, number]>([
   ["opacity", [0.0, 100.0]],
   ["highlightOpacity", [0.0, 100.0]],
@@ -2359,10 +2410,7 @@ export const _GROUP_CHILD_SPECS: Map<string, (PropSpec | GroupSpec)[]> = new Map
   // the Properties pool; AE writes only the latter to binary.
   [
     "ADBE Text Animator",
-    [
-      new GroupSpec("ADBE Text Selectors", "Selectors"),
-      new GroupSpec("ADBE Text Animator Properties", "Properties"),
-    ],
+    [new GroupSpec("ADBE Text Selectors", "Selectors"), new GroupSpec("ADBE Text Animator Properties", "Properties")],
   ],
   ["ADBE Compositing Options Group", _3D_COMPOSITING_OPTIONS_SPECS],
   ["ADBE3D Para Mat Parade", [new GroupSpec("ADBE3D Param Mat Atom", "Material")]],
@@ -2502,9 +2550,9 @@ export const _SKIP_FOR_REGULAR_AV: ReadonlySet<string> = new Set<string>([
 /** Cameras/lights expose only Marker, Transform and their own options. */
 export function _cameraLightSkip(ownOptions: string): ReadonlySet<string> {
   return new Set<string>(
-    _TOP_LEVEL_SPECS.filter((s) => !["ADBE Marker", "ADBE Transform Group", ownOptions].includes(s.matchName)).map(
-      (s) => s.matchName,
-    ),
+    _TOP_LEVEL_SPECS
+      .filter((s) => !["ADBE Marker", "ADBE Transform Group", ownOptions].includes(s.matchName))
+      .map((s) => s.matchName),
   );
 }
 

@@ -119,7 +119,15 @@ export class CosField<T extends InstanceValue, A extends string = string, O exte
   declare publicName: string;
 
   constructor(dictAttr: A, key: string, kw: CosFieldOptions<T, O>) {
-    const { transform, accepts, reverse = null, readOnly = false, validate = null, default: default_, minVersion = null } = kw;
+    const {
+      transform,
+      accepts,
+      reverse = null,
+      readOnly = false,
+      validate = null,
+      default: default_,
+      minVersion = null,
+    } = kw;
     this.dictAttr = dictAttr;
     this.key = key;
     this.transform = transform;
@@ -209,13 +217,20 @@ export class CosField<T extends InstanceValue, A extends string = string, O exte
  * required: it decides whether the field can read `null` (an instance
  * override of `null` is only accepted back when the default is `null`).
  */
-export type CosFieldExtras<D extends InstanceValue, O> = Partial<Pick<CosFieldOptions<D, O>, "readOnly" | "validate" | "minVersion">> & {
+export type CosFieldExtras<D extends InstanceValue, O> = Partial<
+  Pick<CosFieldOptions<D, O>, "readOnly" | "validate" | "minVersion">
+> & {
   default: D;
 };
 
 /** Options of a boolean flag field: `transform=bool`, `reverse=bool`. */
 export function boolField<D extends boolean | null, O>(kw: CosFieldExtras<D, O>): CosFieldOptions<boolean | D, O> {
-  return { transform: truthy, reverse: truthy, accepts: (v): v is boolean | D => (v === null ? kw.default === null : typeof v === "boolean"), ...kw };
+  return {
+    transform: truthy,
+    reverse: truthy,
+    accepts: (v): v is boolean | D => (v === null ? kw.default === null : typeof v === "boolean"),
+    ...kw,
+  };
 }
 
 /**
@@ -256,7 +271,10 @@ export function intField<D extends number | null, O>(kw: CosFieldExtras<D, O>): 
  * `raw + offset`, so a non-number raises `TypeError`), `toBinary` on
  * write.
  */
-export function enumField<V extends number, D extends V | null, O>(E: CosEnum<V>, kw: CosFieldExtras<D, O>): CosFieldOptions<V | D, O> {
+export function enumField<V extends number, D extends V | null, O>(
+  E: CosEnum<V>,
+  kw: CosFieldExtras<D, O>,
+): CosFieldOptions<V | D, O> {
   return {
     transform: (x: CosNode) => enumFromCos(E, x),
     reverse: (v: V) => E.toBinary(v),

@@ -9,7 +9,18 @@ import { describe, expect, test } from "bun:test";
 
 import "../../src/py_aep/binary/_register.ts";
 import { formatHexDump } from "../../src/py_aep/cli/_chunk_helpers.ts";
-import { ByteDifference, ChunkDifference, MultiFileDifference, _compareChunkDicts, _gradientXmlOnlyFloatDiff, _multiOnlyFloatDiff, _onlyFloatDiff, compareBinaryData, filterDifferences, toJsonOutput } from "../../src/py_aep/cli/compare.ts";
+import {
+  ByteDifference,
+  ChunkDifference,
+  MultiFileDifference,
+  _compareChunkDicts,
+  _gradientXmlOnlyFloatDiff,
+  _multiOnlyFloatDiff,
+  _onlyFloatDiff,
+  compareBinaryData,
+  filterDifferences,
+  toJsonOutput,
+} from "../../src/py_aep/cli/compare.ts";
 import { CdatChunk } from "../../src/py_aep/binary/property_chunks.ts";
 import { ShphChunk } from "../../src/py_aep/binary/misc_chunks.ts";
 import { Utf8Chunk } from "../../src/py_aep/binary/scalar_chunks.ts";
@@ -128,8 +139,7 @@ describe("TestCompareChunkDicts", () => {
 describe("TestFloatTolerance", () => {
   // Class attribute _GRAD_XML: the template's only placeholder is {a}.
   const _GRAD_XML =
-    "<?xml version='1.0'?>\n<prop.map version='4'>\n" +
-    "<float>{a}</float>\n<float>0.5</float>\n</prop.map>\n";
+    "<?xml version='1.0'?>\n<prop.map version='4'>\n" + "<float>{a}</float>\n<float>0.5</float>\n</prop.map>\n";
 
   /** cdat within tolerance is suppressed. */
   test("test_cdat_within_tolerance_suppressed", () => {
@@ -168,9 +178,7 @@ describe("TestFloatTolerance", () => {
    * equality applies (no float parsing).
    */
   test("test_non_gradient_utf8_not_tolerated", () => {
-    expect(
-      _onlyFloatDiff(new Utf8Chunk({ value: "Layer 1" }), new Utf8Chunk({ value: "Layer 2" })),
-    ).toBe(false);
+    expect(_onlyFloatDiff(new Utf8Chunk({ value: "Layer 1" }), new Utf8Chunk({ value: "Layer 2" }))).toBe(false);
   });
 
   test("test_cdat_beyond_tolerance_reported", () => {
@@ -205,13 +213,7 @@ describe("TestFloatTolerance", () => {
     // the float-only diff is reported, not silent
     expect(valueEquals(suppressed, ["x"])).toBe(true);
     // --exact disables tolerance.
-    const [diffsExact, ___, ____, suppressedExact] = _compareChunkDicts(
-      data1,
-      data2,
-      typed1,
-      typed2,
-      true,
-    );
+    const [diffsExact, ___, ____, suppressedExact] = _compareChunkDicts(data1, data2, typed1, typed2, true);
     expect(diffsExact.length).toBe(1);
     expect(valueEquals(suppressedExact, [])).toBe(true);
   });
@@ -286,19 +288,8 @@ describe("TestFilterDifferences", () => {
 describe("TestToJsonOutput", () => {
   /** Test that JSON output has expected structure. */
   test("test_json_output_structure", () => {
-    const diff = new ChunkDifference(
-      "test/path",
-      [new ByteDifference("test", 0, 0x00, 0x01)],
-      10,
-      10,
-    );
-    const output = toJsonOutput(
-      new Path("file1.aep"),
-      new Path("file2.aep"),
-      [diff],
-      ["only1"],
-      ["only2"],
-    );
+    const diff = new ChunkDifference("test/path", [new ByteDifference("test", 0, 0x00, 0x01)], 10, 10);
+    const output = toJsonOutput(new Path("file1.aep"), new Path("file2.aep"), [diff], ["only1"], ["only2"]);
     expect("file1" in output).toBe(true);
     expect("file2" in output).toBe(true);
     expect("chunks_with_differences" in output).toBe(true);

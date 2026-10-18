@@ -2,23 +2,31 @@
   "name": "@bevyl-ai/ts-aep",
   "version": "0.2.0",
   "description": "1:1 TypeScript port of py-aep: read and write Adobe After Effects .aep projects (Node, Bun, browsers, Workers)",
+  "keywords": [
+    "adobe",
+    "aep",
+    "after-effects",
+    "py-aep",
+    "rifx"
+  ],
+  "homepage": "https://github.com/bevyl-ai/ts-aep#readme",
+  "bugs": {
+    "url": "https://github.com/bevyl-ai/ts-aep/issues"
+  },
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/bevyl-ai/ts-aep.git"
   },
-  "homepage": "https://github.com/bevyl-ai/ts-aep#readme",
-  "bugs": {
-    "url": "https://github.com/bevyl-ai/ts-aep/issues"
-  },
-  "keywords": [
-    "after-effects",
-    "aep",
-    "adobe",
-    "rifx",
-    "py-aep"
+  "files": [
+    "dist/*.js",
+    "dist/*.js.map",
+    "dist/types",
+    "README.md",
+    "LICENSE"
   ],
   "type": "module",
+  "sideEffects": true,
   "main": "./dist/index.js",
   "types": "./dist/types/py_aep/index.d.ts",
   "exports": {
@@ -31,17 +39,6 @@
       "default": "./dist/index.js"
     },
     "./package.json": "./package.json"
-  },
-  "files": [
-    "dist/*.js",
-    "dist/*.js.map",
-    "dist/types",
-    "README.md",
-    "LICENSE"
-  ],
-  "sideEffects": true,
-  "engines": {
-    "node": ">=22.3"
   },
   "publishConfig": {
     "access": "public"
@@ -61,6 +58,12 @@
   "devDependencies": {
     "@microsoft/tsdoc": "0.15.1",
     "@types/bun": "1.2.21",
+    "knip": "6.42.0",
+    "oxfmt": "0.71.0",
+    "oxlint": "1.86.0",
     "typescript": "5.9.2"
+  },
+  "engines": {
+    "node": ">=22.3"
   }
 }

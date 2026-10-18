@@ -18,7 +18,23 @@
  */
 
 import { describe, expect, test } from "bun:test";
-import { AssertionError, at, b, ByteStream, Bytes, contains, getOr, getOrThrow, len, Path, assert, truthy, valueEquals, StopIteration, zip } from "../../src/pyrt/index.ts";
+import {
+  AssertionError,
+  at,
+  b,
+  ByteStream,
+  Bytes,
+  contains,
+  getOr,
+  getOrThrow,
+  len,
+  Path,
+  assert,
+  truthy,
+  valueEquals,
+  StopIteration,
+  zip,
+} from "../../src/pyrt/index.ts";
 
 import { ListChunk } from "../../src/py_aep/binary/chunk.ts";
 import type { Chunk } from "../../src/py_aep/binary/chunk.ts";
@@ -35,12 +51,7 @@ import { asInstance, parseProjectFresh } from "../helpers.ts";
 import { makeTmpPath } from "../support/pytest.ts";
 import { enumerate, max } from "../support/python.ts";
 
-const SAMPLE = new Path(import.meta.path).parent.parent.parent.div(
-  "samples",
-  "models",
-  "composition",
-  "duplicate.aep",
-);
+const SAMPLE = new Path(import.meta.path).parent.parent.parent.div("samples", "models", "composition", "duplicate.aep");
 const EG_SAMPLE = new Path(import.meta.path).parent.parent.parent.div(
   "samples",
   "models",
@@ -80,9 +91,7 @@ function _allIds(project: Project): number[] {
 
 /** Reference graph with layer ids as free variables (ldta positions). */
 function _graph(comp: CompItem): Map<string, unknown> {
-  const pos = new Map<number, number>(
-    _ldtaInOrder(comp).map((ld, i): [number, number] => [ld.layerId, i]),
-  );
+  const pos = new Map<number, number>(_ldtaInOrder(comp).map((ld, i): [number, number] => [ld.layerId, i]));
   const layers: Map<string, unknown>[] = [];
   for (const layer of comp.layers) {
     const ld = layer._ldta;
@@ -174,9 +183,7 @@ describe("TestDuplicateAgainstAE", () => {
     expect(truthy(shared)).toBe(false);
     // The three CIF containers must carry the SAME fresh uuid per
     // controller (AE keeps them in sync; matched by old uuid).
-    const uuidsPerContainer = _cctls(dup).map(
-      (c) => at(filterByType(c.chunks, "Utf8"), 0).value,
-    );
+    const uuidsPerContainer = _cctls(dup).map((c) => at(filterByType(c.chunks, "Utf8"), 0).value);
     expect(len(new Set(uuidsPerContainer))).toBe(len(dupCtrls));
     // CCId retargeted at the duplicate; CVal/CDef zeroed like AE (the
     // cached controller value is re-derived by AE at runtime).
@@ -197,7 +204,12 @@ describe("TestDuplicateAgainstAE", () => {
     const src = _comp(project, "DupSrc");
     const dup = src.duplicate();
     // Layer sources (solid footage, the Inner precomp) are shared.
-    expect(valueEquals(dup.layers.map((la) => la._ldta.sourceId), src.layers.map((la) => la._ldta.sourceId))).toBe(true);
+    expect(
+      valueEquals(
+        dup.layers.map((la) => la._ldta.sourceId),
+        src.layers.map((la) => la._ldta.sourceId),
+      ),
+    ).toBe(true);
     // Layer-side Essential Properties override uuids reference the
     // SOURCE comp's controllers and must stay verbatim.
     expect(
@@ -279,9 +291,9 @@ describe("TestDuplicateAgainstAE", () => {
     pyDup._cdta.timeDivisor = aeDup._cdta.timeDivisor;
     // Documented family 2: AE zeroes the stale viewer-pseudo-layer
     // expression-flags byte; AE's own resave zeroes it everywhere.
-    const aeFlags = recursiveFind(aeDup._itemList.chunks, "tdb4").map(
-      (t) => t._exprFlags,
-    )[Symbol.iterator]();
+    const aeFlags = recursiveFind(aeDup._itemList.chunks, "tdb4")
+      .map((t) => t._exprFlags)
+      [Symbol.iterator]();
     for (const t of recursiveFind(pyDup._itemList.chunks, "tdb4")) {
       t._exprFlags = next(aeFlags);
     }
@@ -322,8 +334,18 @@ describe("TestDuplicateAgainstAE", () => {
       next(innerLayer.properties, (p) => p.matchName === "ADBE Layer Overrides"),
       PropertyGroup,
     );
-    expect(valueEquals(overrides.properties.map((p) => asInstance(p, Property).value), [42.0])).toBe(true);
-    expect(valueEquals(dup.motionGraphicsControllers.map((c) => c.sourceCompId), [dup.id])).toBe(true);
+    expect(
+      valueEquals(
+        overrides.properties.map((p) => asInstance(p, Property).value),
+        [42.0],
+      ),
+    ).toBe(true);
+    expect(
+      valueEquals(
+        dup.motionGraphicsControllers.map((c) => c.sourceCompId),
+        [dup.id],
+      ),
+    ).toBe(true);
     const ids = _allIds(project2);
     expect(len(ids)).toBe(len(new Set(ids)));
     expect(project2._head.nextItemId > max(ids)).toBe(true);
@@ -340,7 +362,10 @@ describe("TestDuplicateEdgeCases", () => {
     const original = next(host.layers, (la) => truthy(la.essentialPropertyUuids));
     const origAlt = asInstance(
       at(
-        asInstance(next(original.properties, (p) => p.matchName === "ADBE Layer Overrides"), PropertyGroup).properties,
+        asInstance(
+          next(original.properties, (p) => p.matchName === "ADBE Layer Overrides"),
+          PropertyGroup,
+        ).properties,
         0,
       ),
       Property,
@@ -356,7 +381,13 @@ describe("TestDuplicateEdgeCases", () => {
     const layer = next(dup2.layers, (la) => truthy(la.essentialPropertyUuids));
     expect(valueEquals(layer.essentialPropertyUuids, original.essentialPropertyUuids)).toBe(true);
     const alt = asInstance(
-      at(asInstance(next(layer.properties, (p) => p.matchName === "ADBE Layer Overrides"), PropertyGroup).properties, 0),
+      at(
+        asInstance(
+          next(layer.properties, (p) => p.matchName === "ADBE Layer Overrides"),
+          PropertyGroup,
+        ).properties,
+        0,
+      ),
       Property,
     );
     expect(alt.canSetAlternateSource).toBe(true);

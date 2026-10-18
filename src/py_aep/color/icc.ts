@@ -18,15 +18,7 @@
 
 import { md5 } from "../../pyrt/md5.ts";
 import * as host from "../../pyrt/host.ts";
-import {
-  LookupError,
-  OSError,
-  Path,
-  Bytes,
-  bytesEqual,
-  decode,
-  literal,
-  compare, ascii } from "../../pyrt/index.ts";
+import { LookupError, OSError, Path, Bytes, bytesEqual, decode, literal, compare, ascii } from "../../pyrt/index.ts";
 import { profileIdForName } from "../enums/mappings.ts";
 
 /**

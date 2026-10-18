@@ -73,13 +73,26 @@ export function viewportTransform(
   const [minX, minY, vbW, vbH] = vb;
   let sx = width / vbW;
   let sy = height / vbH;
-  const tokens = (preserveAspectRatio || "").split(/\s+/).filter(Boolean).filter((t) => t !== "defer");
+  const tokens = (preserveAspectRatio || "")
+    .split(/\s+/)
+    .filter(Boolean)
+    .filter((t) => t !== "defer");
   const align = tokens.length > 0 ? tokens[0] : "xMidYMid";
   if (align !== "none") {
     const s = valueEquals(tokens.slice(1, 2), ["slice"]) ? Math.max(sx, sy) : Math.min(sx, sy);
     sx = sy = s;
-    const ax = (new Map<string, number>([["xMin", 0.0], ["xMid", 0.5], ["xMax", 1.0]])).get(align.slice(0, 4)) ?? 0.5;
-    const ay = (new Map<string, number>([["YMin", 0.0], ["YMid", 0.5], ["YMax", 1.0]])).get(align.slice(4)) ?? 0.5;
+    const ax =
+      new Map<string, number>([
+        ["xMin", 0.0],
+        ["xMid", 0.5],
+        ["xMax", 1.0],
+      ]).get(align.slice(0, 4)) ?? 0.5;
+    const ay =
+      new Map<string, number>([
+        ["YMin", 0.0],
+        ["YMid", 0.5],
+        ["YMax", 1.0],
+      ]).get(align.slice(4)) ?? 0.5;
     x += (width - vbW * s) * ax;
     y += (height - vbH * s) * ay;
   }

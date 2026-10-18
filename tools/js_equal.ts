@@ -12,7 +12,12 @@ const files = execFileSync("git", ["diff", "--name-only", base, "--", "src"], { 
 const emit = (f: string, text: string) =>
   ts.transpileModule(text, {
     fileName: f,
-    compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext, removeComments: true, verbatimModuleSyntax: false },
+    compilerOptions: {
+      target: ts.ScriptTarget.ES2022,
+      module: ts.ModuleKind.ESNext,
+      removeComments: true,
+      verbatimModuleSyntax: false,
+    },
   }).outputText;
 const existed = (f: string) => {
   try {

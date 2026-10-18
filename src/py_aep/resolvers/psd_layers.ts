@@ -26,7 +26,9 @@ import {
   UnicodeDecodeError,
   ValueError,
   warn,
-  type PathLike, ascii } from "../../pyrt/index.ts";
+  type PathLike,
+  ascii,
+} from "../../pyrt/index.ts";
 import { PSB_8BYTE_KEYS as _PSB_8BYTE_KEYS, psdLayerRecordCount, readBounded } from "./media_probe.ts";
 
 /** Raised when a `.psd`/`.psb` file's layers cannot be enumerated. */
@@ -84,7 +86,12 @@ export class PsdStyleBlocks {
     yield this.channelRestrictions;
   }
 
-  static readonly _fields = ["effects", "fillOpacity", "blendInterior", "channelRestrictions"] as const satisfies readonly (keyof PsdStyleBlocks)[];
+  static readonly _fields = [
+    "effects",
+    "fillOpacity",
+    "blendInterior",
+    "channelRestrictions",
+  ] as const satisfies readonly (keyof PsdStyleBlocks)[];
 
   /** `t._replace(field=...)`: a copy with the given fields replaced. */
   _replace(kw: Partial<PsdStyleBlocks>): PsdStyleBlocks {
@@ -221,7 +228,20 @@ export class PsdLayer {
     yield this.visible;
   }
 
-  static readonly _fields = ["name", "layerId", "bounds", "recordIndex", "isAdjustment", "styleBlocks", "vectorMask", "clipped", "isFill", "maskBox", "hasTransparency", "visible"] as const satisfies readonly (keyof PsdLayer)[];
+  static readonly _fields = [
+    "name",
+    "layerId",
+    "bounds",
+    "recordIndex",
+    "isAdjustment",
+    "styleBlocks",
+    "vectorMask",
+    "clipped",
+    "isFill",
+    "maskBox",
+    "hasTransparency",
+    "visible",
+  ] as const satisfies readonly (keyof PsdLayer)[];
 
   /** `t._replace(field=...)`: a copy with the given fields replaced. */
   _replace(kw: Partial<PsdLayer>): PsdLayer {
@@ -300,7 +320,13 @@ export class PsdGroup {
     yield this.visible;
   }
 
-  static readonly _fields = ["name", "layerId", "children", "styleBlocks", "visible"] as const satisfies readonly (keyof PsdGroup)[];
+  static readonly _fields = [
+    "name",
+    "layerId",
+    "children",
+    "styleBlocks",
+    "visible",
+  ] as const satisfies readonly (keyof PsdGroup)[];
 
   /** `t._replace(field=...)`: a copy with the given fields replaced. */
   _replace(kw: Partial<PsdGroup>): PsdGroup {
@@ -547,16 +573,8 @@ export function readPsdLayers(file: PathLike, kw: { maskBoxes?: boolean } = {}):
       off += 4;
       const extra = data.slice(off, off + extraLen);
       off += extraLen;
-      let [
-        layerName,
-        layerId,
-        sectionDivider,
-        isAdjustment,
-        styleBlocks,
-        vectorMask,
-        isFill,
-        maskData,
-      ] = _parseLayerExtra(extra, isPsb);
+      let [layerName, layerId, sectionDivider, isAdjustment, styleBlocks, vectorMask, isFill, maskData] =
+        _parseLayerExtra(extra, isPsb);
       userMasks.push(maskBoxes ? _userMask(maskData, name, layerName) : null);
       const hasTransparency = channels.some(([cid]) => cid === -1);
       if (index === 0 && !hasTransparency && !sectionDivider) {
@@ -607,7 +625,7 @@ export function readPsdLayers(file: PathLike, kw: { maskBoxes?: boolean } = {}):
       if (area > _MAX_INFLATION * source) {
         throw new UnsupportedPsdLayersError(`${name}: layer ${literal(rec.name)} is larger than its pixel data.`);
       }
-      const alpha = rec.isFill ? null : spans.get(-1) ?? null;
+      const alpha = rec.isFill ? null : (spans.get(-1) ?? null);
       const maskSpan = spans.get(mask.channelId);
       records[index] = rec._replace({
         maskBox: _visibleBox(
@@ -621,7 +639,14 @@ export function readPsdLayers(file: PathLike, kw: { maskBoxes?: boolean } = {}):
       });
     }
   } catch (exc) {
-    if (!(exc instanceof StructError || exc instanceof UnicodeDecodeError || isZlibError(exc) || exc instanceof IndexError)) {
+    if (
+      !(
+        exc instanceof StructError ||
+        exc instanceof UnicodeDecodeError ||
+        isZlibError(exc) ||
+        exc instanceof IndexError
+      )
+    ) {
       throw exc;
     }
     throw Object.assign(new UnsupportedPsdLayersError(`${name}: malformed PSD/PSB layer data.`), { cause: exc });
@@ -689,8 +714,7 @@ export function _visibleBox(
   const [ml, mt, mr, mb] = mask.bounds;
   const maskRows: Uint8Array[] =
     maskData != null && mr > ml && mb > mt ? _channelFlags(maskData, mr - ml, mb - mt, depth, isPsb) : [];
-  const alphaRows: Uint8Array[] | null =
-    alpha != null ? _channelFlags(alpha, width, rb - rt, depth, isPsb) : null;
+  const alphaRows: Uint8Array[] | null = alpha != null ? _channelFlags(alpha, width, rb - rt, depth, isPsb) : null;
   const defaultRow = Bytes.repeat(ascii(mask.default_ ? "\x01" : "\x00"), width);
   // Outside its rectangle the mask takes its default color, so with a black
   // default only the rectangle's rows can show.
@@ -848,9 +872,7 @@ export function _buildLayerTree(records: _Record[]): PsdNode[] {
       stack.push([]);
     } else if (rec.sectionDivider === 1 || rec.sectionDivider === 2) {
       const children = stack.length > 1 ? stack.splice(-1)[0] : [];
-      stack[stack.length - 1].push(
-        new PsdGroup(rec.name, rec.layerId, children, rec.styleBlocks, rec.visible),
-      );
+      stack[stack.length - 1].push(new PsdGroup(rec.name, rec.layerId, children, rec.styleBlocks, rec.visible));
     } else {
       stack[stack.length - 1].push(
         new PsdLayer(
@@ -978,8 +1000,7 @@ export function _parseLayerExtra(
   // Photoshop writes an `infx` block (False) on every ordinary layer, so
   // only a user deviation counts: Fill away from 100% (`iOpa` present),
   // Blend Interior checked, or a channel restriction.
-  const hasBlendData =
-    fillOpacity != null || !!blendInterior || channelRestrictions?.length > 0;
+  const hasBlendData = fillOpacity != null || !!blendInterior || channelRestrictions?.length > 0;
   const styleBlocks =
     effects != null || hasBlendData
       ? new PsdStyleBlocks(effects, fillOpacity, blendInterior, channelRestrictions)

@@ -189,4 +189,3 @@ npm token is stored anywhere:
 2. Bump `version` in `package.json`, commit, then `git tag v<version> && git push --tags`.
    `.github/workflows/release.yml` runs the tests and the packed-tarball smoke
    (`tools/pack_smoke.sh`), then `npm publish` with provenance.
-

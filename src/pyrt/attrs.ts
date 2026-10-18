@@ -11,7 +11,6 @@
 //
 // Construction is keyword-only: `new U1Chunk({ chunkType: "efdc", value: 1 })`.
 
-
 export type Factory<T = unknown> = { readonly factory: () => T };
 
 export function Factory<T>(fn: () => T): Factory<T> {

@@ -1,9 +1,7 @@
 /** Parser and serializer for After Effects gradient XML in GCky Utf8 chunks. */
 
 import { Element, ParseError, fromstring } from "../../pyrt/etree.ts";
-import {
-  warn,
-} from "../../pyrt/index.ts";
+import { warn } from "../../pyrt/index.ts";
 import { Gradient, GradientAlphaStop, GradientColorStop } from "../models/properties/gradient.ts";
 import type { Utf8Chunk } from "../binary/scalar_chunks.ts";
 
@@ -106,9 +104,7 @@ export function _parseColorStops(colorStopsElem: Element | null): GradientColorS
     if (arrayElem == null) continue;
     const floats = _parseFloatArray(arrayElem);
     if (floats.length >= 5) {
-      stops.push(
-        new GradientColorStop(floats[0], floats[1], [floats[2], floats[3], floats[4]]),
-      );
+      stops.push(new GradientColorStop(floats[0], floats[1], [floats[2], floats[3], floats[4]]));
     }
   }
   return stops;

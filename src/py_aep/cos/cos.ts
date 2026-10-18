@@ -154,7 +154,7 @@ export function runSpans(doc: CosNode, docKey: string, styleKey: string | null):
   if (!Array.isArray(runs)) return spans;
   let pos = 0;
   for (const run of runs) {
-    const length = run instanceof Map ? run.get("1") ?? null : null;
+    const length = run instanceof Map ? (run.get("1") ?? null) : null;
     // Python `isinstance(True, int)` is True, so booleans count as lengths 1/0.
     if (!is(pyInt, length)) continue;
     const n = Number(length);
@@ -242,7 +242,11 @@ export class IndirectObject {
   }
 
   [INSPECT](): string {
-    return describe("IndirectObject", { objectNumber: this.objectNumber, generationNumber: this.generationNumber, data: this.data });
+    return describe("IndirectObject", {
+      objectNumber: this.objectNumber,
+      generationNumber: this.generationNumber,
+      data: this.data,
+    });
   }
 
   equals(other: IndirectObject): boolean {
@@ -348,7 +352,9 @@ export class Stream {
   }
 
   equals(other: Stream): boolean {
-    return other instanceof Stream && valueEquals(this.dictionary, other.dictionary) && valueEquals(this.data, other.data);
+    return (
+      other instanceof Stream && valueEquals(this.dictionary, other.dictionary) && valueEquals(this.data, other.data)
+    );
   }
 }
 

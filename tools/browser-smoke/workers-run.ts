@@ -12,10 +12,13 @@ const { Miniflare } = (await import("miniflare" as string)) as any;
 const root = path.resolve(import.meta.dir, "../..");
 const all = fs.globSync("samples/**/*.aep", { cwd: root }).sort();
 const n = Number(process.argv[2] ?? 40);
-const samples = n > 0 && n < all.length ? Array.from({ length: n }, (_, i) => all[Math.floor((i * all.length) / n)]) : all;
+const samples =
+  n > 0 && n < all.length ? Array.from({ length: n }, (_, i) => all[Math.floor((i * all.length) / n)]) : all;
 
 const mf = new Miniflare({
-  modules: [{ type: "ESModule", path: "worker.js", contents: fs.readFileSync(path.join(root, "dist/worker.js"), "utf8") }],
+  modules: [
+    { type: "ESModule", path: "worker.js", contents: fs.readFileSync(path.join(root, "dist/worker.js"), "utf8") },
+  ],
   compatibilityDate: "2025-09-01",
 });
 let identical = 0;

@@ -21,7 +21,11 @@ const OUT = path.join(BINARY, "chunk_types.ts");
 
 // Registration order is import order: chunk.ts, then _register.ts's imports.
 const order = ["chunk.ts"];
-const reg = ts.createSourceFile("_register.ts", fs.readFileSync(path.join(BINARY, "_register.ts"), "utf8"), ts.ScriptTarget.Latest);
+const reg = ts.createSourceFile(
+  "_register.ts",
+  fs.readFileSync(path.join(BINARY, "_register.ts"), "utf8"),
+  ts.ScriptTarget.Latest,
+);
 for (const st of reg.statements) {
   if (ts.isImportDeclaration(st) && ts.isStringLiteral(st.moduleSpecifier)) {
     const f = st.moduleSpecifier.text.replace(/^\.\//, "");
@@ -44,7 +48,8 @@ for (const file of order) {
     if (!ts.isExpressionStatement(st) || !ts.isCallExpression(st.expression)) continue;
     const outer = st.expression;
     const inner = outer.expression;
-    if (!ts.isCallExpression(inner) || !ts.isIdentifier(inner.expression) || inner.expression.text !== "register") continue;
+    if (!ts.isCallExpression(inner) || !ts.isIdentifier(inner.expression) || inner.expression.text !== "register")
+      continue;
     const [arg] = outer.arguments;
     if (outer.arguments.length !== 1 || !ts.isIdentifier(arg)) {
       errors.push(`${file}: register(...) applied to something other than a class name`);
@@ -83,7 +88,10 @@ const HELPER_FMT: Record<string, string> = {
 const files = fs.readdirSync(BINARY).filter((f) => f.endsWith(".ts") && f !== "chunk_types.ts");
 const source = new Map<string, ts.SourceFile>();
 for (const file of files) {
-  source.set(file, ts.createSourceFile(file, fs.readFileSync(path.join(BINARY, file), "utf8"), ts.ScriptTarget.Latest, true));
+  source.set(
+    file,
+    ts.createSourceFile(file, fs.readFileSync(path.join(BINARY, file), "utf8"), ts.ScriptTarget.Latest, true),
+  );
 }
 
 const propName = (name: ts.PropertyName): string | null => {
@@ -117,8 +125,9 @@ for (const [file, sf] of source) {
       if (ts.isPropertyDeclaration(m) && m.type) declared.set(name, m.type.getText(sf).replace(/\s+/g, " ").trim());
     }
     const base =
-      st.heritageClauses?.flatMap((h) => (h.token === ts.SyntaxKind.ExtendsKeyword ? h.types : [])).map((t) => t.expression.getText(sf))[0] ??
-      null;
+      st.heritageClauses
+        ?.flatMap((h) => (h.token === ts.SyntaxKind.ExtendsKeyword ? h.types : []))
+        .map((t) => t.expression.getText(sf))[0] ?? null;
     classes.set(`${file}:${st.name.text}`, { name: st.name.text, file, base, accessors, getters, declared });
   }
 }
@@ -207,8 +216,7 @@ function fieldType(init: ts.Expression): { type: string; refs: string[] } | null
     const mapped = HELPER_FMT[helper];
     if (mapped == null) return null;
     fmt = mapped;
-  }
-  else return null;
+  } else return null;
   // An enum coerce names the enum type (`coerce: SomeEnum` -> `SomeEnum`).
   const refs = crc && crc !== "truthy" ? [crc] : [];
   return { type: typeOfFmt(fmt, enc, crc, optional), refs };
@@ -390,8 +398,12 @@ if (process.argv.includes("--check")) {
     console.error("src/py_aep/binary/chunk_types.ts is stale: run bun tools/gen_chunk_types.ts");
     process.exit(1);
   }
-  console.log(`chunk_types.ts up to date (${types.size} chunk types, ${owned.reduce((n, o) => n + o.fields.length, 0)} fields)`);
+  console.log(
+    `chunk_types.ts up to date (${types.size} chunk types, ${owned.reduce((n, o) => n + o.fields.length, 0)} fields)`,
+  );
 } else {
   fs.writeFileSync(OUT, out);
-  console.log(`wrote src/py_aep/binary/chunk_types.ts (${types.size} chunk types, ${owned.reduce((n, o) => n + o.fields.length, 0)} fields)`);
+  console.log(
+    `wrote src/py_aep/binary/chunk_types.ts (${types.size} chunk types, ${owned.reduce((n, o) => n + o.fields.length, 0)} fields)`,
+  );
 }

@@ -1,7 +1,22 @@
 /** Tests for CompItem model parsing. */
 
 import { describe, expect, test } from "bun:test";
-import { at, AttributeError, contains, getMember, getOrThrow, IndexError, isclose, len, Path, assert, truthy, valueEquals, StopIteration, ValueError } from "../../src/pyrt/index.ts";
+import {
+  at,
+  AttributeError,
+  contains,
+  getMember,
+  getOrThrow,
+  IndexError,
+  isclose,
+  len,
+  Path,
+  assert,
+  truthy,
+  valueEquals,
+  StopIteration,
+  ValueError,
+} from "../../src/pyrt/index.ts";
 
 import { AdvancedRendererOptions, AVItem, ClassicRendererOptions, parse as parseAep } from "../../src/py_aep/index.ts";
 import { GuideOrientationType, ShadowMapResolution } from "../../src/py_aep/enums/index.ts";
@@ -68,9 +83,13 @@ describe("TestRoundtripRenderer", () => {
 
   test("test_renderer_validation_rejects_invalid", () => {
     const comp = at(parseProjectFresh(SAMPLES_DIR.div("renderer_classic_3d.aep")).compositions, 0);
-    raises(ValueError, () => {
-      comp.renderer = "Not A Renderer";
-    }, "must be one of");
+    raises(
+      ValueError,
+      () => {
+        comp.renderer = "Not A Renderer";
+      },
+      "must be one of",
+    );
   });
 
   test("test_renderer_change_swaps_display_name_and_options", () => {
@@ -85,7 +104,9 @@ describe("TestRoundtripRenderer", () => {
     const tmpPath = makeTmpPath();
     const project = parseAep(SAMPLES_DIR.div("renderer_options_classic_3d.aep")).project;
     const comp = at(project.compositions, 0);
-    expect(asInstance(comp.rendererOptions, ClassicRendererOptions).shadowMapResolution === ShadowMapResolution.RES_750).toBe(true);
+    expect(
+      asInstance(comp.rendererOptions, ClassicRendererOptions).shadowMapResolution === ShadowMapResolution.RES_750,
+    ).toBe(true);
 
     comp.renderer = "ADBE Calder";
     const out = tmpPath.div("switched_renderer.aep");
@@ -105,7 +126,9 @@ describe("TestRoundtripRenderer", () => {
 
     comp.renderer = "ADBE Advanced 3d"; // already Classic 3D
 
-    expect(asInstance(comp.rendererOptions, ClassicRendererOptions).shadowMapResolution === ShadowMapResolution.RES_750).toBe(true);
+    expect(
+      asInstance(comp.rendererOptions, ClassicRendererOptions).shadowMapResolution === ShadowMapResolution.RES_750,
+    ).toBe(true);
   });
 });
 
@@ -181,16 +204,24 @@ describe("TestRoundtripBgColor", () => {
 
   test("test_bg_color_validation_rejects_bad_length", () => {
     const comp = getComp(parseProjectFresh(SAMPLES_DIR.div("bgColor.aep")), "bgColor_red");
-    raises(ValueError, () => {
-      comp.bgColor = [0.1, 0.2];
-    }, "expected 3 elements");
+    raises(
+      ValueError,
+      () => {
+        comp.bgColor = [0.1, 0.2];
+      },
+      "expected 3 elements",
+    );
   });
 
   test("test_bg_color_validation_rejects_out_of_range", () => {
     const comp = getComp(parseProjectFresh(SAMPLES_DIR.div("bgColor.aep")), "bgColor_red");
-    raises(ValueError, () => {
-      comp.bgColor = [1.5, 0.0, 0.0];
-    }, "must be <= 1(\\.0)?");
+    raises(
+      ValueError,
+      () => {
+        comp.bgColor = [1.5, 0.0, 0.0];
+      },
+      "must be <= 1(\\.0)?",
+    );
   });
 });
 
@@ -223,24 +254,26 @@ describe("TestRoundtripFrameRate", () => {
   });
 
   test("test_frame_rate_validation_rejects_zero", () => {
-    const comp = getComp(
-      parseProjectFresh(SAMPLES_DIR.div("frameRate.aep")),
-      "frameRate_30",
+    const comp = getComp(parseProjectFresh(SAMPLES_DIR.div("frameRate.aep")), "frameRate_30");
+    raises(
+      ValueError,
+      () => {
+        comp.frameRate = 0.0;
+      },
+      "must be >= 1(\\.0)?",
     );
-    raises(ValueError, () => {
-      comp.frameRate = 0.0;
-    }, "must be >= 1(\\.0)?");
   });
 
   test("test_frame_rate_validation_rejects_too_high", () => {
-    const comp = getComp(
-      parseProjectFresh(SAMPLES_DIR.div("frameRate.aep")),
-      "frameRate_30",
-    );
+    const comp = getComp(parseProjectFresh(SAMPLES_DIR.div("frameRate.aep")), "frameRate_30");
     // AE 2026's range is 1 to 999 ("out of range 1 to 999").
-    raises(ValueError, () => {
-      comp.frameRate = 1000.0;
-    }, "must be <= 999(\\.0)?");
+    raises(
+      ValueError,
+      () => {
+        comp.frameRate = 1000.0;
+      },
+      "must be <= 999(\\.0)?",
+    );
   });
 });
 
@@ -261,13 +294,14 @@ describe("TestRoundtripPixelAspect", () => {
   });
 
   test("test_pixel_aspect_validation_rejects_invalid", () => {
-    const comp = getComp(
-      parseProjectFresh(SAMPLES_DIR.div("pixelAspect.aep")),
-      "pixelAspect_2",
+    const comp = getComp(parseProjectFresh(SAMPLES_DIR.div("pixelAspect.aep")), "pixelAspect_2");
+    raises(
+      ValueError,
+      () => {
+        comp.pixelAspect = -5;
+      },
+      "must be >= 0.01",
     );
-    raises(ValueError, () => {
-      comp.pixelAspect = -5;
-    }, "must be >= 0.01");
   });
 });
 
@@ -292,38 +326,58 @@ describe("TestRoundtripSize", () => {
 
   test("test_width_validation_rejects_too_small", () => {
     const comp = getComp(parseProjectFresh(SAMPLES_DIR.div("size.aep")), "size_1920x1080");
-    raises(ValueError, () => {
-      comp.width = 3;
-    }, "must be >= 4");
+    raises(
+      ValueError,
+      () => {
+        comp.width = 3;
+      },
+      "must be >= 4",
+    );
   });
 
   test("test_width_validation_rejects_too_large", () => {
     const comp = getComp(parseProjectFresh(SAMPLES_DIR.div("size.aep")), "size_1920x1080");
-    raises(ValueError, () => {
-      comp.width = 30001;
-    }, "must be <= 30000");
+    raises(
+      ValueError,
+      () => {
+        comp.width = 30001;
+      },
+      "must be <= 30000",
+    );
   });
 
   test("test_width_validation_rejects_non_int", () => {
     const comp = getComp(parseProjectFresh(SAMPLES_DIR.div("size.aep")), "size_1920x1080");
     // type: ignore[assignment] in Python; the TS setter receives the float as-is.
-    raises(TypeError, () => {
-      comp.width = 1920.5;
-    }, "expected an integer");
+    raises(
+      TypeError,
+      () => {
+        comp.width = 1920.5;
+      },
+      "expected an integer",
+    );
   });
 
   test("test_height_validation_rejects_too_small", () => {
     const comp = getComp(parseProjectFresh(SAMPLES_DIR.div("size.aep")), "size_1920x1080");
-    raises(ValueError, () => {
-      comp.height = 0;
-    }, "must be >= 4");
+    raises(
+      ValueError,
+      () => {
+        comp.height = 0;
+      },
+      "must be >= 4",
+    );
   });
 
   test("test_height_validation_rejects_too_large", () => {
     const comp = getComp(parseProjectFresh(SAMPLES_DIR.div("size.aep")), "size_1920x1080");
-    raises(ValueError, () => {
-      comp.height = 30001;
-    }, "must be <= 30000");
+    raises(
+      ValueError,
+      () => {
+        comp.height = 30001;
+      },
+      "must be <= 30000",
+    );
   });
 });
 
@@ -386,34 +440,37 @@ describe("TestRoundtripShutter", () => {
   });
 
   test("test_shutter_angle_validation_rejects_negative", () => {
-    const comp = getComp(
-      parseProjectFresh(SAMPLES_DIR.div("shutterAngle.aep")),
-      "shutterAngle_180",
+    const comp = getComp(parseProjectFresh(SAMPLES_DIR.div("shutterAngle.aep")), "shutterAngle_180");
+    raises(
+      ValueError,
+      () => {
+        comp.shutterAngle = -1;
+      },
+      "must be >= 0",
     );
-    raises(ValueError, () => {
-      comp.shutterAngle = -1;
-    }, "must be >= 0");
   });
 
   test("test_shutter_angle_validation_rejects_too_large", () => {
-    const comp = getComp(
-      parseProjectFresh(SAMPLES_DIR.div("shutterAngle.aep")),
-      "shutterAngle_180",
+    const comp = getComp(parseProjectFresh(SAMPLES_DIR.div("shutterAngle.aep")), "shutterAngle_180");
+    raises(
+      ValueError,
+      () => {
+        comp.shutterAngle = 721;
+      },
+      "must be <= 720",
     );
-    raises(ValueError, () => {
-      comp.shutterAngle = 721;
-    }, "must be <= 720");
   });
 
   test("test_shutter_angle_validation_rejects_non_int", () => {
-    const comp = getComp(
-      parseProjectFresh(SAMPLES_DIR.div("shutterAngle.aep")),
-      "shutterAngle_180",
-    );
+    const comp = getComp(parseProjectFresh(SAMPLES_DIR.div("shutterAngle.aep")), "shutterAngle_180");
     // type: ignore[assignment] in Python; the TS setter receives the float as-is.
-    raises(TypeError, () => {
-      comp.shutterAngle = 180.5;
-    }, "expected an integer");
+    raises(
+      TypeError,
+      () => {
+        comp.shutterAngle = 180.5;
+      },
+      "expected an integer",
+    );
   });
 
   test("test_modify_shutter_phase", () => {
@@ -429,34 +486,37 @@ describe("TestRoundtripShutter", () => {
   });
 
   test("test_shutter_phase_validation_rejects_too_small", () => {
-    const comp = getComp(
-      parseProjectFresh(SAMPLES_DIR.div("comp_flags.aep")),
-      "shutterPhase_minus90",
+    const comp = getComp(parseProjectFresh(SAMPLES_DIR.div("comp_flags.aep")), "shutterPhase_minus90");
+    raises(
+      ValueError,
+      () => {
+        comp.shutterPhase = -361;
+      },
+      "must be >= -360",
     );
-    raises(ValueError, () => {
-      comp.shutterPhase = -361;
-    }, "must be >= -360");
   });
 
   test("test_shutter_phase_validation_rejects_too_large", () => {
-    const comp = getComp(
-      parseProjectFresh(SAMPLES_DIR.div("comp_flags.aep")),
-      "shutterPhase_minus90",
+    const comp = getComp(parseProjectFresh(SAMPLES_DIR.div("comp_flags.aep")), "shutterPhase_minus90");
+    raises(
+      ValueError,
+      () => {
+        comp.shutterPhase = 361;
+      },
+      "must be <= 360",
     );
-    raises(ValueError, () => {
-      comp.shutterPhase = 361;
-    }, "must be <= 360");
   });
 
   test("test_shutter_phase_validation_rejects_non_int", () => {
-    const comp = getComp(
-      parseProjectFresh(SAMPLES_DIR.div("comp_flags.aep")),
-      "shutterPhase_minus90",
-    );
+    const comp = getComp(parseProjectFresh(SAMPLES_DIR.div("comp_flags.aep")), "shutterPhase_minus90");
     // type: ignore[assignment] in Python; the TS setter receives the float as-is.
-    raises(TypeError, () => {
-      comp.shutterPhase = -90.5;
-    }, "expected an integer");
+    raises(
+      TypeError,
+      () => {
+        comp.shutterPhase = -90.5;
+      },
+      "expected an integer",
+    );
   });
 });
 
@@ -480,13 +540,14 @@ describe("TestTimeScaleReadOnly", () => {
   /** Test that time_scale is read-only. */
 
   test("test_time_scale_is_read_only", () => {
-    const comp = getComp(
-      parseProjectFresh(SAMPLES_DIR.div("frameRate.aep")),
-      "frameRate_30",
+    const comp = getComp(parseProjectFresh(SAMPLES_DIR.div("frameRate.aep")), "frameRate_30");
+    raises(
+      AttributeError,
+      () => {
+        comp.timeScale = 12345;
+      },
+      "read-only",
     );
-    raises(AttributeError, () => {
-      comp.timeScale = 12345;
-    }, "read-only");
   });
 });
 
@@ -553,24 +614,26 @@ describe("TestRoundtripDisplayStartTime", () => {
   });
 
   test("test_display_start_time_validation_rejects_too_small", () => {
-    const comp = getComp(
-      parseProjectFresh(SAMPLES_DIR.div("displayStart.aep")),
-      "displayStartTime_10",
+    const comp = getComp(parseProjectFresh(SAMPLES_DIR.div("displayStart.aep")), "displayStartTime_10");
+    raises(
+      ValueError,
+      () => {
+        comp.displayStartTime = -10801.0;
+      },
+      "must be >= -10800(\\.0)?",
     );
-    raises(ValueError, () => {
-      comp.displayStartTime = -10801.0;
-    }, "must be >= -10800(\\.0)?");
   });
 
   test("test_display_start_time_validation_rejects_too_large", () => {
-    const comp = getComp(
-      parseProjectFresh(SAMPLES_DIR.div("displayStart.aep")),
-      "displayStartTime_10",
-    );
+    const comp = getComp(parseProjectFresh(SAMPLES_DIR.div("displayStart.aep")), "displayStartTime_10");
     // AE 2026's range is -10800 to 86400.
-    raises(ValueError, () => {
-      comp.displayStartTime = 86400.01;
-    }, "must be <= 86400(\\.0)?");
+    raises(
+      ValueError,
+      () => {
+        comp.displayStartTime = 86400.01;
+      },
+      "must be <= 86400(\\.0)?",
+    );
   });
 });
 
@@ -604,33 +667,36 @@ describe("TestRoundtripDuration", () => {
   });
 
   test("test_duration_validation_rejects_negative", () => {
-    const comp = getComp(
-      parseProjectFresh(SAMPLES_DIR.div("comp_misc.aep")),
-      "duration_60",
+    const comp = getComp(parseProjectFresh(SAMPLES_DIR.div("comp_misc.aep")), "duration_60");
+    raises(
+      ValueError,
+      () => {
+        comp.duration = -1.0;
+      },
+      "must be >= 0(\\.0)?",
     );
-    raises(ValueError, () => {
-      comp.duration = -1.0;
-    }, "must be >= 0(\\.0)?");
   });
 
   test("test_duration_validation_rejects_too_large", () => {
-    const comp = getComp(
-      parseProjectFresh(SAMPLES_DIR.div("comp_misc.aep")),
-      "duration_60",
+    const comp = getComp(parseProjectFresh(SAMPLES_DIR.div("comp_misc.aep")), "duration_60");
+    raises(
+      ValueError,
+      () => {
+        comp.duration = 10801.0;
+      },
+      "must be <= 10800(\\.0)?",
     );
-    raises(ValueError, () => {
-      comp.duration = 10801.0;
-    }, "must be <= 10800(\\.0)?");
   });
 
   test("test_frame_duration_validation_rejects_zero", () => {
-    const comp = getComp(
-      parseProjectFresh(SAMPLES_DIR.div("comp_misc.aep")),
-      "duration_60",
+    const comp = getComp(parseProjectFresh(SAMPLES_DIR.div("comp_misc.aep")), "duration_60");
+    raises(
+      ValueError,
+      () => {
+        comp.frameDuration = 0;
+      },
+      "must be >= 1",
     );
-    raises(ValueError, () => {
-      comp.frameDuration = 0;
-    }, "must be >= 1");
   });
 
   test.each([
@@ -646,26 +712,20 @@ describe("TestRoundtripDuration", () => {
     [23.976, 52.0479, 52000, 23976],
     [23.976, 52.5, 53000, 23976],
     [59.94, 52.6, 21200, 23976],
-  ])(
-    "test_duration_snaps_to_nearest_frame[%#]",
-    (fps: number, frames: number, dividend: number, divisor: number) => {
-      const tmpPath = makeTmpPath();
-      const project = parseProjectFresh(SAMPLES_DIR.div("comp_misc.aep"));
-      const comp = project.rootFolder.addComp("snapped", 100, 100, 1.0, 10.0, fps);
-      comp.duration = frames / fps;
-      const out = tmpPath.div("snapped.aep");
-      project.save(out);
-      const cdta = getComp(parseAep(out).project, "snapped")._cdta;
-      expect(valueEquals([cdta.durationDividend, cdta.durationDivisor], [dividend, divisor])).toBe(true);
-    },
-  );
+  ])("test_duration_snaps_to_nearest_frame[%#]", (fps: number, frames: number, dividend: number, divisor: number) => {
+    const tmpPath = makeTmpPath();
+    const project = parseProjectFresh(SAMPLES_DIR.div("comp_misc.aep"));
+    const comp = project.rootFolder.addComp("snapped", 100, 100, 1.0, 10.0, fps);
+    comp.duration = frames / fps;
+    const out = tmpPath.div("snapped.aep");
+    project.save(out);
+    const cdta = getComp(parseAep(out).project, "snapped")._cdta;
+    expect(valueEquals([cdta.durationDividend, cdta.durationDivisor], [dividend, divisor])).toBe(true);
+  });
 
   test("test_duration_snaps_on_a_parsed_comp", () => {
     /** The reported case: an out point 52.0479 frames in at 24 fps. */
-    const comp = getComp(
-      parseProjectFresh(SAMPLES_DIR.div("comp_misc.aep")),
-      "duration_60",
-    );
+    const comp = getComp(parseProjectFresh(SAMPLES_DIR.div("comp_misc.aep")), "duration_60");
     const fps = comp.frameRate;
     comp.duration = 52.0479 / fps;
     expect(comp.duration).toBe(52 / fps);
@@ -687,25 +747,27 @@ describe("TestRoundtripDuration", () => {
   });
 
   test("test_frame_duration_validation_rejects_non_int", () => {
-    const comp = getComp(
-      parseProjectFresh(SAMPLES_DIR.div("comp_misc.aep")),
-      "duration_60",
-    );
+    const comp = getComp(parseProjectFresh(SAMPLES_DIR.div("comp_misc.aep")), "duration_60");
     // type: ignore[assignment] in Python; the TS setter receives the float as-is.
-    raises(TypeError, () => {
-      comp.frameDuration = 300.5;
-    }, "expected an integer");
+    raises(
+      TypeError,
+      () => {
+        comp.frameDuration = 300.5;
+      },
+      "expected an integer",
+    );
   });
 
   test("test_frame_duration_validation_rejects_too_large", () => {
     // The bound is the 3-hour duration limit, not the current duration.
-    const comp = getComp(
-      parseProjectFresh(SAMPLES_DIR.div("comp_misc.aep")),
-      "duration_60",
+    const comp = getComp(parseProjectFresh(SAMPLES_DIR.div("comp_misc.aep")), "duration_60");
+    raises(
+      ValueError,
+      () => {
+        comp.frameDuration = round(10800 * comp.frameRate) + 1;
+      },
+      "must be <= 10800(\\.0)?",
     );
-    raises(ValueError, () => {
-      comp.frameDuration = round(10800 * comp.frameRate) + 1;
-    }, "must be <= 10800(\\.0)?");
   });
 
   test("test_frame_duration_counts_every_frame_at_ntsc", () => {
@@ -718,10 +780,7 @@ describe("TestRoundtripDuration", () => {
   });
 
   test("test_frame_duration_can_grow", () => {
-    const comp = getComp(
-      parseProjectFresh(SAMPLES_DIR.div("comp_misc.aep")),
-      "duration_60",
-    );
+    const comp = getComp(parseProjectFresh(SAMPLES_DIR.div("comp_misc.aep")), "duration_60");
     comp.frameDuration = 2000;
     expect(comp.frameDuration).toBe(2000);
     // Stored in timebase units, like AE's own durations.
@@ -754,14 +813,14 @@ describe("TestCompTimeWrites", () => {
     const cdta = comp._cdta;
     expect(valueEquals([cdta.workAreaStartDividend, cdta.workAreaStartDivisor], [units, 24576])).toBe(true);
     // A work area that ran to the end of the comp still does.
-    expect(valueEquals([cdta.workAreaEndDividend, cdta.workAreaEndDivisor], [0xFFFFFFFF, 24576])).toBe(true);
+    expect(valueEquals([cdta.workAreaEndDividend, cdta.workAreaEndDivisor], [0xffffffff, 24576])).toBe(true);
   });
 
   test.each([
     [24.24, 36864],
     [24.5, 37888],
     [24.6, 37888],
-    [228, 0xFFFFFFFF],
+    [228, 0xffffffff],
   ])("test_work_area_duration[%#]", (frames: number, end: number) => {
     // From frame 12; 228 frames reach the end, which AE stores as such.
     const comp = _comp();
@@ -786,7 +845,7 @@ describe("TestCompTimeWrites", () => {
     comp.workAreaDuration = 5.0;
     comp.workAreaStart = 8.0;
     expect(comp.workAreaStart).toBe(8.0);
-    expect(comp._cdta.workAreaEndDividend).toBe(0xFFFFFFFF);
+    expect(comp._cdta.workAreaEndDividend).toBe(0xffffffff);
     expect(comp.workAreaDuration).toBe(2.0);
   });
 
@@ -815,10 +874,7 @@ describe("TestCompTimeWrites", () => {
     comp.time = 52.5 / 23.976;
     const cdta = comp._cdta;
     expect(
-      valueEquals(
-        [cdta.workAreaStartDividend, cdta.workAreaEndDividend, cdta.timeDividend],
-        [53000, 78000, 53000],
-      ),
+      valueEquals([cdta.workAreaStartDividend, cdta.workAreaEndDividend, cdta.timeDividend], [53000, 78000, 53000]),
     ).toBe(true);
   });
 
@@ -849,9 +905,7 @@ describe("TestCompTimeWrites", () => {
     const comp = _comp();
     comp.displayStartTime = seconds;
     const cdta = comp._cdta;
-    expect(
-      valueEquals([cdta.displayStartTimeDividend, cdta.displayStartTimeDivisor], ratio),
-    ).toBe(true);
+    expect(valueEquals([cdta.displayStartTimeDividend, cdta.displayStartTimeDivisor], ratio)).toBe(true);
     // AE re-stores the work area start and current time over the
     // timebase alongside.
     expect(valueEquals([cdta.workAreaStartDivisor, cdta.timeDivisor], [24576, 24576])).toBe(true);
@@ -864,9 +918,7 @@ describe("TestCompTimeWrites", () => {
     const comp = _comp(fps);
     comp.displayStartFrame = frames;
     const cdta = comp._cdta;
-    expect(
-      valueEquals([cdta.displayStartTimeDividend, cdta.displayStartTimeDivisor], ratio),
-    ).toBe(true);
+    expect(valueEquals([cdta.displayStartTimeDividend, cdta.displayStartTimeDivisor], ratio)).toBe(true);
     expect(comp.displayStartFrame).toBe(frames);
   });
 
@@ -875,12 +927,7 @@ describe("TestCompTimeWrites", () => {
     comp.workAreaStartFrame = 52;
     comp.workAreaDurationFrame = 25;
     comp.frameTime = 53;
-    expect(
-      valueEquals(
-        [comp.workAreaStartFrame, comp.workAreaDurationFrame, comp.frameTime],
-        [52, 25, 53],
-      ),
-    ).toBe(true);
+    expect(valueEquals([comp.workAreaStartFrame, comp.workAreaDurationFrame, comp.frameTime], [52, 25, 53])).toBe(true);
     expect(comp._cdta.workAreaStartDividend).toBe(52000);
   });
 });
@@ -901,34 +948,37 @@ describe("TestRoundtripMotionBlurSamples", () => {
   });
 
   test("test_samples_per_frame_validation_rejects_too_small", () => {
-    const comp = getComp(
-      parseProjectFresh(SAMPLES_DIR.div("comp_flags.aep")),
-      "motionBlurSamplesPerFrame_32",
+    const comp = getComp(parseProjectFresh(SAMPLES_DIR.div("comp_flags.aep")), "motionBlurSamplesPerFrame_32");
+    raises(
+      ValueError,
+      () => {
+        comp.motionBlurSamplesPerFrame = 1;
+      },
+      "must be >= 2",
     );
-    raises(ValueError, () => {
-      comp.motionBlurSamplesPerFrame = 1;
-    }, "must be >= 2");
   });
 
   test("test_samples_per_frame_validation_rejects_too_large", () => {
-    const comp = getComp(
-      parseProjectFresh(SAMPLES_DIR.div("comp_flags.aep")),
-      "motionBlurSamplesPerFrame_32",
+    const comp = getComp(parseProjectFresh(SAMPLES_DIR.div("comp_flags.aep")), "motionBlurSamplesPerFrame_32");
+    raises(
+      ValueError,
+      () => {
+        comp.motionBlurSamplesPerFrame = 65;
+      },
+      "must be <= 64",
     );
-    raises(ValueError, () => {
-      comp.motionBlurSamplesPerFrame = 65;
-    }, "must be <= 64");
   });
 
   test("test_samples_per_frame_validation_rejects_non_int", () => {
-    const comp = getComp(
-      parseProjectFresh(SAMPLES_DIR.div("comp_flags.aep")),
-      "motionBlurSamplesPerFrame_32",
-    );
+    const comp = getComp(parseProjectFresh(SAMPLES_DIR.div("comp_flags.aep")), "motionBlurSamplesPerFrame_32");
     // type: ignore[assignment] in Python; the TS setter receives the float as-is.
-    raises(TypeError, () => {
-      comp.motionBlurSamplesPerFrame = 16.5;
-    }, "expected an integer");
+    raises(
+      TypeError,
+      () => {
+        comp.motionBlurSamplesPerFrame = 16.5;
+      },
+      "expected an integer",
+    );
   });
 
   test("test_modify_adaptive_sample_limit", () => {
@@ -944,46 +994,50 @@ describe("TestRoundtripMotionBlurSamples", () => {
   });
 
   test("test_adaptive_sample_limit_validation_rejects_too_small", () => {
-    const comp = getComp(
-      parseProjectFresh(SAMPLES_DIR.div("comp_flags.aep")),
-      "motionBlurAdaptiveSampleLimit_256",
+    const comp = getComp(parseProjectFresh(SAMPLES_DIR.div("comp_flags.aep")), "motionBlurAdaptiveSampleLimit_256");
+    raises(
+      ValueError,
+      () => {
+        comp.motionBlurAdaptiveSampleLimit = 1;
+      },
+      /must be >= \d+/,
     );
-    raises(ValueError, () => {
-      comp.motionBlurAdaptiveSampleLimit = 1;
-    }, /must be >= \d+/);
   });
 
   test("test_adaptive_sample_limit_validation_rejects_too_large", () => {
-    const comp = getComp(
-      parseProjectFresh(SAMPLES_DIR.div("comp_flags.aep")),
-      "motionBlurAdaptiveSampleLimit_256",
+    const comp = getComp(parseProjectFresh(SAMPLES_DIR.div("comp_flags.aep")), "motionBlurAdaptiveSampleLimit_256");
+    raises(
+      ValueError,
+      () => {
+        comp.motionBlurAdaptiveSampleLimit = 257;
+      },
+      "must be <= 256",
     );
-    raises(ValueError, () => {
-      comp.motionBlurAdaptiveSampleLimit = 257;
-    }, "must be <= 256");
   });
 
   test("test_adaptive_sample_limit_validation_rejects_non_int", () => {
-    const comp = getComp(
-      parseProjectFresh(SAMPLES_DIR.div("comp_flags.aep")),
-      "motionBlurAdaptiveSampleLimit_256",
-    );
+    const comp = getComp(parseProjectFresh(SAMPLES_DIR.div("comp_flags.aep")), "motionBlurAdaptiveSampleLimit_256");
     // type: ignore[assignment] in Python; the TS setter receives the float as-is.
-    raises(TypeError, () => {
-      comp.motionBlurAdaptiveSampleLimit = 128.5;
-    }, "expected an integer");
+    raises(
+      TypeError,
+      () => {
+        comp.motionBlurAdaptiveSampleLimit = 128.5;
+      },
+      "expected an integer",
+    );
   });
 
   test("test_adaptive_sample_limit_rejects_below_samples_per_frame", () => {
-    const comp = getComp(
-      parseProjectFresh(SAMPLES_DIR.div("comp_flags.aep")),
-      "motionBlurAdaptiveSampleLimit_256",
-    );
+    const comp = getComp(parseProjectFresh(SAMPLES_DIR.div("comp_flags.aep")), "motionBlurAdaptiveSampleLimit_256");
     // samples_per_frame is 16, so 8 must be rejected
     expect(comp.motionBlurSamplesPerFrame).toBe(16);
-    raises(ValueError, () => {
-      comp.motionBlurAdaptiveSampleLimit = 8;
-    }, "must be >= 16");
+    raises(
+      ValueError,
+      () => {
+        comp.motionBlurAdaptiveSampleLimit = 8;
+      },
+      "must be >= 16",
+    );
   });
 });
 
@@ -1015,43 +1069,47 @@ describe("TestRoundtripWorkAreaStart", () => {
   });
 
   test("test_work_area_start_validation_rejects_negative", () => {
-    const comp = getComp(
-      parseProjectFresh(SAMPLES_DIR.div("workArea.aep")),
-      "workAreaStart_5",
+    const comp = getComp(parseProjectFresh(SAMPLES_DIR.div("workArea.aep")), "workAreaStart_5");
+    raises(
+      ValueError,
+      () => {
+        comp.workAreaStart = -1.0;
+      },
+      "must be >= 0",
     );
-    raises(ValueError, () => {
-      comp.workAreaStart = -1.0;
-    }, "must be >= 0");
   });
 
   test("test_work_area_start_validation_rejects_too_large", () => {
-    const comp = getComp(
-      parseProjectFresh(SAMPLES_DIR.div("workArea.aep")),
-      "workAreaStart_5",
+    const comp = getComp(parseProjectFresh(SAMPLES_DIR.div("workArea.aep")), "workAreaStart_5");
+    raises(
+      ValueError,
+      () => {
+        comp.workAreaStart = comp.duration;
+      },
+      "must be <=",
     );
-    raises(ValueError, () => {
-      comp.workAreaStart = comp.duration;
-    }, "must be <=");
   });
 
   test("test_work_area_start_frame_validation_rejects_negative", () => {
-    const comp = getComp(
-      parseProjectFresh(SAMPLES_DIR.div("workArea.aep")),
-      "workAreaStart_5",
+    const comp = getComp(parseProjectFresh(SAMPLES_DIR.div("workArea.aep")), "workAreaStart_5");
+    raises(
+      ValueError,
+      () => {
+        comp.workAreaStartFrame = -1;
+      },
+      "must be >= 0",
     );
-    raises(ValueError, () => {
-      comp.workAreaStartFrame = -1;
-    }, "must be >= 0");
   });
 
   test("test_work_area_start_frame_validation_rejects_too_large", () => {
-    const comp = getComp(
-      parseProjectFresh(SAMPLES_DIR.div("workArea.aep")),
-      "workAreaStart_5",
+    const comp = getComp(parseProjectFresh(SAMPLES_DIR.div("workArea.aep")), "workAreaStart_5");
+    raises(
+      ValueError,
+      () => {
+        comp.workAreaStartFrame = comp.frameDuration;
+      },
+      "must be <=",
     );
-    raises(ValueError, () => {
-      comp.workAreaStartFrame = comp.frameDuration;
-    }, "must be <=");
   });
 });
 
@@ -1083,43 +1141,47 @@ describe("TestRoundtripWorkAreaDuration", () => {
   });
 
   test("test_work_area_duration_validation_rejects_too_small", () => {
-    const comp = getComp(
-      parseProjectFresh(SAMPLES_DIR.div("workArea.aep")),
-      "workAreaDuration_10",
+    const comp = getComp(parseProjectFresh(SAMPLES_DIR.div("workArea.aep")), "workAreaDuration_10");
+    raises(
+      ValueError,
+      () => {
+        comp.workAreaDuration = 0.0;
+      },
+      "must be >=",
     );
-    raises(ValueError, () => {
-      comp.workAreaDuration = 0.0;
-    }, "must be >=");
   });
 
   test("test_work_area_duration_validation_rejects_too_large", () => {
-    const comp = getComp(
-      parseProjectFresh(SAMPLES_DIR.div("workArea.aep")),
-      "workAreaDuration_10",
+    const comp = getComp(parseProjectFresh(SAMPLES_DIR.div("workArea.aep")), "workAreaDuration_10");
+    raises(
+      ValueError,
+      () => {
+        comp.workAreaDuration = comp.duration + 1.0;
+      },
+      "must be <=",
     );
-    raises(ValueError, () => {
-      comp.workAreaDuration = comp.duration + 1.0;
-    }, "must be <=");
   });
 
   test("test_work_area_duration_frame_validation_rejects_zero", () => {
-    const comp = getComp(
-      parseProjectFresh(SAMPLES_DIR.div("workArea.aep")),
-      "workAreaDuration_10",
+    const comp = getComp(parseProjectFresh(SAMPLES_DIR.div("workArea.aep")), "workAreaDuration_10");
+    raises(
+      ValueError,
+      () => {
+        comp.workAreaDurationFrame = 0;
+      },
+      "must be >= 1",
     );
-    raises(ValueError, () => {
-      comp.workAreaDurationFrame = 0;
-    }, "must be >= 1");
   });
 
   test("test_work_area_duration_frame_validation_rejects_too_large", () => {
-    const comp = getComp(
-      parseProjectFresh(SAMPLES_DIR.div("workArea.aep")),
-      "workAreaDuration_10",
+    const comp = getComp(parseProjectFresh(SAMPLES_DIR.div("workArea.aep")), "workAreaDuration_10");
+    raises(
+      ValueError,
+      () => {
+        comp.workAreaDurationFrame = comp.frameDuration + 1;
+      },
+      "must be <=",
     );
-    raises(ValueError, () => {
-      comp.workAreaDurationFrame = comp.frameDuration + 1;
-    }, "must be <=");
   });
 });
 
@@ -1178,10 +1240,7 @@ describe("TestValidateGuidePosition", () => {
   });
 
   test("test_position_rejects_non_numeric", () => {
-    const comp = getComp(
-      parseAep(SAMPLES_DIR.div("guides.aep")).project,
-      "guides_horizontal",
-    );
+    const comp = getComp(parseAep(SAMPLES_DIR.div("guides.aep")).project, "guides_horizontal");
     // type: ignore[assignment] in Python; the TS setter receives the string as-is.
     raises(TypeError, () => {
       // @ts-expect-error deliberately assigns a string to a numeric setter
@@ -1584,9 +1643,7 @@ describe("TestRoundtripFrameRateRetiming", () => {
     const tmpPath = makeTmpPath();
     const project = parseProjectFresh(PROPERTY_SAMPLES_DIR.div("keyframe_misc.aep"));
     const comp = at(project.compositions, 0);
-    const before = new Map(
-      Array.from(_keyed(comp), (p) => [p.matchName, p.keyframes.map((k) => k.time)] as const),
-    );
+    const before = new Map(Array.from(_keyed(comp), (p) => [p.matchName, p.keyframes.map((k) => k.time)] as const));
     expect(valueEquals(getOrThrow(before, "ADBE Scale"), [0.0, 3.0, 6.0, 9.0])).toBe(true);
 
     comp.frameRate = 30.0;
@@ -1594,9 +1651,7 @@ describe("TestRoundtripFrameRateRetiming", () => {
     project.save(out);
 
     const comp2 = at(parseAep(out).project.compositions, 0);
-    const after = new Map(
-      Array.from(_keyed(comp2), (p) => [p.matchName, p.keyframes.map((k) => k.time)] as const),
-    );
+    const after = new Map(Array.from(_keyed(comp2), (p) => [p.matchName, p.keyframes.map((k) => k.time)] as const));
     expect(comp2.frameRate).toBe(30.0);
     expect(valueEquals(after, before)).toBe(true);
   });
@@ -1623,7 +1678,12 @@ describe("TestRoundtripFrameRateRetiming", () => {
     expect(comp2._cdta.internalTimebase).toBe(30720);
     for (const prop of _keyed(comp2)) {
       const expected = getOrThrow(before, prop.matchName).map((u) => round((u * 30720) / 25600));
-      expect(valueEquals(prop.keyframes.map((k) => k._ldatItem.timeUnits), expected)).toBe(true);
+      expect(
+        valueEquals(
+          prop.keyframes.map((k) => k._ldatItem.timeUnits),
+          expected,
+        ),
+      ).toBe(true);
     }
   });
 
@@ -1653,8 +1713,18 @@ describe("TestRoundtripFrameRateRetiming", () => {
     expect(comp2.timeScale).toBe(2.0);
     for (const prop of _keyed(comp2)) {
       const name = prop.matchName;
-      expect(valueEquals(prop.keyframes.map((k) => k._ldatItem.timeUnits), getOrThrow(unitsAt30, name))).toBe(true);
-      expect(valueEquals(prop.keyframes.map((k) => k.time), getOrThrow(secondsAt30, name))).toBe(true);
+      expect(
+        valueEquals(
+          prop.keyframes.map((k) => k._ldatItem.timeUnits),
+          getOrThrow(unitsAt30, name),
+        ),
+      ).toBe(true);
+      expect(
+        valueEquals(
+          prop.keyframes.map((k) => k.time),
+          getOrThrow(secondsAt30, name),
+        ),
+      ).toBe(true);
     }
   });
 
@@ -1674,9 +1744,7 @@ describe("TestRoundtripFrameRateRetiming", () => {
     const timebase = comp2._cdta.internalTimebase;
     expect(timebase).toBe(30720);
     const stamps = new Set(
-      [...comp2._walkProperties()]
-        .filter((p) => p._tdb4 != null && p._isLive())
-        .map((p) => p._tdb4._timeBase),
+      [...comp2._walkProperties()].filter((p) => p._tdb4 != null && p._isLive()).map((p) => p._tdb4._timeBase),
     );
     expect(valueEquals(stamps, new Set([timebase]))).toBe(true);
   });
@@ -1700,31 +1768,28 @@ describe("TestRoundtripFrameRateRetiming", () => {
     expect(round(comp2.duration * 25.0)).toBe(264);
   });
 
-  test.each(["comp_marker.aep", "layer_marker.aep"])(
-    "test_marker_times_hold_in_seconds[%#]",
-    (sample: string) => {
-      /**
-       * Markers are keyframes on a marker property, so they ride the same
-       * rescale, on the comp and on the layer alike.
-       */
-      const tmpPath = makeTmpPath();
-      const onComp = sample.startsWith("comp");
-      const project = parseProjectFresh(MARKER_SAMPLES_DIR.div(sample));
-      const comp = at(project.compositions, 0);
-      const marker = onComp ? comp.markerProperty : _layerMarker(comp);
-      assert(marker != null);
-      marker.keyframes[0].time = 3.0;
+  test.each(["comp_marker.aep", "layer_marker.aep"])("test_marker_times_hold_in_seconds[%#]", (sample: string) => {
+    /**
+     * Markers are keyframes on a marker property, so they ride the same
+     * rescale, on the comp and on the layer alike.
+     */
+    const tmpPath = makeTmpPath();
+    const onComp = sample.startsWith("comp");
+    const project = parseProjectFresh(MARKER_SAMPLES_DIR.div(sample));
+    const comp = at(project.compositions, 0);
+    const marker = onComp ? comp.markerProperty : _layerMarker(comp);
+    assert(marker != null);
+    marker.keyframes[0].time = 3.0;
 
-      comp.frameRate = 30.0;
-      const out = tmpPath.div("modified.aep");
-      project.save(out);
+    comp.frameRate = 30.0;
+    const out = tmpPath.div("modified.aep");
+    project.save(out);
 
-      const comp2 = at(parseAep(out).project.compositions, 0);
-      const marker2 = onComp ? comp2.markerProperty : _layerMarker(comp2);
-      assert(marker2 != null);
-      expect(marker2.keyframes[0].time).toBe(3.0);
-    },
-  );
+    const comp2 = at(parseAep(out).project.compositions, 0);
+    const marker2 = onComp ? comp2.markerProperty : _layerMarker(comp2);
+    assert(marker2 != null);
+    expect(marker2.keyframes[0].time).toBe(3.0);
+  });
 
   test("test_nested_comp_is_untouched", () => {
     /**
@@ -1742,12 +1807,7 @@ describe("TestRoundtripFrameRateRetiming", () => {
     project.save(out);
 
     const inner2 = getComp(parseAep(out).project, "Inner");
-    expect(
-      valueEquals(
-        [inner2.frameRate, inner2.duration, inner2._cdta.internalTimebase],
-        before,
-      ),
-    ).toBe(true);
+    expect(valueEquals([inner2.frameRate, inner2.duration, inner2._cdta.internalTimebase], before)).toBe(true);
   });
 
   test("test_noop_write_changes_nothing", () => {
@@ -1760,9 +1820,7 @@ describe("TestRoundtripFrameRateRetiming", () => {
     const comp = at(project.compositions, 0);
     comp.duration = 253.0 / 24.0;
     const beforeDuration = comp.duration;
-    const beforeUnits = Array.from(_keyed(comp)).flatMap((p) =>
-      p.keyframes.map((k) => k._ldatItem.timeUnits),
-    );
+    const beforeUnits = Array.from(_keyed(comp)).flatMap((p) => p.keyframes.map((k) => k._ldatItem.timeUnits));
 
     comp.frameRate = comp.frameRate;
 

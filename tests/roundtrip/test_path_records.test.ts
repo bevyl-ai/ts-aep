@@ -5,13 +5,7 @@
 import { describe, expect, test } from "bun:test";
 import * as fs from "node:fs";
 import * as nodepath from "node:path";
-import {
-  fspath,
-  getOrThrow,
-  Path,
-  valueEquals,
-  type JsonValue,
-} from "../../src/pyrt/index.ts";
+import { fspath, getOrThrow, Path, valueEquals, type JsonValue } from "../../src/pyrt/index.ts";
 
 import { FileSource, FootageItem, ImportOptions, parse as parseAep, type Project } from "../../src/py_aep/index.ts";
 import "../../src/py_aep/binary/_register.ts";
@@ -82,9 +76,9 @@ describe("TestSaveFillsCounts", () => {
     const project = _projectWithMedia(tmpPath);
     project.save(tmpPath.div("a.aep"));
     project.save(tmpPath.div("deep", "b.aep"));
-    expect(
-      valueEquals(_counts(getOrThrow(_sources(parseProjectFresh(tmpPath.div("a.aep"))), "file")), [1, 2]),
-    ).toBe(true);
+    expect(valueEquals(_counts(getOrThrow(_sources(parseProjectFresh(tmpPath.div("a.aep"))), "file")), [1, 2])).toBe(
+      true,
+    );
     expect(
       valueEquals(_counts(getOrThrow(_sources(parseProjectFresh(tmpPath.div("deep", "b.aep"))), "file")), [2, 2]),
     ).toBe(true);
@@ -118,9 +112,9 @@ describe("TestSaveFillsCounts", () => {
     project.save(out);
     const data = getRqi(parseAep(out).project, "base").outputModules[0]._alasData;
     // proj/p.aep vs a file inside renders/.
-    expect(
-      valueEquals([getOrThrow(data, "ascendcount_base"), getOrThrow(data, "ascendcount_target")], [2, 2]),
-    ).toBe(true);
+    expect(valueEquals([getOrThrow(data, "ascendcount_base"), getOrThrow(data, "ascendcount_target")], [2, 2])).toBe(
+      true,
+    );
   });
 });
 

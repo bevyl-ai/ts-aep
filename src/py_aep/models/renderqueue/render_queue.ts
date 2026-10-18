@@ -93,13 +93,7 @@ export class RenderQueue {
     const arsi = new ArsiChunk({});
     const lrdr = new ListChunk({
       listType: "LRdr",
-      chunks: [
-        rhed,
-        rout,
-        settings,
-        litm,
-        new ListChunk({ listType: "LSIf", chunks: [arsi] }),
-      ],
+      chunks: [rhed, rout, settings, litm, new ListChunk({ listType: "LSIf", chunks: [arsi] })],
     });
     return new this({
       _lrdr: lrdr,

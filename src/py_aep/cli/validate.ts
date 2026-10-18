@@ -32,7 +32,9 @@ import {
   parseJson,
   truediv,
   PureWindowsPath,
-  type BoxedFloat, compare } from "../../pyrt/index.ts";
+  type BoxedFloat,
+  compare,
+} from "../../pyrt/index.ts";
 import { parseCommandLine, runMain, usageError, type Command } from "./args.ts";
 
 /** A Python `dict`. Both the JSON side and the to_dict side are Maps (rulebook §3).
@@ -445,7 +447,12 @@ export function _compareMarkers(
 }
 
 /** Compare a list of guides. */
-export function _compareGuides(expectedGuides: Dict[], parsedGuides: Dict[], path: string, result: ValidationResult): void {
+export function _compareGuides(
+  expectedGuides: Dict[],
+  parsedGuides: Dict[],
+  path: string,
+  result: ValidationResult,
+): void {
   if (expectedGuides.length !== parsedGuides.length) {
     result.addDiff(`${path}.numGuides`, expectedGuides.length, parsedGuides.length, "composition");
   }
@@ -460,7 +467,12 @@ export function _compareGuides(expectedGuides: Dict[], parsedGuides: Dict[], pat
 }
 
 /** Compare proxySource on an AVItem (comp or footage). */
-export function _compareProxySource(expectedItem: Dict, parsedItem: Dict, path: string, result: ValidationResult): void {
+export function _compareProxySource(
+  expectedItem: Dict,
+  parsedItem: Dict,
+  path: string,
+  result: ValidationResult,
+): void {
   const expProxy = expectedItem.get("proxySource") ?? null;
   const parsedProxy = parsedItem.get("proxySource") ?? null;
   if (truthy(expProxy) && truthy(parsedProxy)) {
@@ -521,7 +533,7 @@ export function _compareChildrenByMatchName(
       continue;
     }
 
-    const idx = (matchNameIdx.get(expMatchName) ?? 0);
+    const idx = matchNameIdx.get(expMatchName) ?? 0;
     let parsedProp: Dict;
     if (idx < candidates.length) {
       parsedProp = candidates[idx];
@@ -709,12 +721,7 @@ export function compareLayer(
  * @param path - Dotted path for error messages.
  * @param result - ValidationResult to accumulate differences.
  */
-export function compareProperty(
-  expectedProp: Dict,
-  parsedProp: Dict,
-  path: string,
-  result: ValidationResult,
-): void {
+export function compareProperty(expectedProp: Dict, parsedProp: Dict, path: string, result: ValidationResult): void {
   const propertyMappings = {
     name: "name",
     matchName: "matchName",
@@ -745,16 +752,8 @@ export function compareProperty(
   result.trackField("Property", "propertyIndex", expectedProp.has("propertyIndex"));
   result.trackField("Property", "value", expectedProp.has("value"));
   result.trackField("Property", "keyframes", expectedProp.has("numKeys"));
-  result.trackField(
-    "Property",
-    "minValue",
-    expectedProp.has("hasMin") && truthy(expectedProp.get("hasMin")),
-  );
-  result.trackField(
-    "Property",
-    "maxValue",
-    expectedProp.has("hasMax") && truthy(expectedProp.get("hasMax")),
-  );
+  result.trackField("Property", "minValue", expectedProp.has("hasMin") && truthy(expectedProp.get("hasMin")));
+  result.trackField("Property", "maxValue", expectedProp.has("hasMax") && truthy(expectedProp.get("hasMax")));
 
   // Compare propertyIndex (ExtendScript is 1-based, parsed is 0-based)
   if (expectedProp.has("propertyIndex")) {
@@ -863,7 +862,7 @@ export function compareProperty(
     const parsedAlt = parsedProp.get("alternateSource") ?? null;
     if (expAlt == null) {
       if (parsedAlt != null) {
-        const pid = parsedAlt instanceof Map ? parsedAlt.get("id") ?? null : parsedAlt;
+        const pid = parsedAlt instanceof Map ? (parsedAlt.get("id") ?? null) : parsedAlt;
         result.addDiff(`${path}.alternateSource`, null, pid, "properties");
       }
     } else if (expAlt instanceof Map) {
@@ -896,7 +895,7 @@ export function compareProperty(
     const parsedEps = parsedProp.get("essentialPropertySource") ?? null;
     if (expEps == null) {
       if (parsedEps != null) {
-        const pname = parsedEps instanceof Map ? parsedEps.get("name") ?? null : parsedEps;
+        const pname = parsedEps instanceof Map ? (parsedEps.get("name") ?? null) : parsedEps;
         result.addDiff(`${path}.essentialPropertySource`, null, pname, "properties");
       }
     } else if (!(parsedEps instanceof Map)) {
@@ -984,12 +983,7 @@ export function compareShapeValue(
  * @param path - Dotted path for error messages.
  * @param result - ValidationResult to accumulate differences.
  */
-export function compareKeyframe(
-  expectedKf: Dict,
-  parsedKf: Dict,
-  path: string,
-  result: ValidationResult,
-): void {
+export function compareKeyframe(expectedKf: Dict, parsedKf: Dict, path: string, result: ValidationResult): void {
   // Track manually-compared fields
   result.trackField("Keyframe", "value", expectedKf.has("value"));
   result.trackField("Keyframe", "inTemporalEase", expectedKf.has("inTemporalEase"));
@@ -1050,10 +1044,10 @@ export function compareKeyframe(
         result.addDiff(`${path}.${easeKey}.length`, len(expEase), len(parsedEase), "keyframes");
       }
       for (const [ei, [expE, parsedE]] of zip(expEase, parsedEase).entries()) {
-        const expSpeed = expE instanceof Map ? expE.get("speed") ?? null : null;
-        const expInfluence = expE instanceof Map ? expE.get("influence") ?? null : null;
-        const parsedSpeed = parsedE instanceof Map ? parsedE.get("speed") ?? null : null;
-        const parsedInfluence = parsedE instanceof Map ? parsedE.get("influence") ?? null : null;
+        const expSpeed = expE instanceof Map ? (expE.get("speed") ?? null) : null;
+        const expInfluence = expE instanceof Map ? (expE.get("influence") ?? null) : null;
+        const parsedSpeed = parsedE instanceof Map ? (parsedE.get("speed") ?? null) : null;
+        const parsedInfluence = parsedE instanceof Map ? (parsedE.get("influence") ?? null) : null;
         if (!compareValues(expSpeed, parsedSpeed)) {
           result.addDiff(`${path}.${easeKey}[${ei}].speed`, expSpeed, parsedSpeed, "keyframes");
         }
@@ -1073,12 +1067,7 @@ export function compareKeyframe(
  * @param path - Dotted path for error messages.
  * @param result - ValidationResult to accumulate differences.
  */
-export function compareTextDocument(
-  expectedDoc: Dict,
-  parsedDoc: Dict,
-  path: string,
-  result: ValidationResult,
-): void {
+export function compareTextDocument(expectedDoc: Dict, parsedDoc: Dict, path: string, result: ValidationResult): void {
   // fontFamily/fontStyle/fontLocation are intentionally omitted: AE does not
   // store them in the .aep. It resolves them at runtime by feeding the stored
   // PostScript name to CoolType against the host's installed font database, so
@@ -1213,12 +1202,7 @@ export function comparePropertyGroup(
 }
 
 /** Compare composition item properties. */
-export function compareCompItem(
-  expectedItem: Dict,
-  parsedComp: Dict,
-  path: string,
-  result: ValidationResult,
-): void {
+export function compareCompItem(expectedItem: Dict, parsedComp: Dict, path: string, result: ValidationResult): void {
   const compMappings = {
     name: "name",
     id: "id",
@@ -1281,7 +1265,12 @@ export function compareCompItem(
   );
 
   // Compare guides
-  _compareGuides(expectedItem.has("guides") ? expectedItem.get("guides") : [], parsedComp.has("guides") ? parsedComp.get("guides") : [], path, result);
+  _compareGuides(
+    expectedItem.has("guides") ? expectedItem.get("guides") : [],
+    parsedComp.has("guides") ? parsedComp.get("guides") : [],
+    path,
+    result,
+  );
 
   // Compare proxySource
   _compareProxySource(expectedItem, parsedComp, path, result);
@@ -1332,12 +1321,7 @@ export function compareFolderHierarchy(
  * @param path - Dotted path for error messages.
  * @param result - ValidationResult to accumulate differences.
  */
-export function compareFootageItem(
-  expectedItem: Dict,
-  parsedItem: Dict,
-  path: string,
-  result: ValidationResult,
-): void {
+export function compareFootageItem(expectedItem: Dict, parsedItem: Dict, path: string, result: ValidationResult): void {
   const footageMappings = {
     name: "name",
     id: "id",
@@ -1520,21 +1504,14 @@ export function compareOutputModuleSettings(
 }
 
 /** Compare render queue items. */
-export function compareRenderQueue(
-  expectedRq: Dict,
-  parsedRq: Dict,
-  result: ValidationResult,
-  verbose = false,
-): void {
+export function compareRenderQueue(expectedRq: Dict, parsedRq: Dict, result: ValidationResult, verbose = false): void {
   const expectedItems: Dict[] = expectedRq.has("items") ? expectedRq.get("items") : [];
   const parsedItems: Dict[] = parsedRq.has("items") ? parsedRq.get("items") : [];
 
   if (expectedItems.length !== parsedItems.length) {
     result.addDiff("RenderQueue.numItems", expectedItems.length, parsedItems.length, "renderqueue");
     if (verbose) {
-      console.log(
-        `  Item count mismatch: expected ${expectedItems.length}, got ${parsedItems.length}`,
-      );
+      console.log(`  Item count mismatch: expected ${expectedItems.length}, got ${parsedItems.length}`);
     }
   }
 
@@ -1629,11 +1606,7 @@ export function compareRenderQueue(
  * @param parsedViewer - Parsed active_viewer dict from py_aep.
  * @param result - ValidationResult to accumulate differences.
  */
-export function compareViewer(
-  expectedViewer: Dict,
-  parsedViewer: Dict,
-  result: ValidationResult,
-): void {
+export function compareViewer(expectedViewer: Dict, parsedViewer: Dict, result: ValidationResult): void {
   const viewerMappings: Record<string, string> = {
     type: "type",
   };
@@ -1648,8 +1621,8 @@ export function compareViewer(
   for (const [i, [expView, parsedView]] of zip(expViews, parsedViews).entries()) {
     const path = `Viewer.views[${i}]`;
 
-    const expOpts = expView.has("options") ? expView.get("options") : (new Map());
-    const parsedOpts = parsedView.has("options") ? parsedView.get("options") : (new Map());
+    const expOpts = expView.has("options") ? expView.get("options") : new Map();
+    const parsedOpts = parsedView.has("options") ? parsedView.get("options") : new Map();
     const optsPath = `${path}.options`;
     const optsMappings: Record<string, string> = {
       channels: "channels",
@@ -1733,12 +1706,12 @@ export function validateAep(
 
   // Compare folder hierarchy
   if (verbose) console.log("\n=== Comparing Folder Hierarchy ===");
-  compareFolderHierarchy(expectedItems, parsed.has("items") ? parsed.get("items") : (new Map()), result);
+  compareFolderHierarchy(expectedItems, parsed.has("items") ? parsed.get("items") : new Map(), result);
 
   // Compare footage items
   if (verbose) console.log("\n=== Comparing Footage Items ===");
   const expectedFootage = expectedItems.filter((i: Dict) => i.get("itemType") === "FootageItem");
-  const parsedItemsDict: Map<number, Dict> = parsed.has("items") ? parsed.get("items") : (new Map());
+  const parsedItemsDict: Map<number, Dict> = parsed.has("items") ? parsed.get("items") : new Map();
   const parsedFootageById = new Map<number, Dict>();
   for (const [itemId, item] of parsedItemsDict) {
     if (item.get("typeName") === "Footage") parsedFootageById.set(itemId, item);
@@ -1770,8 +1743,8 @@ export function validateAep(
 
   // Compare render queue
   if (verbose) console.log("\n=== Comparing Render Queue ===");
-  const expectedRq = expected.has("renderQueue") ? expected.get("renderQueue") : (new Map());
-  compareRenderQueue(expectedRq, parsed.has("renderQueue") ? parsed.get("renderQueue") : (new Map()), result, verbose);
+  const expectedRq = expected.has("renderQueue") ? expected.get("renderQueue") : new Map();
+  compareRenderQueue(expectedRq, parsed.has("renderQueue") ? parsed.get("renderQueue") : new Map(), result, verbose);
 
   // Compare active viewer
   const expectedViewer = expected.get("activeViewer") ?? null;
@@ -1789,11 +1762,7 @@ export function validateAep(
 }
 
 /** Print validation results. */
-export function printResults(
-  result: ValidationResult,
-  verbose = false,
-  categoryFilter: string | null = null,
-): void {
+export function printResults(result: ValidationResult, verbose = false, categoryFilter: string | null = null): void {
   console.log("\n" + "=".repeat(60));
 
   if (!result.differences?.length) {
@@ -1904,11 +1873,18 @@ export function _parseArgs(argv: string[]): {
   coverage: boolean;
 } {
   const { values, positionals } = parseCommandLine(VALIDATE, argv);
-  if (positionals.length < 2) usageError(VALIDATE, `the following arguments are required: ${["aep_file", "json_file"].slice(positionals.length).join(", ")}`);
+  if (positionals.length < 2)
+    usageError(
+      VALIDATE,
+      `the following arguments are required: ${["aep_file", "json_file"].slice(positionals.length).join(", ")}`,
+    );
   if (positionals.length > 2) usageError(VALIDATE, `unrecognized arguments: ${positionals.slice(2).join(" ")}`);
   const category = typeof values.category === "string" ? values.category : null;
   if (category != null && !_CATEGORY_CHOICES.includes(category)) {
-    usageError(VALIDATE, `argument -c/--category: invalid choice: '${category}' (choose from ${_CATEGORY_CHOICES.join(", ")})`);
+    usageError(
+      VALIDATE,
+      `argument -c/--category: invalid choice: '${category}' (choose from ${_CATEGORY_CHOICES.join(", ")})`,
+    );
   }
   return {
     aepFile: new Path(positionals[0]),

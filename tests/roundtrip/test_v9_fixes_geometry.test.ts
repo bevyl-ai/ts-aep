@@ -23,7 +23,23 @@ AE 2026 headless, which also recorded its own answers next to them:
 */
 
 import { describe, expect, test } from "bun:test";
-import { AttributeError, contains, getMember, getOrThrow, isclose, mod, NotImplementedError, Path, assert, truthy, valueEquals, repr, StopIteration, ValueError, zip } from "../../src/pyrt/index.ts";
+import {
+  AttributeError,
+  contains,
+  getMember,
+  getOrThrow,
+  isclose,
+  mod,
+  NotImplementedError,
+  Path,
+  assert,
+  truthy,
+  valueEquals,
+  repr,
+  StopIteration,
+  ValueError,
+  zip,
+} from "../../src/pyrt/index.ts";
 
 import { parse as parseAep, type CompItem, type Layer, type Project } from "../../src/py_aep/index.ts";
 import "../../src/py_aep/binary/_register.ts";
@@ -45,8 +61,15 @@ const TEXT = LAYER_DIR.div("text_ink_v9.aep");
 const MORE = LAYER_DIR.div("reparent_more_v9.aep");
 const TIMES = [0.0, 0.5, 1.0, 1.5, 2.5];
 const MORE_TIMES = [0.0, 0.5, 1.0, 2.0, 2.5];
-const PTS = [[0.0, 0.0], [100.0, 50.0], [-30.0, 70.0]];
-const CPTS = [[500.0, 400.0], [120.0, 60.0]];
+const PTS = [
+  [0.0, 0.0],
+  [100.0, 50.0],
+  [-30.0, 70.0],
+];
+const CPTS = [
+  [500.0, 400.0],
+  [120.0, 60.0],
+];
 
 // JSON truth records stay plain objects: they are read by fixed key names
 // only and never iterated for their keys (except the sorted() calls below,
@@ -128,9 +151,7 @@ describe("TestComment", () => {
     layer.comment = "";
     expect(layer._cmta == null).toBe(true);
     expect(!layer._ldta.hasComment).toBe(true);
-    expect(
-      layer._layerList.chunks.every((c) => getMember(c, "chunkType", "") !== "cmta"),
-    ).toBe(true);
+    expect(layer._layerList.chunks.every((c) => getMember(c, "chunkType", "") !== "cmta")).toBe(true);
   });
 
   test("test_unflagged_comment_reads_empty", () => {
@@ -164,13 +185,23 @@ describe("TestCopyToComp", () => {
         const truth = _copyTruth(srcName, dstName);
         const keys = copy.transform.property("ADBE Position").keyframes.map((kf) => kf.time);
         expect(
-          _close(keys, truth.T["ADBE Position"].k.map((k: [number, number | number[]]) => k[0]), 1e-4),
+          _close(
+            keys,
+            truth.T["ADBE Position"].k.map((k: [number, number | number[]]) => k[0]),
+            1e-4,
+          ),
         ).toBe(true);
         const markers = getMember(copy.marker, "keyframes").map((kf) => kf.time);
         expect(_close(markers, truth.mk, 1e-4)).toBe(true);
         if ("tr" in truth) {
           const remap = copy.property("ADBE Time Remapping").keyframes.map((kf) => kf.time);
-          expect(_close(remap, truth.tr.map((k: [number, number | number[]]) => k[0]), 1e-4)).toBe(true);
+          expect(
+            _close(
+              remap,
+              truth.tr.map((k: [number, number | number[]]) => k[0]),
+              1e-4,
+            ),
+          ).toBe(true);
         }
       }
     }
@@ -279,20 +310,17 @@ describe("TestCopyToComp", () => {
 // ---------------------------------------------------------------------------
 
 describe("TestLightSource", () => {
-  test.each(["cam_s", "null_s", "adj_s", "env_light", "solid3d_s"])(
-    "test_refused_like_ae[%#]",
-    (target: string) => {
-      const project = parseProjectFresh(REPARENT);
-      const [comp, envLayer] = _layer(project, "PC_SRC", "env_light");
-      const env = asInstance(envLayer, LightLayer);
-      expect(contains(REPARENT_TRUTH.light[target].env, "ERR")).toBe(true);
-      const before = env._ldta.sourceId;
-      raises(ValueError, () => {
-        env.lightSource = _next(comp.layers, (ly) => ly.name === target);
-      });
-      expect(env._ldta.sourceId).toBe(before);
-    },
-  );
+  test.each(["cam_s", "null_s", "adj_s", "env_light", "solid3d_s"])("test_refused_like_ae[%#]", (target: string) => {
+    const project = parseProjectFresh(REPARENT);
+    const [comp, envLayer] = _layer(project, "PC_SRC", "env_light");
+    const env = asInstance(envLayer, LightLayer);
+    expect(contains(REPARENT_TRUTH.light[target].env, "ERR")).toBe(true);
+    const before = env._ldta.sourceId;
+    raises(ValueError, () => {
+      env.lightSource = _next(comp.layers, (ly) => ly.name === target);
+    });
+    expect(env._ldta.sourceId).toBe(before);
+  });
 
   test("test_other_comp_refused", () => {
     const project = parseProjectFresh(REPARENT);
@@ -336,11 +364,11 @@ describe("TestLightSource", () => {
 
   test("test_version_gate", () => {
     const project = parseProjectFresh(SAMPLES.div("versions", "ae2023", "complete.aep"));
-    const light = _next(project.compositions.flatMap((c) => c.lightLayers), () => true);
-    const solid = _next(
-      light.containingComp.avLayers,
-      (ly) => !ly.threeDLayer && !ly.nullLayer,
+    const light = _next(
+      project.compositions.flatMap((c) => c.lightLayers),
+      () => true,
     );
+    const solid = _next(light.containingComp.avLayers, (ly) => !ly.threeDLayer && !ly.nullLayer);
     raises(
       AttributeError,
       () => {
@@ -426,21 +454,14 @@ function _assertTransform(child: Layer, comp: CompItem, truth: _TransformTruth):
       if (contains(matchName, "Orientation") || contains(matchName, "Rotate")) {
         assert(_angleClose(g, w, 1e-3), `${matchName} ${repr(got)} ${repr(exp)}`);
       } else {
-        assert(
-          Math.abs(g - w) <= 1e-3 * Math.max(1.0, Math.abs(w)),
-          `${matchName} ${repr(got)} ${repr(exp)}`,
-        );
+        assert(Math.abs(g - w) <= 1e-3 * Math.max(1.0, Math.abs(w)), `${matchName} ${repr(got)} ${repr(exp)}`);
       }
     }
     if (truthy(expected.k)) {
       for (const [kf, [time, value]] of zip(prop.keyframes, expected.k)) {
         assert(Math.abs(kf.time - time) < 1e-4);
         expect(
-          _close(
-            Array.isArray(kf.value) ? kf.value : [kf.value],
-            Array.isArray(value) ? value : [value],
-            1e-3,
-          ),
+          _close(Array.isArray(kf.value) ? kf.value : [kf.value], Array.isArray(value) ? value : [value], 1e-3),
         ).toBe(true);
       }
     }
@@ -452,22 +473,17 @@ describe("TestParent", () => {
     const project = parseProjectFresh(REPARENT);
     const [comp, child] = _layer(project, "PB", childName);
     const parentName = getOrThrow(_PARENT_OPS, childName);
-    const parent = truthy(parentName)
-      ? _next(comp.layers, (ly) => ly.name === parentName)
-      : null;
+    const parent = truthy(parentName) ? _next(comp.layers, (ly) => ly.name === parentName) : null;
     child.parent = parent;
     _assertTransform(child, comp, REPARENT_TRUTH.parent[childName].after);
   });
 
-  test.each(_MORE_PARENT_OPS)(
-    "test_more_matches_ae[%#]",
-    (compName: string, childName: string, parentName: string) => {
-      const project = parseProjectFresh(MORE);
-      const [comp, child] = _layer(project, compName, childName);
-      child.parent = _next(comp.layers, (ly) => ly.name === parentName);
-      _assertTransform(child, comp, MORE_TRUTH.parent[childName].after);
-    },
-  );
+  test.each(_MORE_PARENT_OPS)("test_more_matches_ae[%#]", (compName: string, childName: string, parentName: string) => {
+    const project = parseProjectFresh(MORE);
+    const [comp, child] = _layer(project, compName, childName);
+    child.parent = _next(comp.layers, (ly) => ly.name === parentName);
+    _assertTransform(child, comp, MORE_TRUTH.parent[childName].after);
+  });
 
   test("test_pixel_aspect_comp", () => {
     const project = parseProjectFresh(REPARENT);
@@ -482,9 +498,7 @@ describe("TestParent", () => {
     child.parent = _next(comp.layers, (ly) => ly.name === "p_zero");
     expect(child.parent != null).toBe(true);
     expect(child.parent.name).toBe("p_zero");
-    expect(valueEquals(child.transform.property("ADBE Position").value.slice(0, 2), [300.0, 200.0])).toBe(
-      true,
-    );
+    expect(valueEquals(child.transform.property("ADBE Position").value.slice(0, 2), [300.0, 200.0])).toBe(true);
   });
 });
 
@@ -543,10 +557,7 @@ describe("TestPointConversions", () => {
         if (!Array.isArray(expected) || valueEquals(expected, [0, 0])) continue;
         const got = layer.compPointToSource(point, time);
         const tol = 1e-3 * Math.max(1.0, Math.max(...expected.map((v: number) => Math.abs(v))));
-        assert(
-          _close(got, expected, Math.max(tol, 1e-2)),
-          `${time} ${repr(point)} ${repr(got)} ${repr(expected)}`,
-        );
+        assert(_close(got, expected, Math.max(tol, 1e-2)), `${time} ${repr(point)} ${repr(got)} ${repr(expected)}`);
       }
     }
   });
@@ -595,10 +606,11 @@ describe("TestPointConversions", () => {
     const comp = project.compositions[0];
     const camera = comp.cameraLayers[0];
     // AE 2026 (the sample's ExtendScript export): [960, 53.5, -2424.24242418]
-    expect(
-      _close(camera.transform.property("ADBE Position").value, [960.0, 53.5, -2424.24242418], 1e-5),
-    ).toBe(true);
-    const layer = asInstance(comp.layers.find((ly) => ly.name === "Dark Gray Solid 1"), AVLayer);
+    expect(_close(camera.transform.property("ADBE Position").value, [960.0, 53.5, -2424.24242418], 1e-5)).toBe(true);
+    const layer = asInstance(
+      comp.layers.find((ly) => ly.name === "Dark Gray Solid 1"),
+      AVLayer,
+    );
     // The camera sits on the default comp camera: c2s is the identity.
     expect(_close(layer.compPointToSource([100.0, 100.0], 0.0), [100.0, 100.0], 1e-6)).toBe(true);
   });
@@ -620,9 +632,7 @@ describe("TestMatrixLaws", () => {
     m.row(2)[2] = 0.0;
     m.row(0)[3] = 10.0;
     m.row(1)[3] = 20.0;
-    expect(
-      _close(intersectLayerPlane(m, [5.0, 6.0, -100.0], [0.0, 0.0, 1.0]), [-5.0, -14.0], 1e-12),
-    ).toBe(true);
+    expect(_close(intersectLayerPlane(m, [5.0, 6.0, -100.0], [0.0, 0.0, 1.0]), [-5.0, -14.0], 1e-12)).toBe(true);
   });
 });
 

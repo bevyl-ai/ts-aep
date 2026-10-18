@@ -1,7 +1,21 @@
 /** Tests for newProject() - creating an empty project from scratch. */
 
 import { describe, expect, test } from "bun:test";
-import { AssertionError, Bytes, bytesEqual, getOrThrow, isdigit, len, Path, truthy, valueEquals, truthyOr, getMember, StopIteration, ValueError } from "../../src/pyrt/index.ts";
+import {
+  AssertionError,
+  Bytes,
+  bytesEqual,
+  getOrThrow,
+  isdigit,
+  len,
+  Path,
+  truthy,
+  valueEquals,
+  truthyOr,
+  getMember,
+  StopIteration,
+  ValueError,
+} from "../../src/pyrt/index.ts";
 
 import * as py_aep from "../../src/py_aep/index.ts";
 import { findByType, recursiveFind } from "../../src/py_aep/binary/utils.ts";
@@ -13,12 +27,7 @@ import { RenderQueue } from "../../src/py_aep/models/renderqueue/render_queue.ts
 import { makeTmpPath, raises, skip } from "../support/pytest.ts";
 import { sorted, split } from "../support/python.ts";
 
-const EMPTIER = new Path(import.meta.path).parent.parent.parent.div(
-  "samples",
-  "models",
-  "project",
-  "emptier.aep",
-);
+const EMPTIER = new Path(import.meta.path).parent.parent.parent.div("samples", "models", "project", "emptier.aep");
 const VERSIONS = new Path(import.meta.path).parent.parent.parent.div("samples", "versions");
 
 describe("TestNewEmpty", () => {
@@ -78,19 +87,14 @@ describe("TestNewEmpty", () => {
     // writes the UTF-8 code page.
     ["windows", GpuAccelType.CUDA, 12, 0x00, "fde9"],
     ["macos", GpuAccelType.METAL, 14, 0x08, "0100"],
-  ])(
-    "test_platform_stamps[%#]",
-    (platform, gpu, osCode, nnhdByte, codePage) => {
-      const project = py_aep.newProject("26.0x67", { platform }).project;
-      expect(project._platform).toBe(platform);
-      expect(project.gpuAccelType).toBe(gpu);
-      expect(project._head.aeVersionOs).toBe(osCode);
-      expect(project._nnhd._savingPlatform).toBe(nnhdByte);
-      expect(Bytes.toHex(Bytes.intToBytes(project._nnhd._systemCodePage, 2, "big"))).toBe(
-        codePage,
-      );
-    },
-  );
+  ])("test_platform_stamps[%#]", (platform, gpu, osCode, nnhdByte, codePage) => {
+    const project = py_aep.newProject("26.0x67", { platform }).project;
+    expect(project._platform).toBe(platform);
+    expect(project.gpuAccelType).toBe(gpu);
+    expect(project._head.aeVersionOs).toBe(osCode);
+    expect(project._nnhd._savingPlatform).toBe(nnhdByte);
+    expect(Bytes.toHex(Bytes.intToBytes(project._nnhd._systemCodePage, 2, "big"))).toBe(codePage);
+  });
 
   test("test_windows_stamps_match_ae_new_project", () => {
     const ae = py_aep.parse(EMPTIER).project;
@@ -135,17 +139,12 @@ describe("TestNewVersion", () => {
     ["22.0x1", new Set(["ExEn", "mrid", "pcms", "PwCs"]), new Set(["pdvc"])],
     ["16.0x1", new Set(["ExEn"]), new Set(["mrid", "pcms", "PwCs", "pdvc"])],
     ["15.1x69", new Set<string>(), new Set(["ExEn", "mrid", "pcms", "PwCs", "pdvc"])],
-  ])(
-    "test_version_gated_chunks[%#]",
-    (version: string, present: Set<string>, absent: Set<string>) => {
-      const chunks = py_aep.newProject(version).project._rifx.chunks;
-      const types = new Set(
-        chunks.map((c) => truthyOr(getMember(c, "listType", ""), c.chunkType)),
-      );
-      expect([...present].every((t) => types.has(t))).toBe(true);
-      expect([...absent].some((t) => types.has(t))).toBe(false);
-    },
-  );
+  ])("test_version_gated_chunks[%#]", (version: string, present: Set<string>, absent: Set<string>) => {
+    const chunks = py_aep.newProject(version).project._rifx.chunks;
+    const types = new Set(chunks.map((c) => truthyOr(getMember(c, "listType", ""), c.chunkType)));
+    expect([...present].every((t) => types.has(t))).toBe(true);
+    expect([...absent].some((t) => types.has(t))).toBe(false);
+  });
 
   test("test_gated_down_reparses", () => {
     const tmpPath = makeTmpPath();
@@ -219,9 +218,7 @@ describe("TestNewVersion", () => {
     const newComp = reread.compositions.find((c) => c.name === "Depth");
     if (newComp == null) throw new StopIteration();
     const records = recursiveFind(newComp._itemList.chunks, "ldta");
-    expect(
-      valueEquals(new Set(records.map((record) => len(record.tobytes()))), new Set([ldtaSize])),
-    ).toBe(true);
+    expect(valueEquals(new Set(records.map((record) => len(record.tobytes()))), new Set([ldtaSize]))).toBe(true);
   });
 
   test("test_layer_copied_across_comps_keeps_a_22_record", () => {
@@ -269,7 +266,12 @@ describe("TestNewMutations", () => {
     const path = tmpPath.div("comp.aep");
     app.project.save(path);
     const proj = py_aep.parse(path).project;
-    expect(valueEquals(proj.compositions.map((c) => c.name), ["Comp 1"])).toBe(true);
+    expect(
+      valueEquals(
+        proj.compositions.map((c) => c.name),
+        ["Comp 1"],
+      ),
+    ).toBe(true);
     const comp = proj.compositions[0];
     expect(valueEquals([comp.width, comp.height], [1920, 1080])).toBe(true);
   });
@@ -291,7 +293,12 @@ describe("TestNewMutations", () => {
     const path = tmpPath.div("ph.aep");
     app.project.save(path);
     const proj = py_aep.parse(path).project;
-    expect(valueEquals(proj.footages.map((f) => f.name), ["PH"])).toBe(true);
+    expect(
+      valueEquals(
+        proj.footages.map((f) => f.name),
+        ["PH"],
+      ),
+    ).toBe(true);
   });
 
   test("test_ae_preferences_dir_threaded", () => {

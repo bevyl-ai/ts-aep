@@ -12,15 +12,7 @@
 import type { EnumHelpers } from "../../pyrt/enum.ts";
 import { FLOAT32_MAX } from "../binary/bin_utils.ts";
 import { AE_VERSION_RE, FORMAT_VERSIONS } from "../binary/item_chunks.ts";
-import {
-  Path,
-  ValueError,
-  encode,
-  floatRepr,
-  literal,
-  FileExistsError,
-  typeName,
-} from "../../pyrt/index.ts";
+import { Path, ValueError, encode, floatRepr, literal, FileExistsError, typeName } from "../../pyrt/index.ts";
 
 /**
  * `validator(value, instance=None)`: raises on an invalid `value`. `value` is
@@ -260,9 +252,7 @@ export function _validateStr(
  *     this a directory passes `mustExist` and only fails later, deep in a reader, as an
  *     OS-specific error (`PermissionError` on Windows, `IsADirectoryError` elsewhere).
  */
-export function _validatePath(
-  kw: { mustExist?: boolean | null; mustBeFile?: boolean } = {},
-): Validator {
+export function _validatePath(kw: { mustExist?: boolean | null; mustBeFile?: boolean } = {}): Validator {
   const { mustExist = null, mustBeFile = false } = kw;
 
   return function _validator(value: unknown, instance: unknown = null): void {
@@ -413,10 +403,7 @@ export function validateAeVersion(value: unknown, instance: unknown = null): voi
   }
   const match = AE_VERSION_RE.exec(String(value));
   if (match == null) {
-    throw new ValueError(
-      "version must match '{major}.{minor}x{build}' " +
-        `(e.g. '25.6x101'), got ${literal(value)}`,
-    );
+    throw new ValueError("version must match '{major}.{minor}x{build}' " + `(e.g. '25.6x101'), got ${literal(value)}`);
   }
   const [major, minor, build] = match.slice(1).map((part) => Number.parseInt(part, 10));
   if (major > 0xff) throw new ValueError(`version major must be <= 255, got ${major}`);

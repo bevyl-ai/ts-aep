@@ -58,7 +58,12 @@ describe("TestSortChildrenByName", () => {
     folder._sortChildrenByName();
 
     const expected = ["alpha", "beta", "Mango", "zebra"];
-    expect(valueEquals(folder.items.map((item) => item.name), expected)).toBe(true);
+    expect(
+      valueEquals(
+        folder.items.map((item) => item.name),
+        expected,
+      ),
+    ).toBe(true);
     // The backing Sfdr item_list chunks are reordered to match.
     // id() keys are object identity, so the Map is keyed by the chunk objects.
     const idToName = new Map<object, string>(folder.items.map((item): [object, string] => [item._itemList, item.name]));

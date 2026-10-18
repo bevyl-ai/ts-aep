@@ -25,7 +25,6 @@ import * as _propertyGroup from "./property_group.ts";
 import * as _propertyValue from "../../parsers/property_value.ts";
 import { late } from "../late.ts";
 
-
 // NOTE(port): local twin of CPython `list.index` / `list.remove` (py_eq compare, ValueError "x is not in list"); no pyrt shim exists.
 export function listIndex<T>(xs: readonly T[], x: T): number {
   const i = xs.findIndex((y) => valueEquals(y, x));
@@ -121,9 +120,7 @@ export function _assignDuplicateMaskIdentity(
   newMask: MaskPropertyGroup,
   parent: PropertyGroup,
 ): void {
-  const siblings = parent._properties
-    .filter((m) => m._isMask && m !== newMask)
-    .filter((m) => m._isMaskGroup());
+  const siblings = parent._properties.filter((m) => m._isMask && m !== newMask).filter((m) => m._isMaskGroup());
   const newId = Math.max(0, ...siblings.map((m) => m._mkif.maskId)) + 1;
   newMask._mkif.maskId = newId;
   // Python `$` also matches before a trailing newline; the lookahead mirrors that.
@@ -166,14 +163,7 @@ export class PropertyBase {
     propertyDepth: number;
     autoName?: string | null;
   }) {
-    const {
-      _tdsb,
-      _nameUtf8 = null,
-      parentProperty = null,
-      matchName,
-      propertyDepth,
-      autoName = null,
-    } = kw;
+    const { _tdsb, _nameUtf8 = null, parentProperty = null, matchName, propertyDepth, autoName = null } = kw;
     this._tdsb = _tdsb;
     this._nameUtf8 = _nameUtf8;
     this._matchName = matchName;
@@ -538,7 +528,8 @@ export class PropertyBase {
    * `LIST:sspc`), this returns the sspc chunk.
    */
   _backingListChunk(parentTdgp: ListChunk): ListChunk {
-    const chunk: ListChunk | null = "_tdbs" in this ? (this._tdbs as ListChunk) : "_tdgp" in this ? (this._tdgp as ListChunk | null) : null;
+    const chunk: ListChunk | null =
+      "_tdbs" in this ? (this._tdbs as ListChunk) : "_tdgp" in this ? (this._tdgp as ListChunk | null) : null;
     assert(chunk != null);
     // Identity check - attrs __eq__ is structural, so .index() / `in`
     // would give false positives for chunks with identical fields.
@@ -699,27 +690,11 @@ export class PropertyBase {
     let result: Property | PropertyGroup;
     if (this._isMask) {
       const mkif = findByType(cloned, "mkif");
-      result = late._parseMaskAtom(
-        listChunk,
-        mkif,
-        this._propertyDepth,
-        effectParamDefs,
-        comp,
-        tdmn,
-        layer,
-      );
+      result = late._parseMaskAtom(listChunk, mkif, this._propertyDepth, effectParamDefs, comp, tdmn, layer);
     } else if (listChunk.listType === "tdbs") {
       result = _propertyValue.parseProperty(listChunk, this._matchName, comp, this._propertyDepth, tdmn);
     } else if (listChunk.listType === "sspc") {
-      result = late.parseEffect(
-        listChunk,
-        this._matchName,
-        this._propertyDepth,
-        effectParamDefs,
-        comp,
-        tdmn,
-        layer,
-      );
+      result = late.parseEffect(listChunk, this._matchName, this._propertyDepth, effectParamDefs, comp, tdmn, layer);
     } else if (listChunk.listType === "tdgp") {
       result = late.parsePropertyGroup(
         listChunk,
@@ -745,9 +720,13 @@ export class PropertyBase {
 
   static {
     // Descriptors for the `declare`d fields above.
-    descriptor(this, "enabled", ChunkField.bool("_tdsb", "enabled", {
-      default: true,
-      validate: _validateEnabled,
-    }));
+    descriptor(
+      this,
+      "enabled",
+      ChunkField.bool("_tdsb", "enabled", {
+        default: true,
+        validate: _validateEnabled,
+      }),
+    );
   }
 }

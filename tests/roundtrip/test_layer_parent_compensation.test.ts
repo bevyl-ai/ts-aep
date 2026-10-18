@@ -177,7 +177,9 @@ describe("TestParentCameraIsAlwaysThreeD", () => {
 
     expect(
       valueEquals(
-        ["ADBE Rotate X", "ADBE Rotate Y", "ADBE Rotate Z"].map((name) => asInstance(camera.transform.property(name), Property).value),
+        ["ADBE Rotate X", "ADBE Rotate Y", "ADBE Rotate Z"].map(
+          (name) => asInstance(camera.transform.property(name), Property).value,
+        ),
         rotationsBefore,
       ),
     ).toBe(true);
@@ -217,8 +219,12 @@ describe("TestParentCompensationConvention", () => {
 
     child.parent = parent;
 
-    expect(approx(child.transform.property("ADBE Position").value, [-70.416, 170.863, 52.416], { abs: 0.001 })).toBe(true);
-    expect(approx(child.transform.property("ADBE Orientation").value, [329.248, 323.066, 337.96], { abs: 0.001 })).toBe(true);
+    expect(approx(child.transform.property("ADBE Position").value, [-70.416, 170.863, 52.416], { abs: 0.001 })).toBe(
+      true,
+    );
+    expect(approx(child.transform.property("ADBE Orientation").value, [329.248, 323.066, 337.96], { abs: 0.001 })).toBe(
+      true,
+    );
     for (const name of ["ADBE Rotate X", "ADBE Rotate Y", "ADBE Rotate Z"] as const) {
       expect(approx(child.transform.property(name).value, 0.0)).toBe(true);
     }
@@ -233,7 +239,9 @@ describe("TestParentCompensationConvention", () => {
 
     child.parent = parent;
 
-    expect(approx(child.transform.property("ADBE Orientation").value, [332.157, 321.758, 5.941], { abs: 0.001 })).toBe(true);
+    expect(approx(child.transform.property("ADBE Orientation").value, [332.157, 321.758, 5.941], { abs: 0.001 })).toBe(
+      true,
+    );
     expect(approx(child.transform.property("ADBE Rotate X").value, 11.0)).toBe(true);
     expect(approx(child.transform.property("ADBE Rotate Y").value, -23.0)).toBe(true);
     expect(approx(child.transform.property("ADBE Rotate Z").value, 47.0)).toBe(true);
@@ -257,8 +265,18 @@ describe("TestParentCompensationConvention", () => {
     child.parent = parent;
 
     expect(_worldDelta(before, buildWorldMatrix(child))).toBeLessThan(1e-9);
-    expect(valueEquals([...rotation.keyframes].map((k) => [k.time, k.value]), [[0.0, 15.0], [2.0, 75.0]])).toBe(true);
-    expect(approx(child.transform.property("ADBE Orientation").value, [358.013, 39.627, 337.08], { abs: 0.001 })).toBe(true);
+    expect(
+      valueEquals(
+        [...rotation.keyframes].map((k) => [k.time, k.value]),
+        [
+          [0.0, 15.0],
+          [2.0, 75.0],
+        ],
+      ),
+    ).toBe(true);
+    expect(approx(child.transform.property("ADBE Orientation").value, [358.013, 39.627, 337.08], { abs: 0.001 })).toBe(
+      true,
+    );
   });
 
   test("test_keyframed_orientation_is_remapped_per_key", () => {
@@ -460,7 +478,15 @@ describe("TestParentKeyframedChild", () => {
     child.parent = parent;
 
     expect(_worldDelta(before, buildWorldMatrix(child))).toBeLessThan(1e-9);
-    expect(valueEquals([...rotation.keyframes].map((k) => [k.time, k.value]), [[0.0, -15.0], [2.0, 45.0]])).toBe(true);
+    expect(
+      valueEquals(
+        [...rotation.keyframes].map((k) => [k.time, k.value]),
+        [
+          [0.0, -15.0],
+          [2.0, 45.0],
+        ],
+      ),
+    ).toBe(true);
   });
 
   test("test_keyframed_scale_is_left_alone", () => {
@@ -492,7 +518,15 @@ describe("TestParentKeyframedChild", () => {
     for (const time of [0.0, 2.0]) {
       expect(_worldDelta(getOrThrow(before, time), buildWorldMatrix(child, time))).toBeLessThan(1e-9);
     }
-    expect(valueEquals([...scale.keyframes].map((k) => k.value), [[100.0, 100.0, 100.0], [250.0, 60.0, 100.0]])).toBe(true);
+    expect(
+      valueEquals(
+        [...scale.keyframes].map((k) => k.value),
+        [
+          [100.0, 100.0, 100.0],
+          [250.0, 60.0, 100.0],
+        ],
+      ),
+    ).toBe(true);
   });
 
   test("test_animated_parent_is_compensated_at_time_zero_only", () => {
@@ -563,7 +597,15 @@ describe("TestParentScaledParentKeyframes", () => {
 
     child.parent = parent;
 
-    expect(valueEquals([...scale.keyframes].map((k) => k.value), [[200.0, 200.0, 200.0], [500.0, 120.0, 200.0]])).toBe(true);
+    expect(
+      valueEquals(
+        [...scale.keyframes].map((k) => k.value),
+        [
+          [200.0, 200.0, 200.0],
+          [500.0, 120.0, 200.0],
+        ],
+      ),
+    ).toBe(true);
     for (const time of [0.0, 2.0]) {
       expect(_worldDelta(getOrThrow(before, time), buildWorldMatrix(child, time))).toBeLessThan(1e-9);
     }
@@ -575,7 +617,15 @@ describe("TestParentScaledParentKeyframes", () => {
 
     child.parent = parent;
 
-    expect(valueEquals([...scale.keyframes].map((k) => k.value), [[50.0, 200.0, 100.0], [125.0, 120.0, 100.0]])).toBe(true);
+    expect(
+      valueEquals(
+        [...scale.keyframes].map((k) => k.value),
+        [
+          [50.0, 200.0, 100.0],
+          [125.0, 120.0, 100.0],
+        ],
+      ),
+    ).toBe(true);
   });
 
   test("test_keyframed_position_remap_includes_the_parent_scale", () => {
@@ -597,7 +647,15 @@ describe("TestParentScaledParentKeyframes", () => {
 
     child.parent = parent;
 
-    expect(valueEquals([...position.keyframes].map((k) => k.value), [[-300.0, 240.0, 0.0], [200.0, 920.0, 0.0]])).toBe(true);
+    expect(
+      valueEquals(
+        [...position.keyframes].map((k) => k.value),
+        [
+          [-300.0, 240.0, 0.0],
+          [200.0, 920.0, 0.0],
+        ],
+      ),
+    ).toBe(true);
   });
 });
 
@@ -629,7 +687,9 @@ describe("TestParentAcrossTheTwoDThreeDBoundary", () => {
 
     child.parent = parent;
 
-    expect(approx(child.transform.property("ADBE Position").value, [-69.9038, 178.923, 0.0], { abs: 0.001 })).toBe(true);
+    expect(approx(child.transform.property("ADBE Position").value, [-69.9038, 178.923, 0.0], { abs: 0.001 })).toBe(
+      true,
+    );
     expect(approx(child.transform.property("ADBE Rotate Z").value, -30.0)).toBe(true);
   });
 
@@ -647,8 +707,12 @@ describe("TestParentAcrossTheTwoDThreeDBoundary", () => {
 
     child.parent = parent;
 
-    expect(approx(child.transform.property("ADBE Position").value, [-69.9038, 178.923, 0.0], { abs: 0.001 })).toBe(true);
-    expect(approx(child.transform.property("ADBE Orientation").value, [287.5766, 301.2001, 285.1604], { abs: 0.001 })).toBe(true);
+    expect(approx(child.transform.property("ADBE Position").value, [-69.9038, 178.923, 0.0], { abs: 0.001 })).toBe(
+      true,
+    );
+    expect(
+      approx(child.transform.property("ADBE Orientation").value, [287.5766, 301.2001, 285.1604], { abs: 0.001 }),
+    ).toBe(true);
   });
 });
 
@@ -689,10 +753,7 @@ describe.skipIf(!TRANSFORM_FIXTURES.isDir())("TestUnparentAgainstAeFixtures", ()
     const out = new Map<string, number | number[]>();
     for (const name of FIELDS) {
       const value = layer.transform.property(name).value;
-      out.set(
-        name,
-        Array.isArray(value) ? value.map((v) => round(v, 3)) : round(value, 3),
-      );
+      out.set(name, Array.isArray(value) ? value.map((v) => round(v, 3)) : round(value, 3));
     }
     return out;
   }

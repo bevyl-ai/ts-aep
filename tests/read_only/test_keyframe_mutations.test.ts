@@ -26,11 +26,7 @@ function _fresh(name: string): Application {
   return parseAep(str(SAMPLES.div(name)));
 }
 
-function _prop(
-  app: Application,
-  matchName: string,
-  kw: { comp?: number; layer?: number } = {},
-): Property {
+function _prop(app: Application, matchName: string, kw: { comp?: number; layer?: number } = {}): Property {
   const { comp = 0, layer = 0 } = kw;
   const lay = app.project.compositions[comp].layers[layer];
   // `next(gen)` without a default raises StopIteration when nothing matches.

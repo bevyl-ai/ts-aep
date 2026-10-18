@@ -33,9 +33,7 @@ export function parseRenderQueue(rootChunks: Chunk[], project: Project): RenderQ
     renderQueue._lrdr.synthetic = true;
     // AE writes LRdr immediately before LIST:PTRE (the workspace blob), so
     // insert at that canonical root position rather than appending past it.
-    const ptreFound = rootChunks.findIndex(
-      (c) => c instanceof ListChunk && c.listType === "PTRE",
-    );
+    const ptreFound = rootChunks.findIndex((c) => c instanceof ListChunk && c.listType === "PTRE");
     const ptreIdx = ptreFound === -1 ? rootChunks.length : ptreFound;
     rootChunks.splice(ptreIdx, 0, renderQueue._lrdr);
     return renderQueue;
@@ -89,9 +87,7 @@ export function parseRenderQueue(rootChunks: Chunk[], project: Project): RenderQ
     // child order; reorder so a populated queue (after add() materializes
     // them) is written canonically. Only when we synthesized something, so
     // an untouched real file's order - hence its round-trip - is untouched.
-    const _canon = new Map<string, number>(
-      LRDR_CHILD_ORDER.map((t, i): [string, number] => [t, i]),
-    );
+    const _canon = new Map<string, number>(LRDR_CHILD_ORDER.map((t, i): [string, number] => [t, i]));
     const rank = (c: Chunk): number => _canon.get((c instanceof ListChunk && c.listType) || c.chunkType) ?? _canon.size;
     lrdrChildChunks.sort((a, b) => rank(a) - rank(b));
   }
@@ -127,13 +123,7 @@ export function parseRenderQueue(rootChunks: Chunk[], project: Project): RenderQ
   });
 
   if (settingsLhd3.count > 0) {
-    renderQueue._items = parseRenderQueueItems(
-      litmChunk,
-      settingsLdat.items,
-      routChunk.items,
-      project,
-      renderQueue,
-    );
+    renderQueue._items = parseRenderQueueItems(litmChunk, settingsLdat.items, routChunk.items, project, renderQueue);
   }
   return renderQueue;
 }
@@ -245,11 +235,7 @@ export function parseRenderQueueItem(
 
   const outputModules: OutputModule[] = [];
   for (const [omIndex, group] of omGroups.entries()) {
-    const outputModule = parseOutputModule(
-      group,
-      omLdatItems.at(omIndex)!,
-      renderQueueItem,
-    );
+    const outputModule = parseOutputModule(group, omLdatItems.at(omIndex)!, renderQueueItem);
     outputModules.push(outputModule);
   }
 

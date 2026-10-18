@@ -19,7 +19,10 @@ const runs = Number(opt("--runs", "3"));
 const top = Number(opt("--top", "8"));
 const filter = opt("--filter", "");
 
-const files = fs.globSync("samples/**/*.aep").filter((f) => f.includes(filter)).sort();
+const files = fs
+  .globSync("samples/**/*.aep")
+  .filter((f) => f.includes(filter))
+  .sort();
 // `parse` takes a path; one warm-up read puts every file in the page cache.
 for (const f of files) fs.readFileSync(f);
 
@@ -110,17 +113,28 @@ for (let run = 0; run < runs; run++) {
     saveToMemory(app);
     const t9 = performance.now();
     const took: Record<Phase, number> = {
-      parse: t1 - t0, save: t2 - t1, load: t3 - t2, save_loaded: t4 - t3, cos: t6 - t5,
-      read: t7 - t6, edit: t8 - t7, save_edited: t9 - t8,
+      parse: t1 - t0,
+      save: t2 - t1,
+      load: t3 - t2,
+      save_loaded: t4 - t3,
+      cos: t6 - t5,
+      read: t7 - t6,
+      edit: t8 - t7,
+      save_edited: t9 - t8,
     };
     const prev = best.get(f);
     for (const k of PHASES) total[k] += took[k];
-    best.set(f, Object.fromEntries(PHASES.map((k) => [k, Math.min(prev?.[k] ?? Infinity, took[k])])) as Record<Phase, number>);
+    best.set(
+      f,
+      Object.fromEntries(PHASES.map((k) => [k, Math.min(prev?.[k] ?? Infinity, took[k])])) as Record<Phase, number>,
+    );
   }
   totals.push(total);
   console.log(`run ${run + 1}: ${PHASES.map((k) => `${k} ${total[k].toFixed(0)}`).join(", ")} ms`);
 }
-console.log(`best of ${runs} (${files.length} files): ${PHASES.map((k) => `${k} ${Math.min(...totals.map((t) => t[k])).toFixed(0)}`).join(", ")} ms`);
+console.log(
+  `best of ${runs} (${files.length} files): ${PHASES.map((k) => `${k} ${Math.min(...totals.map((t) => t[k])).toFixed(0)}`).join(", ")} ms`,
+);
 for (const k of PHASES) {
   console.log(`top ${k}:`);
   for (const [f, r] of [...best].sort((a, b) => b[1][k] - a[1][k]).slice(0, top)) {

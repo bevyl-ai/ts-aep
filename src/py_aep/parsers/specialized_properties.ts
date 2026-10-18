@@ -2,7 +2,15 @@
 
 import type { ListChunk } from "../binary/chunk.ts";
 import type { TdmnChunk } from "../binary/property_chunks.ts";
-import { ChunkNotFoundError, filterByListType, filterByType, findByListType, findByListTypeOrNull, findByType, findByTypeOrNull } from "../binary/utils.ts";
+import {
+  ChunkNotFoundError,
+  filterByListType,
+  filterByType,
+  findByListType,
+  findByListTypeOrNull,
+  findByType,
+  findByTypeOrNull,
+} from "../binary/utils.ts";
 import { CosParser } from "../cos/index.ts";
 import { decodeBtdk } from "../cos/schema.ts";
 // Python's builtin `SyntaxError` as raised by `CosParser`.

@@ -206,7 +206,12 @@ export function intFromBytes(data: Uint8Array, byteorder: "big" | "little", sign
 }
 
 /** `value.to_bytes(length, byteorder, signed=...)` */
-export function intToBytes(value: number | bigint, length: number, byteorder: "big" | "little", signed = false): Uint8Array {
+export function intToBytes(
+  value: number | bigint,
+  length: number,
+  byteorder: "big" | "little",
+  signed = false,
+): Uint8Array {
   let v = BigInt(value);
   if (signed && v < 0n) v += 1n << BigInt(8 * length);
   if (v < 0n || v >= 1n << BigInt(8 * length)) throw new ValueError("int too big to convert");

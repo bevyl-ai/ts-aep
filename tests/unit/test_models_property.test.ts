@@ -23,11 +23,7 @@ describe("TestResolveEffectValue", () => {
   // Each row: [id] is the pytest param id, kept as a trailing comment.
   test.each([
     // enum_default_is_1_based
-    [
-      { propertyControlType: PropertyControlType.ENUM, defaultValue: 1 },
-      PropertyControlType.ENUM,
-      [1, 1],
-    ],
+    [{ propertyControlType: PropertyControlType.ENUM, defaultValue: 1 }, PropertyControlType.ENUM, [1, 1]],
     // enum_default_over_cached_value
     // S_BlurDirectional Edge Mode: ExtendScript reports 3.
     [
@@ -44,17 +40,9 @@ describe("TestResolveEffectValue", () => {
       [459, 459],
     ],
     // boolean_default_value
-    [
-      { propertyControlType: PropertyControlType.BOOLEAN, defaultValue: 1 },
-      PropertyControlType.BOOLEAN,
-      [1, 1],
-    ],
+    [{ propertyControlType: PropertyControlType.BOOLEAN, defaultValue: 1 }, PropertyControlType.BOOLEAN, [1, 1]],
     // boolean_falls_back_to_last_value
-    [
-      { propertyControlType: PropertyControlType.BOOLEAN, lastValue: 0 },
-      PropertyControlType.BOOLEAN,
-      [0, 0],
-    ],
+    [{ propertyControlType: PropertyControlType.BOOLEAN, lastValue: 0 }, PropertyControlType.BOOLEAN, [0, 0]],
     // general_prefers_the_default
     [
       { propertyControlType: PropertyControlType.SCALAR, lastValue: 42.0, defaultValue: 10.0 },
@@ -62,27 +50,18 @@ describe("TestResolveEffectValue", () => {
       [10.0, 10.0],
     ],
     // general_falls_back_to_default
-    [
-      { propertyControlType: PropertyControlType.SCALAR, defaultValue: 10.0 },
-      PropertyControlType.SCALAR,
-      [10.0, 10.0],
-    ],
+    [{ propertyControlType: PropertyControlType.SCALAR, defaultValue: 10.0 }, PropertyControlType.SCALAR, [10.0, 10.0]],
     // general_no_values_returns_none
-    [
-      { propertyControlType: PropertyControlType.SCALAR },
-      PropertyControlType.SCALAR,
-      [null, null],
-    ],
+    [{ propertyControlType: PropertyControlType.SCALAR }, PropertyControlType.SCALAR, [null, null]],
     // general_last_value_only_without_a_default
-    [
-      { propertyControlType: PropertyControlType.SCALAR, lastValue: 7.0 },
-      PropertyControlType.SCALAR,
-      [7.0, 7.0],
-    ],
-  ])("test_resolve_effect_value[%#]", (paramDef: Partial<ParamDef>, controlType: PropertyControlType, expected: unknown) => {
-    const result = _resolveEffectValue("TEST-0001", paramDef, controlType);
-    expect(valueEquals(result, expected)).toBe(true);
-  });
+    [{ propertyControlType: PropertyControlType.SCALAR, lastValue: 7.0 }, PropertyControlType.SCALAR, [7.0, 7.0]],
+  ])(
+    "test_resolve_effect_value[%#]",
+    (paramDef: Partial<ParamDef>, controlType: PropertyControlType, expected: unknown) => {
+      const result = _resolveEffectValue("TEST-0001", paramDef, controlType);
+      expect(valueEquals(result, expected)).toBe(true);
+    },
+  );
 });
 
 describe("TestTdsnWithoutUtf8", () => {

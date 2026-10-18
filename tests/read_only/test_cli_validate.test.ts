@@ -2,7 +2,15 @@
 
 import { describe, expect, test } from "bun:test";
 import { loadExpected, parseProject } from "../conftest.ts";
-import { type Dict, ValidationResult, compareLayer, compareProjectLevel, compareProperty, toDict, validateAep } from "../../src/py_aep/cli/validate.ts";
+import {
+  type Dict,
+  ValidationResult,
+  compareLayer,
+  compareProjectLevel,
+  compareProperty,
+  toDict,
+  validateAep,
+} from "../../src/py_aep/cli/validate.ts";
 import { BlendingMode } from "../../src/py_aep/enums/index.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { Path, contains, getOr, getOrThrow, len, truthy, valueEquals } from "../../src/pyrt/index.ts";
@@ -65,9 +73,7 @@ describe("TestCompareProjectLevel", () => {
     const aepPath = SAMPLES_DIR.div("models", "composition", "bgColor_custom.aep");
     const project = parseProject(aepPath);
     const parsed = toDict(project);
-    const expected = _jsonToDicts(
-      loadExpected(SAMPLES_DIR.div("models", "composition"), "bgColor_custom"),
-    );
+    const expected = _jsonToDicts(loadExpected(SAMPLES_DIR.div("models", "composition"), "bgColor_custom"));
     const result = new ValidationResult();
     compareProjectLevel(expected, parsed, result);
     // Project-level fields should match (or have no differences)
@@ -90,9 +96,7 @@ describe("TestCompareLayer", () => {
     const aepPath = SAMPLES_DIR.div("models", "layer", "enabled_false.aep");
     const project = parseProject(aepPath);
     const parsed = toDict(project);
-    const expected = _jsonToDicts(
-      loadExpected(SAMPLES_DIR.div("models", "layer"), "enabled_false"),
-    );
+    const expected = _jsonToDicts(loadExpected(SAMPLES_DIR.div("models", "layer"), "enabled_false"));
     // Find matching comp and layers
     for (const item of getOrThrow(expected, "items")) {
       if (contains(item, "layers") && len(getOrThrow(item, "layers")) > 0) {
@@ -103,9 +107,7 @@ describe("TestCompareLayer", () => {
           const parsedLayers = getOr<string, Dict[], Dict[]>(parsedComps[0], "layers", []);
           if (truthy(parsedLayers)) {
             const result = new ValidationResult();
-            compareLayer(
-              expLayer, parsedLayers[0], "Layer[0]", 30.0, 24.0, result,
-            );
+            compareLayer(expLayer, parsedLayers[0], "Layer[0]", 30.0, 24.0, result);
             expect(result instanceof ValidationResult).toBe(true);
           }
         }
@@ -129,9 +131,7 @@ describe("TestValidateAep", () => {
     // against the regenerated ground-truth JSON (the override leaf carries
     // both keys).
     const eg = SAMPLES_DIR.div("models", "essential_graphics");
-    const result = validateAep(
-      eg.div("media_replacement.aep"), eg.div("media_replacement.json"),
-    );
+    const result = validateAep(eg.div("media_replacement.aep"), eg.div("media_replacement.json"));
     expect(len(result)).toBe(0);
   });
 });
@@ -141,7 +141,13 @@ describe("TestComparePropertyMediaReplacement", () => {
 
   test("test_matching_object_sources_no_diff", () => {
     const expected = new Map<string, Map<string, number | string>>([
-      ["alternateSource", new Map<string, number | string>([["id", 30], ["name", "wrapper"]])],
+      [
+        "alternateSource",
+        new Map<string, number | string>([
+          ["id", 30],
+          ["name", "wrapper"],
+        ]),
+      ],
       [
         "essentialPropertySource",
         new Map<string, number | string>([
@@ -153,8 +159,20 @@ describe("TestComparePropertyMediaReplacement", () => {
     ]);
     // Parsed index is 0-based; the AVItem/AVLayer serialize id/name/index.
     const parsed = new Map<string, Map<string, number | string>>([
-      ["alternateSource", new Map<string, number | string>([["id", 30], ["name", "wrapper"]])],
-      ["essentialPropertySource", new Map<string, number | string>([["name", "src_layer"], ["index", 0]])],
+      [
+        "alternateSource",
+        new Map<string, number | string>([
+          ["id", 30],
+          ["name", "wrapper"],
+        ]),
+      ],
+      [
+        "essentialPropertySource",
+        new Map<string, number | string>([
+          ["name", "src_layer"],
+          ["index", 0],
+        ]),
+      ],
     ]);
     const result = new ValidationResult();
     compareProperty(expected, parsed, "P", result);
@@ -163,7 +181,13 @@ describe("TestComparePropertyMediaReplacement", () => {
 
   test("test_id_and_index_mismatches_flagged", () => {
     const expected = new Map<string, Map<string, number | string>>([
-      ["alternateSource", new Map<string, number | string>([["id", 30], ["name", "wrapper"]])],
+      [
+        "alternateSource",
+        new Map<string, number | string>([
+          ["id", 30],
+          ["name", "wrapper"],
+        ]),
+      ],
       [
         "essentialPropertySource",
         new Map<string, number | string>([
@@ -175,9 +199,21 @@ describe("TestComparePropertyMediaReplacement", () => {
     ]);
     const parsed = new Map<string, Map<string, number | string>>([
       // id mismatch
-      ["alternateSource", new Map<string, number | string>([["id", 99], ["name", "wrapper"]])],
+      [
+        "alternateSource",
+        new Map<string, number | string>([
+          ["id", 99],
+          ["name", "wrapper"],
+        ]),
+      ],
       // 5+1 != 1
-      ["essentialPropertySource", new Map<string, number | string>([["name", "src_layer"], ["index", 5]])],
+      [
+        "essentialPropertySource",
+        new Map<string, number | string>([
+          ["name", "src_layer"],
+          ["index", 5],
+        ]),
+      ],
     ]);
     const result = new ValidationResult();
     compareProperty(expected, parsed, "P", result);

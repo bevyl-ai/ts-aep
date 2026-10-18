@@ -221,18 +221,8 @@ test("test_parse_gradient_xml_color_stops", () => {
   const result = parseGradientXml(new _FakeUtf8(SAMPLE_XML));
   assert(result != null);
   expect(len(result.colorStops)).toBe(2);
-  expect(
-    valueEquals(
-      result.colorStops[0],
-      new GradientColorStop(0.0, 0.5, [1.0, 0.0, 0.0]),
-    ),
-  ).toBe(true);
-  expect(
-    valueEquals(
-      result.colorStops[1],
-      new GradientColorStop(1.0, 0.5, [0.0, 0.0, 0.0]),
-    ),
-  ).toBe(true);
+  expect(valueEquals(result.colorStops[0], new GradientColorStop(0.0, 0.5, [1.0, 0.0, 0.0]))).toBe(true);
+  expect(valueEquals(result.colorStops[1], new GradientColorStop(1.0, 0.5, [0.0, 0.0, 0.0]))).toBe(true);
 });
 
 test("test_parse_gradient_xml_alpha_stops", () => {

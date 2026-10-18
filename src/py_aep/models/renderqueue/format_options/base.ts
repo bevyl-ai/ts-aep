@@ -1,7 +1,6 @@
 import { RuntimeError, objectSetattr, pyObject } from "../../../../pyrt/index.ts";
 import type { OutputModule } from "../output_module.ts";
 
-
 /**
  * Shared plumbing for the format-specific render-option wrappers.
  *

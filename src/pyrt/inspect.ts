@@ -9,7 +9,8 @@ export function literal(value: unknown): string {
   if (Array.isArray(value)) return `[${value.map(literal).join(", ")}]`;
   if (value instanceof Uint8Array) return `Uint8Array(${value.length})`;
   if (value instanceof Map) return `Map { ${[...value].map(([k, v]) => `${literal(k)} => ${literal(v)}`).join(", ")} }`;
-  if (typeof value === "object" && INSPECT in value && typeof value[INSPECT] === "function") return String(value[INSPECT]());
+  if (typeof value === "object" && INSPECT in value && typeof value[INSPECT] === "function")
+    return String(value[INSPECT]());
   return String(value);
 }
 

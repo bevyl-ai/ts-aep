@@ -154,10 +154,7 @@ export class _OrientationKind extends ParallelKind {
   }
 
   buildHeaderItem(value: PropertyValue): LdatItem {
-    return buildParallelLdatItem(
-      this.headerItemType,
-      Array.isArray(value) ? value : null,
-    );
+    return buildParallelLdatItem(this.headerItemType, Array.isArray(value) ? value : null);
   }
 
   updateHeaderItem(item: LdatItem, value: PropertyValue): void {
@@ -292,11 +289,7 @@ export class _ShapeKind extends ParallelKind {
   }
 
   wrapValueChunk(prop: Property, valueChunk: ListChunk): PropertyValue {
-    return late._parseShapeShap(
-      valueChunk,
-      prop._containingLayer,
-      prop.matchName === "ADBE Mask Shape" ? prop : null,
-    );
+    return late._parseShapeShap(valueChunk, prop._containingLayer, prop.matchName === "ADBE Mask Shape" ? prop : null);
   }
 }
 

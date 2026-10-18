@@ -18,7 +18,6 @@ import { Path, valueEquals, truthyOr, StopIteration, ValueError } from "../../sr
 import { approx, makeTmpPath, raises, skip } from "../support/pytest.ts";
 import { sorted } from "../support/python.ts";
 
-
 const SAMPLES_DIR = new Path(import.meta.path).parent.parent.parent.div("samples", "models", "text");
 const SAMPLE = SAMPLES_DIR.div("text_ranges.aep");
 
@@ -78,12 +77,9 @@ describe("TestTextSetterRunRebuild", () => {
     expect(doc2.text).toBe("New text\nhere");
     expect(doc2.paragraphCount).toBe(2);
     expect(doc2.characterRange(0, -1).fontSize).toBe(72.0);
-    expect(
-      valueEquals(
-        [doc2.paragraphRange(1).characterStart, doc2.paragraphRange(1).characterEnd],
-        [9, 13],
-      ),
-    ).toBe(true);
+    expect(valueEquals([doc2.paragraphRange(1).characterStart, doc2.paragraphRange(1).characterEnd], [9, 13])).toBe(
+      true,
+    );
   });
 
   test("test_kerning_runs_dropped", () => {

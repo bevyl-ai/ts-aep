@@ -4,7 +4,19 @@
  */
 
 import { describe, expect, test } from "bun:test";
-import { at, OSError, Path, assert, truthy, valueEquals, RuntimeError, setMember, StopIteration, ValueError, zip } from "../../src/pyrt/index.ts";
+import {
+  at,
+  OSError,
+  Path,
+  assert,
+  truthy,
+  valueEquals,
+  RuntimeError,
+  setMember,
+  StopIteration,
+  ValueError,
+  zip,
+} from "../../src/pyrt/index.ts";
 
 import { parse as parseAep, Property, type Application } from "../../src/py_aep/index.ts";
 import * as project_mod from "../../src/py_aep/models/project.ts";
@@ -99,7 +111,10 @@ describe("TestSetAlternateSource", () => {
     const [, alt] = _overrideLeaf(app);
     const host = app.project.compositions.find((c) => c.name === "image_with_alpha 2");
     if (host == null) throw new StopIteration();
-    const gif = asInstance([...app.project.items.values()].find((it) => it.name === "sequence_[001-003].gif"), FootageItem);
+    const gif = asInstance(
+      [...app.project.items.values()].find((it) => it.name === "sequence_[001-003].gif"),
+      FootageItem,
+    );
     const before = new Set(app.project.items.keys());
     alt.alternateSource = gif;
     const created = [...new Set(app.project.items.keys())].filter((k) => !before.has(k));
@@ -126,7 +141,10 @@ describe("TestSetAlternateSource", () => {
     // The `Media Replacement Comps` folder is reused, not duplicated.
     const app = parseAep(EG);
     const [, alt] = _overrideLeaf(app);
-    const gif = asInstance([...app.project.items.values()].find((it) => it.name === "sequence_[001-003].gif"), FootageItem);
+    const gif = asInstance(
+      [...app.project.items.values()].find((it) => it.name === "sequence_[001-003].gif"),
+      FootageItem,
+    );
     const foldersBefore = [...app.project.items.values()].filter(
       (it) => it.constructor.name === "FolderItem" && it.name === "Media Replacement Comps",
     );
@@ -280,10 +298,15 @@ describe("TestParentValidation", () => {
     lyr.parent = null_;
 
     // Anchor keyframes are in layer-source space; AE never touches them.
-    expect(valueEquals(anchor.keyframes.map((k) => k.value), [
-      [10.0, 20.0, 0.0],
-      [70.0, 80.0, 0.0],
-    ])).toBe(true);
+    expect(
+      valueEquals(
+        anchor.keyframes.map((k) => k.value),
+        [
+          [10.0, 20.0, 0.0],
+          [70.0, 80.0, 0.0],
+        ],
+      ),
+    ).toBe(true);
 
     const pos = lyr.transform.property("ADBE Position");
     const expected = [
@@ -295,11 +318,21 @@ describe("TestParentValidation", () => {
     }
     const scale = lyr.transform.property("ADBE Scale");
     const rot = lyr.transform.property("ADBE Rotate Z");
-    expect(valueEquals(scale.keyframes.map((k) => k.value), [
-      [50.0, 50.0, 100.0],
-      [150.0, 150.0, 100.0],
-    ])).toBe(true);
-    expect(valueEquals(rot.keyframes.map((k) => k.value), [0.0, 90.0])).toBe(true);
+    expect(
+      valueEquals(
+        scale.keyframes.map((k) => k.value),
+        [
+          [50.0, 50.0, 100.0],
+          [150.0, 150.0, 100.0],
+        ],
+      ),
+    ).toBe(true);
+    expect(
+      valueEquals(
+        rot.keyframes.map((k) => k.value),
+        [0.0, 90.0],
+      ),
+    ).toBe(true);
   });
 });
 

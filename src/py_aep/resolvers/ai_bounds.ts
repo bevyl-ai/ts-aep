@@ -51,7 +51,9 @@ import {
   getOrInsert,
   warn,
   isReal,
-  ascii, hypot } from "../../pyrt/index.ts";
+  ascii,
+  hypot,
+} from "../../pyrt/index.ts";
 
 export type Box = [number, number, number, number];
 export type Matrix = number[];
@@ -365,18 +367,14 @@ export class _Document {
     const names: CosNode[] = !Array.isArray(filters) ? [filters] : filters;
     if (this.get(info, "DecodeParms") != null) {
       throw this._reject(
-        "the content stream uses a decode-parameter filter " +
-          "(predictors), which py_aep cannot decode",
+        "the content stream uses a decode-parameter filter " + "(predictors), which py_aep cannot decode",
       );
     }
     for (const entry of names) {
       if (entry == null) continue;
       const filterName = String(this.resolve(entry));
       if (!_SUPPORTED_FILTERS.has(filterName)) {
-        throw this._reject(
-          `the content stream uses the ${filterName} filter, which ` +
-            "py_aep cannot decode",
-        );
+        throw this._reject(`the content stream uses the ${filterName} filter, which ` + "py_aep cannot decode");
       }
       try {
         body = zlib.decompress(body);
@@ -753,10 +751,7 @@ export class _GState {
    */
   strokeHalfWidth(): [number, number] {
     const half = this.lineWidth / 2.0;
-    return [
-      half * hypot(this.ctm[0], this.ctm[1]),
-      half * hypot(this.ctm[2], this.ctm[3]),
-    ];
+    return [half * hypot(this.ctm[0], this.ctm[1]), half * hypot(this.ctm[2], this.ctm[3])];
   }
 }
 
@@ -813,9 +808,7 @@ export function _fontMetrics(doc: _Document, font: CosDict | null): Metrics {
 export function _type0Metrics(doc: _Document, font: CosDict): Metrics {
   const descendants = doc.get(font, "DescendantFonts");
   const child: CosNode =
-    Array.isArray(descendants) && descendants.length > 0
-      ? doc.resolve(descendants[0])
-      : new Map<string, CosNode>();
+    Array.isArray(descendants) && descendants.length > 0 ? doc.resolve(descendants[0]) : new Map<string, CosNode>();
   const dw = doc.number(doc.get(child, "DW"), 1000.0);
   const default_ = dw !== 0 ? dw : 1000.0;
   const widths = new Map<number, number>();
@@ -844,20 +837,13 @@ export function _type0Metrics(doc: _Document, font: CosDict): Metrics {
   return [widths, default_, yMin, yMax, true];
 }
 
-export function _verticalExtent(
-  doc: _Document,
-  descriptor: CosNode,
-  std: [number, number] | null,
-): [number, number] {
+export function _verticalExtent(doc: _Document, descriptor: CosNode, std: [number, number] | null): [number, number] {
   const bbox = doc.get(descriptor, "FontBBox");
   if (Array.isArray(bbox) && bbox.length === 4) {
     return [doc.number(bbox[1]), doc.number(bbox[3])];
   }
   if (doc.resolve(descriptor) instanceof Map) {
-    return [
-      doc.number(doc.get(descriptor, "Descent"), -250.0),
-      doc.number(doc.get(descriptor, "Ascent"), 750.0),
-    ];
+    return [doc.number(doc.get(descriptor, "Descent"), -250.0), doc.number(doc.get(descriptor, "Ascent"), 750.0)];
   }
   if (std != null) return std;
   return [-250.0, 750.0];
@@ -1121,7 +1107,10 @@ export class _Measurer {
     if (subtype === "Form") {
       const matrix = doc.get(xobject, "Matrix");
       if (Array.isArray(matrix) && matrix.length === 6) {
-        ctm = _matMul(matrix.map((v) => doc.number(v)), ctm);
+        ctm = _matMul(
+          matrix.map((v) => doc.number(v)),
+          ctm,
+        );
       }
     }
     const bbox = doc.get(xobject, "BBox");
@@ -1159,7 +1148,7 @@ export class _Measurer {
     const scale = gs.hScale / 100.0;
     for (const item of items) {
       if (isReal(item)) {
-        const shift = -Number(item) / 1000.0 * gs.size * scale;
+        const shift = (-Number(item) / 1000.0) * gs.size * scale;
         textMatrix = _matMul([1.0, 0.0, 0.0, 1.0, shift, 0.0], textMatrix);
         continue;
       }
@@ -1331,8 +1320,5 @@ export function readAiIccProfile(file: PathLike, data: Uint8Array | null = null)
  */
 export function footageSize(box: Box | null): [number, number] {
   const [x0, y0, x1, y1] = (box == null ? EMPTY_BOX : box).map((v) => Math.round(v * 65536) + 0);
-  return [
-    Math.max(1, Math.ceil((x1 - x0) / 65536.0)),
-    Math.max(1, Math.ceil((y1 - y0) / 65536.0)),
-  ];
+  return [Math.max(1, Math.ceil((x1 - x0) / 65536.0)), Math.max(1, Math.ceil((y1 - y0) / 65536.0))];
 }

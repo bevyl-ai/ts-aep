@@ -144,9 +144,7 @@ export class _IdHashSet<T extends { id: number }> {
 export function _validateUseProxy(value: boolean, obj: AVItem): void {
   validateBool(value);
   if (obj.proxySource == null && value) {
-    throw new AttributeError(
-      "Cannot set useProxy to true when there is no proxy source.",
-    );
+    throw new AttributeError("Cannot set useProxy to true when there is no proxy source.");
   }
 }
 
@@ -375,10 +373,7 @@ export class AVItem extends Item {
   setProxyToNone(): void {
     if (this._proxySource) {
       const proxyPin = this._pinChunks[this._proxyPinIndex];
-      this._itemList.chunks.splice(
-        indexByIdentity(this._itemList.chunks, proxyPin),
-        1,
-      );
+      this._itemList.chunks.splice(indexByIdentity(this._itemList.chunks, proxyPin), 1);
       this._pinChunks.splice(this._proxyPinIndex, 1);
       this._proxySource = null;
     }
@@ -486,10 +481,7 @@ export class AVItem extends Item {
    * @throws {@link NotImplementedError} If After Effects requires a format-specific `opti` header
    *   not implemented for this format.
    */
-  setProxyWithSequence(
-    file: PathLike,
-    forceAlphabetical: boolean = false,
-  ): void {
+  setProxyWithSequence(file: PathLike, forceAlphabetical: boolean = false): void {
     this._setProxy(
       FileSource._fromFile(file, {
         sequence: true,
@@ -507,9 +499,7 @@ export class AVItem extends Item {
    * and any sequence prefix/ext); solid/placeholder sources are built
    * from sspc+opti.
    */
-  static _pinForSource(
-    source: FileSource | SolidSource | PlaceholderSource,
-  ): ListChunk {
+  static _pinForSource(source: FileSource | SolidSource | PlaceholderSource): ListChunk {
     if (source instanceof FileSource) {
       return source._pin;
     }
@@ -538,19 +528,20 @@ export class AVItem extends Item {
 
   /** Set a proxy LIST:Pin chunk (add or replace). */
   private _setProxy(source: FileSource | SolidSource | PlaceholderSource): void {
-    this._replacePin(
-      this._proxyPinIndex,
-      this.constructor._pinForSource(source),
-    );
+    this._replacePin(this._proxyPinIndex, this.constructor._pinForSource(source));
     this._proxySource = source;
     source._joinProject(this._project);
     this.useProxy = true;
   }
 
   static {
-    descriptor(this, "useProxy", ChunkField.bool("_idta", "useProxy", {
-      validate: _validateUseProxy,
-      postSet: _syncProxyActive,
-    }));
+    descriptor(
+      this,
+      "useProxy",
+      ChunkField.bool("_idta", "useProxy", {
+        validate: _validateUseProxy,
+        postSet: _syncProxyActive,
+      }),
+    );
   }
 }

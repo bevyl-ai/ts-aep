@@ -9,7 +9,23 @@
 
 import { describe, expect, test } from "bun:test";
 import * as fs from "node:fs";
-import { Path, ValueError, at, getOr, fspath, getMember, getOrThrow, int, len, lruCache, assert, truthy, valueEquals, repr, str } from "../../src/pyrt/index.ts";
+import {
+  Path,
+  ValueError,
+  at,
+  getOr,
+  fspath,
+  getMember,
+  getOrThrow,
+  int,
+  len,
+  lruCache,
+  assert,
+  truthy,
+  valueEquals,
+  repr,
+  str,
+} from "../../src/pyrt/index.ts";
 
 import { parseProject } from "../helpers.ts";
 import type { TextDocument } from "../../src/py_aep/models/text/text_document.ts";
@@ -92,9 +108,7 @@ function _loadProbe() {
  * back to compare against py_aep's surrogatepass slicing.
  */
 function _expectedText(value: string): string {
-  const decoded = value.replace(_MARKER_RE, (_m: string, hex: string) =>
-    String.fromCodePoint(parseInt(hex, 16)),
-  );
+  const decoded = value.replace(_MARKER_RE, (_m: string, hex: string) => String.fromCodePoint(parseInt(hex, 16)));
   return decoded.replaceAll("\r", "\n");
 }
 
@@ -144,7 +158,9 @@ function _compare(pyVal: unknown, expected: ProbeJson, attr: string): string | n
 function _dictRepr(v: unknown): string {
   if (Array.isArray(v)) return `[${v.map(_dictRepr).join(", ")}]`;
   if (v != null && typeof v === "object") {
-    return `{${Object.entries(v).map(([k, x]) => `${repr(k)}: ${_dictRepr(x)}`).join(", ")}}`;
+    return `{${Object.entries(v)
+      .map(([k, x]) => `${repr(k)}: ${_dictRepr(x)}`)
+      .join(", ")}}`;
   }
   return repr(v);
 }
@@ -247,16 +263,12 @@ describe("TestRangeBoundaries", () => {
     // NOTE(port): Object.entries orders integer-like keys ascending; the probe JSON keys are already in ascending order.
     for (const [idxS, entry] of Object.entries<ProbeResult<ProbeRecord>>(layerProbe.paragraphCharacterIndexesAt)) {
       if (entry.ok) {
-        expect(
-          valueEquals(_asDict(doc.paragraphCharacterIndexesAt(int(idxS))), _asDict(entry.value)),
-        ).toBe(true);
+        expect(valueEquals(_asDict(doc.paragraphCharacterIndexesAt(int(idxS))), _asDict(entry.value))).toBe(true);
       }
     }
     for (const [idxS, entry] of Object.entries<ProbeResult<ProbeRecord>>(layerProbe.composedLineCharacterIndexesAt)) {
       if (entry.ok) {
-        expect(
-          valueEquals(_asDict(doc.composedLineCharacterIndexesAt(int(idxS))), _asDict(entry.value)),
-        ).toBe(true);
+        expect(valueEquals(_asDict(doc.composedLineCharacterIndexesAt(int(idxS))), _asDict(entry.value))).toBe(true);
       }
     }
   });

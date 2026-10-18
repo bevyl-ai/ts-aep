@@ -50,22 +50,8 @@ const _POSITION_MATCH_NAMES: readonly string[] = [
 ];
 
 const _CAMERA_COMPS = ["moved", "zoom_1000", "zoom_1000_separated", "zoom_keyed"];
-const _LIGHT_COMPS = [
-  "1920x1080",
-  "1440x1620",
-  "2880x810",
-  "810x1440",
-  "1920x1080_par2",
-  "1440x810_par05",
-];
-const _LIGHT_LAYERS = [
-  "Point",
-  "Spot",
-  "Parallel",
-  "Ambient",
-  "Environment",
-  "Point Separated",
-];
+const _LIGHT_COMPS = ["1920x1080", "1440x1620", "2880x810", "810x1440", "1920x1080_par2", "1440x810_par05"];
+const _LIGHT_LAYERS = ["Point", "Spot", "Parallel", "Ambient", "Environment", "Point Separated"];
 // pytest: the decorator nearest the function (comp_name) varies fastest.
 const _LIGHT_ROWS: string[][] = _LIGHT_LAYERS.flatMap((layerName) =>
   _LIGHT_COMPS.map((compName) => [compName, layerName]),
@@ -154,11 +140,7 @@ describe("TestLightDefaultPosition", () => {
     const light = _layer("light_default_position", compName, "Point");
     const comp = light.containingComp;
     const zoom = (comp.width * comp.pixelAspect) / 0.72;
-    const expected = [
-      comp.width / 2 + 0.03 * zoom,
-      comp.height / 2 - 0.03 * zoom,
-      -zoom / 4,
-    ];
+    const expected = [comp.width / 2 + 0.03 * zoom, comp.height / 2 - 0.03 * zoom, -zoom / 4];
     expect(approx(_position(light).defaultValue, expected)).toBe(true);
   });
 

@@ -18,11 +18,7 @@ import { type CubicSeg, RawSubpath } from "./path_data.ts";
 import { cubicsToSubpath } from "./shapes.ts";
 import { Affine } from "./transform.ts";
 import type { Subpath } from "./types.ts";
-import {
-  type Path,
-  fspath,
-  valueEquals,
-  zip, hypot } from "../../pyrt/index.ts";
+import { type Path, fspath, valueEquals, zip, hypot } from "../../pyrt/index.ts";
 
 /** The subset of a fontkit glyph this module reads. */
 export interface FontkitGlyph {
@@ -240,10 +236,7 @@ export function _glyphs(font: FontkitFont, text: string): TextGlyphs {
 }
 
 /** Advance width of a run's text in user units (incl. letter-spacing). */
-export function _advanceWidth(
-  run: TextRun,
-  glyphs: TextGlyphs,
-): number {
+export function _advanceWidth(run: TextRun, glyphs: TextGlyphs): number {
   const [, advances, unitsPerEm] = glyphs;
   const scale = run.fontSize / unitsPerEm;
   return advances.reduce((total, x) => total + x, 0) * scale + run.letterSpacing * Array.from(run.text).length;
@@ -292,9 +285,7 @@ export function outlineRuns(
   ctm: Affine,
   anchor = "start",
 ): Subpath[][] {
-  const glyphData = runs.map((run) =>
-    _glyphs(_loadFont(run.fontPath, run.fontNumber), run.text),
-  );
+  const glyphData = runs.map((run) => _glyphs(_loadFont(run.fontPath, run.fontNumber), run.text));
   const widths = runs.map((run, k) => _advanceWidth(run, glyphData[k]));
   const result: Subpath[][] = runs.map(() => []);
   let penX = originX;
@@ -306,14 +297,12 @@ export function outlineRuns(
     let j = i + 1;
     while (j < n && runs[j].absX == null) j += 1;
     const first = runs[i];
-    const chunkAdvance = Array.from({ length: j - i }, (_, k) => widths[i + k] + runs[i + k].dx).reduce((total, x) => total + x, 0);
+    const chunkAdvance = Array.from({ length: j - i }, (_, k) => widths[i + k] + runs[i + k].dx).reduce(
+      (total, x) => total + x,
+      0,
+    );
     const chunkAnchor = first.anchor || anchor;
-    const shift =
-      chunkAnchor === "middle"
-        ? chunkAdvance / 2.0
-        : chunkAnchor === "end"
-          ? chunkAdvance
-          : 0.0;
+    const shift = chunkAnchor === "middle" ? chunkAdvance / 2.0 : chunkAnchor === "end" ? chunkAdvance : 0.0;
     // An absolute x resets the cursor; otherwise the (first) chunk continues
     // from the running pen. The anchor shifts the whole chunk left.
     const baseX = first.absX != null ? first.absX : penX;
@@ -339,10 +328,7 @@ export function _flattenCubic(seg: CubicSeg, steps = 16): [number, number][] {
     const t = i / steps;
     const mt = 1.0 - t;
     const [a, b, c, d] = [mt * mt * mt, 3 * mt * mt * t, 3 * mt * t * t, t * t * t];
-    pts.push([
-      a * x0 + b * c1x + c * c2x + d * x3,
-      a * y0 + b * c1y + c * c2y + d * y3,
-    ]);
+    pts.push([a * x0 + b * c1x + c * c2x + d * x3, a * y0 + b * c1y + c * c2y + d * y3]);
   }
   return pts;
 }
@@ -361,19 +347,13 @@ export function _polyline(raw: RawSubpath): [number, number][] {
 export function _arcLengths(pts: [number, number][]): number[] {
   const cum = [0.0];
   for (let i = 1; i < pts.length; i++) {
-    cum.push(
-      cum[cum.length - 1] + hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]),
-    );
+    cum.push(cum[cum.length - 1] + hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]));
   }
   return cum;
 }
 
 /** Point and tangent angle at arc-length `dist` along the polyline. */
-export function _pointAt(
-  pts: [number, number][],
-  cum: number[],
-  dist: number,
-): [number, number, number] {
+export function _pointAt(pts: [number, number][], cum: number[], dist: number): [number, number, number] {
   dist = Math.max(0.0, Math.min(dist, cum[cum.length - 1]));
   let i = 1;
   while (i < cum.length - 1 && cum[i] < dist) i += 1;
@@ -407,21 +387,13 @@ export function outlineTextPath(
     letterSpacing?: number;
   } = {},
 ): Subpath[] {
-  const {
-    fontNumber = 0,
-    startOffset = 0.0,
-    startOffsetFrac = null,
-    letterSpacing = 0.0,
-  } = kw;
+  const { fontNumber = 0, startOffset = 0.0, startOffsetFrac = null, letterSpacing = 0.0 } = kw;
   if (!path?.length) return [];
   const pts = _polyline(path[0]);
   if (pts.length < 2) return [];
   const cum = _arcLengths(pts);
   const total = cum[cum.length - 1];
-  const [names, advances, unitsPerEm, glyphSet] = _glyphs(
-    _loadFont(fontPath, fontNumber),
-    text,
-  );
+  const [names, advances, unitsPerEm, glyphSet] = _glyphs(_loadFont(fontPath, fontNumber), text);
   const scale = fontSize / unitsPerEm;
 
   let dist = startOffsetFrac != null ? startOffsetFrac * total : startOffset;

@@ -44,7 +44,9 @@ import {
   getOrInsert,
   struct,
   warn,
-  type PathLike, ascii } from "../../pyrt/index.ts";
+  type PathLike,
+  ascii,
+} from "../../pyrt/index.ts";
 
 export type StyleValue = number | number[] | Gradient;
 export type _Box = [number, number, number, number];
@@ -396,11 +398,11 @@ export function _gradient(value: _Value): Gradient {
   for (const stop of _pyIter(getOrThrow(value, "Clrs"))) {
     const [red, green, blue] = _color(_subscript(stop, "Clr "));
     colorStops.push(
-      new GradientColorStop(
-        _arith(_subscript(stop, "Lctn")) / 4096.0,
-        _arith(_subscript(stop, "Mdpn")) / 100.0,
-        [red, green, blue],
-      ),
+      new GradientColorStop(_arith(_subscript(stop, "Lctn")) / 4096.0, _arith(_subscript(stop, "Mdpn")) / 100.0, [
+        red,
+        green,
+        blue,
+      ]),
     );
   }
   const alphaStops = _pyIter(getOrThrow(value, "Trns")).map(
@@ -458,22 +460,10 @@ export const _GLOW_PARAMS: readonly _Param[] = [
 
 // Style key in the effects descriptor -> (AE match-name prefix, params).
 export const _STYLES = new Map<string, [string, readonly _Param[]]>([
-  [
-    "DrSh",
-    [
-      "dropShadow",
-      [..._SHADOW_PARAMS, new _Param("layerConceals", "layerConceals", _bool01)],
-    ],
-  ],
+  ["DrSh", ["dropShadow", [..._SHADOW_PARAMS, new _Param("layerConceals", "layerConceals", _bool01)]]],
   ["IrSh", ["innerShadow", _SHADOW_PARAMS]],
   ["OrGl", ["outerGlow", _GLOW_PARAMS]],
-  [
-    "IrGl",
-    [
-      "innerGlow",
-      [..._GLOW_PARAMS, new _Param("glwS", "innerGlowSource", _enum(_INNER_GLOW_SOURCE))],
-    ],
-  ],
+  ["IrGl", ["innerGlow", [..._GLOW_PARAMS, new _Param("glwS", "innerGlowSource", _enum(_INNER_GLOW_SOURCE))]]],
   [
     "ebbl",
     [
@@ -596,21 +586,12 @@ export function _styleInstances(descriptor: Map<string, _Value>): Map<string, _V
 // whenever the key exists, even with `present=False` (psd_noise_gradient
 // fixtures). Every other style imports its parameters iff the instance has
 // `present=True` - see `parseLayerStyles`.
-export const _ALWAYS_WHEN_PRESENT: ReadonlySet<string> = new Set([
-  "outerGlow",
-  "innerGlow",
-  "bevelEmboss",
-  "chromeFX",
-]);
+export const _ALWAYS_WHEN_PRESENT: ReadonlySet<string> = new Set(["outerGlow", "innerGlow", "bevelEmboss", "chromeFX"]);
 
 // Styles whose gradient carries the editor's Smoothness slider as `Intr`
 // (0..4096 = 0..100%); AE maps it onto the `gradientSmoothness` leaf
 // (psd_styles_smoothness fixture: 2048 -> 50, 1024 -> 25).
-export const _GRADIENT_SMOOTHNESS_PREFIXES: ReadonlySet<string> = new Set([
-  "outerGlow",
-  "innerGlow",
-  "gradientFill",
-]);
+export const _GRADIENT_SMOOTHNESS_PREFIXES: ReadonlySet<string> = new Set(["outerGlow", "innerGlow", "gradientFill"]);
 
 export function _convertStyle(
   prefix: string,
@@ -622,10 +603,7 @@ export function _convertStyle(
     const value = instance.get(param.descriptorKey);
     if (value === undefined) continue;
     try {
-      values.set(
-        `${prefix}/${param.suffix}`,
-        param.convert(value),
-      );
+      values.set(`${prefix}/${param.suffix}`, param.convert(value));
     } catch (exc) {
       if (!(exc instanceof UnsupportedStyleError)) throw exc;
       // A single unrepresentable parameter (e.g. a noise-type gradient)
@@ -647,12 +625,8 @@ export function _convertStyle(
   if (_GRADIENT_SMOOTHNESS_PREFIXES.has(prefix)) {
     const grad = instance.get("Grad") ?? null;
     // bool is an int in Python, so a boolean Intr also counts as a number here.
-    const intr = grad instanceof Map ? grad.get("Intr") ?? null : null;
-    if (
-      grad instanceof Map &&
-      grad.get("GrdF") === "CstS" &&
-      (typeof intr === "number" || typeof intr === "boolean")
-    ) {
+    const intr = grad instanceof Map ? (grad.get("Intr") ?? null) : null;
+    if (grad instanceof Map && grad.get("GrdF") === "CstS" && (typeof intr === "number" || typeof intr === "boolean")) {
       values.set(`${prefix}/gradientSmoothness`, (Number(intr) / 4096.0) * 100.0);
     }
   }
@@ -698,10 +672,7 @@ export function readGlobalLight(file: PathLike): [number, number] {
   return [angle, altitude];
 }
 
-export function _blendOptionsValues(
-  blocks: PsdStyleBlocks,
-  globalLight: [number, number],
-): Map<string, StyleValue> {
+export function _blendOptionsValues(blocks: PsdStyleBlocks, globalLight: [number, number]): Map<string, StyleValue> {
   const [angle, altitude] = globalLight;
   const values = new Map<string, StyleValue>([
     ["ADBE Global Angle2", angle],
@@ -738,20 +709,14 @@ export function _blendOptionsValues(
  *   its descriptor cannot be decoded (the layer then keeps the plain disabled skeleton; a warning
  *   is emitted so the style loss is visible).
  */
-export function parseLayerStyles(
-  leaf: PsdLayer,
-  globalLight: [number, number],
-): PsdLayerStyles | null {
+export function parseLayerStyles(leaf: PsdLayer, globalLight: [number, number]): PsdLayerStyles | null {
   const blocks = leaf.styleBlocks;
   if (blocks == null) return null;
   // Photoshop writes an `infx` block (value 0) on every ordinary layer;
   // only a USER deviation activates AE's blend-options chain: a Fill
   // slider away from 100% (`iOpa`), Blend Interior checked (`infx` true)
   // or a channel restriction (`brst`).
-  const blendData =
-    blocks.fillOpacity != null ||
-    !!blocks.blendInterior ||
-    blocks.channelRestrictions?.length > 0;
+  const blendData = blocks.fillOpacity != null || !!blocks.blendInterior || blocks.channelRestrictions?.length > 0;
   let descriptor = new Map<string, _Value>();
   if (blocks.effects != null) {
     try {
@@ -829,9 +794,7 @@ export function hasEnabledStyles(node: PsdLayer | PsdGroup): boolean {
 }
 
 /** `(key, instance)` of every enabled style instance in a descriptor. */
-export function* _enabledInstances(
-  descriptor: Map<string, _Value>,
-): Generator<[string, Map<string, _Value>]> {
+export function* _enabledInstances(descriptor: Map<string, _Value>): Generator<[string, Map<string, _Value>]> {
   for (const [key, instances] of _styleInstances(descriptor)) {
     for (const instance of instances) {
       if (instance instanceof Map && truthy(instance.get("enab"))) {
@@ -896,7 +859,7 @@ export function _pads(reach: number, antiAliased: boolean, shift = 0.0): [number
 export function _bevelPads(instance: Map<string, _Value>, name: string): [number, number] | null {
   const style = instance.has("bvlS") ? instance.get("bvlS") : "InrB";
   if (style === "InrB") return null;
-  const size = jsonFloat(instance.has("blur") ? instance.get("blur") as _Value : 0);
+  const size = jsonFloat(instance.has("blur") ? (instance.get("blur") as _Value) : 0);
   let height: number;
   if (style === "OtrB") {
     height = size;
@@ -915,13 +878,12 @@ export function _bevelPads(instance: Map<string, _Value>, name: string): [number
   } else {
     reach = height + 4;
   }
-  const softening = jsonFloat(instance.has("Sftn") ? instance.get("Sftn") as _Value : 0);
+  const softening = jsonFloat(instance.has("Sftn") ? (instance.get("Sftn") as _Value) : 0);
   if (softening > 0) {
     reach += Math.max(softening, 2) - 0.5;
   }
   const shift = softening === 0 && (!smooth || size === 0) ? -1.0 : 0.0;
-  const antiAliased =
-    truthy(instance.get("useShape")) && truthy(instance.get("AntA"));
+  const antiAliased = truthy(instance.get("useShape")) && truthy(instance.get("AntA"));
   return _pads(reach, antiAliased, shift);
 }
 
@@ -940,21 +902,23 @@ export function _instanceBox(
   if (key === "DrSh" || key === "OrGl") {
     const precise = key === "OrGl" && instance.get("GlwT") === "PrBL";
     const reach = _blurReach(
-      jsonFloat(instance.has("blur") ? instance.get("blur") as _Value : 0),
-      jsonFloat(instance.has("Ckmt") ? instance.get("Ckmt") as _Value : 0),
+      jsonFloat(instance.has("blur") ? (instance.get("blur") as _Value) : 0),
+      jsonFloat(instance.has("Ckmt") ? (instance.get("Ckmt") as _Value) : 0),
       precise,
     );
     [lead, trail] = _pads(reach, truthy(instance.get("AntA")));
     if (key === "DrSh") {
       const angle = radians(
-        truthy(instance.get("uglg")) ? globalAngle : jsonFloat(instance.has("lagl") ? instance.get("lagl") as _Value : 0),
+        truthy(instance.get("uglg"))
+          ? globalAngle
+          : jsonFloat(instance.has("lagl") ? (instance.get("lagl") as _Value) : 0),
       );
-      const distance = jsonFloat(instance.has("Dstn") ? instance.get("Dstn") as _Value : 0);
+      const distance = jsonFloat(instance.has("Dstn") ? (instance.get("Dstn") as _Value) : 0);
       dx = _roundAway(-Math.cos(angle) * distance);
       dy = _roundAway(Math.sin(angle) * distance);
     }
   } else if (key === "FrFX") {
-    const size = jsonFloat(instance.has("Sz  ") ? instance.get("Sz  ") as _Value : 0);
+    const size = jsonFloat(instance.has("Sz  ") ? (instance.get("Sz  ") as _Value) : 0);
     const position = instance.has("Styl") ? instance.get("Styl") : "OutF";
     if (position === "InsF") return null;
     const reach = position === "OutF" ? size : Math.ceil(size / 2);

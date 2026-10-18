@@ -9,7 +9,14 @@
 
 import { describe, expect, test } from "bun:test";
 
-import { PROFILE_TYPE_ICC, PROFILE_TYPE_OCIO, buildIccEnvelope, buildOcioColorspaceEnvelope, buildOcioDisplayEnvelope, parseEnvelope } from "../../src/py_aep/color/envelope.ts";
+import {
+  PROFILE_TYPE_ICC,
+  PROFILE_TYPE_OCIO,
+  buildIccEnvelope,
+  buildOcioColorspaceEnvelope,
+  buildOcioDisplayEnvelope,
+  parseEnvelope,
+} from "../../src/py_aep/color/envelope.ts";
 import { b, concat, valueEquals } from "../../src/pyrt/index.ts";
 import { range } from "../support/python.ts";
 
@@ -82,8 +89,7 @@ describe("TestKeyOrderAndSeparators", () => {
     // base64("AA==") == b"\x00"; checks outer key order + compact separators.
     const env = buildIccEnvelope("X", b("\x00"));
     expect(env).toBe(
-      '{"baseColorProfile":{"colorProfileData":"AA==",' +
-        '"colorProfileName":"X"},"baseProfileType":2}',
+      '{"baseColorProfile":{"colorProfileData":"AA==",' + '"colorProfileName":"X"},"baseProfileType":2}',
     );
   });
 

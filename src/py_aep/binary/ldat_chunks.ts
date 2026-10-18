@@ -284,13 +284,7 @@ export class KfMultiDimensional extends AttrsBase {
   }
 
   tobytes(): Uint8Array {
-    const allVals = [
-      ...this.value,
-      ...this.inSpeed,
-      ...this.inInfluence,
-      ...this.outSpeed,
-      ...this.outInfluence,
-    ];
+    const allVals = [...this.value, ...this.inSpeed, ...this.inInfluence, ...this.outSpeed, ...this.outInfluence];
     return struct.pack(">" + "d".repeat(allVals.length), ...allVals);
   }
 }
@@ -524,11 +518,7 @@ export class LdatChunk extends Chunk {
   declare itemType: LdatItemType;
   declare itemSize: number;
 
-  static read(
-    fp: ByteStream,
-    size: number,
-    kw: ChunkReadKwargs = {},
-  ): LdatChunk {
+  static read(fp: ByteStream, size: number, kw: ChunkReadKwargs = {}): LdatChunk {
     let { chunkType = "", itemType = LdatItemType.unknown, itemSize = 0, count = 0, isSpatial = false } = kw;
     // Spatial promotion: three_d -> three_d_spatial
     if (itemType === LdatItemType.three_d && isSpatial) {

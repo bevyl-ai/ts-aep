@@ -14,7 +14,17 @@ import { PropertyGroup } from "../../src/py_aep/models/properties/property_group
 import { FeatherPoint, Shape } from "../../src/py_aep/models/properties/shape.ts";
 import { MaskPropertyGroup } from "../../src/py_aep/models/properties/mask_property_group.ts";
 import { Property } from "../../src/py_aep/models/properties/property.ts";
-import { AttributeError, len, Path, assert, truthy, valueEquals, setMember, StopIteration, ValueError } from "../../src/pyrt/index.ts";
+import {
+  AttributeError,
+  len,
+  Path,
+  assert,
+  truthy,
+  valueEquals,
+  setMember,
+  StopIteration,
+  ValueError,
+} from "../../src/pyrt/index.ts";
 
 import { asInstance, projectBytes } from "../helpers.ts";
 import { makeTmpPath, raises } from "../support/pytest.ts";
@@ -25,8 +35,17 @@ const SAMPLES = new Path(import.meta.path).parent.parent.parent.div("samples");
 const FEATHER = SAMPLES.div("models", "property", "shape_feather.aep");
 
 const ZERO3 = Array(3).fill([0.0, 0.0]);
-const TRIANGLE = [[10.0, 10.0], [150.0, 20.0], [100.0, 90.0]];
-const QUAD = [[10.0, 10.0], [150.0, 20.0], [100.0, 90.0], [20.0, 80.0]];
+const TRIANGLE = [
+  [10.0, 10.0],
+  [150.0, 20.0],
+  [100.0, 90.0],
+];
+const QUAD = [
+  [10.0, 10.0],
+  [150.0, 20.0],
+  [100.0, 90.0],
+  [20.0, 80.0],
+];
 
 function _solidMask(width = 200, height = 100) {
   const app = py_aep.newProject();
@@ -54,9 +73,7 @@ function _tensions(pathProp: Property<Shape>): number[][] {
   const container = pathProp._kfValueContainer;
   assert(container != null, "no keyframe value container");
   const shaps = filterByListType(container.chunks, "shap");
-  return shaps.map((s) =>
-    findByType(s.chunks, "omtn").tensions.map((t) => round(t.value, 6)),
-  );
+  return shaps.map((s) => findByType(s.chunks, "omtn").tensions.map((t) => round(t.value, 6)));
 }
 
 function _round(points: number[][], digits = 3): number[][] {
@@ -95,14 +112,34 @@ describe("TestRotoBezierTensions", () => {
     // AE 2026: handles on vertex 1 only -> tensions [1, 1/3, 1, 1], and
     // the stored handles become the drawn tangents.
     const [app, , , mask] = _solidMask();
-    const handlesIn = [[0.0, 0.0], [-20.0, 5.0], [0.0, 0.0], [0.0, 0.0]];
-    const handlesOut = [[0.0, 0.0], [20.0, -5.0], [0.0, 0.0], [0.0, 0.0]];
+    const handlesIn = [
+      [0.0, 0.0],
+      [-20.0, 5.0],
+      [0.0, 0.0],
+      [0.0, 0.0],
+    ];
+    const handlesOut = [
+      [0.0, 0.0],
+      [20.0, -5.0],
+      [0.0, 0.0],
+      [0.0, 0.0],
+    ];
     mask.property("ADBE Mask Shape").value = new Shape(QUAD, handlesIn, handlesOut);
     mask.rotoBezier = true;
     const path = _reparseMask(app, tmpPath).property("ADBE Mask Shape");
     expect(valueEquals(_tensions(path), [[1.0, 0.333333, 1.0, 1.0]])).toBe(true);
-    const drawnIn = [[0.0, 0.0], [-34.968, -31.083], [0.0, 0.0], [0.0, 0.0]];
-    const drawnOut = [[0.0, 0.0], [21.432, 19.05], [0.0, 0.0], [0.0, 0.0]];
+    const drawnIn = [
+      [0.0, 0.0],
+      [-34.968, -31.083],
+      [0.0, 0.0],
+      [0.0, 0.0],
+    ];
+    const drawnOut = [
+      [0.0, 0.0],
+      [21.432, 19.05],
+      [0.0, 0.0],
+      [0.0, 0.0],
+    ];
     expect(valueEquals(_round(path.value.inTangents), drawnIn)).toBe(true);
     expect(valueEquals(_round(path.value.outTangents), drawnOut)).toBe(true);
     expect(valueEquals(_round(path.value._storedTangents(-1)), drawnIn)).toBe(true);
@@ -114,7 +151,12 @@ describe("TestRotoBezierTensions", () => {
     // tangents [0, 0] (tension 1 everywhere), the handles stay stored.
     const [app, , , mask] = _solidMask();
     mask.rotoBezier = true;
-    const handles = [[-5.0, 0.0], [-20.0, 5.0], [5.0, 5.0], [0.0, -5.0]];
+    const handles = [
+      [-5.0, 0.0],
+      [-20.0, 5.0],
+      [5.0, 5.0],
+      [0.0, -5.0],
+    ];
     mask.property("ADBE Mask Shape").value = new Shape(QUAD, handles, handles);
     const path = _reparseMask(app, tmpPath).property("ADBE Mask Shape");
     expect(valueEquals(_tensions(path), [[1.0, 1.0, 1.0, 1.0]])).toBe(true);
@@ -127,7 +169,12 @@ describe("TestRotoBezierTensions", () => {
     mask.rotoBezier = true;
     const path = mask.property("ADBE Mask Shape");
     path.setValueAtTime(0.0, new Shape(QUAD));
-    const handles = [[-5.0, 0.0], [0.0, 5.0], [5.0, 0.0], [0.0, 0.0]];
+    const handles = [
+      [-5.0, 0.0],
+      [0.0, 5.0],
+      [5.0, 0.0],
+      [0.0, 0.0],
+    ];
     path.setValueAtTime(2.0, new Shape(QUAD, handles, handles));
     const reread = _reparseMask(app, tmpPath).property("ADBE Mask Shape");
     expect(valueEquals(_tensions(reread), [Array(4).fill(1.0), Array(4).fill(1.0)])).toBe(true);
@@ -140,9 +187,28 @@ describe("TestRotoBezierTensions", () => {
     const [app, , , mask] = _solidMask();
     const path = mask.property("ADBE Mask Shape");
     path.setValueAtTime(0.0, new Shape(TRIANGLE));
-    const ins = [[-5.0, 0.0], [0.0, 5.0], [5.0, 0.0]];
-    const outs = [[5.0, 0.0], [0.0, -5.0], [-5.0, 0.0]];
-    path.setValueAtTime(2.0, new Shape([[20, 10], [180, 30], [90, 95]], ins, outs));
+    const ins = [
+      [-5.0, 0.0],
+      [0.0, 5.0],
+      [5.0, 0.0],
+    ];
+    const outs = [
+      [5.0, 0.0],
+      [0.0, -5.0],
+      [-5.0, 0.0],
+    ];
+    path.setValueAtTime(
+      2.0,
+      new Shape(
+        [
+          [20, 10],
+          [180, 30],
+          [90, 95],
+        ],
+        ins,
+        outs,
+      ),
+    );
     mask.rotoBezier = true;
     const reread = _reparseMask(app, tmpPath).property("ADBE Mask Shape");
     expect(valueEquals(_tensions(reread), [Array(3).fill(1.0), Array(3).fill(0.333333)])).toBe(true);
@@ -161,8 +227,16 @@ describe("TestRotoBezierTensions", () => {
     // AE 2026: rotoBezier on then off -> omtn emptied, the handles are the
     // tangents RotoBezier drew.
     const [app, , , mask] = _solidMask();
-    const ins = [[-5.0, 0.0], [0.0, 5.0], [5.0, 0.0]];
-    const outs = [[5.0, 0.0], [0.0, -5.0], [-5.0, 0.0]];
+    const ins = [
+      [-5.0, 0.0],
+      [0.0, 5.0],
+      [5.0, 0.0],
+    ];
+    const outs = [
+      [5.0, 0.0],
+      [0.0, -5.0],
+      [-5.0, 0.0],
+    ];
     mask.property("ADBE Mask Shape").value = new Shape(TRIANGLE, ins, outs);
     mask.rotoBezier = true;
     mask.rotoBezier = false;
@@ -216,40 +290,48 @@ describe("TestMaskNaming", () => {
 });
 
 describe("TestPathValueValidation", () => {
-  test.each([[[[1, 2], [3, 4]]], [null], [5], [[1, 2]]])(
-    "test_non_shape_rejected_without_mutation[%#]",
-    (value) => {
-      // AE 2026 refuses `setValue([[0,0],[1,1]])` on a mask path ("Array is
-      // not of the correct type").
-      const [app, , , mask] = _solidMask();
-      const path = mask.property("ADBE Mask Shape");
-      const before = projectBytes(app.project);
-      raises(TypeError, () => {
-        // @ts-expect-error deliberately assigns a non-Shape to check runtime validation
-        path.value = value;
-      });
-      expect(valueEquals(projectBytes(app.project), before)).toBe(true);
-      path.value = new Shape(TRIANGLE);
-      const before2 = projectBytes(app.project);
-      raises(TypeError, () => {
-        // @ts-expect-error deliberately assigns a non-Shape to check runtime validation
-        path.value = value;
-      });
-      expect(valueEquals(projectBytes(app.project), before2)).toBe(true);
-      expect(path.value instanceof Shape).toBe(true);
-    },
-  );
+  test.each([
+    [
+      [
+        [1, 2],
+        [3, 4],
+      ],
+    ],
+    [null],
+    [5],
+    [[1, 2]],
+  ])("test_non_shape_rejected_without_mutation[%#]", (value) => {
+    // AE 2026 refuses `setValue([[0,0],[1,1]])` on a mask path ("Array is
+    // not of the correct type").
+    const [app, , , mask] = _solidMask();
+    const path = mask.property("ADBE Mask Shape");
+    const before = projectBytes(app.project);
+    raises(TypeError, () => {
+      // @ts-expect-error deliberately assigns a non-Shape to check runtime validation
+      path.value = value;
+    });
+    expect(valueEquals(projectBytes(app.project), before)).toBe(true);
+    path.value = new Shape(TRIANGLE);
+    const before2 = projectBytes(app.project);
+    raises(TypeError, () => {
+      // @ts-expect-error deliberately assigns a non-Shape to check runtime validation
+      path.value = value;
+    });
+    expect(valueEquals(projectBytes(app.project), before2)).toBe(true);
+    expect(path.value instanceof Shape).toBe(true);
+  });
 
   test("test_shape_layer_path_rejects_non_shape", () => {
     const app = py_aep.newProject();
     const comp = app.project.rootFolder.addComp("C", 400, 300, 1.0, 5.0, 24.0);
     const group = comp.addShape().property("ADBE Root Vectors Group");
-    const path = group
-      .addProperty("ADBE Vector Shape - Group")
-      .property("ADBE Vector Shape");
+    const path = group.addProperty("ADBE Vector Shape - Group").property("ADBE Vector Shape");
     raises(TypeError, () => {
       // @ts-expect-error deliberately assigns a non-Shape to check runtime validation
-      path.value = [[1, 2], [3, 4]];
+      path.value = [
+        [1, 2],
+        [3, 4],
+      ];
     });
   });
 
@@ -258,8 +340,14 @@ describe("TestPathValueValidation", () => {
     // @ts-expect-error deliberately passes a string time to check runtime validation
     [(p: Property<Shape>) => p.addKey("1")],
     [(p: Property<Shape>) => p.setValueAtTime(1e9, new Shape(TRIANGLE))],
-    // @ts-expect-error deliberately passes a non-Shape value to check runtime validation
-    [(p: Property<Shape>) => p.setValueAtTime(1.0, [[0, 0], [1, 1]])],
+    // A non-Shape value, to check runtime validation.
+    [
+      (p: Property<Shape>) =>
+        p.setValueAtTime(1.0, [
+          [0, 0],
+          [1, 1],
+        ] as unknown as Shape),
+    ],
   ])("test_rejected_key_leaves_a_fresh_mask_untouched[%#]", (call: (p: Property<Shape>) => unknown) => {
     const [app, , , mask] = _solidMask();
     const before = projectBytes(app.project);
@@ -276,7 +364,12 @@ describe("TestFreshMaskNoOps", () => {
     const path = mask.property("ADBE Mask Shape");
     const before = projectBytes(app.project);
     path.value = path.value;
-    path.value = new Shape([[0, 0], [0, 100], [200, 100], [200, 0]]);
+    path.value = new Shape([
+      [0, 0],
+      [0, 100],
+      [200, 100],
+      [200, 0],
+    ]);
     path.expressionEnabled = false;
     expect(valueEquals(projectBytes(app.project), before)).toBe(true);
   });
@@ -284,24 +377,45 @@ describe("TestFreshMaskNoOps", () => {
   test("test_a_different_value_writes_the_path", () => {
     const [app, , , mask] = _solidMask();
     const before = projectBytes(app.project);
-    mask.property("ADBE Mask Shape").value = new Shape([[0, 0], [0, 100], [200, 100], [201, 0]]);
+    mask.property("ADBE Mask Shape").value = new Shape([
+      [0, 0],
+      [0, 100],
+      [200, 100],
+      [201, 0],
+    ]);
     expect(valueEquals(projectBytes(app.project), before)).toBe(false);
   });
 });
 
 describe("TestShapeGeometry", () => {
   test.each([
-    [{ vertices: [[1e39, 0.0], [1.0, 1.0]] }],
     [
       {
-        vertices: [[3e38, 0.0], [1.0, 1.0]],
-        in_tangents: [[3e38, 0.0], [0, 0]],
+        vertices: [
+          [1e39, 0.0],
+          [1.0, 1.0],
+        ],
+      },
+    ],
+    [
+      {
+        vertices: [
+          [3e38, 0.0],
+          [1.0, 1.0],
+        ],
+        in_tangents: [
+          [3e38, 0.0],
+          [0, 0],
+        ],
       },
     ],
     [{ vertices: [[0.0, 0.0]], out_tangents: [[Infinity, 0.0]] }],
-  ])("test_beyond_float32_is_rejected[%#]", (kwargs: { vertices: number[][]; in_tangents?: number[][]; out_tangents?: number[][] }) => {
-    raises(ValueError, () => new Shape(kwargs.vertices, kwargs.in_tangents, kwargs.out_tangents));
-  });
+  ])(
+    "test_beyond_float32_is_rejected[%#]",
+    (kwargs: { vertices: number[][]; in_tangents?: number[][]; out_tangents?: number[][] }) => {
+      raises(ValueError, () => new Shape(kwargs.vertices, kwargs.in_tangents, kwargs.out_tangents));
+    },
+  );
 
   test("test_closed_must_be_a_bool", () => {
     raises(
@@ -312,27 +426,92 @@ describe("TestShapeGeometry", () => {
   });
 
   test("test_vertex_move_keeps_relative_tangents", () => {
-    const shape = new Shape([[0, 0], [10, 0], [5, 5]], [[1, 1], [0, 0], [0, 0]]);
-    shape.vertices = [[100, 100], [110, 100], [105, 105]];
-    expect(valueEquals(shape.vertices, [[100, 100], [110, 100], [105, 105]])).toBe(true);
-    expect(valueEquals(_round(shape.inTangents), [[1, 1], [0, 0], [0, 0]])).toBe(true);
+    const shape = new Shape(
+      [
+        [0, 0],
+        [10, 0],
+        [5, 5],
+      ],
+      [
+        [1, 1],
+        [0, 0],
+        [0, 0],
+      ],
+    );
+    shape.vertices = [
+      [100, 100],
+      [110, 100],
+      [105, 105],
+    ];
+    expect(
+      valueEquals(shape.vertices, [
+        [100, 100],
+        [110, 100],
+        [105, 105],
+      ]),
+    ).toBe(true);
+    expect(
+      valueEquals(_round(shape.inTangents), [
+        [1, 1],
+        [0, 0],
+        [0, 0],
+      ]),
+    ).toBe(true);
   });
 
   test("test_flat_path_takes_new_coordinates", () => {
-    const shape = new Shape([[0, 5], [10, 5], [20, 5]]);
-    shape.vertices = [[0, 0], [10, 10], [20, 0]];
-    shape.inTangents = [[1, 1], [1, 1], [1, 1]];
-    expect(valueEquals(shape.vertices, [[0, 0], [10, 10], [20, 0]])).toBe(true);
+    const shape = new Shape([
+      [0, 5],
+      [10, 5],
+      [20, 5],
+    ]);
+    shape.vertices = [
+      [0, 0],
+      [10, 10],
+      [20, 0],
+    ];
+    shape.inTangents = [
+      [1, 1],
+      [1, 1],
+      [1, 1],
+    ];
+    expect(
+      valueEquals(shape.vertices, [
+        [0, 0],
+        [10, 10],
+        [20, 0],
+      ]),
+    ).toBe(true);
     expect(valueEquals(_round(shape.inTangents), Array(3).fill([1, 1]))).toBe(true);
   });
 
   test("test_new_shape_then_vertices", () => {
     // The ExtendScript idiom: `new Shape()`, then assign the vertices.
     const shape = new Shape();
-    shape.vertices = [[0, 0], [10, 0], [5, 5]];
-    shape.outTangents = [[1, 0], [0, 1], [0, 0]];
-    expect(valueEquals(shape.vertices, [[0, 0], [10, 0], [5, 5]])).toBe(true);
-    expect(valueEquals(_round(shape.outTangents), [[1, 0], [0, 1], [0, 0]])).toBe(true);
+    shape.vertices = [
+      [0, 0],
+      [10, 0],
+      [5, 5],
+    ];
+    shape.outTangents = [
+      [1, 0],
+      [0, 1],
+      [0, 0],
+    ];
+    expect(
+      valueEquals(shape.vertices, [
+        [0, 0],
+        [10, 0],
+        [5, 5],
+      ]),
+    ).toBe(true);
+    expect(
+      valueEquals(_round(shape.outTangents), [
+        [1, 0],
+        [0, 1],
+        [0, 0],
+      ]),
+    ).toBe(true);
   });
 
   test("test_empty_vertices_rejected", () => {
@@ -343,7 +522,11 @@ describe("TestShapeGeometry", () => {
   });
 
   test("test_tangent_count_must_match", () => {
-    const shape = new Shape([[0, 0], [10, 0], [5, 5]]);
+    const shape = new Shape([
+      [0, 0],
+      [10, 0],
+      [5, 5],
+    ]);
     raises(ValueError, () => {
       shape.inTangents = [[1, 1]];
     });
@@ -388,8 +571,8 @@ describe("TestShapeCopies", () => {
     expect(
       valueEquals(
         _round(
-          asInstance(asInstance(b2.masks, PropertyGroup).properties[0], MaskPropertyGroup).property("ADBE Mask Shape").value
-            .vertices,
+          asInstance(asInstance(b2.masks, PropertyGroup).properties[0], MaskPropertyGroup).property("ADBE Mask Shape")
+            .value.vertices,
         ),
         TRIANGLE,
       ),
@@ -399,9 +582,7 @@ describe("TestShapeCopies", () => {
   test("test_mask_copied_to_a_shape_path_keeps_its_pixels", () => {
     const [, comp, , maskA] = _twoLayers();
     const group = comp.addShape().property("ADBE Root Vectors Group");
-    const path = group
-      .addProperty("ADBE Vector Shape - Group")
-      .property("ADBE Vector Shape");
+    const path = group.addProperty("ADBE Vector Shape - Group").property("ADBE Vector Shape");
     path.value = maskA.property("ADBE Mask Shape").value;
     expect(valueEquals(_round(path.value.vertices), TRIANGLE)).toBe(true);
   });
@@ -450,9 +631,7 @@ describe("TestExpressionNul", () => {
   test("test_nul_rejected", () => {
     // AE 2026 keeps only the text before a NUL ("50\0 + 1" reads "50").
     const [, , solid] = _solidMask();
-    const opacity = solid
-      .property("ADBE Transform Group")
-      .property("ADBE Opacity");
+    const opacity = solid.property("ADBE Transform Group").property("ADBE Opacity");
     raises(ValueError, () => {
       opacity.expression = "50\x00 + 1";
     });

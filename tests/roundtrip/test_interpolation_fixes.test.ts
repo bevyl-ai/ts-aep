@@ -8,7 +8,15 @@
 
 import { describe, expect, test } from "bun:test";
 import * as py_aep from "../../src/py_aep/index.ts";
-import { KeyframeEase, KeyframeInterpolationType, Property, PropertyGroup, type Application, type AVLayer, type CompItem } from "../../src/py_aep/index.ts";
+import {
+  KeyframeEase,
+  KeyframeInterpolationType,
+  Property,
+  PropertyGroup,
+  type Application,
+  type AVLayer,
+  type CompItem,
+} from "../../src/py_aep/index.ts";
 import { at, getMember, len, assert, truthy, StopIteration, zip } from "../../src/pyrt/index.ts";
 import type { Path } from "../../src/pyrt/index.ts";
 
@@ -60,7 +68,7 @@ describe("TestFlatBezierSegment", () => {
   // AE 2026, opacity 50 -> 50 over 2 s, out ease 100/33, in ease -100/33.
   const AE = new Map<number, number>([
     [0.0, 50.0],
-    [0.25, 71.778350],
+    [0.25, 71.77835],
     [0.5, 87.217522],
     [0.75, 96.435069],
     [1.0, 99.5],
@@ -121,7 +129,7 @@ describe("TestLinearSideKeepsTheMotionPath", () => {
     [0.0, [50.0, 50.0]],
     [0.5, [108.389427, 144.050019]],
     [1.0, [199.997539, 200.0]],
-    [1.5, [291.611424, 144.048980]],
+    [1.5, [291.611424, 144.04898]],
     [2.0, [350.0, 50.0]],
   ]);
 
@@ -219,12 +227,12 @@ describe("TestSpatialEaseDivisorAndClamp", () => {
  */
 describe("TestRovingRunIsOneEasedSpan", () => {
   // AE 2026 placed the two roving keys of a 4-point 8 s run at these times.
-  const AE_TIMES = [0.0, 3.544840, 4.308594, 8.0];
+  const AE_TIMES = [0.0, 3.54484, 4.308594, 8.0];
   // AE's sampled positions on the same run.
   const AE_CURVE = new Map<number, number[]>([
     [1.0, [56.981111, 196.509445]],
     [3.0, [157.599662, 146.200169]],
-    [5.0, [638.297201, 244.681120]],
+    [5.0, [638.297201, 244.68112]],
     [7.0, [742.754934, 202.898026]],
   ]);
 
@@ -329,9 +337,7 @@ describe("TestAddKeyPreservesTheCurve", () => {
   test("test_spatial_split_keeps_the_motion_path", () => {
     function point(curve: number[][], t: number): number[] {
       const m = 1.0 - t;
-      return zip(...curve).map(
-        ([a, b, c, d]) => m * m * m * a + 3 * m * m * t * b + 3 * m * t * t * c + t * t * t * d,
-      );
+      return zip(...curve).map(([a, b, c, d]) => m * m * m * a + 3 * m * m * t * b + 3 * m * t * t * c + t * t * t * d);
     }
 
     function distanceTo(p: number[], a: number[], b: number[]): number {
@@ -365,11 +371,8 @@ describe("TestAddKeyPreservesTheCurve", () => {
 
     let worst = 0.0;
     for (let i = 1; i < 50; i++) {
-      const p = pos.valueAtTime(t0 + (t1 - t0) * i / 50);
-      worst = max([
-        worst,
-        min(zip(path, path.slice(1)).map(([a, b]) => distanceTo(p, a, b))),
-      ]);
+      const p = pos.valueAtTime(t0 + ((t1 - t0) * i) / 50);
+      worst = max([worst, min(zip(path, path.slice(1)).map(([a, b]) => distanceTo(p, a, b)))]);
     }
     expect(worst < 1e-4).toBe(true);
   });
@@ -429,10 +432,7 @@ describe("TestAddKeyPreservesTheCurve", () => {
     const app = parseAppFresh(PROPERTY_DIR.div("keyframe_bezier_ease_in_out_1D.aep"));
     const prop = app.project.compositions
       .flatMap((comp) => comp.layers.flatMap((layer) => [...layer.transform].filter((p) => p instanceof Property)))
-      .find(
-        (p) =>
-          truthy(getMember(p, "keyframes", null)) && len(p.keyframes) >= 2 && !p.isSpatial,
-      );
+      .find((p) => truthy(getMember(p, "keyframes", null)) && len(p.keyframes) >= 2 && !p.isSpatial);
     if (prop == null) throw new StopIteration();
     const times = [0.0, 0.5, 1.0, 1.5, 2.0, 3.0];
     const before = times.map((t) => prop.valueAtTime(t));
@@ -441,6 +441,12 @@ describe("TestAddKeyPreservesTheCurve", () => {
     const index = prop.addKey(mid);
     prop.removeKey(index);
 
-    expect(approx(times.map((t) => prop.valueAtTime(t)), before, { abs: 1e-6 })).toBe(true);
+    expect(
+      approx(
+        times.map((t) => prop.valueAtTime(t)),
+        before,
+        { abs: 1e-6 },
+      ),
+    ).toBe(true);
   });
 });

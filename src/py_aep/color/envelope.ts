@@ -203,10 +203,14 @@ export function parseEnvelope(envelopeJson: string): ColorProfile {
   const name = jsonRequire(base, "colorProfileName");
   const profileType = jsonRequire(outer, "baseProfileType");
   const data = jsonRequire(base, "colorProfileData");
-  if (typeof profileType !== "number") throw new TypeError(`baseProfileType must be an int, not '${typeName(profileType)}'`);
-  return new ColorProfile(_envelopeString(name, "colorProfileName"), profileType, b64decode(_envelopeString(data, "colorProfileData")));
+  if (typeof profileType !== "number")
+    throw new TypeError(`baseProfileType must be an int, not '${typeName(profileType)}'`);
+  return new ColorProfile(
+    _envelopeString(name, "colorProfileName"),
+    profileType,
+    b64decode(_envelopeString(data, "colorProfileData")),
+  );
 }
-
 
 /**
  * The envelope's `colorProfileName`, or `"None"` when the envelope is

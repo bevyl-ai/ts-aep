@@ -249,10 +249,7 @@ test("test_gradient_value_write_through", () => {
     new GradientColorStop(0.5, 0.5, [1.0, 1.0, 0.0]),
     new GradientColorStop(1.0, 0.5, [0.0, 0.0, 1.0]),
   ];
-  gradient.alphaStops = [
-    new GradientAlphaStop(0.0, 0.5, 1.0),
-    new GradientAlphaStop(1.0, 0.5, 1.0),
-  ];
+  gradient.alphaStops = [new GradientAlphaStop(0.0, 0.5, 1.0), new GradientAlphaStop(1.0, 0.5, 1.0)];
 
   // Re-read from the Utf8 chunk to confirm write-through
   const reparsed = parseGradientXml(gradient._utf8);
@@ -276,10 +273,7 @@ test("test_gradient_binary_roundtrip", () => {
     new GradientColorStop(0.0, 0.5, [0.25, 0.75, 0.5]),
     new GradientColorStop(1.0, 0.5, [0.75, 0.25, 0.5]),
   ];
-  gradient.alphaStops = [
-    new GradientAlphaStop(0.0, 0.5, 0.8),
-    new GradientAlphaStop(1.0, 0.5, 0.2),
-  ];
+  gradient.alphaStops = [new GradientAlphaStop(0.0, 0.5, 0.8), new GradientAlphaStop(1.0, 0.5, 0.2)];
 
   // Save and re-parse
   const out = tmpPath.div("roundtrip.aep");

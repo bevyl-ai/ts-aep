@@ -70,7 +70,11 @@ export function decodeBtdk(tree: CosNode): CosDict | null {
 export type Layout = { readonly [key: string]: Kind<CosNode> };
 
 /** `d[key]` when it is of the kind the layout gives `key`, else `undefined` (absent or another kind). */
-export function read<K extends string, T extends CosNode>(layout: { readonly [P in K]: Kind<T> }, d: CosDict, key: K): T | undefined {
+export function read<K extends string, T extends CosNode>(
+  layout: { readonly [P in K]: Kind<T> },
+  d: CosDict,
+  key: K,
+): T | undefined {
   const value = d.get(key);
   return layout[key](value) ? value : undefined;
 }

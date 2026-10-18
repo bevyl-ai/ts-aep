@@ -14,12 +14,32 @@
  */
 
 import { describe, expect, test } from "bun:test";
-import { AssertionError, Path, degrees, float, floatRepr, getOrThrow, len, mod, assert, truthy, valueEquals, repr, StopIteration, zip } from "../../src/pyrt/index.ts";
+import {
+  AssertionError,
+  Path,
+  degrees,
+  float,
+  floatRepr,
+  getOrThrow,
+  len,
+  mod,
+  assert,
+  truthy,
+  valueEquals,
+  repr,
+  StopIteration,
+  zip,
+} from "../../src/pyrt/index.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { asInstance, getComp, loadExpectedValueAtTime, parseProject, type ExpectedShape } from "../helpers.ts";
 import { Shape } from "../../src/py_aep/models/properties/shape.ts";
 import type { Property } from "../../src/py_aep/models/properties/property.ts";
-import { _subdivisionCuts, eulerToQuaternion, interpolateShapes, slerpOrientation } from "../../src/py_aep/resolvers/interpolation.ts";
+import {
+  _subdivisionCuts,
+  eulerToQuaternion,
+  interpolateShapes,
+  slerpOrientation,
+} from "../../src/py_aep/resolvers/interpolation.ts";
 import type { Layer } from "../../src/py_aep/models/layers/layer.ts";
 import { enumerate, min, round, sum } from "../support/python.ts";
 
@@ -110,11 +130,7 @@ function _assertSameRotation(
 /** (base name, comp name, layer name, match name) per exported property. */
 function _cases(): [string, string, string, string][] {
   const out: [string, string, string, string][] = [];
-  for (const base of [
-    "property_path_orientation_pin",
-    "property_path_orientation_ease",
-    "property_vat_edge_cases",
-  ]) {
+  for (const base of ["property_path_orientation_pin", "property_path_orientation_ease", "property_vat_edge_cases"]) {
     const data = loadExpectedValueAtTime(VAT_DIR, `${base}_value_at_time`);
     for (const comp of data.comps) {
       for (const layer of comp.layers) {
@@ -138,15 +154,9 @@ function _expectedFrames(base: string, compName: string, layerName: string, matc
   const compData = data.comps.find((c) => c.name === compName);
   if (compData === undefined) throw new StopIteration();
   const layers = compData.layers.filter((ly) => ly.name === layerName);
-  assert(
-    len(layers) === 1,
-    `${base}/${compName}: expected 1 layer named ${layerName}, got ${len(layers)}`,
-  );
+  assert(len(layers) === 1, `${base}/${compName}: expected 1 layer named ${layerName}, got ${len(layers)}`);
   const props = layers[0].properties.filter((p) => p.matchName === matchName);
-  assert(
-    len(props) === 1,
-    `${base}/${compName}/${layerName}: expected 1 ${matchName}, got ${len(props)}`,
-  );
+  assert(len(props) === 1, `${base}/${compName}/${layerName}: expected 1 ${matchName}, got ${len(props)}`);
   const frames = props[0].frames;
   assert(truthy(frames), `${base}/${compName}/${layerName}/${matchName}: no frames exported`);
   return frames;
@@ -157,10 +167,7 @@ test.each(_cases())("test_matches_extendscript[%#]", (base, compName, layerName,
   const project = parseProject(SAMPLES_DIR.div(`${base}.aep`));
   const comp = getComp(project, compName);
   const matches = comp.layers.filter((layer) => layer.name === layerName);
-  assert(
-    len(matches) === 1,
-    `${compName}: expected 1 layer named ${layerName}, got ${len(matches)}`,
-  );
+  assert(len(matches) === 1, `${compName}: expected 1 layer named ${layerName}, got ${len(matches)}`);
   const prop = _find(matches[0], matchName);
   const tolerance = getOrThrow(_TOLERANCE, matchName);
 
@@ -170,8 +177,7 @@ test.each(_cases())("test_matches_extendscript[%#]", (base, compName, layerName,
     const actual = _flatten(got);
     assert(
       len(actual) === len(expected),
-      `${matchName} t=${floatRepr(frame.time)}: ` +
-        `${len(actual)} values, expected ${len(expected)}`,
+      `${matchName} t=${floatRepr(frame.time)}: ` + `${len(actual)} values, expected ${len(expected)}`,
     );
     if (matchName === "ADBE Orientation") {
       _assertSameRotation(actual, expected, tolerance, layerName, frame.time);
@@ -226,7 +232,12 @@ describe("TestValueSpaces", () => {
     const prop = _find(TestValueSpaces._probe_layer("probe_solid"), "ADBE Mask Shape");
     const first = prop.keyframes[0].value;
     assert(first instanceof Shape);
-    for (const [got, expected] of zip(first.vertices, [[20, 20], [120, 20], [120, 80], [20, 80]])) {
+    for (const [got, expected] of zip(first.vertices, [
+      [20, 20],
+      [120, 20],
+      [120, 80],
+      [20, 80],
+    ])) {
       expect(Math.abs(got[0] - expected[0]) < 1e-4).toBe(true);
       expect(Math.abs(got[1] - expected[1]) < 1e-4).toBe(true);
     }
@@ -291,8 +302,18 @@ describe("TestShapeInterpolationEdges", () => {
   });
 
   test("test_vertex_count_mismatch_resamples_the_shorter_path", () => {
-    const left = new Shape([[0.0, 0.0], [10.0, 0.0], [10.0, 10.0]]);
-    const right = new Shape([[0.0, 0.0], [10.0, 0.0], [10.0, 10.0], [0.0, 10.0], [-5.0, 5.0]]);
+    const left = new Shape([
+      [0.0, 0.0],
+      [10.0, 0.0],
+      [10.0, 10.0],
+    ]);
+    const right = new Shape([
+      [0.0, 0.0],
+      [10.0, 0.0],
+      [10.0, 10.0],
+      [0.0, 10.0],
+      [-5.0, 5.0],
+    ]);
     const blended = interpolateShapes(left, right, 0.0);
     expect(blended != null).toBe(true);
     if (blended == null) throw new AssertionError("interpolate_shapes returned null");
@@ -307,24 +328,58 @@ describe("TestShapeInterpolationEdges", () => {
         [10.0, 10.0],
       ]),
     ).toBe(true);
-    expect(valueEquals(blended.inTangents, Array.from({ length: 5 }, () => [0.0, 0.0]))).toBe(true);
-    expect(valueEquals(blended.outTangents, Array.from({ length: 5 }, () => [0.0, 0.0]))).toBe(true);
+    expect(
+      valueEquals(
+        blended.inTangents,
+        Array.from({ length: 5 }, () => [0.0, 0.0]),
+      ),
+    ).toBe(true);
+    expect(
+      valueEquals(
+        blended.outTangents,
+        Array.from({ length: 5 }, () => [0.0, 0.0]),
+      ),
+    ).toBe(true);
   });
 
   test("test_resampling_a_curve_preserves_its_shape", () => {
     // One curved segment split in half: de Casteljau puts the new
     // vertex at the curve's midpoint and halves the outer handles.
     const left = new Shape(
-      [[0.0, 0.0], [100.0, 0.0]],
-      [[0.0, 0.0], [-40.0, 0.0]],
-      [[40.0, 0.0], [0.0, 0.0]],
+      [
+        [0.0, 0.0],
+        [100.0, 0.0],
+      ],
+      [
+        [0.0, 0.0],
+        [-40.0, 0.0],
+      ],
+      [
+        [40.0, 0.0],
+        [0.0, 0.0],
+      ],
       { closed: false },
     );
-    const right = new Shape([[0.0, 0.0], [50.0, 0.0], [100.0, 0.0]], undefined, undefined, { closed: false });
+    const right = new Shape(
+      [
+        [0.0, 0.0],
+        [50.0, 0.0],
+        [100.0, 0.0],
+      ],
+      undefined,
+      undefined,
+      { closed: false },
+    );
     const blended = interpolateShapes(left, right, 0.0);
     expect(blended != null).toBe(true);
     if (blended == null) throw new AssertionError("interpolate_shapes returned null");
-    expect(valueEquals(blended.vertices, [[0.0, 0.0], [50.0, 0.0], [100.0, 0.0]])).toBe(true);
+    expect(
+      valueEquals(blended.vertices, [
+        [0.0, 0.0],
+        [50.0, 0.0],
+        [100.0, 0.0],
+      ]),
+    ).toBe(true);
     expect(valueEquals(blended.outTangents[0], [20.0, 0.0])).toBe(true);
     expect(valueEquals(blended.inTangents[2], [-20.0, 0.0])).toBe(true);
   });
@@ -334,8 +389,24 @@ describe("TestShapeInterpolationEdges", () => {
   });
 
   test("test_closed_comes_from_the_left_key", () => {
-    const left = new Shape([[0.0, 0.0], [10.0, 0.0]], undefined, undefined, { closed: false });
-    const right = new Shape([[0.0, 0.0], [10.0, 0.0]], undefined, undefined, { closed: true });
+    const left = new Shape(
+      [
+        [0.0, 0.0],
+        [10.0, 0.0],
+      ],
+      undefined,
+      undefined,
+      { closed: false },
+    );
+    const right = new Shape(
+      [
+        [0.0, 0.0],
+        [10.0, 0.0],
+      ],
+      undefined,
+      undefined,
+      { closed: true },
+    );
     const blended = interpolateShapes(left, right, 0.5);
     expect(blended != null).toBe(true);
     if (blended == null) throw new AssertionError("interpolate_shapes returned null");
@@ -361,7 +432,11 @@ describe("TestOrientationSlerp", () => {
   });
 
   test("test_endpoints_round_trip", () => {
-    for (const angles of [[0.0, 0.0, 0.0], [10.0, 20.0, 30.0], [45.0, 80.0, 30.0]]) {
+    for (const angles of [
+      [0.0, 0.0, 0.0],
+      [10.0, 20.0, 30.0],
+      [45.0, 80.0, 30.0],
+    ]) {
       const start = slerpOrientation(angles, [1.0, 2.0, 3.0], 0.0);
       for (const [a, b] of zip(start, angles)) {
         expect(Math.abs(a - b) < 1e-9).toBe(true);
@@ -378,7 +453,12 @@ describe("TestOrientationSlerp", () => {
     // keyframe's own value at its own time, so this never reshapes a
     // stored angle.
     const got = slerpOrientation([45.0, 90.0, 30.0], [1.0, 2.0, 3.0], 0.0);
-    expect(valueEquals(got.map((v) => round(v, 9)), [0.0, 90.0, 75.0])).toBe(true);
+    expect(
+      valueEquals(
+        got.map((v) => round(v, 9)),
+        [0.0, 90.0, 75.0],
+      ),
+    ).toBe(true);
     const original = eulerToQuaternion([45.0, 90.0, 30.0]);
     const recovered = eulerToQuaternion(got);
     expect(Math.abs(Math.abs(sum(zip(original, recovered).map(([a, b]) => a * b))) - 1.0) < 1e-12).toBe(true);

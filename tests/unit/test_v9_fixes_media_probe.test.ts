@@ -10,7 +10,18 @@ import { Stream, TokenType } from "../../src/py_aep/cos/cos.ts";
 import { UnsupportedAiLayersError, readAiLayers } from "../../src/py_aep/resolvers/ai_layers.ts";
 import { probeMedia } from "../../src/py_aep/resolvers/media_probe.ts";
 import { UnsupportedPsdLayersError, readPsdLayers } from "../../src/py_aep/resolvers/psd_layers.ts";
-import { ByteStream, Path, ValueError, b, Bytes, concat, getOrThrow, assert, valueEquals, struct } from "../../src/pyrt/index.ts";
+import {
+  ByteStream,
+  Path,
+  ValueError,
+  b,
+  Bytes,
+  concat,
+  getOrThrow,
+  assert,
+  valueEquals,
+  struct,
+} from "../../src/pyrt/index.ts";
 
 import { asInstance } from "../helpers.ts";
 import { makeTmpPath, raises } from "../support/pytest.ts";
@@ -64,14 +75,17 @@ const _TRUNCATED: Map<string, Uint8Array> = new Map<string, Uint8Array>([
   ["exr_magic_only.exr", ASSETS.div("exr").div("rgb_full.exr").readBytes().slice(0, 4)],
 ]);
 
-test.each(sorted(Array.from(_TRUNCATED.keys())).map((n) => [n]))("test_truncated_media_raises_value_error[%#]", (name: string) => {
-  const tmpPath = makeTmpPath();
-  const path = tmpPath.div(name);
-  path.writeBytes(getOrThrow(_TRUNCATED, name));
-  for (const data of [null, getOrThrow(_TRUNCATED, name)]) {
-    raises(ValueError, () => probeMedia(path, data));
-  }
-});
+test.each(sorted(Array.from(_TRUNCATED.keys())).map((n) => [n]))(
+  "test_truncated_media_raises_value_error[%#]",
+  (name: string) => {
+    const tmpPath = makeTmpPath();
+    const path = tmpPath.div(name);
+    path.writeBytes(getOrThrow(_TRUNCATED, name));
+    for (const data of [null, getOrThrow(_TRUNCATED, name)]) {
+      raises(ValueError, () => probeMedia(path, data));
+    }
+  },
+);
 
 test("test_corrupt_exr_attribute_size_does_not_allocate", () => {
   const tmpPath = makeTmpPath();
@@ -79,7 +93,7 @@ test("test_corrupt_exr_attribute_size_does_not_allocate", () => {
   // read(size) allocate 4 GB before reading.
   const exr = ASSETS.div("exr").div("rgb_full.exr").readBytes().slice(0, 8);
   const path = tmpPath.div("huge_attr.exr");
-  path.writeBytes(concat(exr, b("channels\x00chlist\x00"), struct.pack("<I", 0xFFFFFFF0)));
+  path.writeBytes(concat(exr, b("channels\x00chlist\x00"), struct.pack("<I", 0xfffffff0)));
   const [, peak] = _run(() => probeMedia(path));
   expect(peak).toBeLessThan(50_000_000);
 });
@@ -87,7 +101,7 @@ test("test_corrupt_exr_attribute_size_does_not_allocate", () => {
 test("test_corrupt_psd_resource_length_does_not_allocate", () => {
   const tmpPath = makeTmpPath();
   const path = tmpPath.div("huge_resources.psd");
-  path.writeBytes(concat(_PSD_HEADER, struct.pack(">II", 0, 0xFFFFFFF0), b("8BIM")));
+  path.writeBytes(concat(_PSD_HEADER, struct.pack(">II", 0, 0xfffffff0), b("8BIM")));
   const [, peak] = _run(() => probeMedia(path));
   expect(peak).toBeLessThan(50_000_000);
 });
@@ -135,7 +149,7 @@ test("test_read_psd_layers_huge_canvas_is_rejected", () => {
   const tmpPath = makeTmpPath();
   const header = new Uint8Array(ASSETS.div("layer_bounds.psd").readBytes());
   // Python: struct.pack_into(">II", header, 14, ...) - written via set() at offset 14.
-  header.set(struct.pack(">II", 0xFFFFFFF0, 0xFFFFFFF0), 14);
+  header.set(struct.pack(">II", 0xfffffff0, 0xfffffff0), 14);
   const path = tmpPath.div("huge_canvas.psd");
   path.writeBytes(header);
   const [result, peak] = _run(() => readPsdLayers(path));

@@ -1,13 +1,58 @@
 /** Tests for Property model parsing with strengthened assertions. */
 
 import { describe, expect, test } from "bun:test";
-import { AssertionError, AttributeError, IndexError, StopIteration, Path, ValueError, b, Bytes, contains, copy, deepcopy, getMember, getOrThrow, len, assert, truthy, valueEquals, truthyOr, repr, setMember, getOrInsert, compositeKey, zip } from "../../src/pyrt/index.ts";
+import {
+  AssertionError,
+  AttributeError,
+  IndexError,
+  StopIteration,
+  Path,
+  ValueError,
+  b,
+  Bytes,
+  contains,
+  copy,
+  deepcopy,
+  getMember,
+  getOrThrow,
+  len,
+  assert,
+  truthy,
+  valueEquals,
+  truthyOr,
+  repr,
+  setMember,
+  getOrInsert,
+  compositeKey,
+  zip,
+} from "../../src/pyrt/index.ts";
 
 import { asInstance, getComp, getFirstLayer, getLayer, parseProjectFresh } from "../helpers.ts";
 
 import { parse as parseAep, newProject as pyAepNew, Project } from "../../src/py_aep/index.ts";
-import { KeyframeInterpolationType, Label, MaskFeatherFalloff, MaskMode, MaskMotionBlur, PropertyControlType, PropertyType, PropertyValueType } from "../../src/py_aep/enums/index.ts";
-import { AVLayer, Application, CompItem, FootageItem, Keyframe, Layer, MaskPropertyGroup, Property, PropertyBase, PropertyGroup, Shape } from "../../src/py_aep/models/index.ts";
+import {
+  KeyframeInterpolationType,
+  Label,
+  MaskFeatherFalloff,
+  MaskMode,
+  MaskMotionBlur,
+  PropertyControlType,
+  PropertyType,
+  PropertyValueType,
+} from "../../src/py_aep/enums/index.ts";
+import {
+  AVLayer,
+  Application,
+  CompItem,
+  FootageItem,
+  Keyframe,
+  Layer,
+  MaskPropertyGroup,
+  Property,
+  PropertyBase,
+  PropertyGroup,
+  Shape,
+} from "../../src/py_aep/models/index.ts";
 import { ShapeLayer, TextLayer } from "../../src/py_aep/models/layers/index.ts";
 import { _bakedEffectDef } from "../../src/py_aep/models/properties/property_group.ts";
 import { buildExpressionControl } from "../../src/py_aep/binary/mutations.ts";
@@ -108,7 +153,10 @@ describe("TestRoundtripMaskMode", () => {
     project.save(out);
 
     const project2 = parseAep(out).project;
-    const mask2 = asInstance(asInstance(project2.compositions[0].layers[0].masks, PropertyGroup).property(0), MaskPropertyGroup);
+    const mask2 = asInstance(
+      asInstance(project2.compositions[0].layers[0].masks, PropertyGroup).property(0),
+      MaskPropertyGroup,
+    );
     assert(mask2 instanceof MaskPropertyGroup);
     expect(mask2.maskMode).toBe(MaskMode.SUBTRACT);
   });
@@ -130,7 +178,10 @@ describe("TestRoundtripMaskInverted", () => {
     project.save(out);
 
     const project2 = parseAep(out).project;
-    const mask2 = asInstance(asInstance(project2.compositions[0].layers[0].masks, PropertyGroup).property(0), MaskPropertyGroup);
+    const mask2 = asInstance(
+      asInstance(project2.compositions[0].layers[0].masks, PropertyGroup).property(0),
+      MaskPropertyGroup,
+    );
     assert(mask2 instanceof MaskPropertyGroup);
     expect(mask2.inverted).toBe(true);
   });
@@ -152,7 +203,10 @@ describe("TestRoundtripMaskLocked", () => {
     project.save(out);
 
     const project2 = parseAep(out).project;
-    const mask2 = asInstance(asInstance(project2.compositions[0].layers[0].masks, PropertyGroup).property(0), MaskPropertyGroup);
+    const mask2 = asInstance(
+      asInstance(project2.compositions[0].layers[0].masks, PropertyGroup).property(0),
+      MaskPropertyGroup,
+    );
     assert(mask2 instanceof MaskPropertyGroup);
     expect(mask2.locked).toBe(true);
   });
@@ -174,7 +228,10 @@ describe("TestRoundtripMaskMotionBlur", () => {
     project.save(out);
 
     const project2 = parseAep(out).project;
-    const mask2 = asInstance(asInstance(project2.compositions[0].layers[0].masks, PropertyGroup).property(0), MaskPropertyGroup);
+    const mask2 = asInstance(
+      asInstance(project2.compositions[0].layers[0].masks, PropertyGroup).property(0),
+      MaskPropertyGroup,
+    );
     assert(mask2 instanceof MaskPropertyGroup);
     expect(mask2.maskMotionBlur).toBe(MaskMotionBlur.ON);
   });
@@ -195,7 +252,10 @@ describe("TestRoundtripMaskColor", () => {
     project.save(out);
 
     const project2 = parseAep(out).project;
-    const mask2 = asInstance(asInstance(project2.compositions[0].layers[0].masks, PropertyGroup).property(0), MaskPropertyGroup);
+    const mask2 = asInstance(
+      asInstance(project2.compositions[0].layers[0].masks, PropertyGroup).property(0),
+      MaskPropertyGroup,
+    );
     assert(mask2 instanceof MaskPropertyGroup);
     // Colors are stored as uint8, so precision is 1/255
     expect(Math.abs(mask2.color[0] - 0.5) < 0.005).toBe(true);
@@ -220,7 +280,10 @@ describe("TestRoundtripMaskFeatherFalloff", () => {
     project.save(out);
 
     const project2 = parseAep(out).project;
-    const mask2 = asInstance(asInstance(project2.compositions[0].layers[0].masks, PropertyGroup).property(0), MaskPropertyGroup);
+    const mask2 = asInstance(
+      asInstance(project2.compositions[0].layers[0].masks, PropertyGroup).property(0),
+      MaskPropertyGroup,
+    );
     assert(mask2 instanceof MaskPropertyGroup);
     expect(mask2.maskFeatherFalloff).toBe(MaskFeatherFalloff.FFO_LINEAR);
   });
@@ -245,7 +308,10 @@ describe("TestRoundtripFeatherPointRadius", () => {
 
     const project2 = parseAep(out).project;
     const comp2 = getComp(project2, "shape_feather_points");
-    const shape2 = asInstance(asInstance(asInstance(comp2.layers[0].masks, PropertyGroup).property(0), MaskPropertyGroup).properties[0], Property).value;
+    const shape2 = asInstance(
+      asInstance(asInstance(comp2.layers[0].masks, PropertyGroup).property(0), MaskPropertyGroup).properties[0],
+      Property,
+    ).value;
     expect(shape2.featherPoints[0].radius).toBe(55.0);
     // Second feather point unchanged
     expect(shape2.featherPoints[1].radius).toBe(100.0);
@@ -256,7 +322,10 @@ describe("TestRoundtripFeatherPointRadius", () => {
     const project = parseAep(SAMPLES_DIR.div("shape_feather.aep")).project;
     const comp = getComp(project, "shape_feather_points");
     const layer = comp.layers[0];
-    const shape = asInstance(asInstance(asInstance(layer.masks, PropertyGroup).property(0), MaskPropertyGroup).properties[0], Property).value;
+    const shape = asInstance(
+      asInstance(asInstance(layer.masks, PropertyGroup).property(0), MaskPropertyGroup).properties[0],
+      Property,
+    ).value;
     expect(shape.featherPoints[0].segLoc).toBe(1);
 
     shape.featherPoints[0].segLoc = 3;
@@ -265,7 +334,10 @@ describe("TestRoundtripFeatherPointRadius", () => {
 
     const project2 = parseAep(out).project;
     const comp2 = getComp(project2, "shape_feather_points");
-    const shape2 = asInstance(asInstance(asInstance(comp2.layers[0].masks, PropertyGroup).property(0), MaskPropertyGroup).properties[0], Property).value;
+    const shape2 = asInstance(
+      asInstance(asInstance(comp2.layers[0].masks, PropertyGroup).property(0), MaskPropertyGroup).properties[0],
+      Property,
+    ).value;
     expect(shape2.featherPoints[0].segLoc).toBe(3);
   });
 
@@ -274,7 +346,10 @@ describe("TestRoundtripFeatherPointRadius", () => {
     const project = parseAep(SAMPLES_DIR.div("shape_feather.aep")).project;
     const comp = getComp(project, "shape_feather_inner_hold");
     const layer = comp.layers[0];
-    const shape = asInstance(asInstance(asInstance(layer.masks, PropertyGroup).property(0), MaskPropertyGroup).properties[0], Property).value;
+    const shape = asInstance(
+      asInstance(asInstance(layer.masks, PropertyGroup).property(0), MaskPropertyGroup).properties[0],
+      Property,
+    ).value;
     expect(shape.featherPoints[1].tension).toBe(0.5);
 
     shape.featherPoints[1].tension = 0.75;
@@ -283,7 +358,10 @@ describe("TestRoundtripFeatherPointRadius", () => {
 
     const project2 = parseAep(out).project;
     const comp2 = getComp(project2, "shape_feather_inner_hold");
-    const shape2 = asInstance(asInstance(asInstance(comp2.layers[0].masks, PropertyGroup).property(0), MaskPropertyGroup).properties[0], Property).value;
+    const shape2 = asInstance(
+      asInstance(asInstance(comp2.layers[0].masks, PropertyGroup).property(0), MaskPropertyGroup).properties[0],
+      Property,
+    ).value;
     expect(shape2.featherPoints[1].tension).toBe(0.75);
   });
 
@@ -292,7 +370,10 @@ describe("TestRoundtripFeatherPointRadius", () => {
     const project = parseAep(SAMPLES_DIR.div("shape_feather.aep")).project;
     const comp = getComp(project, "shape_feather_points");
     const layer = comp.layers[0];
-    const shape = asInstance(asInstance(asInstance(layer.masks, PropertyGroup).property(0), MaskPropertyGroup).properties[0], Property).value;
+    const shape = asInstance(
+      asInstance(asInstance(layer.masks, PropertyGroup).property(0), MaskPropertyGroup).properties[0],
+      Property,
+    ).value;
     // Both are outer (positive radius)
     expect(shape.featherPoints[0].type).toBe(0);
 
@@ -303,7 +384,10 @@ describe("TestRoundtripFeatherPointRadius", () => {
 
     const project2 = parseAep(out).project;
     const comp2 = getComp(project2, "shape_feather_points");
-    const shape2 = asInstance(asInstance(asInstance(comp2.layers[0].masks, PropertyGroup).property(0), MaskPropertyGroup).properties[0], Property).value;
+    const shape2 = asInstance(
+      asInstance(asInstance(comp2.layers[0].masks, PropertyGroup).property(0), MaskPropertyGroup).properties[0],
+      Property,
+    ).value;
     expect(shape2.featherPoints[0].type).toBe(1);
     expect(shape2.featherPoints[0].radius).toBe(-30.0);
   });
@@ -315,55 +399,97 @@ describe("TestValidateFeatherPoint", () => {
   test("test_seg_loc_rejects_negative", () => {
     const project = parseAep(SAMPLES_DIR.div("shape_feather.aep")).project;
     const comp = getComp(project, "shape_feather_points");
-    const fp = asInstance(asInstance(asInstance(comp.layers[0].masks, PropertyGroup).property(0), MaskPropertyGroup).properties[0], Property).value;
-    raises(ValueError, () => {
-      fp.featherPoints[0].segLoc = -1;
-    }, "must be >= 0");
+    const fp = asInstance(
+      asInstance(asInstance(comp.layers[0].masks, PropertyGroup).property(0), MaskPropertyGroup).properties[0],
+      Property,
+    ).value;
+    raises(
+      ValueError,
+      () => {
+        fp.featherPoints[0].segLoc = -1;
+      },
+      "must be >= 0",
+    );
   });
 
   test("test_seg_loc_rejects_float", () => {
     const project = parseAep(SAMPLES_DIR.div("shape_feather.aep")).project;
     const comp = getComp(project, "shape_feather_points");
-    const fp = asInstance(asInstance(asInstance(comp.layers[0].masks, PropertyGroup).property(0), MaskPropertyGroup).properties[0], Property).value;
-    raises(TypeError, () => {
-      fp.featherPoints[0].segLoc = 1.5;
-    }, "expected an integer");
+    const fp = asInstance(
+      asInstance(asInstance(comp.layers[0].masks, PropertyGroup).property(0), MaskPropertyGroup).properties[0],
+      Property,
+    ).value;
+    raises(
+      TypeError,
+      () => {
+        fp.featherPoints[0].segLoc = 1.5;
+      },
+      "expected an integer",
+    );
   });
 
   test("test_rel_seg_loc_rejects_negative", () => {
     const project = parseAep(SAMPLES_DIR.div("shape_feather.aep")).project;
     const comp = getComp(project, "shape_feather_points");
-    const fp = asInstance(asInstance(asInstance(comp.layers[0].masks, PropertyGroup).property(0), MaskPropertyGroup).properties[0], Property).value;
-    raises(ValueError, () => {
-      fp.featherPoints[0].relSegLoc = -0.1;
-    }, "must be >= 0");
+    const fp = asInstance(
+      asInstance(asInstance(comp.layers[0].masks, PropertyGroup).property(0), MaskPropertyGroup).properties[0],
+      Property,
+    ).value;
+    raises(
+      ValueError,
+      () => {
+        fp.featherPoints[0].relSegLoc = -0.1;
+      },
+      "must be >= 0",
+    );
   });
 
   test("test_rel_seg_loc_rejects_above_one", () => {
     const project = parseAep(SAMPLES_DIR.div("shape_feather.aep")).project;
     const comp = getComp(project, "shape_feather_points");
-    const fp = asInstance(asInstance(asInstance(comp.layers[0].masks, PropertyGroup).property(0), MaskPropertyGroup).properties[0], Property).value;
-    raises(ValueError, () => {
-      fp.featherPoints[0].relSegLoc = 1.1;
-    }, "must be <= 1");
+    const fp = asInstance(
+      asInstance(asInstance(comp.layers[0].masks, PropertyGroup).property(0), MaskPropertyGroup).properties[0],
+      Property,
+    ).value;
+    raises(
+      ValueError,
+      () => {
+        fp.featherPoints[0].relSegLoc = 1.1;
+      },
+      "must be <= 1",
+    );
   });
 
   test("test_tension_rejects_negative", () => {
     const project = parseAep(SAMPLES_DIR.div("shape_feather.aep")).project;
     const comp = getComp(project, "shape_feather_inner_hold");
-    const fp = asInstance(asInstance(asInstance(comp.layers[0].masks, PropertyGroup).property(0), MaskPropertyGroup).properties[0], Property).value;
-    raises(ValueError, () => {
-      fp.featherPoints[1].tension = -0.1;
-    }, "must be >= 0");
+    const fp = asInstance(
+      asInstance(asInstance(comp.layers[0].masks, PropertyGroup).property(0), MaskPropertyGroup).properties[0],
+      Property,
+    ).value;
+    raises(
+      ValueError,
+      () => {
+        fp.featherPoints[1].tension = -0.1;
+      },
+      "must be >= 0",
+    );
   });
 
   test("test_tension_rejects_above_one", () => {
     const project = parseAep(SAMPLES_DIR.div("shape_feather.aep")).project;
     const comp = getComp(project, "shape_feather_inner_hold");
-    const fp = asInstance(asInstance(asInstance(comp.layers[0].masks, PropertyGroup).property(0), MaskPropertyGroup).properties[0], Property).value;
-    raises(ValueError, () => {
-      fp.featherPoints[1].tension = 1.1;
-    }, "must be <= 1");
+    const fp = asInstance(
+      asInstance(asInstance(comp.layers[0].masks, PropertyGroup).property(0), MaskPropertyGroup).properties[0],
+      Property,
+    ).value;
+    raises(
+      ValueError,
+      () => {
+        fp.featherPoints[1].tension = 1.1;
+      },
+      "must be <= 1",
+    );
   });
 });
 
@@ -399,10 +525,7 @@ describe("TestRoundtripKeyframeLabel", () => {
      */
     const tmpPath = makeTmpPath();
     const project = parseAep(SAMPLES_DIR.div("keyframe_bezier_multi_ease_1D.aep")).project;
-    const opacity = asInstance(_findProperty(
-      getComp(project, "TestComp").layers[0],
-      "ADBE Opacity",
-    ), Property);
+    const opacity = asInstance(_findProperty(getComp(project, "TestComp").layers[0], "ADBE Opacity"), Property);
     for (const [kf, label] of zip(opacity.keyframes, [Label.of(1), Label.of(5), Label.of(16)])) {
       kf.label = label;
     }
@@ -456,10 +579,7 @@ describe("TestRoundtripKeyframeInterpolationType", () => {
     project.save(out);
 
     const project2 = parseAep(out).project;
-    const prop2 = asInstance(_findProperty(
-      getComp(project2, "keyframe_LINEAR").layers[0],
-      "ADBE Position",
-    ), Property);
+    const prop2 = asInstance(_findProperty(getComp(project2, "keyframe_LINEAR").layers[0], "ADBE Position"), Property);
     expect(prop2.keyframes[0].outInterpolationType).toBe(KeyframeInterpolationType.HOLD);
   });
 
@@ -476,10 +596,7 @@ describe("TestRoundtripKeyframeInterpolationType", () => {
     project.save(out);
 
     const project2 = parseAep(out).project;
-    const prop2 = asInstance(_findProperty(
-      getComp(project2, "keyframe_BEZIER").layers[0],
-      "ADBE Position",
-    ), Property);
+    const prop2 = asInstance(_findProperty(getComp(project2, "keyframe_BEZIER").layers[0], "ADBE Position"), Property);
     expect(prop2.keyframes[1].inInterpolationType).toBe(KeyframeInterpolationType.LINEAR);
   });
 });
@@ -508,10 +625,7 @@ describe("TestRoundtripExpression", () => {
     project.save(out);
 
     const project2 = parseAep(out).project;
-    const prop2 = asInstance(_findProperty(
-      getComp(project2, "expression_enabled").layers[0],
-      matchName,
-    ), Property);
+    const prop2 = asInstance(_findProperty(getComp(project2, "expression_enabled").layers[0], matchName), Property);
     expect(prop2.expression).toBe("wiggle(5, 50)");
   });
 });
@@ -583,27 +697,40 @@ describe("TestRoundtripMaskShapeOnEachLayerKind", () => {
    */
 
   test.each(["solid", "shape", "text"])("test_written_vertices_read_back[%#]", (layerName) => {
-      const tmpPath = makeTmpPath();
-      const vertices = [[-10.0, -10.0], [30.0, -10.0], [30.0, 20.0], [-10.0, 20.0]];
-      const project = parseProjectFresh(SAMPLES_DIR.div("mask_shape_and_text_layers.aep"));
-      const layer = asInstance(
-        project.compositions.flatMap((c: CompItem) => c.layers).find((ly: Layer) => ly.name === layerName),
-        Layer,
-      );
-      assert(layer.masks != null);
-      asInstance(asInstance(asInstance(layer.masks, PropertyGroup).property(0), MaskPropertyGroup), MaskPropertyGroup).property("ADBE Mask Shape").value = new Shape(vertices);
-      const out = tmpPath.div("masks.aep");
-      project.save(out);
+    const tmpPath = makeTmpPath();
+    const vertices = [
+      [-10.0, -10.0],
+      [30.0, -10.0],
+      [30.0, 20.0],
+      [-10.0, 20.0],
+    ];
+    const project = parseProjectFresh(SAMPLES_DIR.div("mask_shape_and_text_layers.aep"));
+    const layer = asInstance(
+      project.compositions.flatMap((c: CompItem) => c.layers).find((ly: Layer) => ly.name === layerName),
+      Layer,
+    );
+    assert(layer.masks != null);
+    asInstance(
+      asInstance(asInstance(layer.masks, PropertyGroup).property(0), MaskPropertyGroup),
+      MaskPropertyGroup,
+    ).property("ADBE Mask Shape").value = new Shape(vertices);
+    const out = tmpPath.div("masks.aep");
+    project.save(out);
 
-      const reopened = asInstance(
-        parseAep(out).project.compositions.flatMap((c: CompItem) => c.layers).find((ly: Layer) => ly.name === layerName),
-        Layer,
-      );
-      assert(reopened.masks != null);
-      const shape = asInstance(asInstance(asInstance(reopened.masks, PropertyGroup).property(0), MaskPropertyGroup), MaskPropertyGroup).property("ADBE Mask Shape").value;
-      for (const [vertex, want] of zip(shape.vertices, vertices)) {
-        expect(approx(vertex, want, { abs: 1e-4 })).toBe(true);
-      }
+    const reopened = asInstance(
+      parseAep(out)
+        .project.compositions.flatMap((c: CompItem) => c.layers)
+        .find((ly: Layer) => ly.name === layerName),
+      Layer,
+    );
+    assert(reopened.masks != null);
+    const shape = asInstance(
+      asInstance(asInstance(reopened.masks, PropertyGroup).property(0), MaskPropertyGroup),
+      MaskPropertyGroup,
+    ).property("ADBE Mask Shape").value;
+    for (const [vertex, want] of zip(shape.vertices, vertices)) {
+      expect(approx(vertex, want, { abs: 1e-4 })).toBe(true);
+    }
   });
 });
 
@@ -628,10 +755,7 @@ describe("TestRoundtripKeyframeEase", () => {
     project.save(out);
 
     const project2 = parseAep(out).project;
-    const prop2 = _findProperty(
-      getComp(project2, "keyframe_BEZIER").layers[0],
-      "ADBE Position",
-    );
+    const prop2 = _findProperty(getComp(project2, "keyframe_BEZIER").layers[0], "ADBE Position");
     assert(prop2 != null);
     expect(Math.abs(prop2.keyframes[0].outTemporalEase[0].speed - 42.0) < 0.01).toBe(true);
     expect(Math.abs(prop2.keyframes[0].outTemporalEase[0].influence - 75.0) < 0.01).toBe(true);
@@ -657,9 +781,13 @@ describe("TestValidateKeyframeEaseInfluence", () => {
     const prop = _findProperty(layer, "ADBE Position");
     assert(prop != null);
     const kf = prop.keyframes[0];
-    raises(ValueError, () => {
-      kf.outTemporalEase[0].influence = -0.1;
-    }, "must be");
+    raises(
+      ValueError,
+      () => {
+        kf.outTemporalEase[0].influence = -0.1;
+      },
+      "must be",
+    );
   });
 
   test("test_influence_accepts_what_ae_writes_for_a_long_segment", () => {
@@ -679,9 +807,13 @@ describe("TestValidateKeyframeEaseInfluence", () => {
     const prop = _findProperty(layer, "ADBE Position");
     assert(prop != null);
     const kf = prop.keyframes[0];
-    raises(ValueError, () => {
-      kf.outTemporalEase[0].influence = 100.1;
-    }, "must be");
+    raises(
+      ValueError,
+      () => {
+        kf.outTemporalEase[0].influence = 100.1;
+      },
+      "must be",
+    );
   });
 });
 
@@ -793,10 +925,7 @@ describe("TestRoundtripExpressionEnabled", () => {
     project.save(out);
 
     const project2 = parseAep(out).project;
-    const prop2 = asInstance(_findProperty(
-      getComp(project2, "expression_enabled").layers[0],
-      matchName,
-    ), Property);
+    const prop2 = asInstance(_findProperty(getComp(project2, "expression_enabled").layers[0], matchName), Property);
     expect(prop2.expressionEnabled).toBe(false);
     expect(prop2.expression !== "").toBe(true);
   });
@@ -822,10 +951,7 @@ describe("TestRoundtripExpressionEnabled", () => {
     project.save(out);
 
     const project2 = parseAep(out).project;
-    const prop2 = asInstance(_findProperty(
-      getComp(project2, "expression_disabled").layers[0],
-      matchName,
-    ), Property);
+    const prop2 = asInstance(_findProperty(getComp(project2, "expression_disabled").layers[0], matchName), Property);
     expect(prop2.expressionEnabled).toBe(true);
   });
 
@@ -854,10 +980,10 @@ describe("TestRoundtripExpressionEnabled", () => {
 
     const out = tmpPath.div("reenabled_expr.aep");
     project.save(out);
-    const prop2 = asInstance(_findProperty(
-      getComp(parseAep(out).project, "expression_disabled").layers[0],
-      matchName,
-    ), Property);
+    const prop2 = asInstance(
+      _findProperty(getComp(parseAep(out).project, "expression_disabled").layers[0], matchName),
+      Property,
+    );
     expect(prop2.expression).toBe("100");
     expect(prop2.expressionEnabled).toBe(true);
   });
@@ -879,7 +1005,10 @@ describe("TestRoundtripRotoBezier", () => {
     project.save(out);
 
     const project2 = parseAep(out).project;
-    const mask2 = asInstance(asInstance(project2.compositions[0].layers[0].masks, PropertyGroup).property(0), MaskPropertyGroup);
+    const mask2 = asInstance(
+      asInstance(project2.compositions[0].layers[0].masks, PropertyGroup).property(0),
+      MaskPropertyGroup,
+    );
     assert(mask2 instanceof MaskPropertyGroup);
     expect(mask2.rotoBezier).toBe(false);
   });
@@ -922,7 +1051,10 @@ describe("TestKeyedEffectPointArcMetric", () => {
     if (matchName === "ADBE Point Control") {
       effects.addProperty(matchName);
     }
-    let point = asInstance(asInstance(effects.properties.at(-1), PropertyGroup).property(`${matchName}-0001`), Property);
+    let point = asInstance(
+      asInstance(effects.properties.at(-1), PropertyGroup).property(`${matchName}-0001`),
+      Property,
+    );
     expect(point._tdb4.pixelAspect).toBe(1.0); // never keyed
     for (const [time, value] of KEYS) {
       point.setValueAtTime(time, value);
@@ -1016,13 +1148,17 @@ describe("TestPropertyRemove", () => {
     /** Removing from a non-indexed group raises ValueError. */
     const app = parseAep(AEP);
     const layer = app.project.compositions[0].layers[0];
-    const transform = [...layer.properties].filter(
-      (p) => p.matchName === "ADBE Transform Group",
+    const transform = [...layer.properties].filter((p) => p.matchName === "ADBE Transform Group")[0];
+    const position = [...asInstance(transform, PropertyGroup).properties].filter(
+      (p) => p.matchName === "ADBE Position",
     )[0];
-    const position = [...asInstance(transform, PropertyGroup).properties].filter((p) => p.matchName === "ADBE Position")[0];
-    raises(ValueError, () => {
-      position.remove();
-    }, "non-indexed");
+    raises(
+      ValueError,
+      () => {
+        position.remove();
+      },
+      "non-indexed",
+    );
   });
 
   test("test_remove_all_effects", () => {
@@ -1145,20 +1281,26 @@ describe("TestPropertyDuplicate", () => {
     assert(layer2.effects != null);
     expect(asInstance(layer2.effects, PropertyGroup).properties.length).toBe(3);
     // First and second should have same match name
-    expect(asInstance(layer2.effects, PropertyGroup).properties[0].matchName).toBe(asInstance(layer2.effects, PropertyGroup).properties[1].matchName);
+    expect(asInstance(layer2.effects, PropertyGroup).properties[0].matchName).toBe(
+      asInstance(layer2.effects, PropertyGroup).properties[1].matchName,
+    );
   });
 
   test("test_duplicate_non_indexed_raises", () => {
     /** Duplicating a non-indexed property raises ValueError. */
     const app = parseAep(AEP);
     const layer = app.project.compositions[0].layers[0];
-    const transform = [...layer.properties].filter(
-      (p) => p.matchName === "ADBE Transform Group",
+    const transform = [...layer.properties].filter((p) => p.matchName === "ADBE Transform Group")[0];
+    const position = [...asInstance(transform, PropertyGroup).properties].filter(
+      (p) => p.matchName === "ADBE Position",
     )[0];
-    const position = [...asInstance(transform, PropertyGroup).properties].filter((p) => p.matchName === "ADBE Position")[0];
-    raises(ValueError, () => {
-      position.duplicate();
-    }, "non-indexed");
+    raises(
+      ValueError,
+      () => {
+        position.duplicate();
+      },
+      "non-indexed",
+    );
   });
 
   test("test_duplicate_preserves_values", () => {
@@ -1172,12 +1314,8 @@ describe("TestPropertyDuplicate", () => {
     assert(newProp instanceof PropertyGroup);
     assert(original instanceof PropertyGroup);
     // Check blurriness value matches
-    const origBlur = [...original.properties].filter(
-      (p) => p.matchName === "ADBE Gaussian Blur-0001",
-    );
-    const newBlur = [...newProp.properties].filter(
-      (p) => p.matchName === "ADBE Gaussian Blur-0001",
-    );
+    const origBlur = [...original.properties].filter((p) => p.matchName === "ADBE Gaussian Blur-0001");
+    const newBlur = [...newProp.properties].filter((p) => p.matchName === "ADBE Gaussian Blur-0001");
     if (truthy(origBlur) && truthy(newBlur)) {
       expect(valueEquals(asInstance(origBlur[0], Property).value, asInstance(newBlur[0], Property).value)).toBe(true);
     }
@@ -1227,14 +1365,7 @@ describe("TestMaskMutations", () => {
     expect(masks.properties.length).toBe(2);
     masks.properties[0].remove();
     expect(masks.properties.length).toBe(1);
-    expect(valueEquals(_paradeChunkTypes(masks), [
-      "tdsb",
-      "tdsn",
-      "tdmn",
-      "mkif",
-      "tdgp",
-      "tdmn",
-    ])).toBe(true);
+    expect(valueEquals(_paradeChunkTypes(masks), ["tdsb", "tdsn", "tdmn", "mkif", "tdgp", "tdmn"])).toBe(true);
   });
 
   test("test_remove_mask_roundtrip", () => {
@@ -1285,12 +1416,12 @@ describe("TestMaskMutations", () => {
     assert(layer.masks != null);
     const newProp = asInstance(layer.masks, PropertyGroup).properties[0].duplicate();
     assert(newProp instanceof MaskPropertyGroup);
-    expect(valueEquals(newProp.properties.map((c: Property | PropertyGroup) => c.name), [
-      "Mask Path",
-      "Mask Feather",
-      "Mask Opacity",
-      "Mask Expansion",
-    ])).toBe(true);
+    expect(
+      valueEquals(
+        newProp.properties.map((c: Property | PropertyGroup) => c.name),
+        ["Mask Path", "Mask Feather", "Mask Opacity", "Mask Expansion"],
+      ),
+    ).toBe(true);
   });
 
   test("test_duplicate_mask_roundtrip", () => {
@@ -1305,15 +1436,22 @@ describe("TestMaskMutations", () => {
     const layer2 = parseAep(out).project.compositions[0].layers[0];
     assert(layer2.masks != null);
     expect(asInstance(layer2.masks, PropertyGroup).properties.length).toBe(3);
-    expect(asInstance(layer2.masks, PropertyGroup).properties.every((m: Property | PropertyGroup) => m instanceof MaskPropertyGroup)).toBe(true);
+    expect(
+      asInstance(layer2.masks, PropertyGroup).properties.every(
+        (m: Property | PropertyGroup) => m instanceof MaskPropertyGroup,
+      ),
+    ).toBe(true);
     // AE inserts the copy after the source and names it "Mask 3" (max id
     // + 1), with a matching unique mask id - not a duplicate "Mask 1"/id 1.
-    expect(valueEquals(asInstance(layer2.masks, PropertyGroup).properties.map((m: Property | PropertyGroup) => m.name), [
-      "Mask 1",
-      "Mask 3",
-      "Mask 2",
-    ])).toBe(true);
-    const ids = asInstance(layer2.masks, PropertyGroup).properties.map((m: Property | PropertyGroup) => asInstance(m, MaskPropertyGroup)._mkif.maskId);
+    expect(
+      valueEquals(
+        asInstance(layer2.masks, PropertyGroup).properties.map((m: Property | PropertyGroup) => m.name),
+        ["Mask 1", "Mask 3", "Mask 2"],
+      ),
+    ).toBe(true);
+    const ids = asInstance(layer2.masks, PropertyGroup).properties.map(
+      (m: Property | PropertyGroup) => asInstance(m, MaskPropertyGroup)._mkif.maskId,
+    );
     expect(valueEquals(ids, [1, 3, 2])).toBe(true);
     expect(new Set(ids).size === ids.length).toBe(true);
   });
@@ -1342,12 +1480,22 @@ describe("TestMaskMutations", () => {
     const layer = app.project.compositions[0].layers[0];
     assert(layer.masks != null);
     asInstance(layer.masks, PropertyGroup).properties[1].moveTo(0);
-    expect(valueEquals(asInstance(layer.masks, PropertyGroup).properties.map((m: Property | PropertyGroup) => m.name), ["Mask 2", "Mask 1"])).toBe(true);
+    expect(
+      valueEquals(
+        asInstance(layer.masks, PropertyGroup).properties.map((m: Property | PropertyGroup) => m.name),
+        ["Mask 2", "Mask 1"],
+      ),
+    ).toBe(true);
     const out = tmpPath.div("out.aep");
     app.project.save(out);
     const layer2 = parseAep(out).project.compositions[0].layers[0];
     assert(layer2.masks != null);
-    expect(valueEquals(asInstance(layer2.masks, PropertyGroup).properties.map((m: Property | PropertyGroup) => m.name), ["Mask 2", "Mask 1"])).toBe(true);
+    expect(
+      valueEquals(
+        asInstance(layer2.masks, PropertyGroup).properties.map((m: Property | PropertyGroup) => m.name),
+        ["Mask 2", "Mask 1"],
+      ),
+    ).toBe(true);
   });
 });
 
@@ -1416,11 +1564,23 @@ describe("TestAddProperty", () => {
     assert(mask2._tdgp != null);
     const oms = mask2._tdgp.chunks.find((c: Chunk) => getMember(c, "listType", null) === "om-s");
     if (!(oms instanceof ListChunk)) throw new StopIteration();
-    expect(valueEquals(oms.chunks.map((c: Chunk) => getMember(c, "listType", null)), ["tdbs", "omks"])).toBe(true);
+    expect(
+      valueEquals(
+        oms.chunks.map((c: Chunk) => getMember(c, "listType", null)),
+        ["tdbs", "omks"],
+      ),
+    ).toBe(true);
     const path = mask2.property("ADBE Mask Shape");
     expect(path.expression).toBe("value");
     const [w, h] = asInstance(layer2, AVLayer)._maskScale;
-    expect(valueEquals(path.value.vertices, [[0.0, 0.0], [0.0, h], [w, h], [w, 0.0]])).toBe(true);
+    expect(
+      valueEquals(path.value.vertices, [
+        [0.0, 0.0],
+        [0.0, h],
+        [w, h],
+        [w, 0.0],
+      ]),
+    ).toBe(true);
   });
 
   test("test_add_mask_by_display_name", () => {
@@ -1439,12 +1599,12 @@ describe("TestAddProperty", () => {
     assert(layer.masks != null);
     const newMask = asInstance(layer.masks, PropertyGroup).addProperty("ADBE Mask Atom");
     assert(newMask instanceof MaskPropertyGroup);
-    expect(valueEquals(newMask.properties.map((c: Property | PropertyGroup) => c.name), [
-      "Mask Path",
-      "Mask Feather",
-      "Mask Opacity",
-      "Mask Expansion",
-    ])).toBe(true);
+    expect(
+      valueEquals(
+        newMask.properties.map((c: Property | PropertyGroup) => c.name),
+        ["Mask Path", "Mask Feather", "Mask Opacity", "Mask Expansion"],
+      ),
+    ).toBe(true);
   });
 
   test("test_add_mask_writes_minimal_chunks", () => {
@@ -1458,11 +1618,12 @@ describe("TestAddProperty", () => {
     const newMask = asInstance(layer.masks, PropertyGroup).addProperty("ADBE Mask Atom");
     assert(newMask instanceof MaskPropertyGroup);
     assert(newMask._tdgp != null);
-    expect(valueEquals(newMask._tdgp.chunks.map((c: Chunk) => truthyOr(getMember(c, "listType", null), c.chunkType)), [
-      "tdsb",
-      "tdsn",
-      "tdmn",
-    ])).toBe(true);
+    expect(
+      valueEquals(
+        newMask._tdgp.chunks.map((c: Chunk) => truthyOr(getMember(c, "listType", null), c.chunkType)),
+        ["tdsb", "tdsn", "tdmn"],
+      ),
+    ).toBe(true);
     expect(truthy(newMask._tdgp.synthetic)).toBe(false);
   });
 
@@ -1477,21 +1638,22 @@ describe("TestAddProperty", () => {
     app.project.save(out);
     const layer2 = parseAep(out).project.compositions[0].layers[0];
     assert(layer2.masks != null);
-    expect(valueEquals(asInstance(layer2.masks, PropertyGroup).properties.map((m: Property | PropertyGroup) => m.name), [
-      "Mask 1",
-      "Mask 2",
-      "Mask 3",
-    ])).toBe(true);
+    expect(
+      valueEquals(
+        asInstance(layer2.masks, PropertyGroup).properties.map((m: Property | PropertyGroup) => m.name),
+        ["Mask 1", "Mask 2", "Mask 3"],
+      ),
+    ).toBe(true);
     const mask3 = asInstance(layer2.masks, PropertyGroup).properties[2];
     assert(mask3 instanceof MaskPropertyGroup);
     expect(mask3.maskMode).toBe(MaskMode.ADD);
     expect(mask3._mkif.maskId).toBe(3);
-    expect(valueEquals(mask3.properties.map((c: Property | PropertyGroup) => c.name), [
-      "Mask Path",
-      "Mask Feather",
-      "Mask Opacity",
-      "Mask Expansion",
-    ])).toBe(true);
+    expect(
+      valueEquals(
+        mask3.properties.map((c: Property | PropertyGroup) => c.name),
+        ["Mask Path", "Mask Feather", "Mask Opacity", "Mask Expansion"],
+      ),
+    ).toBe(true);
   });
 
   test("test_add_first_mask_materializes_parade", () => {
@@ -1515,15 +1677,18 @@ describe("TestAddProperty", () => {
     app.project.save(out);
     const layer2 = parseAep(out).project.compositions[0].layers[0];
     assert(layer2.masks != null);
-    expect(valueEquals(asInstance(layer2.masks, PropertyGroup).properties.map((m: Property | PropertyGroup) => m.name), ["Mask 1"])).toBe(true);
+    expect(
+      valueEquals(
+        asInstance(layer2.masks, PropertyGroup).properties.map((m: Property | PropertyGroup) => m.name),
+        ["Mask 1"],
+      ),
+    ).toBe(true);
     // Parade must be written before the Transform Group, as AE does.
     assert(layer2._tdgp != null);
     const chunks = layer2._tdgp.chunks;
     const paradeIdx = chunks.findIndex(
       (c: Chunk, i: number) =>
-        c.chunkType === "tdmn" &&
-        getMember(c, "value", null) === "ADBE Mask Parade" &&
-        !c.synthetic,
+        c.chunkType === "tdmn" && getMember(c, "value", null) === "ADBE Mask Parade" && !c.synthetic,
     );
     const transformIdx = chunks.findIndex(
       (c: Chunk, i: number) => c.chunkType === "tdmn" && getMember(c, "value", null) === "ADBE Transform Group",
@@ -1615,9 +1780,7 @@ describe("TestAddProperty", () => {
     expect(maskPath.value instanceof Shape).toBe(true);
     expect(maskPath.value.vertices.length).toBe(4);
     assert(mask._tdgp != null);
-    expect(
-      mask._tdgp.chunks.filter((c: Chunk) => getMember(c, "value", null) === "ADBE Mask Shape").length,
-    ).toBe(1);
+    expect(mask._tdgp.chunks.filter((c: Chunk) => getMember(c, "value", null) === "ADBE Mask Shape").length).toBe(1);
     const out = tmpPath.div("out.aep");
     app.project.save(out);
     const m2 = asInstance(parseAep(out).project.compositions[0].layers[0].masks, PropertyGroup).properties.at(-1);
@@ -1645,7 +1808,17 @@ describe("TestAddProperty", () => {
     assert(mask instanceof MaskPropertyGroup);
     const maskPath = mask.property("ADBE Mask Shape");
     assert(maskPath instanceof Property);
-    maskPath.value = new Shape([[10.0, 10.0], [50.0, 10.0], [50.0, 50.0], [10.0, 50.0]], null, null, { closed: true });
+    maskPath.value = new Shape(
+      [
+        [10.0, 10.0],
+        [50.0, 10.0],
+        [50.0, 50.0],
+        [10.0, 50.0],
+      ],
+      null,
+      null,
+      { closed: true },
+    );
     expect(mask.rotoBezier).toBe(false);
     const out = tmpPath.div("plain_path.aep");
     app.project.save(out);
@@ -1692,9 +1865,7 @@ describe("TestAddProperty", () => {
     mask.rotoBezier = false;
     expect(mask.rotoBezier).toBe(false);
     assert(mask._tdgp != null);
-    expect(
-      mask._tdgp.chunks.some((c: Chunk) => getMember(c, "value", null) === "ADBE Mask Shape"),
-    ).toBe(false);
+    expect(mask._tdgp.chunks.some((c: Chunk) => getMember(c, "value", null) === "ADBE Mask Shape")).toBe(false);
   });
 
   test("test_add_property_invalid_name_raises", () => {
@@ -1702,9 +1873,13 @@ describe("TestAddProperty", () => {
     const app = parseAep(AEP);
     const layer = app.project.compositions[0].layers[0];
     assert(layer.masks != null);
-    raises(ValueError, () => {
-      asInstance(layer.masks, PropertyGroup).addProperty("Not A Property");
-    }, "Cannot add property");
+    raises(
+      ValueError,
+      () => {
+        asInstance(layer.masks, PropertyGroup).addProperty("Not A Property");
+      },
+      "Cannot add property",
+    );
   });
 
   test("test_add_property_non_indexed_raises", () => {
@@ -1713,9 +1888,13 @@ describe("TestAddProperty", () => {
     const layer = app.project.compositions[0].layers[0];
     const transform = layer.property("ADBE Transform Group");
     assert(transform instanceof PropertyGroup);
-    raises(ValueError, () => {
-      transform.addProperty("ADBE Mask Atom");
-    }, "Cannot add property");
+    raises(
+      ValueError,
+      () => {
+        transform.addProperty("ADBE Mask Atom");
+      },
+      "Cannot add property",
+    );
   });
 
   test("test_add_dropdown_control", () => {
@@ -1732,7 +1911,12 @@ describe("TestAddProperty", () => {
     expect(fx.name).toBe("Dropdown Menu Control");
     expect(fx.matchName.startsWith("Pseudo/@@")).toBe(true);
     expect(fx.matchName.length).toBe("Pseudo/@@".length + 22);
-    expect(valueEquals(fx.properties.map((c: Property | PropertyGroup) => c.name), ["Menu", "Compositing Options"])).toBe(true);
+    expect(
+      valueEquals(
+        fx.properties.map((c: Property | PropertyGroup) => c.name),
+        ["Menu", "Compositing Options"],
+      ),
+    ).toBe(true);
     const menu = fx.properties[0];
     assert(menu instanceof Property);
     expect(menu.value).toBe(1);
@@ -1814,7 +1998,10 @@ describe("TestSetPropertyParameters", () => {
     app.project.save(out);
     const layer2 = parseAep(out).project.compositions[0].layers[0];
     assert(layer2.effects != null);
-    const fx2 = asInstance(_next(layer2.effects.properties, (e) => e.matchName === fx.matchName), PropertyGroup);
+    const fx2 = asInstance(
+      _next(layer2.effects.properties, (e) => e.matchName === fx.matchName),
+      PropertyGroup,
+    );
     const menu2 = asInstance(fx2.properties[0], Property);
     expect(valueEquals(menu2.propertyParameters, ITEMS)).toBe(true);
     expect(menu2.nbOptions).toBe(5);
@@ -1827,33 +2014,37 @@ describe("TestSetPropertyParameters", () => {
     const layer = app.project.compositions[0].layers[0];
     assert(layer.effects != null);
     const blur = asInstance(layer.effects.properties[0], PropertyGroup);
-    const blurDims = asInstance(_next(blur.properties, (p) => p.name === "Blur Dimensions"), Property);
+    const blurDims = asInstance(
+      _next(blur.properties, (p) => p.name === "Blur Dimensions"),
+      Property,
+    );
     assert(blurDims.propertyParameters != null);
-    raises(ValueError, () => {
-      blurDims.propertyParameters = ["A", "B"];
-    }, "Dropdown Menu Control");
+    raises(
+      ValueError,
+      () => {
+        blurDims.propertyParameters = ["A", "B"];
+      },
+      "Dropdown Menu Control",
+    );
   });
 
   test("test_regular_property_raises", () => {
     const app = parseAep(AEP);
     const layer = app.project.compositions[0].layers[0];
     const opacity = layer.transform.property("ADBE Opacity");
-    raises(ValueError, () => {
-      opacity.propertyParameters = ["A", "B"];
-    }, "Dropdown Menu Control");
+    raises(
+      ValueError,
+      () => {
+        opacity.propertyParameters = ["A", "B"];
+      },
+      "Dropdown Menu Control",
+    );
   });
 
   test("test_invalid_items_raise", () => {
     const app = parseAep(AEP);
     const [, menu] = _menu(app);
-    const bads: (string[] | string)[] = [
-      [],
-      ["ok", ""],
-      ["dup", "dup"],
-      ["back\\slash"],
-      ["pi|pe"],
-      "not a list",
-    ];
+    const bads: (string[] | string)[] = [[], ["ok", ""], ["dup", "dup"], ["back\\slash"], ["pi|pe"], "not a list"];
     for (const bad of bads) {
       raises(ValueError, () => {
         // @ts-expect-error "not a list" is a string, not string[]; the setter must raise ValueError at runtime
@@ -1899,7 +2090,12 @@ describe("TestAddEffect", () => {
     assert(layer.effects != null);
     const fx = asInstance(layer.effects, PropertyGroup).addProperty("Slider Control");
     assert(fx instanceof PropertyGroup);
-    expect(valueEquals(fx.properties.map((c: Property | PropertyGroup) => c.name), ["Slider", "Compositing Options"])).toBe(true);
+    expect(
+      valueEquals(
+        fx.properties.map((c: Property | PropertyGroup) => c.name),
+        ["Slider", "Compositing Options"],
+      ),
+    ).toBe(true);
     const slider = fx.properties[0];
     assert(slider instanceof Property);
     expect(slider.value).toBe(0.0);
@@ -1946,14 +2142,17 @@ describe("TestAddEffect", () => {
     app.project.save(out);
     const layer2 = parseAep(out).project.compositions[0].layers[0];
     assert(layer2.effects != null);
-    expect(valueEquals(asInstance(layer2.effects, PropertyGroup).properties.map((e: Property | PropertyGroup) => e.name), ["Slider Control"])).toBe(true);
+    expect(
+      valueEquals(
+        asInstance(layer2.effects, PropertyGroup).properties.map((e: Property | PropertyGroup) => e.name),
+        ["Slider Control"],
+      ),
+    ).toBe(true);
     assert(layer2._tdgp != null);
     const chunks = layer2._tdgp.chunks;
     const paradeIdx = chunks.findIndex(
       (c: Chunk, i: number) =>
-        c.chunkType === "tdmn" &&
-        getMember(c, "value", null) === "ADBE Effect Parade" &&
-        !c.synthetic,
+        c.chunkType === "tdmn" && getMember(c, "value", null) === "ADBE Effect Parade" && !c.synthetic,
     );
     const transformIdx = chunks.findIndex(
       (c: Chunk, i: number) => c.chunkType === "tdmn" && getMember(c, "value", null) === "ADBE Transform Group",
@@ -1989,10 +2188,12 @@ describe("TestAddEffect", () => {
     app.project.save(out);
     const layer2 = parseAep(out).project.compositions[0].layers[0];
     assert(layer2.effects != null);
-    expect(valueEquals(asInstance(layer2.effects, PropertyGroup).properties.map((e: Property | PropertyGroup) => e.name), [
-      "Slider Control",
-      "Color Control",
-    ])).toBe(true);
+    expect(
+      valueEquals(
+        asInstance(layer2.effects, PropertyGroup).properties.map((e: Property | PropertyGroup) => e.name),
+        ["Slider Control", "Color Control"],
+      ),
+    ).toBe(true);
     const slider = asInstance(layer2.effects.properties[0], PropertyGroup).properties[0];
     assert(slider instanceof Property);
     expect(slider.value).toBe(0.0);
@@ -2018,11 +2219,12 @@ describe("TestAddEffect", () => {
     app.project.save(out);
     const layer2 = parseAep(out).project.compositions[0].layers[0];
     assert(layer2.effects != null);
-    expect(valueEquals(asInstance(layer2.effects, PropertyGroup).properties.map((e: Property | PropertyGroup) => e.name), [
-      "Slider Control",
-      "Color Control",
-      "Slider Control 2",
-    ])).toBe(true);
+    expect(
+      valueEquals(
+        asInstance(layer2.effects, PropertyGroup).properties.map((e: Property | PropertyGroup) => e.name),
+        ["Slider Control", "Color Control", "Slider Control 2"],
+      ),
+    ).toBe(true);
   });
 
   test("test_add_effect_then_set_value", () => {
@@ -2079,7 +2281,10 @@ describe("TestAddEffect", () => {
         Bytes.fromHex(skeleton["part"]),
         { tdsnName: "-_0_/-", timeBase: 24576, layerId: 1 },
       );
-      const pgui = asInstance(_next(sspc.chunks, (c) => c.chunkType === "pgui"), PguiChunk);
+      const pgui = asInstance(
+        _next(sspc.chunks, (c) => c.chunkType === "pgui"),
+        PguiChunk,
+      );
       guids.push(pgui.guid);
     }
     expect(valueEquals(guids[0], b("\x00".repeat(16)))).toBe(true);
@@ -2119,7 +2324,13 @@ describe("TestBakedBuiltinEffects", () => {
     // A second instance gets AE's numbered name.
     expect(parade.addProperty("Transform").name).toBe("Transform 2");
 
-    asInstance(effect.property("Position"), Property).setValuesAtTimes([0.0, 1.0], [[0.0, 0.0], [10.0, 5.0]]);
+    asInstance(effect.property("Position"), Property).setValuesAtTimes(
+      [0.0, 1.0],
+      [
+        [0.0, 0.0],
+        [10.0, 5.0],
+      ],
+    );
     asInstance(effect.property("Anchor Point"), Property).value = [0.0, 0.0];
 
     const out = tmpPath.div("out.aep");
@@ -2185,12 +2396,13 @@ describe("TestSynthesizedEffectParamWrites", () => {
     expect(valueEquals(getOrThrow(seen, PropertyControlType.TWO_D), new Set([0x0f]))).toBe(true);
     expect(valueEquals(getOrThrow(seen, PropertyControlType.COLOR), new Set([0x07]))).toBe(true);
     for (const [control, flags] of seen) {
-      if (
-        contains([PropertyControlType.TWO_D, PropertyControlType.THREE_D, PropertyControlType.COLOR], control)
-      ) {
+      if (contains([PropertyControlType.TWO_D, PropertyControlType.THREE_D, PropertyControlType.COLOR], control)) {
         continue;
       }
-      assert([...flags].every((f) => [0x00, 0x01].includes(f)), `${String([control, flags])}`);
+      assert(
+        [...flags].every((f) => [0x00, 0x01].includes(f)),
+        `${String([control, flags])}`,
+      );
     }
   });
 
@@ -2198,14 +2410,20 @@ describe("TestSynthesizedEffectParamWrites", () => {
     const tmpPath = makeTmpPath();
     const app = parseAep(AEP);
     const layer = getLayer(app.project, "effect_2dPoint");
-    const prop = asInstance(asInstance(asInstance(layer.effects, PropertyGroup).properties[0], PropertyGroup).property("Flare Center"), Property);
+    const prop = asInstance(
+      asInstance(asInstance(layer.effects, PropertyGroup).properties[0], PropertyGroup).property("Flare Center"),
+      Property,
+    );
     expect(prop._isLive()).toBe(false);
     prop.value = [10.0, 20.0];
 
     const out = tmpPath.div("out.aep");
     app.project.save(out);
     const reloaded = getLayer(parseAep(out).project, "effect_2dPoint");
-    const written = asInstance(asInstance(asInstance(reloaded.effects, PropertyGroup).properties[0], PropertyGroup).property("Flare Center"), Property);
+    const written = asInstance(
+      asInstance(asInstance(reloaded.effects, PropertyGroup).properties[0], PropertyGroup).property("Flare Center"),
+      Property,
+    );
     expect(written._isLive()).toBe(true);
     expect(valueEquals(written.value, [10.0, 20.0])).toBe(true);
     // Bit 1 is what makes AE read the value instead of the parT default.
@@ -2216,7 +2434,10 @@ describe("TestSynthesizedEffectParamWrites", () => {
     const tmpPath = makeTmpPath();
     const app = parseAep(AEP);
     const layer = getLayer(app.project, "effect_3dPoint");
-    const effect = asInstance(_next(asInstance(layer.effects, PropertyGroup).properties, (e) => e.name === "CC Sphere"), PropertyGroup);
+    const effect = asInstance(
+      _next(asInstance(layer.effects, PropertyGroup).properties, (e) => e.name === "CC Sphere"),
+      PropertyGroup,
+    );
     const prop = asInstance(effect.property("Light Color"), Property);
     expect(prop._isLive()).toBe(false);
     prop.value = [1.0, 0.0, 0.0, 1.0];
@@ -2225,7 +2446,10 @@ describe("TestSynthesizedEffectParamWrites", () => {
     app.project.save(out);
     const reloaded = getLayer(parseAep(out).project, "effect_3dPoint");
     const written = asInstance(
-      asInstance(_next(asInstance(reloaded.effects, PropertyGroup).properties, (e) => e.name === "CC Sphere"), PropertyGroup).property("Light Color"),
+      asInstance(
+        _next(asInstance(reloaded.effects, PropertyGroup).properties, (e) => e.name === "CC Sphere"),
+        PropertyGroup,
+      ).property("Light Color"),
       Property,
     );
     expect(written._isLive()).toBe(true);
@@ -2240,7 +2464,10 @@ describe("TestSynthesizedEffectParamWrites", () => {
      */
     const app = parseAep(AEP);
     const layer = getLayer(app.project, "effect_3dPoint");
-    const effect = asInstance(_next(asInstance(layer.effects, PropertyGroup).properties, (e) => e.name === "CC Sphere"), PropertyGroup);
+    const effect = asInstance(
+      _next(asInstance(layer.effects, PropertyGroup).properties, (e) => e.name === "CC Sphere"),
+      PropertyGroup,
+    );
     const prop = asInstance(effect.property("Light Color"), Property);
     expect(prop._tdb4._spatialStaticFlags).toBe(0x07);
     expect(prop.isSpatial).toBe(true);
@@ -2261,11 +2488,7 @@ describe("TestSynthesizedEffectParamWrites", () => {
     let prop: Property | null = null;
     find_prop: for (const layer of project.compositions[0].layers) {
       for (const p of layer._leafProperties()) {
-        if (
-          p._isInEffect() &&
-          p._propertyControlType === PropertyControlType.COLOR &&
-          truthy(p.keyframes)
-        ) {
+        if (p._isInEffect() && p._propertyControlType === PropertyControlType.COLOR && truthy(p.keyframes)) {
           prop = p;
           break find_prop;
         }
@@ -2363,7 +2586,8 @@ describe("TestAddInstalledEffect", () => {
     const effect = layer.property("ADBE Effect Parade").addProperty("ADBE Gaussian Blur 2");
     assert(effect instanceof PropertyGroup);
     const stamped = [...effect.properties].filter(
-      (child): child is Property => child instanceof Property && getMember(child, "_tdb4", null) != null && truthy(child._tdb4._timeBase),
+      (child): child is Property =>
+        child instanceof Property && getMember(child, "_tdb4", null) != null && truthy(child._tdb4._timeBase),
     );
     assert(truthy(stamped), "expected at least one stamped tdb4 in the clone");
     for (const child of stamped) {
@@ -2419,10 +2643,12 @@ describe("TestAddInstalledEffect", () => {
     app.project.save(out);
     const layer2 = getLayer(parseAep(out).project, "effect_2dPoint");
     assert(layer2.effects != null);
-    expect(valueEquals([...layer2.effects].map((e) => e.matchName), [
-      "ADBE Lens Flare",
-      "ADBE Lens Flare",
-    ])).toBe(true);
+    expect(
+      valueEquals(
+        [...layer2.effects].map((e) => e.matchName),
+        ["ADBE Lens Flare", "ADBE Lens Flare"],
+      ),
+    ).toBe(true);
   });
 
   /** The Effect Parade's direct chunks, `engv` with its value. */
@@ -2455,13 +2681,9 @@ describe("TestAddInstalledEffect", () => {
     app.project.save(out);
 
     const layer2 = getLayer(parseAep(out).project, "effect_puppet");
-    expect(valueEquals(_paradeLayout(layer2), [
-      "ADBE FreePin3",
-      "engv 2",
-      "ADBE FreePin3",
-      "engv 2",
-      "ADBE Group End",
-    ])).toBe(true);
+    expect(
+      valueEquals(_paradeLayout(layer2), ["ADBE FreePin3", "engv 2", "ADBE FreePin3", "engv 2", "ADBE Group End"]),
+    ).toBe(true);
   });
 
   test("test_removed_puppet_takes_its_engine_version", () => {
@@ -2469,11 +2691,7 @@ describe("TestAddInstalledEffect", () => {
     const layer = getLayer(app.project, "effect_puppet");
     assert(layer.effects != null);
     asInstance(layer.effects, PropertyGroup).addProperty("ADBE FreePin3").remove();
-    expect(valueEquals(_paradeLayout(layer), [
-      "ADBE FreePin3",
-      "engv 2",
-      "ADBE Group End",
-    ])).toBe(true);
+    expect(valueEquals(_paradeLayout(layer), ["ADBE FreePin3", "engv 2", "ADBE Group End"])).toBe(true);
   });
 
   test("test_add_installed_effect_uses_pard_defaults_not_def_values", () => {
@@ -2489,8 +2707,14 @@ describe("TestAddInstalledEffect", () => {
     const app = parseAep(SAMPLES_DIR.div("2_gaussian_20_30.aep"));
     const layer = app.project.compositions[0].layers[0];
     assert(layer.effects != null);
-    const added = asInstance(asInstance(layer.effects, PropertyGroup).addProperty("ADBE Gaussian Blur 2"), PropertyGroup);
-    const blur = asInstance(_next(added.properties, (p) => p.matchName === "ADBE Gaussian Blur 2-0001"), Property);
+    const added = asInstance(
+      asInstance(layer.effects, PropertyGroup).addProperty("ADBE Gaussian Blur 2"),
+      PropertyGroup,
+    );
+    const blur = asInstance(
+      _next(added.properties, (p) => p.matchName === "ADBE Gaussian Blur 2-0001"),
+      Property,
+    );
     expect(blur.value).toBe(blur.defaultValue);
     expect(blur.defaultValue).toBe(25.0);
   });
@@ -2507,8 +2731,14 @@ describe("TestAddInstalledEffect", () => {
     const app = parseAep(SAMPLES_DIR.div("2_gaussian_animated.aep"));
     const layer = app.project.compositions[0].layers[0];
     assert(layer.effects != null);
-    const added = asInstance(asInstance(layer.effects, PropertyGroup).addProperty("ADBE Gaussian Blur 2"), PropertyGroup);
-    const blur = asInstance(_next(added.properties, (p) => p.matchName === "ADBE Gaussian Blur 2-0001"), Property);
+    const added = asInstance(
+      asInstance(layer.effects, PropertyGroup).addProperty("ADBE Gaussian Blur 2"),
+      PropertyGroup,
+    );
+    const blur = asInstance(
+      _next(added.properties, (p) => p.matchName === "ADBE Gaussian Blur 2-0001"),
+      Property,
+    );
     expect(blur.keyframes.length).toBe(0);
     expect(blur.value).toBe(blur.defaultValue);
     expect(blur.defaultValue).toBe(25.0);
@@ -2528,8 +2758,14 @@ describe("TestAddInstalledEffect", () => {
     const layer = app.project.compositions[0].layers[0];
     assert(layer.effects != null);
     const existing = [...layer.effects].filter((e) => e.matchName === "ADBE Gaussian Blur 2");
-    const added = asInstance(asInstance(layer.effects, PropertyGroup).addProperty("ADBE Gaussian Blur 2"), PropertyGroup);
-    const blur = asInstance(_next(added.properties, (p) => p.matchName === "ADBE Gaussian Blur 2-0001"), Property);
+    const added = asInstance(
+      asInstance(layer.effects, PropertyGroup).addProperty("ADBE Gaussian Blur 2"),
+      PropertyGroup,
+    );
+    const blur = asInstance(
+      _next(added.properties, (p) => p.matchName === "ADBE Gaussian Blur 2-0001"),
+      Property,
+    );
     expect(blur.expression).toBe("");
     expect(blur.expressionEnabled).toBe(false);
     expect(blur.keyframes.length).toBe(0);
@@ -2554,8 +2790,14 @@ describe("TestAddInstalledEffect", () => {
     app.project.save(out);
     const layer2 = parseAep(out).project.compositions[0].layers[0];
     assert(layer2.effects != null);
-    const added = asInstance([...layer2.effects].filter((e) => e.matchName === "ADBE Gaussian Blur 2").at(-1), PropertyGroup);
-    const blur = asInstance(_next(added.properties, (p) => p.matchName === "ADBE Gaussian Blur 2-0001"), Property);
+    const added = asInstance(
+      [...layer2.effects].filter((e) => e.matchName === "ADBE Gaussian Blur 2").at(-1),
+      PropertyGroup,
+    );
+    const blur = asInstance(
+      _next(added.properties, (p) => p.matchName === "ADBE Gaussian Blur 2-0001"),
+      Property,
+    );
     expect(blur.value).toBe(25.0);
   });
 });
@@ -2605,51 +2847,62 @@ describe("TestAddTextSelector", () => {
     const sel = _selectors(parseAep(AEP));
     const rng = sel.addProperty("ADBE Text Selector");
     assert(rng instanceof PropertyGroup);
-    expect(valueEquals(rng.properties.map((c: Property | PropertyGroup) => c.name), [
-      "Start",
-      "End",
-      "Offset",
-      "Start",
-      "End",
-      "Offset",
-      "Advanced",
-    ])).toBe(true);
+    expect(
+      valueEquals(
+        rng.properties.map((c: Property | PropertyGroup) => c.name),
+        ["Start", "End", "Offset", "Start", "End", "Offset", "Advanced"],
+      ),
+    ).toBe(true);
     const advanced = rng.property("ADBE Text Range Advanced");
     assert(advanced instanceof PropertyGroup);
-    expect(valueEquals(advanced.properties.map((c: Property | PropertyGroup) => c.name), [
-      "Units",
-      "Based On",
-      "Mode",
-      "Amount",
-      "Shape",
-      "Smoothness",
-      "Ease High",
-      "Ease Low",
-      "Randomize Order",
-      "Random Seed",
-    ])).toBe(true);
+    expect(
+      valueEquals(
+        advanced.properties.map((c: Property | PropertyGroup) => c.name),
+        [
+          "Units",
+          "Based On",
+          "Mode",
+          "Amount",
+          "Shape",
+          "Smoothness",
+          "Ease High",
+          "Ease Low",
+          "Randomize Order",
+          "Random Seed",
+        ],
+      ),
+    ).toBe(true);
   });
-
 
   test("test_wiggly_and_expression_children", () => {
     const sel = _selectors(parseAep(AEP));
     const wiggly = sel.addProperty("ADBE Text Wiggly Selector");
     assert(wiggly instanceof PropertyGroup);
-    expect(valueEquals(wiggly.properties.map((c: Property | PropertyGroup) => c.name), [
-      "Mode",
-      "Max Amount",
-      "Min Amount",
-      "Based On",
-      "Wiggles/Second",
-      "Correlation",
-      "Temporal Phase",
-      "Spatial Phase",
-      "Lock Dimensions",
-      "Random Seed",
-    ])).toBe(true);
+    expect(
+      valueEquals(
+        wiggly.properties.map((c: Property | PropertyGroup) => c.name),
+        [
+          "Mode",
+          "Max Amount",
+          "Min Amount",
+          "Based On",
+          "Wiggles/Second",
+          "Correlation",
+          "Temporal Phase",
+          "Spatial Phase",
+          "Lock Dimensions",
+          "Random Seed",
+        ],
+      ),
+    ).toBe(true);
     const expr = sel.addProperty("ADBE Text Expressible Selector");
     assert(expr instanceof PropertyGroup);
-    expect(valueEquals(expr.properties.map((c: Property | PropertyGroup) => c.name), ["Based On", "Amount"])).toBe(true);
+    expect(
+      valueEquals(
+        expr.properties.map((c: Property | PropertyGroup) => c.name),
+        ["Based On", "Amount"],
+      ),
+    ).toBe(true);
     const amount = expr.properties[1];
     assert(amount instanceof Property);
     expect(valueEquals(amount.value, [100.0, 100.0, 100.0])).toBe(true);
@@ -2677,12 +2930,17 @@ describe("TestAddTextSelector", () => {
     const out = tmpPath.div("out.aep");
     app.project.save(out);
     const sel2 = _selectors(parseAep(out));
-    expect(valueEquals(sel2.properties.map((s: Property | PropertyGroup) => [s.name, s.matchName]), [
-      ["Range Selector 1", "ADBE Text Selector"],
-      ["Wiggly Selector 1", "ADBE Text Wiggly Selector"],
-      ["Expression Selector 1", "ADBE Text Expressible Selector"],
-      ["Range Selector 2", "ADBE Text Selector"],
-    ])).toBe(true);
+    expect(
+      valueEquals(
+        sel2.properties.map((s: Property | PropertyGroup) => [s.name, s.matchName]),
+        [
+          ["Range Selector 1", "ADBE Text Selector"],
+          ["Wiggly Selector 1", "ADBE Text Wiggly Selector"],
+          ["Expression Selector 1", "ADBE Text Expressible Selector"],
+          ["Range Selector 2", "ADBE Text Selector"],
+        ],
+      ),
+    ).toBe(true);
   });
 
   test("test_selectors_removable", () => {
@@ -2691,7 +2949,12 @@ describe("TestAddTextSelector", () => {
     sel.addProperty("ADBE Text Wiggly Selector");
     expect(sel.properties.length).toBe(2);
     sel.properties[1].remove();
-    expect(valueEquals(sel.properties.map((s: Property | PropertyGroup) => s.matchName), ["ADBE Text Selector"])).toBe(true);
+    expect(
+      valueEquals(
+        sel.properties.map((s: Property | PropertyGroup) => s.matchName),
+        ["ADBE Text Selector"],
+      ),
+    ).toBe(true);
   });
 });
 
@@ -2727,10 +2990,15 @@ describe("TestAddTextAnimator", () => {
     expect(a1.name).toBe("Animator 1");
     expect(a1.canSetEnabled).toBe(true);
     expect(a1.isModified).toBe(false);
-    expect(valueEquals(a1.properties.map((c: Property | PropertyGroup) => [c.name, c.matchName]), [
-      ["Selectors", "ADBE Text Selectors"],
-      ["Properties", "ADBE Text Animator Properties"],
-    ])).toBe(true);
+    expect(
+      valueEquals(
+        a1.properties.map((c: Property | PropertyGroup) => [c.name, c.matchName]),
+        [
+          ["Selectors", "ADBE Text Selectors"],
+          ["Properties", "ADBE Text Animator Properties"],
+        ],
+      ),
+    ).toBe(true);
     const sel = a1.property("ADBE Text Selectors");
     assert(sel instanceof PropertyGroup);
     expect(sel.propertyType).toBe(PropertyType.INDEXED_GROUP);
@@ -2767,15 +3035,17 @@ describe("TestAddTextAnimator", () => {
     const summary = anims2.properties.map((child) => {
       const a = asInstance(child, PropertyGroup);
       return [
-      a.name,
-      a.property("ADBE Text Selectors").properties.length,
-      a.property("ADBE Text Animator Properties").properties.length,
+        a.name,
+        a.property("ADBE Text Selectors").properties.length,
+        a.property("ADBE Text Animator Properties").properties.length,
       ];
     });
-    expect(valueEquals(summary, [
-      ["Animator 1", 1, 103],
-      ["Animator 2", 0, 103],
-    ])).toBe(true);
+    expect(
+      valueEquals(summary, [
+        ["Animator 1", 1, 103],
+        ["Animator 2", 0, 103],
+      ]),
+    ).toBe(true);
   });
 });
 
@@ -2928,17 +3198,18 @@ describe("TestAddShapeElement", () => {
     const rect = contents.addProperty("ADBE Vector Shape - Rect");
     assert(rect instanceof PropertyGroup);
     assert(rect._tdgp != null);
-    expect(valueEquals(rect._tdgp.chunks.map((c: Chunk) => truthyOr(getMember(c, "listType", null), c.chunkType)), [
-      "tdsb",
-      "tdsn",
-      "tdmn",
-    ])).toBe(true);
-    expect(valueEquals(rect.properties.map((c: Property | PropertyGroup) => c.name), [
-      "Shape Direction",
-      "Size",
-      "Position",
-      "Roundness",
-    ])).toBe(true);
+    expect(
+      valueEquals(
+        rect._tdgp.chunks.map((c: Chunk) => truthyOr(getMember(c, "listType", null), c.chunkType)),
+        ["tdsb", "tdsn", "tdmn"],
+      ),
+    ).toBe(true);
+    expect(
+      valueEquals(
+        rect.properties.map((c: Property | PropertyGroup) => c.name),
+        ["Shape Direction", "Size", "Position", "Roundness"],
+      ),
+    ).toBe(true);
   });
 
   test("test_add_group_carries_mandatory_subgroups", () => {
@@ -2985,17 +3256,22 @@ describe("TestAddShapeElement", () => {
     const layer2 = _next(comp2.layers, (lyr) => lyr instanceof ShapeLayer);
     const contents2 = layer2.property("ADBE Root Vectors Group");
     assert(contents2 instanceof PropertyGroup);
-    expect(valueEquals(contents2.properties.map((e: Property | PropertyGroup) => e.name), [
-      "Group 1",
-      "Rectangle Path 1",
-      "Fill 1",
-      "Rectangle Path 2",
-    ])).toBe(true);
+    expect(
+      valueEquals(
+        contents2.properties.map((e: Property | PropertyGroup) => e.name),
+        ["Group 1", "Rectangle Path 1", "Fill 1", "Rectangle Path 2"],
+      ),
+    ).toBe(true);
     const group2 = contents2.properties[0];
     assert(group2 instanceof PropertyGroup);
     const inner2 = group2.property("ADBE Vectors Group");
     assert(inner2 instanceof PropertyGroup);
-    expect(valueEquals(inner2.properties.map((e: Property | PropertyGroup) => e.name), ["Polystar Path 1"])).toBe(true);
+    expect(
+      valueEquals(
+        inner2.properties.map((e: Property | PropertyGroup) => e.name),
+        ["Polystar Path 1"],
+      ),
+    ).toBe(true);
   });
 
   test("test_add_fill_then_set_color", () => {
@@ -3025,12 +3301,20 @@ describe("TestAddShapeElement", () => {
 
   test("test_add_to_contents_rejects_non_shape_names", () => {
     const [_app, contents] = _newContents();
-    raises(ValueError, () => {
-      contents.addProperty("ADBE Mask Atom");
-    }, "Cannot add property");
-    raises(ValueError, () => {
-      contents.addProperty("ADBE Slider Control");
-    }, "Cannot add property");
+    raises(
+      ValueError,
+      () => {
+        contents.addProperty("ADBE Mask Atom");
+      },
+      "Cannot add property",
+    );
+    raises(
+      ValueError,
+      () => {
+        contents.addProperty("ADBE Slider Control");
+      },
+      "Cannot add property",
+    );
   });
 
   test("test_filter_children_synthesized", () => {
@@ -3048,19 +3332,24 @@ describe("TestAddShapeElement", () => {
     for (const [matchName, childNames] of expected) {
       const el = contents.addProperty(matchName);
       assert(el instanceof PropertyGroup);
-      expect(valueEquals(el.properties.map((c: Property | PropertyGroup) => c.name), childNames)).toBe(true);
+      expect(
+        valueEquals(
+          el.properties.map((c: Property | PropertyGroup) => c.name),
+          childNames,
+        ),
+      ).toBe(true);
     }
 
     const wiggler = contents.addProperty("ADBE Vector Filter - Wiggler");
     assert(wiggler instanceof PropertyGroup);
     const transform = wiggler.property("ADBE Vector Wiggler Transform");
     assert(transform instanceof PropertyGroup);
-    expect(valueEquals(transform.properties.map((c: Property | PropertyGroup) => c.name), [
-      "Anchor Point",
-      "Position",
-      "Scale",
-      "Rotation",
-    ])).toBe(true);
+    expect(
+      valueEquals(
+        transform.properties.map((c: Property | PropertyGroup) => c.name),
+        ["Anchor Point", "Position", "Scale", "Rotation"],
+      ),
+    ).toBe(true);
     expect(transform.canSetEnabled).toBe(false);
   });
 
@@ -3088,7 +3377,12 @@ describe("TestAddShapeElement", () => {
     const [_app, contents] = _newContents();
     const path = contents.addProperty("ADBE Vector Shape - Group");
     assert(path instanceof PropertyGroup);
-    expect(valueEquals(path.properties.map((c: Property | PropertyGroup) => c.name), ["Shape Direction", "Path"])).toBe(true);
+    expect(
+      valueEquals(
+        path.properties.map((c: Property | PropertyGroup) => c.name),
+        ["Shape Direction", "Path"],
+      ),
+    ).toBe(true);
     const pathProp = path.properties[1];
     assert(pathProp instanceof Property);
     expect(pathProp.isSpatial).toBe(true);
@@ -3122,7 +3416,11 @@ describe("TestAddShapeElement", () => {
     assert(path instanceof PropertyGroup);
     const pathProp = path.property("ADBE Vector Shape");
     assert(pathProp instanceof Property);
-    const tri = [[100.0, 100.0], [300.0, 100.0], [200.0, 280.0]];
+    const tri = [
+      [100.0, 100.0],
+      [300.0, 100.0],
+      [200.0, 280.0],
+    ];
     pathProp.value = new Shape(tri, null, null, { closed: true });
 
     const out = tmpPath.div("path.aep");
@@ -3285,9 +3583,13 @@ describe("TestRoundtripProxyBody", () => {
     const project = parseAep(SAMPLES_DIR.div("2_gaussian.aep")).project;
     const layer = getFirstLayer(project);
     const blur = _findSynthesizedEffectProp(layer, 0, "ADBE Gaussian Blur 2-0001");
-    raises(ValueError, () => {
-      blur.name = "Custom Blur Name";
-    }, "not an indexed group");
+    raises(
+      ValueError,
+      () => {
+        blur.name = "Custom Blur Name";
+      },
+      "not an indexed group",
+    );
   });
 
   test("test_effect_group_name_is_writable", () => {
@@ -3322,9 +3624,13 @@ describe("TestValueValidation", () => {
     _deanimate(opacity);
     expect(opacity.hasMin).toBe(true);
     expect(opacity.minValue).toBe(0);
-    raises(ValueError, () => {
-      opacity.value = -10.0;
-    }, "must be >= 0");
+    raises(
+      ValueError,
+      () => {
+        opacity.value = -10.0;
+      },
+      "must be >= 0",
+    );
   });
 
   test("test_scalar_above_max_raises", () => {
@@ -3336,9 +3642,13 @@ describe("TestValueValidation", () => {
     _deanimate(opacity);
     expect(opacity.hasMax).toBe(true);
     expect(opacity.maxValue).toBe(100);
-    raises(ValueError, () => {
-      opacity.value = 150.0;
-    }, "must be <= 100");
+    raises(
+      ValueError,
+      () => {
+        opacity.value = 150.0;
+      },
+      "must be <= 100",
+    );
   });
 
   test("test_valid_value_accepted", () => {
@@ -3360,9 +3670,13 @@ describe("TestValueValidation", () => {
     assert(position != null);
     _deanimate(position);
     expect(position.dimensions).toBe(3);
-    raises(ValueError, () => {
-      position.value = [100.0, 200.0];
-    }, "expected 3 elements, got 2");
+    raises(
+      ValueError,
+      () => {
+        position.value = [100.0, 200.0];
+      },
+      "expected 3 elements, got 2",
+    );
   });
 
   test("test_list_on_scalar_raises", () => {
@@ -3373,9 +3687,13 @@ describe("TestValueValidation", () => {
     assert(opacity != null);
     _deanimate(opacity);
     expect(opacity.dimensions).toBe(1);
-    raises(TypeError, () => {
-      opacity.value = [50.0, 60.0];
-    }, "expected a number, got Array");
+    raises(
+      TypeError,
+      () => {
+        opacity.value = [50.0, 60.0];
+      },
+      "expected a number, got Array",
+    );
   });
 
   test("test_scalar_on_multidim_raises", () => {
@@ -3386,9 +3704,13 @@ describe("TestValueValidation", () => {
     assert(position != null);
     _deanimate(position);
     expect(position.dimensions).toBe(3);
-    raises(TypeError, () => {
-      position.value = 42.0;
-    }, "expected a sequence of 3 elements");
+    raises(
+      TypeError,
+      () => {
+        position.value = 42.0;
+      },
+      "expected a sequence of 3 elements",
+    );
   });
 });
 
@@ -3577,11 +3899,7 @@ describe("TestIsInterpolationTypeValid", () => {
    * out-of-enum argument raises instead of returning False.
    */
 
-  const ALL = [
-    KeyframeInterpolationType.LINEAR,
-    KeyframeInterpolationType.BEZIER,
-    KeyframeInterpolationType.HOLD,
-  ];
+  const ALL = [KeyframeInterpolationType.LINEAR, KeyframeInterpolationType.BEZIER, KeyframeInterpolationType.HOLD];
 
   /** Method `_table` in the Python class. */
   function _table(prop: Property): boolean[] {
@@ -3591,13 +3909,7 @@ describe("TestIsInterpolationTypeValid", () => {
   test("test_transform_properties_accept_all", () => {
     const project = parseAep(SAMPLES_DIR.div("is_modified_false.aep")).project;
     const layer = project.compositions[0].layers[0];
-    for (const match of [
-      "ADBE Position",
-      "ADBE Scale",
-      "ADBE Rotate Z",
-      "ADBE Opacity",
-      "ADBE Anchor Point",
-    ]) {
+    for (const match of ["ADBE Position", "ADBE Scale", "ADBE Rotate Z", "ADBE Opacity", "ADBE Anchor Point"]) {
       const prop = layer.transform.property(match);
       assert(prop instanceof Property);
       expect(valueEquals(_table(prop), [true, true, true])).toBe(true);
@@ -3614,9 +3926,10 @@ describe("TestIsInterpolationTypeValid", () => {
 
   test("test_source_text_is_hold_only", () => {
     const project = parseAep(SAMPLES_DIR.parent.div("text", "text_ranges.aep")).project;
-    const layer = asInstance(project.compositions
-      .flatMap((comp: CompItem) => comp.layers)
-      .find((ly: Layer) => ly instanceof TextLayer), TextLayer);
+    const layer = asInstance(
+      project.compositions.flatMap((comp: CompItem) => comp.layers).find((ly: Layer) => ly instanceof TextLayer),
+      TextLayer,
+    );
     const prop = layer.property("ADBE Text Properties").property("ADBE Text Document");
     assert(prop instanceof Property);
     expect(valueEquals(_table(prop), [false, false, true])).toBe(true);
@@ -3637,16 +3950,28 @@ describe("TestIsInterpolationTypeValid", () => {
     const parade = layer.effects;
     assert(parade != null);
 
-    const slider = asInstance(asInstance(parade.addProperty("ADBE Slider Control"), PropertyGroup).properties[0], Property);
+    const slider = asInstance(
+      asInstance(parade.addProperty("ADBE Slider Control"), PropertyGroup).properties[0],
+      Property,
+    );
     expect(valueEquals(_table(slider), [true, true, true])).toBe(true);
 
-    const checkbox = asInstance(asInstance(parade.addProperty("ADBE Checkbox Control"), PropertyGroup).properties[0], Property);
+    const checkbox = asInstance(
+      asInstance(parade.addProperty("ADBE Checkbox Control"), PropertyGroup).properties[0],
+      Property,
+    );
     expect(valueEquals(_table(checkbox), [false, false, true])).toBe(true);
 
-    const dropdown = asInstance(asInstance(parade.addProperty("ADBE Dropdown Control"), PropertyGroup).properties[0], Property);
+    const dropdown = asInstance(
+      asInstance(parade.addProperty("ADBE Dropdown Control"), PropertyGroup).properties[0],
+      Property,
+    );
     expect(valueEquals(_table(dropdown), [false, false, true])).toBe(true);
 
-    const layerCtl = asInstance(asInstance(parade.addProperty("ADBE Layer Control"), PropertyGroup).properties[0], Property);
+    const layerCtl = asInstance(
+      asInstance(parade.addProperty("ADBE Layer Control"), PropertyGroup).properties[0],
+      Property,
+    );
     expect(valueEquals(_table(layerCtl), [false, false, false])).toBe(true);
   });
 
@@ -3691,9 +4016,13 @@ describe("TestKeyframeInterpolationTypeGuard", () => {
 
   test.each(holdOnlyRows)("test_hold_only_property_rejects_non_hold[%#]", (side, interp) => {
     const kf = _markerKeyframe();
-    raises(ValueError, () => {
-      setMember(kf, side, interp);
-    }, "not a valid interpolation type");
+    raises(
+      ValueError,
+      () => {
+        setMember(kf, side, interp);
+      },
+      "not a valid interpolation type",
+    );
     expect(getMember(kf, side)).toBe(KeyframeInterpolationType.HOLD);
   });
 
@@ -3873,10 +4202,7 @@ const _AE_STATIC = new Map<string, [string, string]>([
         "0000000000000000000000000101000000000000000000000000000000000000",
         "00000000000000000000000000000000000000000000000000000000",
       ].join(""),
-      [
-        "3fe999999999999a000000000000000000000000000000000000000000000000",
-        "0000000000000000",
-      ].join(""),
+      ["3fe999999999999a000000000000000000000000000000000000000000000000", "0000000000000000"].join(""),
     ],
   ],
   [
@@ -3921,7 +4247,7 @@ describe("TestDeanimateMatchesAe", () => {
 
   /** Method `_prop` in the Python class. */
   function _prop(project: Project, path: string[]): Property {
-    const layer =_next( getComp(project, "type_camera").layers, (lyr) => lyr.name === "XF");
+    const layer = _next(getComp(project, "type_camera").layers, (lyr) => lyr.name === "XF");
     let prop: Property | PropertyGroup = layer;
     for (const matchName of path) {
       prop = asInstance(prop, PropertyGroup).property(matchName);
@@ -3952,11 +4278,9 @@ describe("TestDeanimateMatchesAe", () => {
      * bit, value-hint/cvot bytes and category of the animated state).
      */
     const project = parseProjectFresh(LAYER_SAMPLES_DIR.div("shape_source_rect.aep"));
-    const layer =_next( getComp(project, "SHAPE_RECTS").layers, (lyr) => lyr.name === "animated_rect");
+    const layer = _next(getComp(project, "SHAPE_RECTS").layers, (lyr) => lyr.name === "animated_rect");
     const group = layer.property("ADBE Root Vectors Group").property("ADBE Vector Group");
-    const pos = group
-      .property("ADBE Vector Transform Group")
-      .property("ADBE Vector Position");
+    const pos = group.property("ADBE Vector Transform Group").property("ADBE Vector Position");
     const fill = group
       .property("ADBE Vectors Group")
       .property("ADBE Vector Graphic - Fill")
@@ -3972,11 +4296,9 @@ describe("TestDeanimateMatchesAe", () => {
     }
     const out = tmpPath.div("shape_deanimated.aep");
     project.save(out);
-    const layer2 =_next( getComp(parseAep(out).project, "SHAPE_RECTS").layers, (lyr) => lyr.name === "animated_rect");
+    const layer2 = _next(getComp(parseAep(out).project, "SHAPE_RECTS").layers, (lyr) => lyr.name === "animated_rect");
     const group2 = layer2.property("ADBE Root Vectors Group").property("ADBE Vector Group");
-    const pos2 = group2
-      .property("ADBE Vector Transform Group")
-      .property("ADBE Vector Position");
+    const pos2 = group2.property("ADBE Vector Transform Group").property("ADBE Vector Position");
     const fill2 = group2
       .property("ADBE Vectors Group")
       .property("ADBE Vector Graphic - Fill")
@@ -4060,9 +4382,13 @@ describe("TestExpressionEnabledGuard", () => {
     const prop = project.compositions[0].layers[0].transform.property("ADBE Opacity");
     expect(prop.expression).toBe("");
 
-    raises(ValueError, () => {
-      prop.expressionEnabled = true;
-    }, "no expression to enable");
+    raises(
+      ValueError,
+      () => {
+        prop.expressionEnabled = true;
+      },
+      "no expression to enable",
+    );
   });
 
   test("test_the_rejected_write_leaves_the_byte_alone", () => {
@@ -4087,9 +4413,7 @@ describe("TestExpressionEnabledGuard", () => {
 
     const out = tmpPath.div("modified.aep");
     project.save(out);
-    const prop2 = parseAep(out).project.compositions[0].layers[0].transform.property(
-      "ADBE Opacity",
-    );
+    const prop2 = parseAep(out).project.compositions[0].layers[0].transform.property("ADBE Opacity");
     expect(prop2.expression).toBe("value * 2");
     expect(prop2.expressionEnabled).toBe(true);
   });
@@ -4184,7 +4508,9 @@ describe("TestKeyPathlessMask", () => {
   function _maskPath(project: Project): Property<Shape> {
     const comp = getComp(project, "Comp 1");
     const layer = _next(comp.layers, (layer) => layer.name === "Gray Solid 1");
-    return asInstance(asInstance(layer.masks, PropertyGroup).properties[0], MaskPropertyGroup).property("ADBE Mask Shape");
+    return asInstance(asInstance(layer.masks, PropertyGroup).properties[0], MaskPropertyGroup).property(
+      "ADBE Mask Shape",
+    );
   }
 
   test("test_add_key_stores_the_default_rectangle", () => {
@@ -4199,12 +4525,14 @@ describe("TestKeyPathlessMask", () => {
     const reparsed = _maskPath(parseProjectFresh(out));
     expect(reparsed.keyframes.length).toBe(2);
     for (const keyframe of reparsed.keyframes) {
-      expect(valueEquals(keyframe.value.vertices, [
-        [0.0, 0.0],
-        [0.0, 1080.0],
-        [1920.0, 1080.0],
-        [1920.0, 0.0],
-      ])).toBe(true);
+      expect(
+        valueEquals(keyframe.value.vertices, [
+          [0.0, 0.0],
+          [0.0, 1080.0],
+          [1920.0, 1080.0],
+          [1920.0, 0.0],
+        ]),
+      ).toBe(true);
       expect(keyframe.value.closed).toBe(true);
     }
   });
@@ -4214,9 +4542,7 @@ describe("TestKeyPathlessMask", () => {
 function _maskShapeBytes(mask: MaskPropertyGroup): Uint8Array {
   assert(mask._tdgp != null);
   const chunks = mask._tdgp.chunks;
-  const index = chunks.findIndex(
-    (c) => c.chunkType === "tdmn" && getMember(c, "value", null) === "ADBE Mask Shape",
-  );
+  const index = chunks.findIndex((c) => c.chunkType === "tdmn" && getMember(c, "value", null) === "ADBE Mask Shape");
   assert(index >= 0, "StopIteration"); // `next(...)` raises when nothing matches
   return chunks[index + 1].tobytes();
 }
@@ -4228,13 +4554,23 @@ describe("TestMaskLayerSpaceWrites", () => {
    */
 
   const AEP = SAMPLES_DIR.div("mask_layer_space.aep");
-  const _PATH = [[10.0, 20.0], [300.0, 20.0], [300.0, 200.0], [10.0, 200.0]];
+  const _PATH = [
+    [10.0, 20.0],
+    [300.0, 20.0],
+    [300.0, 200.0],
+    [10.0, 200.0],
+  ];
 
   /** Static method `_masks` in the Python class. */
   function _masks(project: Project, layerName: string): Map<string, MaskPropertyGroup> {
     const comp = getComp(project, "MASK_LAYER_SPACE");
     const layer = _next(comp.layers, (lay) => lay.name === layerName);
-    return new Map(asInstance(layer.masks, PropertyGroup).properties.map((m): [string, MaskPropertyGroup] => [m.name, asInstance(m, MaskPropertyGroup)]));
+    return new Map(
+      asInstance(layer.masks, PropertyGroup).properties.map((m): [string, MaskPropertyGroup] => [
+        m.name,
+        asInstance(m, MaskPropertyGroup),
+      ]),
+    );
   }
 
   test("test_reading_unstored_paths_writes_nothing", () => {
@@ -4257,22 +4593,27 @@ describe("TestMaskLayerSpaceWrites", () => {
      * assigning it back stores the edit.
      */
     const project = parseAep(AEP).project;
-    const maskPath = getOrThrow(_masks(project, "solid_640x360"), "Mask 1").property(
-      "ADBE Mask Shape",
-    );
+    const maskPath = getOrThrow(_masks(project, "solid_640x360"), "Mask 1").property("ADBE Mask Shape");
     const shape = maskPath.value;
     expect(maskPath.value !== shape).toBe(true);
-    shape.vertices = [[10.0, 20.0], [0.0, 360.0], [640.0, 360.0], [640.0, 0.0]];
+    shape.vertices = [
+      [10.0, 20.0],
+      [0.0, 360.0],
+      [640.0, 360.0],
+      [640.0, 0.0],
+    ];
     maskPath.value = shape;
     const out = tmpPath.div("edited.aep");
     project.save(out);
     const reparsed = getOrThrow(_masks(parseProjectFresh(out), "solid_640x360"), "Mask 1");
     const vertices = reparsed.property("ADBE Mask Shape").value.vertices;
-    expect(approx(
-      vertices.flatMap((point) => point),
-      [10.0, 20.0, 0.0, 360.0, 640.0, 360.0, 640.0, 0.0],
-      { abs: 1e-4 },
-    )).toBe(true);
+    expect(
+      approx(
+        vertices.flatMap((point) => point),
+        [10.0, 20.0, 0.0, 360.0, 640.0, 360.0, 640.0, 0.0],
+        { abs: 1e-4 },
+      ),
+    ).toBe(true);
   });
 
   test.each(["solid_640x360", "text", "shape"])("test_set_path_is_stored_as_ae_stores_it[%#]", (layerName) => {
@@ -4288,7 +4629,9 @@ describe("TestMaskLayerSpaceWrites", () => {
     const out = tmpPath.div("set.aep");
     project.save(out);
     const masks = _masks(parseProjectFresh(out), layerName);
-    expect(valueEquals(_maskShapeBytes(getOrThrow(masks, "Mask 1")), _maskShapeBytes(getOrThrow(masks, "stored")))).toBe(true);
+    expect(
+      valueEquals(_maskShapeBytes(getOrThrow(masks, "Mask 1")), _maskShapeBytes(getOrThrow(masks, "stored"))),
+    ).toBe(true);
   });
 });
 
@@ -4795,7 +5138,10 @@ describe("TestAudioLayerMasks", () => {
     project.save(out);
     const layer = getLayer(parseProjectFresh(out), "audioEnabled_true");
     assert(layer.masks != null);
-    const path = asInstance(asInstance(asInstance(layer.masks, PropertyGroup).properties[0], MaskPropertyGroup).property("ADBE Mask Shape"), Property);
+    const path = asInstance(
+      asInstance(asInstance(layer.masks, PropertyGroup).properties[0], MaskPropertyGroup).property("ADBE Mask Shape"),
+      Property,
+    );
     expect(path.expression).toBe("value");
     const value = asInstance(path.value, Shape);
     expect(value.vertices).toEqual([

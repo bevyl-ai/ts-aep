@@ -104,9 +104,7 @@ export function _parseStops(elem: Element): GradientStop[] {
     const style = _stopStyle(child);
     const color = parseColor(style.get("stop-color") ?? "#000000") ?? [0.0, 0.0, 0.0, 1.0];
     const opacity = parseRatio(style.get("stop-opacity") ?? null, 1.0);
-    stops.push(
-      new GradientStop(offset, [color[0], color[1], color[2], color[3] * opacity]),
-    );
+    stops.push(new GradientStop(offset, [color[0], color[1], color[2], color[3] * opacity]));
   }
   return stops;
 }
@@ -157,7 +155,8 @@ export function resolveGradient(
   const units = gd.attr("gradientUnits", "objectBoundingBox");
   const objectBbox = units !== "userSpaceOnUse";
   const [minX, minY, maxX, maxY] = bbox;
-  const bw = maxX - minX, bh = maxY - minY;
+  const bw = maxX - minX,
+    bh = maxY - minY;
   const [vpW, vpH] = viewport;
   const gt = parseTransform(gd.attr("gradientTransform", ""));
   let base: Affine;
@@ -207,12 +206,5 @@ export function resolveGradient(
   const scaleY = xRadius !== 0 ? (100.0 * yRadius) / xRadius : 100.0;
   const angle = degrees(Math.atan2(end[1] - start[1], end[0] - start[0]));
   const rotation = 360.0 - angle;
-  return new GradientPaint(
-    gd.kind,
-    gd.stops,
-    start,
-    end,
-    [100.0, scaleY],
-    rotation,
-  );
+  return new GradientPaint(gd.kind, gd.stops, start, end, [100.0, scaleY], rotation);
 }

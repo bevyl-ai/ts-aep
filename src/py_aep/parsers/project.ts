@@ -6,7 +6,14 @@ import { NhedChunk, NnhdChunk } from "../binary/item_chunks.ts";
 import { DwgaChunk } from "../binary/misc_chunks.ts";
 import { Utf8Chunk } from "../binary/scalar_chunks.ts";
 import type { Chunk, ListChunk } from "../binary/chunk.ts";
-import { ChunkNotFoundError, filterByType, findByListType, findByListTypeOrNull, findByType, findByTypeOrNull } from "../binary/utils.ts";
+import {
+  ChunkNotFoundError,
+  filterByType,
+  findByListType,
+  findByListTypeOrNull,
+  findByType,
+  findByTypeOrNull,
+} from "../binary/utils.ts";
 import { GpuAccelType } from "../enums/index.ts";
 import { _suppressMaterialization } from "../models/descriptors.ts";
 import { Project } from "../models/project.ts";
@@ -144,10 +151,7 @@ export const parseProject = _suppressMaterialization()(function parse_project(
     aePreferencesDir: aePreferencesDir,
   });
 
-  project._effectParamDefs = parseEffectDefinitions(
-    rootChunks,
-    nnhdChunk._systemCodePage,
-  );
+  project._effectParamDefs = parseEffectDefinitions(rootChunks, nnhdChunk._systemCodePage);
 
   const rootFolder = parseFolder(
     true, // is_root
@@ -171,7 +175,7 @@ export const parseProject = _suppressMaterialization()(function parse_project(
     // bookkeeping, and opens such a file with nothing selected). Treat a
     // dangling id as "no active item" rather than failing the parse.
     project._activeItem = project.items.get(fcidChunk.value) ?? null;
-    }
+  }
 
   return project;
 });

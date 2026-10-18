@@ -2,13 +2,50 @@
 
 import { describe, expect, test } from "bun:test";
 
-import { AttributeError, contains, float, getMember, getOrThrow, int, len, Path, assert, valueEquals, setMember, compositeKey, ValueError } from "../../src/pyrt/index.ts";
+import {
+  AttributeError,
+  contains,
+  float,
+  getMember,
+  getOrThrow,
+  int,
+  len,
+  Path,
+  assert,
+  valueEquals,
+  setMember,
+  compositeKey,
+  ValueError,
+} from "../../src/pyrt/index.ts";
 
 import { parse, type Project } from "../../src/py_aep/index.ts";
 import "../../src/py_aep/binary/_register.ts";
 import type { Element as ETElement } from "../../src/pyrt/etree.ts";
-import { AudioCodec, CineonFileFormat, DnxResolution, Hdr10ColorPrimaries, JpegFormatType, MPEGAudioFormat, MPEGMultiplexer, MPEGMuxStreamCompatibility, MPEGProfile, OpenExrCompression, OutputChannels, OutputColorDepth, PngCompression, VideoCodec } from "../../src/py_aep/enums/index.ts";
-import { CineonFormatOptions, JpegFormatOptions, OpenExrFormatOptions, PngFormatOptions, TargaFormatOptions, TiffFormatOptions, XmlFormatOptions } from "../../src/py_aep/models/renderqueue/format_options/index.ts";
+import {
+  AudioCodec,
+  CineonFileFormat,
+  DnxResolution,
+  Hdr10ColorPrimaries,
+  JpegFormatType,
+  MPEGAudioFormat,
+  MPEGMultiplexer,
+  MPEGMuxStreamCompatibility,
+  MPEGProfile,
+  OpenExrCompression,
+  OutputChannels,
+  OutputColorDepth,
+  PngCompression,
+  VideoCodec,
+} from "../../src/py_aep/enums/index.ts";
+import {
+  CineonFormatOptions,
+  JpegFormatOptions,
+  OpenExrFormatOptions,
+  PngFormatOptions,
+  TargaFormatOptions,
+  TiffFormatOptions,
+  XmlFormatOptions,
+} from "../../src/py_aep/models/renderqueue/format_options/index.ts";
 import type { OutputModule } from "../../src/py_aep/models/renderqueue/output_module.ts";
 import { RenderQueue } from "../../src/py_aep/models/renderqueue/render_queue.ts";
 import { asInstance } from "../helpers.ts";
@@ -874,17 +911,19 @@ const _PNG_LOCKSTEP: [OutputChannels, OutputColorDepth, [boolean, number, number
 
 describe("TestPngOptionsFollowTheModule", () => {
   const PNG_ROWS = ["base.aep", "compression_none.aep"].flatMap((sample) =>
-    _PNG_LOCKSTEP.map(([channels, depth, expected]): [string, OutputChannels, OutputColorDepth, [boolean, number, number]] => [sample, channels, depth, expected]),
+    _PNG_LOCKSTEP.map(
+      ([channels, depth, expected]): [string, OutputChannels, OutputColorDepth, [boolean, number, number]] => [
+        sample,
+        channels,
+        depth,
+        expected,
+      ],
+    ),
   );
 
   test.each(PNG_ROWS)(
     "test_channels_and_depth_update_the_png_options[%#]",
-    (
-      sample: string,
-      channels: OutputChannels,
-      depth: OutputColorDepth,
-      expected: [boolean, number, number],
-    ) => {
+    (sample: string, channels: OutputChannels, depth: OutputColorDepth, expected: [boolean, number, number]) => {
       const tmpPath = makeTmpPath();
       // AE renders from the module's Channels / Depth either way (a stale
       // PNG option renders the module's choice), but stores them in step.

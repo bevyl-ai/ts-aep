@@ -2,10 +2,16 @@
 
 import { describe, expect, test } from "bun:test";
 
-
 import { Path, at, b, getOrThrow, assert, valueEquals, zip } from "../../src/pyrt/index.ts";
 import { asInstance } from "../helpers.ts";
-import { GradientPaint, type GradientStop, SolidPaint, SvgDocument, UnsupportedSVGError, readSvg } from "../../src/py_aep/svg/index.ts";
+import {
+  GradientPaint,
+  type GradientStop,
+  SolidPaint,
+  SvgDocument,
+  UnsupportedSVGError,
+  readSvg,
+} from "../../src/py_aep/svg/index.ts";
 import { parseColor } from "../../src/py_aep/svg/colors.ts";
 import { parsePath } from "../../src/py_aep/svg/path_data.ts";
 import { cubicsToSubpath, elementSubpaths } from "../../src/py_aep/svg/shapes.ts";
@@ -148,19 +154,36 @@ describe("TestShapes", () => {
   test("test_rect_sharp", () => {
     const raws = elementSubpaths(
       "rect",
-      new Map([["x", "0"], ["y", "0"], ["width", "4"], ["height", "2"]]),
+      new Map([
+        ["x", "0"],
+        ["y", "0"],
+        ["width", "4"],
+        ["height", "2"],
+      ]),
     );
     const sp = cubicsToSubpath(raws[0], IDENTITY);
     if (sp == null) throw new Error("no subpath");
     expect(sp.closed).toBe(true);
-    expect(valueEquals(sp.vertices, [[0, 0], [4, 0], [4, 2], [0, 2]])).toBe(true);
+    expect(
+      valueEquals(sp.vertices, [
+        [0, 0],
+        [4, 0],
+        [4, 2],
+        [0, 2],
+      ]),
+    ).toBe(true);
     expect(sp.outTangents.every((t) => valueEquals(t, [0.0, 0.0]))).toBe(true);
   });
 
   test("test_rect_rounded_has_bezier_corners", () => {
     const raws = elementSubpaths(
       "rect",
-      new Map([["width", "10"], ["height", "10"], ["rx", "2"], ["ry", "2"]]),
+      new Map([
+        ["width", "10"],
+        ["height", "10"],
+        ["rx", "2"],
+        ["ry", "2"],
+      ]),
     );
     const sp = cubicsToSubpath(raws[0], IDENTITY);
     if (sp == null) throw new Error("no subpath");
@@ -171,7 +194,12 @@ describe("TestShapes", () => {
   test("test_ellipse_four_vertices", () => {
     const raws = elementSubpaths(
       "ellipse",
-      new Map([["cx", "0"], ["cy", "0"], ["rx", "10"], ["ry", "5"]]),
+      new Map([
+        ["cx", "0"],
+        ["cy", "0"],
+        ["rx", "10"],
+        ["ry", "5"],
+      ]),
     );
     const sp = cubicsToSubpath(raws[0], IDENTITY);
     if (sp == null) throw new Error("no subpath");
@@ -189,7 +217,13 @@ describe("TestShapes", () => {
     const sp = cubicsToSubpath(raws[0], IDENTITY);
     if (sp == null) throw new Error("no subpath");
     expect(sp.closed).toBe(true);
-    expect(valueEquals(sp.vertices, [[0, 0], [10, 0], [5, 8]])).toBe(true);
+    expect(
+      valueEquals(sp.vertices, [
+        [0, 0],
+        [10, 0],
+        [5, 8],
+      ]),
+    ).toBe(true);
   });
 
   test("test_polyline_open", () => {
@@ -204,7 +238,13 @@ describe("TestShapes", () => {
   });
 
   test("test_transform_applied_to_vertices", () => {
-    const raws = elementSubpaths("rect", new Map([["width", "2"], ["height", "2"]]));
+    const raws = elementSubpaths(
+      "rect",
+      new Map([
+        ["width", "2"],
+        ["height", "2"],
+      ]),
+    );
     const sp = cubicsToSubpath(raws[0], parseTransform("translate(100,50)"));
     if (sp == null) throw new Error("no subpath");
     expect(valueEquals(sp.vertices[0], [100.0, 50.0])).toBe(true);
@@ -245,9 +285,7 @@ describe("TestColors", () => {
   });
 
   test("test_currentcolor", () => {
-    expect(
-      valueEquals(parseColor("currentColor", [0.1, 0.2, 0.3, 1.0]), [0.1, 0.2, 0.3, 1.0]),
-    ).toBe(true);
+    expect(valueEquals(parseColor("currentColor", [0.1, 0.2, 0.3, 1.0]), [0.1, 0.2, 0.3, 1.0])).toBe(true);
   });
 });
 
@@ -275,7 +313,10 @@ describe("TestStyle", () => {
     const style = resolveProperties(
       new Map(),
       "path",
-      new Map([["class", "hi"], ["fill", "red"]]),
+      new Map([
+        ["class", "hi"],
+        ["fill", "red"],
+      ]),
       rules,
     );
     expect(getOrThrow(style, "fill")).toBe("green");
@@ -286,7 +327,10 @@ describe("TestStyle", () => {
     const style = resolveProperties(
       new Map(),
       "path",
-      new Map([["style", "fill:purple"], ["fill", "red"]]),
+      new Map([
+        ["style", "fill:purple"],
+        ["fill", "red"],
+      ]),
       rules,
     );
     expect(getOrThrow(style, "fill")).toBe("purple");
@@ -297,7 +341,10 @@ describe("TestStyle", () => {
     const style = resolveProperties(
       new Map(),
       "path",
-      new Map([["id", "a"], ["class", "c"]]),
+      new Map([
+        ["id", "a"],
+        ["class", "c"],
+      ]),
       rules,
     );
     expect(getOrThrow(style, "fill")).toBe("orange");
@@ -321,9 +368,7 @@ describe("TestReadSvgSample", () => {
     // into the leaf's paint opacity, so the reader folds it into each
     // affected drawable (the rest stay fully opaque).
     const doc = readSvg(SAMPLE);
-    const opacities = sorted(
-      doc.drawables.filter((d) => d.opacity !== 1.0).map((d) => d.opacity),
-    );
+    const opacities = sorted(doc.drawables.filter((d) => d.opacity !== 1.0).map((d) => d.opacity));
     expect(approx(opacities, [0.3, 0.3])).toBe(true);
   });
 
@@ -376,7 +421,12 @@ describe("TestReadSvgSample", () => {
       '<rect width="4" height="4" fill="url(#g)" fill-opacity="0.5"/></svg>';
     const fill = readSvg(svg).drawables[0].fill;
     assert(fill instanceof GradientPaint);
-    expect(approx(fill.stops.map((s: GradientStop) => s.color[3]), [0.5, 0.25])).toBe(true);
+    expect(
+      approx(
+        fill.stops.map((s: GradientStop) => s.color[3]),
+        [0.5, 0.25],
+      ),
+    ).toBe(true);
   });
 
   test("test_first_drawable_geometry_absolute", () => {
@@ -570,23 +620,16 @@ class TestTextWhitespace {
     // Text outlining needs a resolvable font; if none is installed the
     // runs produce no drawables and there is nothing to assert.
     if (doc.drawables.length < 2) return null;
-    return min(
-      at(doc.drawables, -1).subpaths.flatMap((sp) => sp.vertices.map((v) => v[0])),
-    );
+    return min(at(doc.drawables, -1).subpaths.flatMap((sp) => sp.vertices.map((v) => v[0])));
   }
 }
 
 describe("TestTextWhitespace", () => {
   test("test_inter_tspan_space_advances_next_run", () => {
     const head =
-      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 200">' +
-      '<text x="20" y="130" font-size="72">';
-    const spaced = TestTextWhitespace._last_run_min_x(
-      head + "<tspan>foo</tspan> <tspan>bar</tspan></text></svg>",
-    );
-    const flush = TestTextWhitespace._last_run_min_x(
-      head + "<tspan>foo</tspan><tspan>bar</tspan></text></svg>",
-    );
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 200">' + '<text x="20" y="130" font-size="72">';
+    const spaced = TestTextWhitespace._last_run_min_x(head + "<tspan>foo</tspan> <tspan>bar</tspan></text></svg>");
+    const flush = TestTextWhitespace._last_run_min_x(head + "<tspan>foo</tspan><tspan>bar</tspan></text></svg>");
     if (spaced == null || flush == null) {
       return skip("no outline font available to render text");
     }

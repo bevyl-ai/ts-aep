@@ -34,7 +34,10 @@ import {
   parseJson,
   type JsonValue,
   openFile,
-  typeName, compare, ascii } from "../../pyrt/index.ts";
+  typeName,
+  compare,
+  ascii,
+} from "../../pyrt/index.ts";
 import type { Path } from "../../pyrt/index.ts";
 
 /** Read/seek surface shared by `ByteStream` and `_BoundedReader`. */
@@ -213,7 +216,7 @@ export function _imageDepth(hasAlpha: boolean, bits: number, kw: { gray?: boolea
   const { gray = false, indexed = false } = kw;
   if (hasAlpha || !(gray || indexed)) return _colorDepth(hasAlpha, bits);
   if (indexed) return bits;
-  return bits === 1 ? 0 : _GRAY_DEPTHS.get(bits) ?? 0;
+  return bits === 1 ? 0 : (_GRAY_DEPTHS.get(bits) ?? 0);
 }
 
 export class _BoundedReader {
@@ -305,10 +308,9 @@ export function probeMedia(file: Path, data: Uint8Array | null = null): MediaInf
     }
   } catch (exc: unknown) {
     if (!(exc instanceof StructError || exc instanceof IndexError)) throw exc;
-    throw Object.assign(
-      new ValueError(`${file.name}: truncated or malformed ${suffix} file (${exc.message})`),
-      { cause: exc },
-    );
+    throw Object.assign(new ValueError(`${file.name}: truncated or malformed ${suffix} file (${exc.message})`), {
+      cause: exc,
+    });
   }
 }
 
@@ -521,15 +523,16 @@ export function _probeExr(fp: ProbeStream): MediaInfo {
   const first = parts[0];
   const firstList = first.channels ?? [];
   const hasAlpha = firstList.some((c) => c === "A" || c === "a");
-  const channelNames = parts.flatMap((part) =>
-    (part.channels ?? []).map((c) => (part.name ? `${part.name}.${c}` : c)),
-  );
+  const channelNames = parts.flatMap((part) => (part.channels ?? []).map((c) => (part.name ? `${part.name}.${c}` : c)));
   // AE reads OpenEXR as 32-bit float, half-float channels included. Its
   // footage size and alpha come from the first part. A luminance-only part
   // (a lone Y channel) reads as float grayscale (AE 2026: exr/y.exr caches
   // depth -32; Y + A reads as RGBA float, 128).
   const firstChannels = new Set(firstList);
-  const luminanceOnly = !hasAlpha && firstChannels.has("Y") && !(firstChannels.has("R") || firstChannels.has("G") || firstChannels.has("B"));
+  const luminanceOnly =
+    !hasAlpha &&
+    firstChannels.has("Y") &&
+    !(firstChannels.has("R") || firstChannels.has("G") || firstChannels.has("B"));
   return new MediaInfo({
     width: first.width ?? 0,
     height: first.height ?? 0,
@@ -730,7 +733,10 @@ export function _tiffMediaInfo(
   const layered = photoshopLayers != null;
   const base = _TIFF_BASE_CHANNELS.get(photometric) ?? 3;
   const hasAlpha = samples > base || layered;
-  const depth = _imageDepth(hasAlpha, bits, { gray: photometric === 0 || photometric === 1, indexed: photometric === 3 });
+  const depth = _imageDepth(hasAlpha, bits, {
+    gray: photometric === 0 || photometric === 1,
+    indexed: photometric === 3,
+  });
   // A palette image's alpha sample is not counted in the opti channels,
   // layer count or cached size, unlike a grayscale or RGB one (AE 2026:
   // an 8-bit palette TIFF with an ExtraSamples alpha records 1 channel,
@@ -744,7 +750,7 @@ export function _tiffMediaInfo(
     depth,
     bitDepth: bits,
     layerCount: photoshopLayers || (countedAlpha ? 1 : 0),
-    colorMode: bits === 1 ? 0 : _TIFF_COLOR_MODES.get(photometric) ?? 3,
+    colorMode: bits === 1 ? 0 : (_TIFF_COLOR_MODES.get(photometric) ?? 3),
     pixelChannels: countedAlpha || layered ? base + 1 : base,
   });
 }
@@ -755,7 +761,8 @@ export function _tiffMediaInfo(
  * AE reads BigTIFF, so returning 0x0 would write an unusable footage item.
  */
 export function _probeBigtiff(fp: ProbeStream, en: "<" | ">"): MediaInfo {
-  if (struct.unpack(`${en}H`, fp.read(2))[0] !== 8) throw new ValueError("Unsupported BigTIFF offset size (expected 8)");
+  if (struct.unpack(`${en}H`, fp.read(2))[0] !== 8)
+    throw new ValueError("Unsupported BigTIFF offset size (expected 8)");
   fp.read(2); // reserved, always 0
   fp.seek(Number(struct.unpack(`${en}Q`, fp.read(8))[0]));
   let width = 0;
@@ -801,12 +808,25 @@ export function _probeBigtiff(fp: ProbeStream, en: "<" | ">"): MediaInfo {
       extraAlpha = length <= 4 && (val === 1 || val === 2);
     }
   }
-  return _tiffMediaInfo(fp, en, width, height, samples, bits, bitsOffset, photometric, extraAlpha, iccSpan, photoshopSpan);
+  return _tiffMediaInfo(
+    fp,
+    en,
+    width,
+    height,
+    samples,
+    bits,
+    bitsOffset,
+    photometric,
+    extraAlpha,
+    iccSpan,
+    photoshopSpan,
+  );
 }
 
 export function _probeTiff(fp: ProbeStream): MediaInfo {
   const bo = fp.read(2);
-  if (!(bytesEqual(bo, ascii("II")) || bytesEqual(bo, ascii("MM")))) throw new ValueError(`Not a valid TIFF file (bad byte order ${literal(bo)})`);
+  if (!(bytesEqual(bo, ascii("II")) || bytesEqual(bo, ascii("MM"))))
+    throw new ValueError(`Not a valid TIFF file (bad byte order ${literal(bo)})`);
   const en = bytesEqual(bo, ascii("II")) ? "<" : ">";
   const version = struct.unpack(`${en}H`, fp.read(2))[0];
   if (version === 43) return _probeBigtiff(fp, en);
@@ -827,7 +847,8 @@ export function _probeTiff(fp: ProbeStream): MediaInfo {
     const entry = fp.read(12);
     const [tag, typ] = struct.unpack(`${en}HH`, entry.slice(0, 4));
     const length = struct.unpack(`${en}I`, entry.slice(4, 8))[0];
-    const val = typ === 3 ? struct.unpack(`${en}H`, entry.slice(8, 10))[0] : struct.unpack(`${en}I`, entry.slice(8, 12))[0];
+    const val =
+      typ === 3 ? struct.unpack(`${en}H`, entry.slice(8, 10))[0] : struct.unpack(`${en}I`, entry.slice(8, 12))[0];
     if (tag === 0x0100) {
       width = val;
     } else if (tag === 0x0101) {
@@ -849,7 +870,19 @@ export function _probeTiff(fp: ProbeStream): MediaInfo {
       iccSpan = [val, length]; // values this long are stored by offset
     }
   }
-  return _tiffMediaInfo(fp, en, width, height, samples, bits, bitsOffset, photometric, extraAlpha, iccSpan, photoshopSpan);
+  return _tiffMediaInfo(
+    fp,
+    en,
+    width,
+    height,
+    samples,
+    bits,
+    bitsOffset,
+    photometric,
+    extraAlpha,
+    iccSpan,
+    photoshopSpan,
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -989,7 +1022,10 @@ export function _gifFrameTiming(fp: ProbeStream): [number, number] {
 
 export function _probeGif(fp: ProbeStream): MediaInfo {
   const sig = fp.read(6);
-  if (!bytesEqual(sig.slice(0, 3), ascii("GIF")) || !(bytesEqual(sig.slice(3), ascii("87a")) || bytesEqual(sig.slice(3), ascii("89a")))) {
+  if (
+    !bytesEqual(sig.slice(0, 3), ascii("GIF")) ||
+    !(bytesEqual(sig.slice(3), ascii("87a")) || bytesEqual(sig.slice(3), ascii("89a")))
+  ) {
     throw new ValueError("Not a valid GIF file (bad signature)");
   }
   const [width, height] = struct.unpack("<HH", fp.read(4));
@@ -1595,7 +1631,16 @@ export class _VideoSampleEntry {
   /** The bits per channel AE decodes the codec at. */
   declare readonly bitsPerChannel: number;
 
-  constructor(kw: Partial<{ codec: Uint8Array; width: number; height: number; depth: number; pixelAspect: number; bitsPerChannel: number }> = {}) {
+  constructor(
+    kw: Partial<{
+      codec: Uint8Array;
+      width: number;
+      height: number;
+      depth: number;
+      pixelAspect: number;
+      bitsPerChannel: number;
+    }> = {},
+  ) {
     Object.assign(
       this,
       { codec: new Uint8Array(0), width: 0, height: 0, depth: 0, pixel_aspect: 0.0, bits_per_channel: 8 },
@@ -1610,7 +1655,9 @@ export const _PRORES_CODECS: ReadonlySet<string> = new Set(
 );
 
 /** H.264 profiles whose sequence parameter set carries the bit depth. */
-export const _AVC_HIGH_PROFILES: ReadonlySet<number> = new Set([100, 110, 122, 244, 44, 83, 86, 118, 128, 138, 139, 134, 135]);
+export const _AVC_HIGH_PROFILES: ReadonlySet<number> = new Set([
+  100, 110, 122, 244, 44, 83, 86, 118, 128, 138, 139, 134, 135,
+]);
 
 /**
  * Luma bit depth of the first sequence parameter set of an `avcC` box.
@@ -1667,7 +1714,14 @@ export function _parseStsd(data: Uint8Array, body: number, end: number): _VideoS
       bitsPerChannel = 16;
     }
   }
-  return new _VideoSampleEntry({ codec, width, height, depth, pixelAspect: pixelAspect, bitsPerChannel: bitsPerChannel });
+  return new _VideoSampleEntry({
+    codec,
+    width,
+    height,
+    depth,
+    pixelAspect: pixelAspect,
+    bitsPerChannel: bitsPerChannel,
+  });
 }
 
 /**
@@ -1678,7 +1732,9 @@ export function _parseStsd(data: Uint8Array, body: number, end: number): _VideoS
  * only once verified, since under-claiming a codec AE *can* decode breaks
  * the footage too (AE warns and renders nothing).
  */
-export const _MP4_UNDECODABLE_CODECS: ReadonlySet<string> = new Set([ascii("vp09"), ascii("av01")].map((k) => Bytes.toHex(k)));
+export const _MP4_UNDECODABLE_CODECS: ReadonlySet<string> = new Set(
+  [ascii("vp09"), ascii("av01")].map((k) => Bytes.toHex(k)),
+);
 
 /**
  * Probe an `.mp4`.
@@ -1754,7 +1810,15 @@ export function _probeData(fp: ProbeStream): MediaInfo {
  * Naive (zoneless) calendar datetime as microseconds since 1970-01-01, or
  * `null` when the fields are not a valid datetime (`datetime()` raises).
  */
-export function _naiveDatetimeUs(y: number, mo: number, d: number, h: number, mi: number, s: number, us: number): number | null {
+export function _naiveDatetimeUs(
+  y: number,
+  mo: number,
+  d: number,
+  h: number,
+  mi: number,
+  s: number,
+  us: number,
+): number | null {
   const leap = (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0;
   const dim = [31, leap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
   if (!(1 <= y && y <= 9999) || !(1 <= mo && mo <= 12) || !(1 <= d && d <= dim[mo - 1])) return null;
@@ -1795,7 +1859,15 @@ export function _parseMgjsonTime(t: JsonValue): { us: number; aware: boolean } |
   const m = strp.exec(s);
   if (m) {
     const frac = m[7] === undefined ? "" : m[7].padEnd(6, "0");
-    const us = _naiveDatetimeUs(Number.parseInt(m[1], 10), Number.parseInt(m[2], 10), Number.parseInt(m[3], 10), Number.parseInt(m[4], 10), Number.parseInt(m[5], 10), Number.parseInt(m[6], 10), Number.parseInt(frac || "0", 10));
+    const us = _naiveDatetimeUs(
+      Number.parseInt(m[1], 10),
+      Number.parseInt(m[2], 10),
+      Number.parseInt(m[3], 10),
+      Number.parseInt(m[4], 10),
+      Number.parseInt(m[5], 10),
+      Number.parseInt(m[6], 10),
+      Number.parseInt(frac || "0", 10),
+    );
     if (us !== null) return { us, aware: false };
   }
   try {
@@ -1897,7 +1969,12 @@ export function _mp3FrameSize(header: number): number {
  */
 export function _findMp3Frame(window: Uint8Array): number {
   const n = window.length;
-  if (n >= 4 && window[0] === 0xff && (window[1] & 0xe0) === 0xe0 && _mp3FrameSize(Number(struct.unpackFrom(">I", window, 0)[0]))) {
+  if (
+    n >= 4 &&
+    window[0] === 0xff &&
+    (window[1] & 0xe0) === 0xe0 &&
+    _mp3FrameSize(Number(struct.unpackFrom(">I", window, 0)[0]))
+  ) {
     return 0;
   }
   let pos = 1;
@@ -1977,7 +2054,9 @@ export function _probeMp3(fp: ProbeStream): MediaInfo {
 // ---------------------------------------------------------------------------
 
 /** ADTS sampling-frequency index -\> Hz (indices 13-15 are reserved/explicit). */
-export const _AAC_SR: readonly number[] = [96000, 88200, 64000, 48000, 44100, 32000, 24000, 22050, 16000, 12000, 11025, 8000, 7350];
+export const _AAC_SR: readonly number[] = [
+  96000, 88200, 64000, 48000, 44100, 32000, 24000, 22050, 16000, 12000, 11025, 8000, 7350,
+];
 
 /**
  * 13-bit ADTS frame length: low 2 bits of byte 3, all of byte 4, high 3
@@ -2314,13 +2393,19 @@ export function _probeCrw(fp: ProbeStream): MediaInfo {
   // Camera Raw develops the image at the ImageInfo size, turned by its
   // rotation (AE 2026 reports a CRW marked 90 or 270 degrees upright).
   let [width, height, , rotation] = struct.unpack(`${order}IIfi`, info.slice(0, 16));
-  if ((((rotation % 180) + 180) % 180) === 90) [width, height] = [height, width];
+  if (((rotation % 180) + 180) % 180 === 90) [width, height] = [height, width];
   // AE 2026 caches a developed raw as 16-bit RGB (crw.crw: depth 48).
   return new MediaInfo({ width, height, depth: _colorDepth(false, 16) });
 }
 
 /** The body of the first `wanted` record in the CIFF heap `[start, end)`. */
-export function _ciffRecord(data: Uint8Array, order: "<" | ">", start: number, end: number, wanted: number): Uint8Array | null {
+export function _ciffRecord(
+  data: Uint8Array,
+  order: "<" | ">",
+  start: number,
+  end: number,
+  wanted: number,
+): Uint8Array | null {
   const [tableRel] = struct.unpack(`${order}I`, data.slice(end - 4, end));
   const table = tableRel + start;
   const [count] = struct.unpack(`${order}H`, data.slice(table, table + 2));
@@ -2380,8 +2465,8 @@ export function _probeEps(fp: ProbeStream): MediaInfo {
       const nums = Bytes.split(Bytes.split(line, ascii(":"), 1)[1]);
       if (nums.length >= 4) {
         const [llx, lly, urx, ury] = nums.slice(0, 4).map((n) => Number(decode(n, "ascii")));
-        width = (Math.round(urx - llx) + 0);
-        height = (Math.round(ury - lly) + 0);
+        width = Math.round(urx - llx) + 0;
+        height = Math.round(ury - lly) + 0;
         hires = true;
       }
     } else if (!hires && Bytes.startsWith(line, ascii("%%BoundingBox:"))) {
@@ -2390,8 +2475,8 @@ export function _probeEps(fp: ProbeStream): MediaInfo {
         const nums = Bytes.split(rest);
         if (nums.length >= 4) {
           const [llx, lly, urx, ury] = nums.slice(0, 4).map((n) => Number(decode(n, "ascii")));
-          width = (Math.round(urx - llx) + 0);
-          height = (Math.round(ury - lly) + 0);
+          width = Math.round(urx - llx) + 0;
+          height = Math.round(ury - lly) + 0;
         }
       }
     } else if (Bytes.startsWith(line, ascii("%%EndComments"))) {
@@ -2546,7 +2631,7 @@ export function _probeWmv(fp: ProbeStream): MediaInfo {
   // a 1.96 s / 25 fps stream imports as 50 frames = 2.0 s, and the same
   // stream relabelled 29.97 fps imports as 60 frames = 2.002002 s.
   let duration: number;
-  if (frameRate && sendDuration) duration = ((Math.round(sendDuration * frameRate) + 0) + 1) / frameRate;
+  if (frameRate && sendDuration) duration = (Math.round(sendDuration * frameRate) + 0 + 1) / frameRate;
   else if (sendDuration) duration = sendDuration;
   else duration = Math.max(0.0, playDuration - preroll);
   return new MediaInfo({
@@ -2641,7 +2726,9 @@ export function _probeDpxCineon(fp: ProbeStream): MediaInfo {
 }
 
 /** HEIF brands `_probeHeif` accepts in `ftyp`, as `bytes_.hex` keys. */
-export const _HEIF_BRANDS: ReadonlySet<string> = new Set([ascii("heic"), ascii("heix"), ascii("mif1"), ascii("heif")].map((k) => Bytes.toHex(k)));
+export const _HEIF_BRANDS: ReadonlySet<string> = new Set(
+  [ascii("heic"), ascii("heix"), ascii("mif1"), ascii("heif")].map((k) => Bytes.toHex(k)),
+);
 
 /**
  * Probe a HEIF/HEIC (ISO/IEC 23008-12) still image.

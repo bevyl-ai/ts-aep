@@ -36,7 +36,10 @@ import {
   decode,
   concat,
   Bytes,
-  reSearch, compare, ascii } from "../../pyrt/index.ts";
+  reSearch,
+  compare,
+  ascii,
+} from "../../pyrt/index.ts";
 import { _compact, buildOcioEnvelope } from "./envelope.ts";
 import { aeGuid } from "./murmur3.ts";
 
@@ -64,16 +67,7 @@ export class _OcioLoader {
  * its shape is checked on load - py_aep never validates the config - so
  * each reader narrows the value where it reads it.
  */
-export type OcioValue =
-  | string
-  | number
-  | boolean
-  | null
-  | Date
-  | Uint8Array
-  | OcioValue[]
-  | Set<OcioValue>
-  | OcioNode;
+export type OcioValue = string | number | boolean | null | Date | Uint8Array | OcioValue[] | Set<OcioValue> | OcioNode;
 
 /** An OCIO mapping. Its keys are YAML values too (`3: x`, `~: x`), not only strings. */
 export interface OcioNode extends Map<OcioValue, OcioValue> {}
@@ -132,24 +126,28 @@ export function _ignoreTag(loader: Document, suffix: string, node: Node): OcioVa
  * (path string, `mtimeNs` bigint, `size`) to get real cache hits. The
  * `maxsize=8` eviction is unobservable: results are pure functions of the key.
  */
-export const _loadConfigCached = lruCache(
-  (configPath: string, _mtimeNs: bigint, _size: number): OcioNode | null => {
-    let doc: OcioValue;
-    try {
-      doc = dep("yaml").parse(decode(new Path(configPath).readBytes(), "utf-8"), {
-        ..._OcioLoader.options,
-      });
-    } catch (e) {
-      // `except (OSError, yaml.YAMLError)`; node fs errors carry a `code`.
-      if (!(e instanceof OSError || e instanceof dep("yaml").YAMLError || (e instanceof Error && "code" in e && truthy(e.code)))) {
-        throw e;
-      }
-      return null;
+export const _loadConfigCached = lruCache((configPath: string, _mtimeNs: bigint, _size: number): OcioNode | null => {
+  let doc: OcioValue;
+  try {
+    doc = dep("yaml").parse(decode(new Path(configPath).readBytes(), "utf-8"), {
+      ..._OcioLoader.options,
+    });
+  } catch (e) {
+    // `except (OSError, yaml.YAMLError)`; node fs errors carry a `code`.
+    if (
+      !(
+        e instanceof OSError ||
+        e instanceof dep("yaml").YAMLError ||
+        (e instanceof Error && "code" in e && truthy(e.code))
+      )
+    ) {
+      throw e;
     }
-    if (_hasUnhashableKey(doc)) return null;
-    return doc instanceof Map ? doc : null;
-  },
-);
+    return null;
+  }
+  if (_hasUnhashableKey(doc)) return null;
+  return doc instanceof Map ? doc : null;
+});
 
 /** `(mtime_ns, size)` cache key for `configPath`, or `null` if unreadable. */
 export function _configStamp(configPath: Path): [bigint, number] | null {
@@ -265,8 +263,7 @@ export function requireOcioConfig(config: string | null, purpose: string): Path 
   const resolved = config != null ? resolveOcioConfig(config) : null;
   if (resolved == null) {
     throw new ValueError(
-      `Cannot resolve the project's OCIO configuration (${literal(config)}), ` +
-        `which is needed to ${purpose}.`,
+      `Cannot resolve the project's OCIO configuration (${literal(config)}), ` + `which is needed to ${purpose}.`,
     );
   }
   return resolved;
@@ -291,7 +288,9 @@ export const _builtinConfigRoots = lruCache((): Path[] => {
     // Newest install first, by release year: a plain name sort would put
     // "Adobe After Effects CC 2019" before "Adobe After Effects 2026"
     // ("C" > "2"). Year-less installs (CS6, bare CC) sort last.
-    for (const aeDir of [...base.glob("Adobe After Effects *")].sort((a, b) => compare(_installYear(b), _installYear(a)))) {
+    for (const aeDir of [...base.glob("Adobe After Effects *")].sort((a, b) =>
+      compare(_installYear(b), _installYear(a)),
+    )) {
       roots.push(aeDir.div("Support Files", "OpenColorIO-Configs"));
     }
   }
@@ -318,16 +317,9 @@ export const _OCIO_PROFILE_TYPE = 3;
  * @param profileData - The `colorProfileData` JSON (e.g. `{"colorSpace1":"ACEScg yo"}`).
  */
 export function _colorSpaceGuid(profileName: string, profileData: string): Uint8Array {
-  const inner = aeGuid(
-    concat(ascii("DVAColorProfile"), encode(profileName, "utf-8"), encode(profileData, "utf-8")),
-  );
+  const inner = aeGuid(concat(ascii("DVAColorProfile"), encode(profileName, "utf-8"), encode(profileData, "utf-8")));
   return aeGuid(
-    concat(
-      ascii("DVAColorSpace"),
-      inner,
-      Bytes.intToBytes(_OCIO_PROFILE_TYPE, 4, "little"),
-      new Uint8Array(1),
-    ),
+    concat(ascii("DVAColorSpace"), inner, Bytes.intToBytes(_OCIO_PROFILE_TYPE, 4, "little"), new Uint8Array(1)),
   );
 }
 
@@ -365,47 +357,45 @@ export function _configIndex(configPath: Path): _ConfigIndex {
 }
 
 /** Memoized body of `_configIndex` (`@lru_cache(maxsize=8)`; see `_loadConfigCached` TODO). */
-export const _configIndexCached = lruCache(
-  (configPath: string, mtimeNs: bigint, size: number): _ConfigIndex => {
-    const doc = _loadConfigCached(configPath, mtimeNs, size);
-    if (doc == null) return new _ConfigIndex(new Map(), new Map(), new Map(), new Map());
-    const families = new Map<string, OcioValue>();
-    const aliases = new Map<string, OcioValue>();
-    for (const key of ["colorspaces", "display_colorspaces"] as const) {
-      for (const cs of pyIter(truthyOr(doc.get(key), []))) {
-        if (!(cs instanceof Map)) continue;
-        const name = cs.get("name");
-        if (typeof name === "string") {
-          const family = truthyOr(cs.get("family"), "");
-          families.set(name, family);
-          for (const alias of pyIter(truthyOr(cs.get("aliases"), []))) {
-            if (typeof alias === "string") aliases.set(alias, family);
-          }
+export const _configIndexCached = lruCache((configPath: string, mtimeNs: bigint, size: number): _ConfigIndex => {
+  const doc = _loadConfigCached(configPath, mtimeNs, size);
+  if (doc == null) return new _ConfigIndex(new Map(), new Map(), new Map(), new Map());
+  const families = new Map<string, OcioValue>();
+  const aliases = new Map<string, OcioValue>();
+  for (const key of ["colorspaces", "display_colorspaces"] as const) {
+    for (const cs of pyIter(truthyOr(doc.get(key), []))) {
+      if (!(cs instanceof Map)) continue;
+      const name = cs.get("name");
+      if (typeof name === "string") {
+        const family = truthyOr(cs.get("family"), "");
+        families.set(name, family);
+        for (const alias of pyIter(truthyOr(cs.get("aliases"), []))) {
+          if (typeof alias === "string") aliases.set(alias, family);
         }
       }
     }
-    const roles = new Map<OcioValue, string>();
-    for (const [r, t] of _items(truthyOr(doc.get("roles"), new Map<OcioValue, OcioValue>()))) {
-      if (typeof t === "string") roles.set(r, t);
-    }
-    const displays = new Map<OcioValue, string[]>();
-    for (const [display, items] of _items(truthyOr(doc.get("displays"), new Map<OcioValue, OcioValue>()))) {
-      const views: string[] = [];
-      for (const item of pyIter(truthyOr(items, []))) {
-        // `!<Views> [name, ..]` (shared views) or `!<View> {name: ..}`; the
-        // OCIO loader strips the tags to a list or a dict respectively.
-        if (Array.isArray(item)) {
-          for (const v of item) if (typeof v === "string") views.push(v);
-        } else if (item instanceof Map) {
-          const view = item.get("name");
-          if (typeof view === "string") views.push(view);
-        }
+  }
+  const roles = new Map<OcioValue, string>();
+  for (const [r, t] of _items(truthyOr(doc.get("roles"), new Map<OcioValue, OcioValue>()))) {
+    if (typeof t === "string") roles.set(r, t);
+  }
+  const displays = new Map<OcioValue, string[]>();
+  for (const [display, items] of _items(truthyOr(doc.get("displays"), new Map<OcioValue, OcioValue>()))) {
+    const views: string[] = [];
+    for (const item of pyIter(truthyOr(items, []))) {
+      // `!<Views> [name, ..]` (shared views) or `!<View> {name: ..}`; the
+      // OCIO loader strips the tags to a list or a dict respectively.
+      if (Array.isArray(item)) {
+        for (const v of item) if (typeof v === "string") views.push(v);
+      } else if (item instanceof Map) {
+        const view = item.get("name");
+        if (typeof view === "string") views.push(view);
       }
-      displays.set(display, views);
     }
-    return new _ConfigIndex(families, aliases, roles, displays);
-  },
-);
+    displays.set(display, views);
+  }
+  return new _ConfigIndex(families, aliases, roles, displays);
+});
 
 /** Python `x.items()` on a config value: `AttributeError` when it is not a dict. */
 export function _items(x: OcioValue): [OcioValue, OcioValue][] {
@@ -455,10 +445,7 @@ export function _outputEnvelope(index: _ConfigIndex, colorSpace: OcioValue): [st
     // also the family of `ACES - ACEScg`), and matching on the display
     // alone would claim the `family/name` form the getters return.
     if ((index.displays.get(display) ?? []).includes(view)) {
-      return [
-        colorSpace,
-        _compact({ colorSpace1: display, colorSpace2: view, ocioColorSpaceType: 1 }),
-      ];
+      return [colorSpace, _compact({ colorSpace1: display, colorSpace2: view, ocioColorSpaceType: 1 })];
     }
   }
   throw new ValueError(`${literal(colorSpace)} is not a color space in the OCIO config`);
@@ -508,10 +495,7 @@ export const _guidTableCached = lruCache(
  * @param configPath - The resolved `.ocio` config path.
  * @param profileId - The 16-byte output profile id from the output module.
  */
-export function ocioColorSpaceForProfileId(
-  configPath: Path,
-  profileId: Uint8Array,
-): string | null {
+export function ocioColorSpaceForProfileId(configPath: Path, profileId: Uint8Array): string | null {
   const stamp = _configStamp(configPath);
   if (stamp == null) return null;
   const name = _guidTableCached(configPath.path, stamp[0], stamp[1]).get(compositeKey(profileId)) ?? null;
@@ -599,11 +583,7 @@ export function _ruleMatches(rule: OcioNode, filePath: string): boolean {
     const stem = i >= 0 ? filePath.slice(0, i) : "";
     const dot = i >= 0 ? "." : "";
     const ext = i >= 0 ? filePath.slice(i + 1) : filePath;
-    return (
-      !!dot &&
-      fnmatchcase(stem, pattern) &&
-      fnmatchcase(ext.toLowerCase(), extension.toLowerCase())
-    );
+    return !!dot && fnmatchcase(stem, pattern) && fnmatchcase(ext.toLowerCase(), extension.toLowerCase());
   }
   return false;
 }

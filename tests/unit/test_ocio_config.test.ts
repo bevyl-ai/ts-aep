@@ -11,7 +11,6 @@ import { listConfigColorSpaces, resolveOcioConfig } from "../../src/py_aep/color
 import { Path, len, truthy, valueEquals } from "../../src/pyrt/index.ts";
 import { makeTmpPath } from "../support/pytest.ts";
 
-
 const CONFIG = new Path(import.meta.dir, "..", "..", "samples", "assets", "config.ocio");
 
 const pathEq = (a: Path | null, b: Path): boolean => a != null && a.equals(b);

@@ -89,9 +89,7 @@ describe("TestCameraOptionDefaults", () => {
     // additions; min_major=26 gating must keep it at 13 options.
     const project = parseProject(TYPE_AEP);
     expect(project._head.aeVersionMajor).toBe(25);
-    const cam = project.compositions
-      .flatMap((c) => c.layers)
-      .find((ly) => ly instanceof CameraLayer);
+    const cam = project.compositions.flatMap((c) => c.layers).find((ly) => ly instanceof CameraLayer);
     if (cam === undefined) throw new StopIteration();
     const options = cam.property("ADBE Camera Options Group").properties;
     expect(len(options)).toBe(13);

@@ -31,17 +31,10 @@
  */
 
 import { Affine, IDENTITY } from "../svg/transform.ts";
-import {
-  NotImplementedError,
-  ZeroDivisionError,
-  floatRepr,
-  radians,
-  literal,
-} from "../../pyrt/index.ts";
+import { NotImplementedError, ZeroDivisionError, floatRepr, radians, literal } from "../../pyrt/index.ts";
 import type { MatchNameTypes } from "../models/properties/match_name_types.ts";
 import type { Property } from "../models/properties/property.ts";
 import type { PropertyGroup } from "../models/properties/property_group.ts";
-
 
 declare module "../models/properties/match_name_types.ts" {
   interface MatchNameTypes {
@@ -86,7 +79,11 @@ declare module "../models/properties/match_name_types.ts" {
 }
 
 type _VectorProp = {
-  [K in keyof MatchNameTypes]: MatchNameTypes[K] extends Property<infer V> ? (V extends number | number[] ? K : never) : never;
+  [K in keyof MatchNameTypes]: MatchNameTypes[K] extends Property<infer V>
+    ? V extends number | number[]
+      ? K
+      : never
+    : never;
 }[keyof MatchNameTypes];
 
 export type _Point = [number, number];
@@ -95,10 +92,7 @@ export type _Path = _Segment[];
 
 export const _KAPPA = (4 / 3) * (Math.sqrt(2) - 1);
 
-export const _FILLS: ReadonlySet<string> = new Set([
-  "ADBE Vector Graphic - Fill",
-  "ADBE Vector Graphic - G-Fill",
-]);
+export const _FILLS: ReadonlySet<string> = new Set(["ADBE Vector Graphic - Fill", "ADBE Vector Graphic - G-Fill"]);
 export const _STROKES: ReadonlySet<string> = new Set([
   "ADBE Vector Graphic - Stroke",
   "ADBE Vector Graphic - G-Stroke",
@@ -168,12 +162,7 @@ export function _rotation(degrees: number): Affine {
 }
 
 export function _mapPath(m: Affine, path: _Path): _Path {
-  return path.map(([p0, p1, p2, p3]): _Segment => [
-    m.apply(...p0),
-    m.apply(...p1),
-    m.apply(...p2),
-    m.apply(...p3),
-  ]);
+  return path.map(([p0, p1, p2, p3]): _Segment => [m.apply(...p0), m.apply(...p1), m.apply(...p2), m.apply(...p3)]);
 }
 
 export function _groupMatrix(transform: PropertyGroup, time: number): Affine {
@@ -182,9 +171,7 @@ export function _groupMatrix(transform: PropertyGroup, time: number): Affine {
   const scale = _value(transform, "ADBE Vector Scale", time);
   const skew = Math.tan(radians(_value(transform, "ADBE Vector Skew", time)));
   const axis = _value(transform, "ADBE Vector Skew Axis", time);
-  const shear = _rotation(-axis).multiply(
-    new Affine(1.0, 0.0, -skew, 1.0, 0.0, 0.0).multiply(_rotation(axis)),
-  );
+  const shear = _rotation(-axis).multiply(new Affine(1.0, 0.0, -skew, 1.0, 0.0, 0.0).multiply(_rotation(axis)));
   let m = new Affine(1.0, 0.0, 0.0, 1.0, -anchor[0], -anchor[1]);
   m = new Affine(scale[0] / 100, 0.0, 0.0, scale[1] / 100, 0.0, 0.0).multiply(m);
   m = shear.multiply(m);
@@ -197,12 +184,7 @@ export function _groupMatrix(transform: PropertyGroup, time: number): Affine {
 // ---------------------------------------------------------------------------
 
 /** Cubic segments from vertices and handles relative to them. */
-export function _closedPath(
-  vertices: _Point[],
-  ins: _Point[],
-  outs: _Point[],
-  closed: boolean,
-): _Path {
+export function _closedPath(vertices: _Point[], ins: _Point[], outs: _Point[], closed: boolean): _Path {
   const count = vertices.length;
   const path: _Path = [];
   const n = closed ? count : count - 1;
@@ -245,13 +227,35 @@ export function _rectPath(item: PropertyGroup, time: number): _Path {
   }
   const k = r * _KAPPA;
   const vertices: _Point[] = [
-    [left + r, top], [right - r, top],
-    [right, top + r], [right, bottom - r],
-    [right - r, bottom], [left + r, bottom],
-    [left, bottom - r], [left, top + r],
+    [left + r, top],
+    [right - r, top],
+    [right, top + r],
+    [right, bottom - r],
+    [right - r, bottom],
+    [left + r, bottom],
+    [left, bottom - r],
+    [left, top + r],
   ]; // fmt: skip
-  const outs: _Point[] = [[0, 0], [k, 0], [0, 0], [0, k], [0, 0], [-k, 0], [0, 0], [0, -k]];
-  const ins: _Point[] = [[-k, 0], [0, 0], [0, -k], [0, 0], [k, 0], [0, 0], [0, k], [0, 0]];
+  const outs: _Point[] = [
+    [0, 0],
+    [k, 0],
+    [0, 0],
+    [0, k],
+    [0, 0],
+    [-k, 0],
+    [0, 0],
+    [0, -k],
+  ];
+  const ins: _Point[] = [
+    [-k, 0],
+    [0, 0],
+    [0, -k],
+    [0, 0],
+    [k, 0],
+    [0, 0],
+    [0, k],
+    [0, 0],
+  ];
   return _closedPath(vertices, ins, outs, true);
 }
 
@@ -287,8 +291,7 @@ export function _polystarPath(item: PropertyGroup, time: number): _Path {
   let points = _value(item, "ADBE Vector Star Points", time);
   if (points !== Math.trunc(points)) {
     throw new NotImplementedError(
-      "sourceRectAtTime does not model a polystar with a fractional " +
-        `number of points (${floatRepr(points)})`,
+      "sourceRectAtTime does not model a polystar with a fractional " + `number of points (${floatRepr(points)})`,
     );
   }
   points = Math.trunc(points);
@@ -297,9 +300,7 @@ export function _polystarPath(item: PropertyGroup, time: number): _Path {
   const outer = _value(item, "ADBE Vector Star Outer Radius", time);
   const outerRound = _value(item, "ADBE Vector Star Outer Roundess", time) / 100;
   const inner = star ? _value(item, "ADBE Vector Star Inner Radius", time) : outer;
-  const innerRound = star
-    ? _value(item, "ADBE Vector Star Inner Roundess", time) / 100
-    : outerRound;
+  const innerRound = star ? _value(item, "ADBE Vector Star Inner Roundess", time) / 100 : outerRound;
   const count = star ? points * 2 : points;
   if (points === 0) {
     throw new ZeroDivisionError("float division by zero");
@@ -310,8 +311,7 @@ export function _polystarPath(item: PropertyGroup, time: number): _Path {
   const ins: _Point[] = [];
   const outs: _Point[] = [];
   for (let i = 0; i < count; i++) {
-    const [radius, roundness] =
-      i % 2 === 0 || !star ? [outer, outerRound] : [inner, innerRound];
+    const [radius, roundness] = i % 2 === 0 || !star ? [outer, outerRound] : [inner, innerRound];
     const cos = Math.cos(angle),
       sin = Math.sin(angle);
     const length = radius * roundness * handle;
@@ -325,9 +325,7 @@ export function _polystarPath(item: PropertyGroup, time: number): _Path {
 }
 
 export function _bezierPath(item: PropertyGroup, time: number): _Path {
-  const shape = item.property("ADBE Vector Shape").valueAtTime(
-    time,
-  );
+  const shape = item.property("ADBE Vector Shape").valueAtTime(time);
   const vertices: _Point[] = shape.vertices.map((v): _Point => [v[0], v[1]]);
   if (vertices.length === 0) {
     return [];
@@ -423,26 +421,15 @@ export function _walk(
     const group = item._isGroup() ? item : null;
     const pathBuilder = _PATH_BUILDERS.get(matchName);
     if (matchName === "ADBE Vector Group" && group != null) {
-      const local = _groupMatrix(
-        group.property("ADBE Vector Transform Group"),
-        time,
-      );
-      const children = _walk(
-        group.property("ADBE Vectors Group"),
-        time,
-        toLayer.multiply(local),
-        geometry,
-        extents,
-      );
+      const local = _groupMatrix(group.property("ADBE Vector Transform Group"), time);
+      const children = _walk(group.property("ADBE Vectors Group"), time, toLayer.multiply(local), geometry, extents);
       for (const path of children) {
         pending.push(_mapPath(local, path));
       }
     } else if (pathBuilder !== undefined && group != null) {
       pending.push(pathBuilder(group, time));
     } else if (_FILLS.has(matchName) || _STROKES.has(matchName)) {
-      const reach = _STROKES.has(matchName) && group != null
-        ? _strokeReach(group, time)
-        : null;
+      const reach = _STROKES.has(matchName) && group != null ? _strokeReach(group, time) : null;
       for (const path of pending.slice(painted)) {
         if (path?.length > 0) {
           geometry.addBox(_pathBox(_mapPath(toLayer, path)));
@@ -471,9 +458,7 @@ export function _walk(
         }
       }
     } else if (matchName.startsWith("ADBE Vector Filter") && !_BOX_NEUTRAL_FILTERS.has(matchName)) {
-      throw new NotImplementedError(
-        `sourceRectAtTime does not model the ${literal(item.name)} path operation`,
-      );
+      throw new NotImplementedError(`sourceRectAtTime does not model the ${literal(item.name)} path operation`);
     }
   }
   return pending;

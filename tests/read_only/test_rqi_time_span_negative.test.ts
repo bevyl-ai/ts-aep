@@ -15,11 +15,14 @@ import { RenderQueue } from "../../src/py_aep/models/renderqueue/render_queue.ts
 import { Path, valueEquals } from "../../src/pyrt/index.ts";
 import { makeTmpPath } from "../support/pytest.ts";
 
-
 // `Path(__file__).parent.parent.parent`: `import.meta.dir` is the directory of
 // this file (`__file__.parent`), so two more `.parent` reach the package root.
-const SAMPLE = new Path(import.meta.dir)
-  .parent.parent.div("samples", "models", "renderqueue", "time_span_negative.aep");
+const SAMPLE = new Path(import.meta.dir).parent.parent.div(
+  "samples",
+  "models",
+  "renderqueue",
+  "time_span_negative.aep",
+);
 
 describe("TestNegativeTimeSpanDecode", () => {
   test("test_negative_start_decodes_signed", () => {

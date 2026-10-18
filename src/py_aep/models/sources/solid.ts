@@ -40,12 +40,7 @@ export class SolidSource extends FootageSource {
    */
   declare color: number[];
 
-  constructor(kw: {
-    _sspc: SspcChunk;
-    _opti: OptiChunk;
-    _linl?: U1Chunk | null;
-    _clrs?: ListChunk | null;
-  }) {
+  constructor(kw: { _sspc: SspcChunk; _opti: OptiChunk; _linl?: U1Chunk | null; _clrs?: ListChunk | null }) {
     const { _sspc, _opti, _linl = null, _clrs = null } = kw;
     super({ _sspc, _linl, _clrs });
     this._opti = _opti;

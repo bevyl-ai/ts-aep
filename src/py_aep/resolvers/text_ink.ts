@@ -34,14 +34,7 @@
 import type * as fontkit from "fontkit";
 import { dep } from "../../pyrt/deps.ts";
 import * as host from "../../pyrt/host.ts";
-import {
-  NotImplementedError,
-  truthy,
-  truthyOr,
-  literal,
-  compositeKey,
-  zip,
-} from "../../pyrt/index.ts";
+import { NotImplementedError, truthy, truthyOr, literal, compositeKey, zip } from "../../pyrt/index.ts";
 import type { TextDocument } from "../models/text/text_document.ts";
 import { cosGet, runSpans } from "../cos/index.ts";
 import type { CosDict } from "../cos/cos.ts";
@@ -167,7 +160,12 @@ export function _lineInk(
     }
     const [font, isCff, glyphBounds] = _fontOutlines(style.font);
     const inkScale = scale * (isCff ? _CFF_INK_SCALE : 1.0);
-    for (const [info, pos] of zip<[{ codepoint: number; cluster: number }[], { xAdvance: number; yAdvance: number; xOffset: number; yOffset: number }[]]>(buf.glyphInfos, buf.glyphPositions)) {
+    for (const [info, pos] of zip<
+      [
+        { codepoint: number; cluster: number }[],
+        { xAdvance: number; yAdvance: number; xOffset: number; yOffset: number }[],
+      ]
+    >(buf.glyphInfos, buf.glyphPositions)) {
       // fontkit addresses glyphs by id, which HarfBuzz reports as the codepoint.
       const name = info.codepoint;
       if (!glyphBounds.has(name)) {
@@ -191,11 +189,7 @@ export function _lineInk(
 }
 
 /** Where a point-text line that is not left-justified starts its pen, from its advance width. */
-export function _justifiedOrigin(
-  justification: ParagraphJustification,
-  width: number,
-  text: string,
-): number {
+export function _justifiedOrigin(justification: ParagraphJustification, width: number, text: string): number {
   if (text !== text.replace(/ +$/, "")) {
     throw _refuse("trailing spaces on a centered or right-justified line");
   }
@@ -280,8 +274,7 @@ export function _pointTextInk(
         // all of it). A left-justified line needs no width, so its
         // glyphs are shaped once, by `_lineInk`.
         const last = styles[offset + paragraph.length - 1];
-        const width =
-          tc._width(paragraph, styles, offset) - (last.tracking / 1000.0) * last.size;
+        const width = tc._width(paragraph, styles, offset) - (last.tracking / 1000.0) * last.size;
         origin = _justifiedOrigin(justification, width, paragraph);
       }
       // A point-text paragraph is one line, its first: AE 2026 moves it

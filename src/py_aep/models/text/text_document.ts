@@ -19,15 +19,87 @@ import type { HeadChunk } from "../../binary/item_chunks.ts";
 import { getCosTemplate, cosGet, serialize } from "../../cos/index.ts";
 import type { CosDict, CosNode } from "../../cos/cos.ts";
 import { enumFromCos, type InstanceValue } from "../../cos/descriptors.ts";
-import { cosAppend, cosAt, cosDict, cosFloat, cosGetOr, cosItem, cosIter, cosNum, cosPop, cosSetdefault, cosSetitem, cosUnbox, is, pyInt, pyNumber, type CosUnboxed } from "../../cos/kinds.ts";
+import {
+  cosAppend,
+  cosAt,
+  cosDict,
+  cosFloat,
+  cosGetOr,
+  cosItem,
+  cosIter,
+  cosNum,
+  cosPop,
+  cosSetdefault,
+  cosSetitem,
+  cosUnbox,
+  is,
+  pyInt,
+  pyNumber,
+  type CosUnboxed,
+} from "../../cos/kinds.ts";
 import { charStyle, firstBaseline, read } from "../../cos/schema.ts";
-import { AutoKernType, BaselineDirection, BoxAutoFitPolicy, BoxFirstBaselineAlignment, BoxVerticalAlignment, ComposerEngine, DigitSet, FontBaselineOption, FontCapsOption, LeadingType, LineJoinType, LineOrientation, ParagraphDirection, ParagraphJustification } from "../../enums/index.ts";
+import {
+  AutoKernType,
+  BaselineDirection,
+  BoxAutoFitPolicy,
+  BoxFirstBaselineAlignment,
+  BoxVerticalAlignment,
+  ComposerEngine,
+  DigitSet,
+  FontBaselineOption,
+  FontCapsOption,
+  LeadingType,
+  LineJoinType,
+  LineOrientation,
+  ParagraphDirection,
+  ParagraphJustification,
+} from "../../enums/index.ts";
 import { calibrate as calibrateComposition } from "../../resolvers/text_composition.ts";
 import { requiresVersion } from "../../ae_version.ts";
 import { Preferences, defaultCharacterStyle, defaultParagraphStyle } from "../preferences.ts";
-import { validateBool, validateBoxSize, validateEnum, validateFontName, validateInt, validateNormalizedFloat, validateNumber, validatePositiveInt, validatePositiveNonzeroNumber, validatePositiveNumber, validateRgbColor, validateS4, validateText, validateVector2 } from "../validators.ts";
+import {
+  validateBool,
+  validateBoxSize,
+  validateEnum,
+  validateFontName,
+  validateInt,
+  validateNormalizedFloat,
+  validateNumber,
+  validatePositiveInt,
+  validatePositiveNonzeroNumber,
+  validatePositiveNumber,
+  validateRgbColor,
+  validateS4,
+  validateText,
+  validateVector2,
+} from "../validators.ts";
 import { FontObject } from "./font_object.ts";
-import { CHARACTER_RANGE_OOB, NOT_ASSOCIATED, CharacterRange, ComposedLineRange, DocumentWideCosField, ParagraphRange, _applyCharKey, _buildColorPaint, _cachedLineData, _cachedLineNodes, _charRunSpans, _composedLineSpans, _freshComposedSpans, _lineAdvances, _lineDataFromNodes, _lineOrigin, _paraRunSpans, _parseColor, _rawText, _rebuildKernRuns, _registerFontAt, _visibleLength, u16Len, u16Slice } from "./ranges.ts";
+import {
+  CHARACTER_RANGE_OOB,
+  NOT_ASSOCIATED,
+  CharacterRange,
+  ComposedLineRange,
+  DocumentWideCosField,
+  ParagraphRange,
+  _applyCharKey,
+  _buildColorPaint,
+  _cachedLineData,
+  _cachedLineNodes,
+  _charRunSpans,
+  _composedLineSpans,
+  _freshComposedSpans,
+  _lineAdvances,
+  _lineDataFromNodes,
+  _lineOrigin,
+  _paraRunSpans,
+  _parseColor,
+  _rawText,
+  _rebuildKernRuns,
+  _registerFontAt,
+  _visibleLength,
+  u16Len,
+  u16Slice,
+} from "./ranges.ts";
 
 /**
  * `baselineLocs` entry for a line with no visible characters: the
@@ -605,7 +677,13 @@ export class TextDocument {
       state.delete("1");
       return;
     }
-    const runs: CosNode[] = parts.map((part): CosDict => new Map<string, CosNode>([["0", new Map([["1", 1]])], ["1", u16Len(part) + 1]]));
+    const runs: CosNode[] = parts.map(
+      (part): CosDict =>
+        new Map<string, CosNode>([
+          ["0", new Map([["1", 1]])],
+          ["1", u16Len(part) + 1],
+        ]),
+    );
     const lineCounts = (): CosDict => new Map([["0", runs]]);
     if (state.has("1")) {
       state.set("1", lineCounts());
@@ -1304,10 +1382,7 @@ export class TextDocument {
    * @throws {@link ValueError} When the indices are outside the document bounds (AE raises at
    *   creation time).
    */
-  characterRange(
-    characterStart: number,
-    signedCharacterEnd: number | null = null,
-  ): CharacterRange {
+  characterRange(characterStart: number, signedCharacterEnd: number | null = null): CharacterRange {
     this._requireAssociation();
     validatePositiveInt(characterStart, this);
     if (signedCharacterEnd == null) {
@@ -1328,10 +1403,7 @@ export class TextDocument {
    * @throws {@link ValueError} When the indices are outside the document bounds (AE raises at
    *   creation time).
    */
-  paragraphRange(
-    paragraphIndexStart: number,
-    signedParagraphIndexEnd: number | null = null,
-  ): ParagraphRange {
+  paragraphRange(paragraphIndexStart: number, signedParagraphIndexEnd: number | null = null): ParagraphRange {
     this._requireAssociation();
     validatePositiveInt(paragraphIndexStart, this);
     if (signedParagraphIndexEnd == null) {
@@ -1423,36 +1495,116 @@ export class TextDocument {
     // -- Class-body descriptors (`x = DocumentWideCosField.float(...)`) ------------
     // Each `declare` above has its descriptor installed on the prototype here, in
     // source order (pyrt `descriptor`, which also runs `attach`).
-    descriptor(this, "fontSize", DocumentWideCosField.float("_charStyle", "1", { default: null, validate: validatePositiveNonzeroNumber }));
+    descriptor(
+      this,
+      "fontSize",
+      DocumentWideCosField.float("_charStyle", "1", { default: null, validate: validatePositiveNonzeroNumber }),
+    );
     descriptor(this, "fauxBold", DocumentWideCosField.bool("_charStyle", "2", { default: null }));
     descriptor(this, "fauxItalic", DocumentWideCosField.bool("_charStyle", "3", { default: null }));
     descriptor(this, "tracking", DocumentWideCosField.int("_charStyle", "8", { default: null, validate: validateS4 }));
-    descriptor(this, "horizontalScale", DocumentWideCosField.float("_charStyle", "6", { default: null, validate: validateNumber }));
-    descriptor(this, "verticalScale", DocumentWideCosField.float("_charStyle", "7", { default: null, validate: validateNumber }));
-    descriptor(this, "baselineShift", DocumentWideCosField.float("_charStyle", "9", { default: null, validate: validateNumber }));
-    descriptor(this, "fontCapsOption", DocumentWideCosField.enum(FontCapsOption, "_charStyle", "12", { default: null }));
-    descriptor(this, "fontBaselineOption", DocumentWideCosField.enum(FontBaselineOption, "_charStyle", "13", { default: null }));
-    descriptor(this, "tsume", DocumentWideCosField.float("_charStyle", "36", { default: 0.0, validate: validateNormalizedFloat }));
+    descriptor(
+      this,
+      "horizontalScale",
+      DocumentWideCosField.float("_charStyle", "6", { default: null, validate: validateNumber }),
+    );
+    descriptor(
+      this,
+      "verticalScale",
+      DocumentWideCosField.float("_charStyle", "7", { default: null, validate: validateNumber }),
+    );
+    descriptor(
+      this,
+      "baselineShift",
+      DocumentWideCosField.float("_charStyle", "9", { default: null, validate: validateNumber }),
+    );
+    descriptor(
+      this,
+      "fontCapsOption",
+      DocumentWideCosField.enum(FontCapsOption, "_charStyle", "12", { default: null }),
+    );
+    descriptor(
+      this,
+      "fontBaselineOption",
+      DocumentWideCosField.enum(FontBaselineOption, "_charStyle", "13", { default: null }),
+    );
+    descriptor(
+      this,
+      "tsume",
+      DocumentWideCosField.float("_charStyle", "36", { default: 0.0, validate: validateNormalizedFloat }),
+    );
     descriptor(this, "applyFill", DocumentWideCosField.bool("_charStyle", "56", { default: null }));
     descriptor(this, "applyStroke", DocumentWideCosField.bool("_charStyle", "57", { default: false }));
     descriptor(this, "strokeOverFill", DocumentWideCosField.bool("_charStyle", "58", { default: true }));
-    descriptor(this, "strokeWidth", DocumentWideCosField.float("_charStyle", "63", { default: 1.0, validate: validatePositiveNonzeroNumber }));
-    descriptor(this, "justification", DocumentWideCosField.enum(ParagraphJustification, "_paraStyle", "0", { default: null }));
-    descriptor(this, "firstLineIndent", DocumentWideCosField.float("_paraStyle", "1", { default: 0.0, validate: validateNumber }));
-    descriptor(this, "startIndent", DocumentWideCosField.float("_paraStyle", "2", { default: 0.0, validate: validateNumber }));
-    descriptor(this, "endIndent", DocumentWideCosField.float("_paraStyle", "3", { default: 0.0, validate: validateNumber }));
-    descriptor(this, "spaceBefore", DocumentWideCosField.float("_paraStyle", "4", { default: 0.0, validate: validateNumber }));
-    descriptor(this, "spaceAfter", DocumentWideCosField.float("_paraStyle", "5", { default: 0.0, validate: validateNumber }));
-    descriptor(this, "leadingType", DocumentWideCosField.enum(LeadingType, "_paraStyle", "8", { default: LeadingType.ROMAN_LEADING_TYPE }));
+    descriptor(
+      this,
+      "strokeWidth",
+      DocumentWideCosField.float("_charStyle", "63", { default: 1.0, validate: validatePositiveNonzeroNumber }),
+    );
+    descriptor(
+      this,
+      "justification",
+      DocumentWideCosField.enum(ParagraphJustification, "_paraStyle", "0", { default: null }),
+    );
+    descriptor(
+      this,
+      "firstLineIndent",
+      DocumentWideCosField.float("_paraStyle", "1", { default: 0.0, validate: validateNumber }),
+    );
+    descriptor(
+      this,
+      "startIndent",
+      DocumentWideCosField.float("_paraStyle", "2", { default: 0.0, validate: validateNumber }),
+    );
+    descriptor(
+      this,
+      "endIndent",
+      DocumentWideCosField.float("_paraStyle", "3", { default: 0.0, validate: validateNumber }),
+    );
+    descriptor(
+      this,
+      "spaceBefore",
+      DocumentWideCosField.float("_paraStyle", "4", { default: 0.0, validate: validateNumber }),
+    );
+    descriptor(
+      this,
+      "spaceAfter",
+      DocumentWideCosField.float("_paraStyle", "5", { default: 0.0, validate: validateNumber }),
+    );
+    descriptor(
+      this,
+      "leadingType",
+      DocumentWideCosField.enum(LeadingType, "_paraStyle", "8", { default: LeadingType.ROMAN_LEADING_TYPE }),
+    );
     descriptor(this, "autoHyphenate", DocumentWideCosField.bool("_paraStyle", "9", { default: null }));
     descriptor(this, "hangingRoman", DocumentWideCosField.bool("_paraStyle", "21", { default: false }));
     descriptor(this, "everyLineComposer", DocumentWideCosField.bool("_paraStyle", "29", { default: false }));
-    descriptor(this, "baselineDirection", DocumentWideCosField.enum(BaselineDirection, "_charStyle", "35", { default: BaselineDirection.BASELINE_WITH_STREAM }));
+    descriptor(
+      this,
+      "baselineDirection",
+      DocumentWideCosField.enum(BaselineDirection, "_charStyle", "35", {
+        default: BaselineDirection.BASELINE_WITH_STREAM,
+      }),
+    );
     descriptor(this, "ligature", DocumentWideCosField.bool("_charStyle", "18", { default: false }));
     descriptor(this, "noBreak", DocumentWideCosField.bool("_charStyle", "52", { default: false }));
-    descriptor(this, "digitSet", DocumentWideCosField.enum(DigitSet, "_charStyle", "70", { default: DigitSet.DEFAULT_DIGITS }));
-    descriptor(this, "lineJoinType", DocumentWideCosField.enum(LineJoinType, "_charStyle", "62", { default: LineJoinType.LINE_JOIN_MITER }));
-    descriptor(this, "direction", DocumentWideCosField.enum(ParagraphDirection, "_paraStyle", "33", { default: ParagraphDirection.DIRECTION_LEFT_TO_RIGHT }));
+    descriptor(
+      this,
+      "digitSet",
+      DocumentWideCosField.enum(DigitSet, "_charStyle", "70", { default: DigitSet.DEFAULT_DIGITS }),
+    );
+    descriptor(
+      this,
+      "lineJoinType",
+      DocumentWideCosField.enum(LineJoinType, "_charStyle", "62", { default: LineJoinType.LINE_JOIN_MITER }),
+    );
+    descriptor(
+      this,
+      "direction",
+      DocumentWideCosField.enum(ParagraphDirection, "_paraStyle", "33", {
+        default: ParagraphDirection.DIRECTION_LEFT_TO_RIGHT,
+      }),
+    );
   }
 }
 
@@ -1460,51 +1612,58 @@ export class TextDocument {
 // The Python decorator wraps each setter; the gate runs before the body. The
 // setters above forward to these wrappers.
 
-export const _boxInsetSpacingSet = requiresVersion(24)(/** Setter body for `boxInsetSpacing`. */
-function box_inset_spacing(this: TextDocument, value: number): void {
-  validatePositiveNumber(value);
-  const meta = cosSetdefault(this._ensureFrame(), "2", new Map());
-  cosSetitem(meta, "9", boxFloat(value));
-  _numericSort(cosDict(meta, "items"));
-  this._propagateCos();
-});
+export const _boxInsetSpacingSet = requiresVersion(24)(
+  /** Setter body for `boxInsetSpacing`. */
+  function box_inset_spacing(this: TextDocument, value: number): void {
+    validatePositiveNumber(value);
+    const meta = cosSetdefault(this._ensureFrame(), "2", new Map());
+    cosSetitem(meta, "9", boxFloat(value));
+    _numericSort(cosDict(meta, "items"));
+    this._propagateCos();
+  },
+);
 
-export const _boxVerticalAlignmentSet = requiresVersion(24)(/** Setter body for `boxVerticalAlignment`. */
-function box_vertical_alignment(this: TextDocument, value: BoxVerticalAlignment): void {
-  const meta = cosSetdefault(this._ensureFrame(), "2", new Map());
-  cosSetitem(meta, "13", BoxVerticalAlignment.toBinary(value));
-  _numericSort(cosDict(meta, "items"));
-  this._propagateCos();
-});
+export const _boxVerticalAlignmentSet = requiresVersion(24)(
+  /** Setter body for `boxVerticalAlignment`. */
+  function box_vertical_alignment(this: TextDocument, value: BoxVerticalAlignment): void {
+    const meta = cosSetdefault(this._ensureFrame(), "2", new Map());
+    cosSetitem(meta, "13", BoxVerticalAlignment.toBinary(value));
+    _numericSort(cosDict(meta, "items"));
+    this._propagateCos();
+  },
+);
 
-export const _boxAutoFitPolicySet = requiresVersion(24)(/** Setter body for `boxAutoFitPolicy`. */
-function box_auto_fit_policy(this: TextDocument, value: BoxAutoFitPolicy): void {
-  const meta = cosSetdefault(this._ensureFrame(), "2", new Map());
-  cosSetitem(meta, "14", BoxAutoFitPolicy.toBinary(value));
-  _numericSort(cosDict(meta, "items"));
-  this._propagateCos();
-});
+export const _boxAutoFitPolicySet = requiresVersion(24)(
+  /** Setter body for `boxAutoFitPolicy`. */
+  function box_auto_fit_policy(this: TextDocument, value: BoxAutoFitPolicy): void {
+    const meta = cosSetdefault(this._ensureFrame(), "2", new Map());
+    cosSetitem(meta, "14", BoxAutoFitPolicy.toBinary(value));
+    _numericSort(cosDict(meta, "items"));
+    this._propagateCos();
+  },
+);
 
-export const _boxFirstBaselineAlignmentSet = requiresVersion(24)(/** Setter body for `boxFirstBaselineAlignment`. */
-function box_first_baseline_alignment(
-  this: TextDocument,
-  value: BoxFirstBaselineAlignment,
-): void {
-  const meta = cosSetdefault(this._ensureFrame(), "2", new Map());
-  const sub = cosSetdefault(meta, "10", new Map());
-  cosSetitem(sub, "0", BoxFirstBaselineAlignment.toBinary(value));
-  // AE always stores the minimum alongside the alignment.
-  cosSetdefault(sub, "1", boxFloat(0.0));
-  _numericSort(cosDict(meta, "items"));
-  this._propagateCos();
-});
+export const _boxFirstBaselineAlignmentSet = requiresVersion(24)(
+  /** Setter body for `boxFirstBaselineAlignment`. */
+  function box_first_baseline_alignment(this: TextDocument, value: BoxFirstBaselineAlignment): void {
+    const meta = cosSetdefault(this._ensureFrame(), "2", new Map());
+    const sub = cosSetdefault(meta, "10", new Map());
+    cosSetitem(sub, "0", BoxFirstBaselineAlignment.toBinary(value));
+    // AE always stores the minimum alongside the alignment.
+    cosSetdefault(sub, "1", boxFloat(0.0));
+    _numericSort(cosDict(meta, "items"));
+    this._propagateCos();
+  },
+);
 
-export const _boxFirstBaselineAlignmentMinimumSet = requiresVersion(24)(/** Setter body for `boxFirstBaselineAlignmentMinimum`. */
-function box_first_baseline_alignment_minimum(this: TextDocument, value: number): void {
-  const meta = cosSetdefault(this._ensureFrame(), "2", new Map());
-  const sub = cosSetdefault(meta, "10", new Map());
-  cosSetdefault(sub, "0", BoxFirstBaselineAlignment.toBinary(BoxFirstBaselineAlignment.ASCENT));
-  cosSetitem(sub, "1", boxFloat(value));
-  _numericSort(cosDict(meta, "items"));
-  this._propagateCos();
-});
+export const _boxFirstBaselineAlignmentMinimumSet = requiresVersion(24)(
+  /** Setter body for `boxFirstBaselineAlignmentMinimum`. */
+  function box_first_baseline_alignment_minimum(this: TextDocument, value: number): void {
+    const meta = cosSetdefault(this._ensureFrame(), "2", new Map());
+    const sub = cosSetdefault(meta, "10", new Map());
+    cosSetdefault(sub, "0", BoxFirstBaselineAlignment.toBinary(BoxFirstBaselineAlignment.ASCENT));
+    cosSetitem(sub, "1", boxFloat(value));
+    _numericSort(cosDict(meta, "items"));
+    this._propagateCos();
+  },
+);

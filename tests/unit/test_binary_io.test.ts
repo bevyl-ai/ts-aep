@@ -2,7 +2,6 @@
 
 import { describe, expect, test } from "bun:test";
 
-
 import {
   AssertionError,
   ByteStream,
@@ -22,18 +21,86 @@ import {
   repr,
   struct,
 } from "../../src/pyrt/index.ts";
-import { isReadable, readBytes, readFmt, readPad, writeBytes, writeFmt, writePad } from "../../src/py_aep/binary/bin_utils.ts";
-import { _CONTEXT_RESOLVERS, Chunk, ContainerChunk, ListChunk, ReadContext, _resolveCdatContext, _resolveLdatContext, _resolveTdumContext, readAep, readChunks, readHeader, writeAep, writeChunk } from "../../src/py_aep/binary/chunk.ts";
+import {
+  isReadable,
+  readBytes,
+  readFmt,
+  readPad,
+  writeBytes,
+  writeFmt,
+  writePad,
+} from "../../src/py_aep/binary/bin_utils.ts";
+import {
+  _CONTEXT_RESOLVERS,
+  Chunk,
+  ContainerChunk,
+  ListChunk,
+  ReadContext,
+  _resolveCdatContext,
+  _resolveLdatContext,
+  _resolveTdumContext,
+  readAep,
+  readChunks,
+  readHeader,
+  writeAep,
+  writeChunk,
+} from "../../src/py_aep/binary/chunk.ts";
 import { CHUNK_TYPES, register } from "../../src/py_aep/binary/registry.ts";
 import { _structInfo, asciiField, bytesField, u1Field, u2Field, u4Field } from "../../src/py_aep/binary/fmt_field.ts";
 import { U4Chunk } from "../../src/py_aep/binary/scalar_chunks.ts";
-import { AnglePardChunk, BooleanPardChunk, ColorPardChunk, EnumPardChunk, FeatherPointItem, FipsChunk, Fth5Chunk, GenericPardChunk, IntegerPardChunk, NmhdChunk, PardChunk, PrinChunk, ScalarPardChunk, SliderPardChunk, ThreeDPardChunk, TwoDPardChunk } from "../../src/py_aep/binary/misc_chunks.ts";
+import {
+  AnglePardChunk,
+  BooleanPardChunk,
+  ColorPardChunk,
+  EnumPardChunk,
+  FeatherPointItem,
+  FipsChunk,
+  Fth5Chunk,
+  GenericPardChunk,
+  IntegerPardChunk,
+  NmhdChunk,
+  PardChunk,
+  PrinChunk,
+  ScalarPardChunk,
+  SliderPardChunk,
+  ThreeDPardChunk,
+  TwoDPardChunk,
+} from "../../src/py_aep/binary/misc_chunks.ts";
 import { LdtaChunk } from "../../src/py_aep/binary/layer_chunks.ts";
 import { BitField } from "../../src/py_aep/binary/bitfield.ts";
 import { CdatChunk, Tdb4Chunk, TdsbChunk, TdumChunk } from "../../src/py_aep/binary/property_chunks.ts";
-import { CineonRoptChunk, JpegRoptChunk, OpenExrRoptChunk, PngRoptChunk, RoptChunk, RouuChunk, RoutChunk, RoutItem, TargaRoptChunk } from "../../src/py_aep/binary/render_chunks.ts";
-import { OptiChunk, PlaceholderOptiChunk, PsdOptiChunk, SoliOptiChunk, SspcChunk, TextOptiChunk, buildAiLayerOptiData } from "../../src/py_aep/binary/footage_chunks.ts";
-import { GuideItem, KfColor, KfMultiDimensional, KfNoValue, KfPosition, LdatChunk, LdatItem, LdatItemType, Lhd3Chunk, ShapePoint } from "../../src/py_aep/binary/ldat_chunks.ts";
+import {
+  CineonRoptChunk,
+  JpegRoptChunk,
+  OpenExrRoptChunk,
+  PngRoptChunk,
+  RoptChunk,
+  RouuChunk,
+  RoutChunk,
+  RoutItem,
+  TargaRoptChunk,
+} from "../../src/py_aep/binary/render_chunks.ts";
+import {
+  OptiChunk,
+  PlaceholderOptiChunk,
+  PsdOptiChunk,
+  SoliOptiChunk,
+  SspcChunk,
+  TextOptiChunk,
+  buildAiLayerOptiData,
+} from "../../src/py_aep/binary/footage_chunks.ts";
+import {
+  GuideItem,
+  KfColor,
+  KfMultiDimensional,
+  KfNoValue,
+  KfPosition,
+  LdatChunk,
+  LdatItem,
+  LdatItemType,
+  Lhd3Chunk,
+  ShapePoint,
+} from "../../src/py_aep/binary/ldat_chunks.ts";
 import { ChunkNotFoundError, findByType } from "../../src/py_aep/binary/utils.ts";
 import { asInstance } from "../helpers.ts";
 import { _unflagMarkers, removeChunksByType, toggleFlagChunk } from "../../src/py_aep/binary/mutations.ts";
@@ -438,7 +505,11 @@ describe("TestContextResolvers", () => {
 
   test("test_nesting_flag_matches_the_container_classes", () => {
     for (const [chunkType, cls] of CHUNK_TYPES) {
-      const nests = cls.prototype instanceof ListChunk || cls === ListChunk || cls.prototype instanceof ContainerChunk || cls === ContainerChunk;
+      const nests =
+        cls.prototype instanceof ListChunk ||
+        cls === ListChunk ||
+        cls.prototype instanceof ContainerChunk ||
+        cls === ContainerChunk;
       expect([chunkType, cls._nests]).toEqual([chunkType, nests]);
     }
   });
@@ -500,18 +571,8 @@ describe("TestFmtField", () => {
     const info = _structInfo(U4Chunk);
     expect(info != null).toBe(true);
     if (info == null) throw new AssertionError("U4Chunk has no struct info");
-    const [
-      fmt,
-      dataFields,
-      encodings,
-      optionalStart,
-      endians,
-      itemsInfo,
-      coerces,
-      initNames,
-      simple,
-      expectedSize,
-    ] = info;
+    const [fmt, dataFields, encodings, optionalStart, endians, itemsInfo, coerces, initNames, simple, expectedSize] =
+      info;
     expect(fmt).toBe("I");
     expect(dataFields.length).toBe(1);
     expect(dataFields[0].name).toBe("value");
@@ -1212,7 +1273,9 @@ describe("TestSspcChunk", () => {
     // AE 2026 caches 14,729,427,240 for a 14.7 GB image sequence.
     const chunk = new SspcChunk({});
     chunk.dataSize = 14_729_427_240;
-    expect(valueEquals(Bytes.slice(chunk.tobytes(), 0xcc, 0xd4), Bytes.intToBytes(14_729_427_240, 8, "big"))).toBe(true);
+    expect(valueEquals(Bytes.slice(chunk.tobytes(), 0xcc, 0xd4), Bytes.intToBytes(14_729_427_240, 8, "big"))).toBe(
+      true,
+    );
     const reread = asInstance(SspcChunk.frombytes(chunk.tobytes(), { chunkType: "sspc" }), SspcChunk);
     expect(valueEquals(reread.dataSize, 14_729_427_240)).toBe(true); // u8 field unpacks as bigint
   });
@@ -1279,12 +1342,7 @@ describe("TestOptiChunk", () => {
     // Build data: 4-byte asset_type + 2-byte asset_type_int + 4-byte pad
     // + 256-byte NUL-padded name
     const nameField = Bytes.concat(nameBytes, Bytes.zeros(256 - nameBytes.length));
-    const data = Bytes.concat(
-      Bytes.zeros(4),
-      struct.pack(">H", 2),
-      b("\x00\x00\x01\x0a"),
-      nameField,
-    );
+    const data = Bytes.concat(Bytes.zeros(4), struct.pack(">H", 2), b("\x00\x00\x01\x0a"), nameField);
 
     const buf = new ByteStream(data);
     const chunk = OptiChunk.read(buf, data.length, { chunkType: "opti" });
@@ -1658,10 +1716,7 @@ describe("TestPardChunk", () => {
 
       const buf = new ByteStream(data);
       const chunk = PardChunk.read(buf, data.length, { chunkType: "pard" });
-      assert(
-        chunk instanceof GenericPardChunk,
-        `type ${ct}: expected GenericPardChunk, got ${chunk.constructor.name}`,
-      );
+      assert(chunk instanceof GenericPardChunk, `type ${ct}: expected GenericPardChunk, got ${chunk.constructor.name}`);
       expect(chunk.propertyControlType).toBe(ct);
 
       const out = new ByteStream();
@@ -1938,11 +1993,7 @@ describe("TestLdatItem", () => {
     flags = 0,
     payload: Uint8Array = b(""),
   ): Uint8Array {
-    return Bytes.concat(
-      struct.pack(">i", timeUnits),
-      struct.pack(">BBBB", inInterp, outInterp, label, flags),
-      payload,
-    );
+    return Bytes.concat(struct.pack(">i", timeUnits), struct.pack(">BBBB", inInterp, outInterp, label, flags), payload);
   }
 
   test("test_1d_roundtrip", () => {
@@ -2075,12 +2126,7 @@ describe("TestLdatChunk", () => {
 
   test("test_1d_keyframe_roundtrip", () => {
     // Build one item: 8B header + 40B payload = 48B
-    const header = Bytes.concat(
-      b("\x00"),
-      struct.pack(">h", 15),
-      b("\x00"),
-      struct.pack(">BBBB", 2, 2, 0, 0),
-    );
+    const header = Bytes.concat(b("\x00"), struct.pack(">h", 15), b("\x00"), struct.pack(">BBBB", 2, 2, 0, 0));
     const payload = struct.pack(">ddddd", 100.0, 1.0, 33.3, 2.0, 66.6);
     const itemData = Bytes.concat(header, payload);
     expect(itemData.length).toBe(48);

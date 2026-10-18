@@ -11,7 +11,14 @@
  */
 
 import { aeWrites } from "../ae_version.ts";
-import { COMP_VIEW_LAYER_SPECS, type GroupSpec, type LayerSpec, type PropSpec, type SpecExtras, type SpecValue } from "../data/comp_skeleton_specs.ts";
+import {
+  COMP_VIEW_LAYER_SPECS,
+  type GroupSpec,
+  type LayerSpec,
+  type PropSpec,
+  type SpecExtras,
+  type SpecValue,
+} from "../data/comp_skeleton_specs.ts";
 import { Chunk, ListChunk } from "./chunk.ts";
 import { CdtaChunk, CsctChunk, frameGrid } from "./composition_chunks.ts";
 import { IdtaChunk } from "./item_chunks.ts";
@@ -39,11 +46,7 @@ export function buildItemViewChunks(): Chunk[] {
 /** Build the per-layer view block AE writes after each layer's LIST
  * (an empty `Ewst` plus two view-data septets). */
 export function buildLayerViewBlock(): Chunk[] {
-  return [
-    new ListChunk({ listType: "Ewst", chunks: [] }),
-    ...buildItemViewChunks(),
-    ...buildItemViewChunks(),
-  ];
+  return [new ListChunk({ listType: "Ewst", chunks: [] }), ...buildItemViewChunks(), ...buildItemViewChunks()];
 }
 
 // NOTE(port): the only specs in data/comp_skeleton_specs.ts are `+`/`-`/unary minus over env names and int
@@ -66,16 +69,10 @@ export function _buildTdbs(spec: PropSpec, env: Record<string, number>): ListChu
     // (not orientation / color, despite their spatial marker).
     tdb4.pixelAspect = env["PAR"];
   }
-  const chunks: Chunk[] = [
-    new TdsbChunk({ ...(spec["tdsb"] ?? {}) }),
-    TdsnChunk.new_(spec["tdsn"]),
-    tdb4,
-  ];
+  const chunks: Chunk[] = [new TdsbChunk({ ...(spec["tdsb"] ?? {}) }), TdsnChunk.new_(spec["tdsn"]), tdb4];
   const { cdat, tdum, tduM } = spec;
   if (cdat !== undefined) {
-    chunks.push(
-      new CdatChunk({ values: cdat.map((v) => Number(_evaluate(v, env))) }),
-    );
+    chunks.push(new CdatChunk({ values: cdat.map((v) => Number(_evaluate(v, env))) }));
   }
   if (tdum !== undefined) {
     chunks.push(new TdumChunk({ chunkType: "tdum", values: [...tdum] }));
@@ -98,15 +95,8 @@ export function _buildExtras(extras: SpecExtras): Chunk[] {
   return out;
 }
 
-export function _buildTdgp(
-  spec: GroupSpec,
-  env: Record<string, number>,
-  aeMajor: number,
-): ListChunk {
-  const chunks: Chunk[] = [
-    new TdsbChunk({ ...(spec["tdsb"] ?? {}) }),
-    TdsnChunk.new_(spec["tdsn"] ?? ""),
-  ];
+export function _buildTdgp(spec: GroupSpec, env: Record<string, number>, aeMajor: number): ListChunk {
+  const chunks: Chunk[] = [new TdsbChunk({ ...(spec["tdsb"] ?? {}) }), TdsnChunk.new_(spec["tdsn"] ?? "")];
   for (const node of spec["children"]) {
     const [kind, matchName, body, extras] = node;
     if (body.gate !== undefined && !aeWrites(body.gate, aeMajor)) continue;
@@ -157,12 +147,7 @@ export function _buildViewLayer(
   }
   const ldta = new LdtaChunk({ layerId, ...ldtaKwargs });
   const [gide, _lhd3, _inner] = buildGideList();
-  const chunks: Chunk[] = [
-    ldta,
-    new Utf8Chunk({ value: spec["name"] }),
-    _buildTdgp(spec["tdgp"], env, aeMajor),
-    gide,
-  ];
+  const chunks: Chunk[] = [ldta, new Utf8Chunk({ value: spec["name"] }), _buildTdgp(spec["tdgp"], env, aeMajor), gide];
   if (aeWrites("layer OvdG", aeMajor)) {
     chunks.push(buildOvdg());
   }
@@ -191,11 +176,7 @@ export function _buildCif(listType: string): ListChunk {
       cps2,
       new ListChunk({
         listType: "CapS",
-        chunks: [
-          new CsctChunk(),
-          new U4Chunk({ chunkType: "CapL" }),
-          new Utf8Chunk({ value: "Untitled" }),
-        ],
+        chunks: [new CsctChunk(), new U4Chunk({ chunkType: "CapL" }), new Utf8Chunk({ value: "Untitled" })],
       }),
       new Chunk({ chunkType: "CPTm", data: Uint8Array.of(0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01) }),
       new Chunk({ chunkType: "CROI", data: Bytes.repeat(new Uint8Array(1), 8) }),
@@ -274,18 +255,7 @@ export function buildNewCompItem(kw: {
   aeMajor: number;
   label?: number;
 }): [ListChunk, IdtaChunk, Utf8Chunk, ListChunk] {
-  const {
-    itemId,
-    name,
-    width,
-    height,
-    pixelAspect,
-    duration,
-    frameRate,
-    allocateLayerId,
-    aeMajor,
-    label = 15,
-  } = kw;
+  const { itemId, name, width, height, pixelAspect, duration, frameRate, allocateLayerId, aeMajor, label = 15 } = kw;
   const idta = new IdtaChunk({ itemType: 4, itemId, label, flags17: 0x20 });
   const nameUtf8 = new Utf8Chunk({ value: name });
   const cdta = _buildCdta(width, height, pixelAspect, duration, frameRate);

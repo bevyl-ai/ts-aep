@@ -149,17 +149,16 @@ export class LayerSpec {
 
   *[Symbol.iterator](): Generator<
     LayerSpec[
-      | 'name'
-      | 'optiData'
-      | 'width'
-      | 'transform'
-      | 'fullFrame'
-      | 'layerId'
-      | 'reservedC8'
-      | 'styles'
-      | 'masks'
-      | 'hasAlpha'
-    ]
+      | "name"
+      | "optiData"
+      | "width"
+      | "transform"
+      | "fullFrame"
+      | "layerId"
+      | "reservedC8"
+      | "styles"
+      | "masks"
+      | "hasAlpha"]
   > {
     yield this.name;
     yield this.optiData;
@@ -237,9 +236,7 @@ export class LayerGroupSpec {
     return other instanceof LayerGroupSpec && valueEquals([...this], [...other]);
   }
 
-  *[Symbol.iterator](): Generator<
-    LayerGroupSpec['name' | 'children' | 'compName' | 'collapsed']
-  > {
+  *[Symbol.iterator](): Generator<LayerGroupSpec["name" | "children" | "compName" | "collapsed"]> {
     yield this.name;
     yield this.children;
     yield this.compName;

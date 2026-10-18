@@ -55,7 +55,7 @@ export function isReal(x: unknown): x is number | BoxedFloat {
 export function unbox(x: number | BoxedFloat): number;
 export function unbox<T>(x: T): T extends BoxedFloat ? number : T;
 export function unbox<T>(x: T): T | number {
-  return (x instanceof BoxedFloat ? x.value : x);
+  return x instanceof BoxedFloat ? x.value : x;
 }
 
 /**
@@ -144,7 +144,9 @@ function repr200(x: string): string {
     .replace(/\t/g, "\\t")
     .replace(q === "'" ? /'/g : /"/g, `\\${q}`)
     .replace(/[\x00-\x1f\x7f]/g, (c) => "\\x" + c.charCodeAt(0).toString(16).padStart(2, "0"));
-  return Array.from(q + body + q).slice(0, 200).join("");
+  return Array.from(q + body + q)
+    .slice(0, 200)
+    .join("");
 }
 
 const ASCII_WS = /^[ \t\n\v\f\r]+|[ \t\n\v\f\r]+$/g;
@@ -179,7 +181,10 @@ export function int(x: number | string | boolean | bigint | BoxedFloat | String,
     }
     let b = base;
     const p = t.slice(0, 2).toLowerCase();
-    const prefixed = (p === "0x" && (b === 16 || b === 0)) || (p === "0o" && (b === 8 || b === 0)) || (p === "0b" && (b === 2 || b === 0));
+    const prefixed =
+      (p === "0x" && (b === 16 || b === 0)) ||
+      (p === "0o" && (b === 8 || b === 0)) ||
+      (p === "0b" && (b === 2 || b === 0));
     if (b === 0) {
       if (prefixed) b = p === "0x" ? 16 : p === "0o" ? 8 : 2;
       else {

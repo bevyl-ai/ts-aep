@@ -126,11 +126,7 @@ export function _getFirstParaStyle(doc: CosNode): CosDict | null {
  * @param btdkBody - The btdk chunk body for COS write-back.
  * @returns Array of {@link TextDocument} instances (one per keyframe).
  */
-export function parseTextDocuments(
-  cosData: CosDict,
-  fonts: FontObject[],
-  btdkBody: ListChunk,
-): TextDocument[] {
+export function parseTextDocuments(cosData: CosDict, fonts: FontObject[], btdkBody: ListChunk): TextDocument[] {
   const docArray = cosGet(cosData, "1", "1");
   if (!truthy(docArray) || !Array.isArray(docArray)) {
     return [];
@@ -181,10 +177,7 @@ export function parseTextDocuments(
  *   array of {@link TextDocument} (one per keyframe) and `fonts` is
  *   the array of {@link FontObject} referenced by the documents.
  */
-export function parseBtdkCos(
-  cosData: CosDict,
-  btdkBody: ListChunk,
-): [TextDocument[], FontObject[]] {
+export function parseBtdkCos(cosData: CosDict, btdkBody: ListChunk): [TextDocument[], FontObject[]] {
   const fonts = parseFonts(cosData);
   const documents = parseTextDocuments(cosData, fonts, btdkBody);
   return [documents, fonts];

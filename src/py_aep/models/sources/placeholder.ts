@@ -39,12 +39,7 @@ export class PlaceholderSource extends FootageSource {
     return true;
   }
 
-  constructor(kw: {
-    _sspc: SspcChunk;
-    _opti: OptiChunk;
-    _linl?: U1Chunk | null;
-    _clrs?: ListChunk | null;
-  }) {
+  constructor(kw: { _sspc: SspcChunk; _opti: OptiChunk; _linl?: U1Chunk | null; _clrs?: ListChunk | null }) {
     const { _sspc, _opti, _linl = null, _clrs = null } = kw;
     super({ _sspc, _linl, _clrs });
     this._opti = _opti;
@@ -59,13 +54,7 @@ export class PlaceholderSource extends FootageSource {
    * @param frameRate - Frame rate in fps (1.0-99.0).
    * @param duration - Duration in seconds (\> 0, \<= 10800).
    */
-  static _new(
-    name: string,
-    width: number,
-    height: number,
-    frameRate: number,
-    duration: number,
-  ): PlaceholderSource {
+  static _new(name: string, width: number, height: number, frameRate: number, duration: number): PlaceholderSource {
     validateOptiName(name);
     validateFootageDimension(width);
     validateFootageDimension(height);

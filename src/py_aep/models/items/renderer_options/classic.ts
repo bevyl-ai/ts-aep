@@ -10,9 +10,10 @@ import type { ClassicPrdaChunk } from "../../../binary/misc_chunks.ts";
 export class ClassicRendererOptions extends RendererOptionsBase {
   declare _body: ClassicPrdaChunk;
 
-  static _SPEC: Map<string, [string, typeof ShadowMapResolution]> = new Map<string, [string, typeof ShadowMapResolution]>([
-    ["Shadow Map Resolution", ["shadowMapResolution", ShadowMapResolution]],
-  ]);
+  static _SPEC: Map<string, [string, typeof ShadowMapResolution]> = new Map<
+    string,
+    [string, typeof ShadowMapResolution]
+  >([["Shadow Map Resolution", ["shadowMapResolution", ShadowMapResolution]]]);
 
   /**
    * Resolution of the shadow map, as set in the Classic 3D Options dialog.

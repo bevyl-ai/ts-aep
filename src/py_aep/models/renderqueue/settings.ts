@@ -23,7 +23,6 @@ import type { EnumHelpers } from "../../../pyrt/enum.ts";
 import type { CompPreset } from "../../parsers/comp_presets.ts";
 import type { Preferences } from "../preferences.ts";
 
-
 // NOTE(port): py_enum members are plain numbers with no owning class, so
 // `isinstance(value, IntEnum)` is unanswerable. NUMBER output is unaffected
 // (`int(member)` is the member itself); STRING output gets the label from the
@@ -251,8 +250,7 @@ export function _coerceEnum(enumClass: LabeledEnum, value: SettingValue | null):
         .map((m) => `${enumClass.nameOf(m)} (${Math.trunc(m)})`)
         .join(", ");
       throw new ValueError(
-        `Invalid int value ${literal(value)} for ${enumClass.enumName}. ` +
-          `Valid members: ${members}`,
+        `Invalid int value ${literal(value)} for ${enumClass.enumName}. ` + `Valid members: ${members}`,
       );
     }
     return member;
@@ -266,14 +264,9 @@ export function _coerceEnum(enumClass: LabeledEnum, value: SettingValue | null):
       .members()
       .map((m) => literal(enumLabel(enumClass, m)))
       .join(", ");
-    throw new ValueError(
-      `Invalid string ${literal(value)} for ${enumClass.enumName}. ` +
-        `Valid labels: ${labels}`,
-    );
+    throw new ValueError(`Invalid string ${literal(value)} for ${enumClass.enumName}. ` + `Valid labels: ${labels}`);
   }
-  throw new TypeError(
-    `Expected ${enumClass.enumName}, int, or str, got ${typeName(value)}`,
-  );
+  throw new TypeError(`Expected ${enumClass.enumName}, int, or str, got ${typeName(value)}`);
 }
 
 export const _RESOLUTION_STRINGS: Map<string, string> = new Map<string, string>([
@@ -391,7 +384,9 @@ export function _toStringValue(
 }
 
 /** `settings.items()` of a dict or a settings view. */
-function _settingItems(settings: Map<string, SettingValue> | SettingsView<SettingValues>): Array<[string, SettingValue]> {
+function _settingItems(
+  settings: Map<string, SettingValue> | SettingsView<SettingValues>,
+): Array<[string, SettingValue]> {
   return settings instanceof Map ? [...settings.entries()] : settings.items();
 }
 
@@ -403,7 +398,9 @@ function _settingItems(settings: Map<string, SettingValue> | SettingsView<Settin
  *
  * @param settings - The typed settings map.
  */
-export function settingsToNumber(settings: Map<string, SettingValue> | SettingsView<SettingValues>): Map<string, SettingValue> {
+export function settingsToNumber(
+  settings: Map<string, SettingValue> | SettingsView<SettingValues>,
+): Map<string, SettingValue> {
   return new Map<string, SettingValue>(
     _settingItems(settings).map(([k, v]): [string, SettingValue] => [k, _toNumberValue(v)]),
   );
@@ -423,9 +420,7 @@ export function settingsToString(
   resizeMap: Map<string, string> = _RESIZE_TO_STRINGS,
 ): Map<string, string | Map<string, string>> {
   return new Map<string, string | Map<string, string>>(
-    _settingItems(settings).map((
-      [k, v],
-    ): [string, string | Map<string, string>] => [
+    _settingItems(settings).map(([k, v]): [string, string | Map<string, string>] => [
       k,
       _toStringValue(k, v, resizeMap, settings instanceof SettingsView ? (settings._specs.get(k) ?? null)?.[1] : null),
     ]),

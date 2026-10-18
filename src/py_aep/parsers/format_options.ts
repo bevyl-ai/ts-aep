@@ -3,7 +3,15 @@
 import type { Chunk } from "../binary/chunk.ts";
 import { OpenExrRoptChunk, PngRoptChunk } from "../binary/render_chunks.ts";
 import { findByTypeOrNull } from "../binary/utils.ts";
-import { CineonFormatOptions, JpegFormatOptions, OpenExrFormatOptions, PngFormatOptions, TargaFormatOptions, TiffFormatOptions, XmlFormatOptions } from "../models/renderqueue/format_options/index.ts";
+import {
+  CineonFormatOptions,
+  JpegFormatOptions,
+  OpenExrFormatOptions,
+  PngFormatOptions,
+  TargaFormatOptions,
+  TiffFormatOptions,
+  XmlFormatOptions,
+} from "../models/renderqueue/format_options/index.ts";
 
 export type FormatOptions =
   | CineonFormatOptions

@@ -99,10 +99,7 @@ export const _TDB4_SPATIAL: SpecFields = {
 // Shared property nodes
 // ---------------------------------------------------------------------------
 
-export function _boolProp(
-  matchName: string,
-  value: number,
-): PropNode {
+export function _boolProp(matchName: string, value: number): PropNode {
   return [
     "prop",
     matchName,
@@ -116,10 +113,7 @@ export function _boolProp(
 }
 
 /** Material-options slider with 0-100 bounds. */
-export function _coefficientProp(
-  matchName: string,
-  value: number,
-): PropNode {
+export function _coefficientProp(matchName: string, value: number): PropNode {
   return [
     "prop",
     matchName,
@@ -145,11 +139,7 @@ export const _ANCHOR_POINT: SpecNode = [
   },
 ];
 
-export function _positionProp(
-  x: number | string,
-  y: number | string,
-  z: number | string,
-): PropNode {
+export function _positionProp(x: number | string, y: number | string, z: number | string): PropNode {
   return [
     "prop",
     "ADBE Position",
@@ -163,20 +153,18 @@ export function _positionProp(
 }
 
 // X / Y / Z separation followers (ADBE Position_0 / _1 / _2).
-export const _SPLIT_POSITIONS: SpecNode[] = [0, 1, 2].map(
-  (i): SpecNode => [
-    "prop",
-    `ADBE Position_${i}`,
-    {
-      tdsb: { enableFlags: 3 },
-      tdsn: "-_0_/-",
-      tdb4: _TDB4_SCALAR,
-      cdat: [0.0, 0.0, 0.0, 0.0, 0.0],
-      tdum: [0.0],
-      tduM: [0.0],
-    },
-  ],
-);
+export const _SPLIT_POSITIONS: SpecNode[] = [0, 1, 2].map((i): SpecNode => [
+  "prop",
+  `ADBE Position_${i}`,
+  {
+    tdsb: { enableFlags: 3 },
+    tdsn: "-_0_/-",
+    tdb4: _TDB4_SCALAR,
+    cdat: [0.0, 0.0, 0.0, 0.0, 0.0],
+    tdum: [0.0],
+    tduM: [0.0],
+  },
+]);
 
 export const _SCALE: SpecNode = [
   "prop",
@@ -215,16 +203,10 @@ export const _OPACITY: SpecNode = [
   },
 ];
 
-export const _ENVIR_APPEAR: SpecNode = _boolProp(
-  "ADBE Envir Appear in Reflect",
-  1.0,
-);
+export const _ENVIR_APPEAR: SpecNode = _boolProp("ADBE Envir Appear in Reflect", 1.0);
 
 /** `node` restricted to the releases that write the `gate` part. */
-export function _gated(
-  node: PropNode,
-  gate: string,
-): PropNode {
+export function _gated(node: PropNode, gate: string): PropNode {
   const [kind, matchName, body] = node;
   return [kind, matchName, { ...body, gate }];
 }
@@ -273,16 +255,8 @@ export function _viewLayer(
     },
     tdgp: {
       children: [
-        [
-          "group",
-          "ADBE Transform Group",
-          { children, tdsb: {}, tdsn: "-_0_/-" },
-        ],
-        [
-          "group",
-          "ADBE Camera Options Group",
-          { children: [], tdsb: {}, tdsn: "-_0_/-" },
-        ],
+        ["group", "ADBE Transform Group", { children, tdsb: {}, tdsn: "-_0_/-" }],
+        ["group", "ADBE Camera Options Group", { children: [], tdsb: {}, tdsn: "-_0_/-" }],
       ],
       tdsb: {},
       tdsn: "",
@@ -388,28 +362,20 @@ export const _MARKERS_LAYER: LayerSpec = {
               "group",
               "ADBE Blend Options Group",
               {
-                children: [
-                  [
-                    "group",
-                    "ADBE Adv Blend Group",
-                    { children: [], tdsb: {}, tdsn: "-_0_/-" },
-                  ],
-                ],
+                children: [["group", "ADBE Adv Blend Group", { children: [], tdsb: {}, tdsn: "-_0_/-" }]],
                 tdsb: { enableFlags: 3 },
                 tdsn: "-_0_/-",
               },
             ],
-            ..._LAYER_STYLE_NAMES.map(
-              (style): SpecNode => [
-                "group",
-                `${style}/enabled`,
-                {
-                  children: [],
-                  tdsb: { enableFlags: 2 },
-                  tdsn: "-_0_/-",
-                },
-              ],
-            ),
+            ..._LAYER_STYLE_NAMES.map((style): SpecNode => [
+              "group",
+              `${style}/enabled`,
+              {
+                children: [],
+                tdsb: { enableFlags: 2 },
+                tdsn: "-_0_/-",
+              },
+            ]),
           ],
           tdsb: { enableFlags: 3 },
           tdsn: "-_0_/-",
@@ -445,42 +411,44 @@ export const _MARKERS_LAYER: LayerSpec = {
         "ADBE Material Options Group",
         {
           children: [
-            ...([
-              _boolProp("ADBE Casts Shadows", 0.0),
-              _coefficientProp("ADBE Light Transmission", 0.0),
-              _boolProp("ADBE Accepts Shadows", 1.0),
-              _boolProp("ADBE Accepts Lights", 1.0),
+            ...(
               [
-                "prop",
-                "ADBE Shadow Color",
-                {
-                  tdsb: { enableFlags: 3 },
-                  tdsn: "-_0_/-",
-                  tdb4: {
-                    dimensions: 4,
-                    spatialStaticFlags: 7,
-                    valueHintType: 2,
-                    valueHintFlag: 255,
-                    cvotFlags: 255,
-                    timeBase: "$TB",
-                    typeFlags: 1,
-                    propertyCategory: 1,
-                    spatialMarker: true,
+                _boolProp("ADBE Casts Shadows", 0.0),
+                _coefficientProp("ADBE Light Transmission", 0.0),
+                _boolProp("ADBE Accepts Shadows", 1.0),
+                _boolProp("ADBE Accepts Lights", 1.0),
+                [
+                  "prop",
+                  "ADBE Shadow Color",
+                  {
+                    tdsb: { enableFlags: 3 },
+                    tdsn: "-_0_/-",
+                    tdb4: {
+                      dimensions: 4,
+                      spatialStaticFlags: 7,
+                      valueHintType: 2,
+                      valueHintFlag: 255,
+                      cvotFlags: 255,
+                      timeBase: "$TB",
+                      typeFlags: 1,
+                      propertyCategory: 1,
+                      spatialMarker: true,
+                    },
+                    cdat: ["$SHADOW_ALPHA", ...Array(11).fill(0.0)],
                   },
-                  cdat: ["$SHADOW_ALPHA", ...Array(11).fill(0.0)],
-                },
-              ],
-            ] satisfies PropNode[]).map((node) => _gated(node, "markers material")),
+                ],
+              ] satisfies PropNode[]
+            ).map((node) => _gated(node, "markers material")),
             _boolProp("ADBE Appears in Reflections", 1.0),
-            ...([
-              ["ADBE Ambient Coefficient", 100.0],
-              ["ADBE Diffuse Coefficient", 50.0],
-              ["ADBE Specular Coefficient", 50.0],
-              ["ADBE Shininess Coefficient", 5.0],
-              ["ADBE Metal Coefficient", 100.0],
-            ] satisfies [string, number][]).map(([matchName, value]) =>
-              _gated(_coefficientProp(matchName, value), "markers material"),
-            ),
+            ...(
+              [
+                ["ADBE Ambient Coefficient", 100.0],
+                ["ADBE Diffuse Coefficient", 50.0],
+                ["ADBE Specular Coefficient", 50.0],
+                ["ADBE Shininess Coefficient", 5.0],
+                ["ADBE Metal Coefficient", 100.0],
+              ] satisfies [string, number][]
+            ).map(([matchName, value]) => _gated(_coefficientProp(matchName, value), "markers material")),
             _coefficientProp("ADBE Reflection Coefficient", 0.0),
             _coefficientProp("ADBE Glossiness Coefficient", 100.0),
             _coefficientProp("ADBE Fresnel Coefficient", 0.0),
@@ -503,11 +471,7 @@ export const _MARKERS_LAYER: LayerSpec = {
           tdsn: "-_0_/-",
         },
       ],
-      [
-        "group",
-        "ADBE Audio Group",
-        { children: [], tdsb: { enableFlags: 3 }, tdsn: "-_0_/-" },
-      ],
+      ["group", "ADBE Audio Group", { children: [], tdsb: { enableFlags: 3 }, tdsn: "-_0_/-" }],
       [
         "group",
         "ADBE Layer Sets",
@@ -537,20 +501,10 @@ export const COMP_VIEW_LAYER_SPECS: LayerSpec[] = [
   _viewLayer("SLay", "Back", ["$W2", "$H2", 5000.0], { hasScale: false }),
   _viewLayer("SLay", "Right", ["$W2 + 5000", "$H2", 0.0], { hasScale: false }),
   _viewLayer("SLay", "Bottom", ["$W2", "$H2 + 5000", 0.0], { hasScale: false }),
-  _viewLayer(
-    "CLay",
-    "Custom View 1",
-    ["$W2 - ZV", "$H2 - ZV", "$-ZV"],
-    { hasScale: true },
-  ),
+  _viewLayer("CLay", "Custom View 1", ["$W2 - ZV", "$H2 - ZV", "$-ZV"], { hasScale: true }),
   _viewLayer("CLay", "Custom View 2", ["$W2", "$H2 - ZV", "$-ZV"], {
     hasScale: true,
   }),
-  _viewLayer(
-    "CLay",
-    "Custom View 3",
-    ["$W2 + ZV", "$H2 - ZV", "$-ZV"],
-    { hasScale: true },
-  ),
+  _viewLayer("CLay", "Custom View 3", ["$W2 + ZV", "$H2 - ZV", "$-ZV"], { hasScale: true }),
   _MARKERS_LAYER,
 ];

@@ -67,7 +67,11 @@ function runCase(out: string, id: string): any {
       continue;
     }
     d.walk(path, doc);
-    for (const [name, args] of [["character_range", [0, -1]], ["paragraph_range", [0]], ["composed_line_range", [0]]] as const) {
+    for (const [name, args] of [
+      ["character_range", [0, -1]],
+      ["paragraph_range", [0]],
+      ["composed_line_range", [0]],
+    ] as const) {
       let r: any;
       try {
         r = attrOf(doc, name)(...args);
