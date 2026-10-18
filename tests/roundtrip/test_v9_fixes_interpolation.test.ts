@@ -9,13 +9,16 @@
  */
 
 import { describe, expect, test } from "bun:test";
-import { Path, TypeError_, ValueError, float, getitem, hasattr, py_eq } from "../../src/pyrt/index.ts";
-import { approx, make_tmp_path, raises } from "../../src/pyrt/pytest.ts";
+import { Path, StopIteration, TypeError_, ValueError, float, getattr, getitem, hasattr, py_assert, py_eq, setattr } from "../../src/pyrt/index.ts";
+import { approx, make_tmp_path, raises, type ApproxOperand } from "../../src/pyrt/pytest.ts";
 import * as py_aep from "../../src/py_aep/index.ts";
-import { KeyframeEase, Shape, parse } from "../../src/py_aep/index.ts";
+import { AVLayer, CompItem, Keyframe, KeyframeEase, Layer, Property, PropertyGroup, Shape, parse } from "../../src/py_aep/index.ts";
+import type { PropertyValue } from "../../src/py_aep/models/properties/keyframe.ts";
+import { TdumChunk } from "../../src/py_aep/binary/property_chunks.ts";
+import { KfNoValue } from "../../src/py_aep/binary/ldat_chunks.ts";
 import { KeyframeInterpolationType as KIT } from "../../src/py_aep/index.ts";
 import "../../src/py_aep/binary/_register.ts";
-import { project_bytes } from "../helpers.ts";
+import { as_instance, project_bytes } from "../helpers.ts";
 
 const TG = "ADBE Transform Group";
 const LIN = KIT.LINEAR;
@@ -24,89 +27,108 @@ const HOLD = KIT.HOLD;
 
 const SAMPLES = new Path(import.meta.path).parent.parent.parent.div("samples");
 
-function _leaves(group: any): any[] {
-  const out: any[] = [];
+function _leaves(group: PropertyGroup): Property[] {
+  const out: Property[] = [];
   for (const prop of group.properties) {
-    out.push(...(hasattr(prop, "properties") ? _leaves(prop) : [prop]));
+    out.push(...(hasattr(prop, "properties") ? _leaves(as_instance(prop, PropertyGroup)) : [as_instance(prop, Property)]));
   }
   return out;
 }
 
-function _comp(width = 1920, height = 1080, par = 1.0, fps = 24.0): [py_aep.Application, any] {
+/** Python `next(x for x in items if pred(x))`: raises StopIteration when nothing matches. */
+function _next<T>(items: Iterable<T>, pred: (x: T) => boolean): T {
+  for (const x of items) {
+    if (pred(x)) return x;
+  }
+  throw new StopIteration();
+}
+
+function _comp(width = 1920, height = 1080, par = 1.0, fps = 24.0): [py_aep.Application, CompItem] {
   const app = py_aep.new();
   const comp = app.project.root_folder.add_comp("C", width, height, par, 10.0, fps);
   return [app, comp];
 }
 
-function _solid(comp: any, w = 200, h = 100, three_d = false): any {
+function _solid(comp: CompItem, w = 200, h = 100, three_d = false): AVLayer {
   const layer = comp.add_solid([1.0, 0.0, 0.0], "L", w, h, 1.0);
   if (three_d) layer.three_d_layer = true;
   return layer;
 }
 
-function _effect(layer: any, effect: string): any {
-  return layer.effects.add_property(effect).property(`${effect}-0001`);
+function _effect(layer: Layer, effect: string): Property {
+  const added = as_instance(as_instance(layer.effects, PropertyGroup).add_property(effect), PropertyGroup);
+  return as_instance(added.property(`${effect}-0001`), Property);
 }
 
-function _keys(prop: any, keys: [number, any][]): any {
+function _keys<P extends Property>(prop: P, keys: [number, PropertyValue][]): P {
   for (const [t, v] of keys) prop.set_value_at_time(t, v);
   return prop;
 }
 
-function _ease(kf: any, in_ease: number[][], out_ease: number[][]): void {
+function _ease(kf: Keyframe, in_ease: number[][], out_ease: number[][]): void {
   kf.in_temporal_ease = in_ease.map(([s, i]) => new KeyframeEase(s, i));
   kf.out_temporal_ease = out_ease.map(([s, i]) => new KeyframeEase(s, i));
 }
 
-function _types(kf: any, in_type: number, out_type: number): void {
+function _types(kf: Keyframe, in_type: KIT, out_type: KIT): void {
   kf.in_interpolation_type = in_type;
   kf.out_interpolation_type = out_type;
 }
 
-function _flat(value: any): number[] {
-  if (Array.isArray(value)) return value.flatMap((item: any) => _flat(item));
+/** A number or a (nested) list of numbers. */
+type _Nested = number | readonly _Nested[];
+
+function _flat(value: _Nested): number[] {
+  if (typeof value !== "number") return value.flatMap((item) => _flat(item));
   return [value];
 }
 
-function _speeds(eases: any[]): number[] {
-  return _flat(eases.map((e: any) => [e.speed, e.influence]));
+function _speeds(eases: KeyframeEase[]): number[] {
+  return _flat(eases.map((e) => [e.speed, e.influence]));
 }
 
-function _verts(shape: any): number[] {
-  return _flat(shape.vertices.map((v: any) => [...v]));
+function _verts(shape: Shape): number[] {
+  return _flat(shape.vertices.map((v) => [...v]));
 }
 
-function _reparse(app: py_aep.Application, tmp_path: Path): any {
+/** `kf._stored_value[2]`: the stored Z of a 3-D key. */
+function _stored_z(kf: Keyframe): number {
+  const stored = kf._stored_value;
+  py_assert(Array.isArray(stored));
+  return stored[2];
+}
+
+function _reparse(app: py_aep.Application, tmp_path: Path): Layer {
   const path = tmp_path.div("out.aep");
   app.project.save(path);
-  const comp = parse(path).project.compositions.find((c: any) => c.name === "C")!;
-  return comp.layers.find((lyr: any) => lyr.name === "L")!;
+  const comp = _next(parse(path).project.compositions, (c) => c.name === "C");
+  return _next(comp.layers, (lyr) => lyr.name === "L");
 }
 
-function _reparse_comp(app: py_aep.Application, tmp_path: Path): any {
+function _reparse_comp(app: py_aep.Application, tmp_path: Path): CompItem {
   const path = tmp_path.div("out.aep");
   app.project.save(path);
-  return parse(path).project.compositions.find((c: any) => c.name === "C")!;
+  return _next(parse(path).project.compositions, (c) => c.name === "C");
 }
 
-type _Approx = { expected: any; abs: number };
+type _Approx = { expected: number | number[]; abs: number };
 
 /** `pytest.approx(_flat(value) if isinstance(value, list) else value, abs=abs)`: the expected side, compared with `_eq_approx`. */
-function _approx(value: any, abs: number = 1e-6): _Approx {
-  return { expected: Array.isArray(value) ? _flat(value) : value, abs };
+function _approx(value: _Nested, abs: number = 1e-6): _Approx {
+  return { expected: typeof value !== "number" ? _flat(value) : value, abs };
 }
 
 /** `actual == _approx(...)`, through pyrt's `approx`. */
-function _eq_approx(actual: any, a: _Approx): boolean {
+function _eq_approx(actual: ApproxOperand, a: _Approx): boolean {
   return approx(actual, a.expected, { abs: a.abs });
 }
 
 // NOTE(port): pytest.raises((A, B)) - local helper accepts any listed class, same as CPython tuple matching (instanceof any); re-throws otherwise like pytest.
-function raises_any(classes: any[], fn: () => unknown): Error {
+function raises_any(classes: (abstract new (...args: never[]) => Error)[], fn: () => unknown): Error {
   try {
     fn();
   } catch (e) {
-    if (classes.some((c) => (e as any) instanceof c)) return e as Error;
+    if (e instanceof Error && classes.some((c) => e instanceof c)) return e;
     throw e;
   }
   throw new Error("DID NOT RAISE");
@@ -123,7 +145,7 @@ describe("TestFootageAnchorPointZ", () => {
     const layer = _solid(comp, 400, 300, true);
     const anchor = layer.__getitem__(TG).__getitem__("ADBE Anchor Point");
     anchor.value = [100, 50, 80];
-    expect(_eq_approx(anchor._cdat.values.slice(0, 3), _approx([0.25, 50 / 300, 80 / 300]))).toBe(true);
+    expect(_eq_approx(getattr(anchor._cdat, "values").slice(0, 3), _approx([0.25, 50 / 300, 80 / 300]))).toBe(true);
     expect(_eq_approx(anchor.value, _approx([100.0, 50.0, 80.0]))).toBe(true);
     const again = _reparse(app, tmp_path).__getitem__(TG).__getitem__("ADBE Anchor Point");
     expect(_eq_approx(again.value, _approx([100.0, 50.0, 80.0]))).toBe(true);
@@ -137,7 +159,7 @@ describe("TestTemporalAutoBezierParallelKinds", () => {
     // AE 2026: keys report speed 1; the in-between shapes below.
     const [_app, comp] = _comp();
     const layer = _solid(comp, 3000, 200);
-    const path = layer.masks.add_property("ADBE Mask Atom").__getitem__("ADBE Mask Shape");
+    const path = as_instance(layer.masks, PropertyGroup).add_property("ADBE Mask Atom").__getitem__("ADBE Mask Shape");
     _keys(path, [
       [0, new Shape([[0, 0], [100, 0], [100, 100]], undefined, undefined, { closed: true })],
       [1, new Shape([[20, 10], [150, 0], [120, 140]], undefined, undefined, { closed: true })],
@@ -237,7 +259,7 @@ describe("TestInHoldSegments", () => {
 
   test("test_mask_path", () => {
     const [_app, comp] = _comp();
-    const path = _solid(comp).masks.add_property("ADBE Mask Atom").__getitem__("ADBE Mask Shape");
+    const path = as_instance(_solid(comp).masks, PropertyGroup).add_property("ADBE Mask Atom").__getitem__("ADBE Mask Shape");
     _keys(path, [
       [0, new Shape([[0, 0], [100, 0], [100, 100]], undefined, undefined, { closed: true })],
       [1, new Shape([[20, 10], [150, 0], [120, 140]], undefined, undefined, { closed: true })],
@@ -251,12 +273,12 @@ describe("TestInHoldSegments", () => {
 describe("TestColourModel", () => {
   /** F6: colour eases move along the RGBA line, scaled by its length. */
 
-  const KEYS: [number, any][] = [
+  const KEYS: [number, number[]][] = [
     [0, [1, 0, 0, 1]],
     [2, [0, 0.5, 1, 1]],
   ];
 
-  const _color = (): any => {
+  const _color = () => {
     const [_app, comp] = _comp();
     return _keys(_effect(_solid(comp), "ADBE Color Control"), KEYS);
   };
@@ -305,7 +327,7 @@ describe("TestRangeClamp", () => {
 
   test("test_mask_feather_and_expansion", () => {
     const [_app, comp] = _comp();
-    const mask = _solid(comp, 3000, 200).masks.add_property("ADBE Mask Atom");
+    const mask = as_instance(_solid(comp, 3000, 200).masks, PropertyGroup).add_property("ADBE Mask Atom");
     const feather = _keys(mask.__getitem__("ADBE Mask Feather"), [
       [0, [10, 10]],
       [2, [50, 60]],
@@ -353,7 +375,7 @@ describe("TestRejectedWritesDoNotMutate", () => {
     expect(_eq_approx(_speeds(new_.out_temporal_ease), _approx([[179.03961789599282, 61.1377297149683]]))).toBe(true);
     expect(_eq_approx(_speeds(op.keyframes[0].out_temporal_ease), _approx([[300.0, 35.131134850035764]]))).toBe(true);
     const again = _reparse(app, tmp_path).__getitem__(TG).__getitem__("ADBE Opacity");
-    expect(py_eq(again.keyframes.map((k: any) => k.value), [10.0, 100.0, 90.0])).toBe(true);
+    expect(py_eq(again.keyframes.map((k) => k.value), [10.0, 100.0, 90.0])).toBe(true);
   });
 });
 
@@ -457,7 +479,7 @@ describe("TestBezierSideFacingHold", () => {
   });
 });
 
-const ROVING_KEYS: [number, any][] = [
+const ROVING_KEYS: [number, number[]][] = [
   [0, [100, 100, 0]],
   [1, [300, 150, 0]],
   [2, [350, 400, 0]],
@@ -465,7 +487,7 @@ const ROVING_KEYS: [number, any][] = [
   [5, [800, 300, 0]],
 ];
 
-function _roving_run(comp: any): any {
+function _roving_run(comp: CompItem) {
   const pos = _keys(comp.add_null().__getitem__(TG).__getitem__("ADBE Position"), ROVING_KEYS);
   pos.keyframes[1].roving = true;
   pos.keyframes[2].roving = true;
@@ -503,10 +525,10 @@ describe("TestRovingRunRetimedByAnchorEase", () => {
     pos.keyframes[3].spatial_auto_bezier = true;
     _ease(pos.keyframes[0], [[0, 80]], [[0, 80]]);
     const want = [1.9925759092425759, 2.6412245578912246];
-    expect(_eq_approx(pos.keyframes.slice(1, 3).map((k: any) => k.time), _approx(want))).toBe(true);
+    expect(_eq_approx(pos.keyframes.slice(1, 3).map((k) => k.time), _approx(want))).toBe(true);
     const comp_again = _reparse_comp(app, tmp_path);
     const again = comp_again.layers[0].__getitem__(TG).__getitem__("ADBE Position");
-    expect(_eq_approx(again.keyframes.slice(1, 3).map((k: any) => k.time), _approx(want))).toBe(true);
+    expect(_eq_approx(again.keyframes.slice(1, 3).map((k) => k.time), _approx(want))).toBe(true);
   });
 
   test("test_auto_bezier_anchors", () => {
@@ -515,7 +537,7 @@ describe("TestRovingRunRetimedByAnchorEase", () => {
     pos.keyframes[0].temporal_auto_bezier = true;
     pos.keyframes[3].temporal_auto_bezier = true;
     expect(
-      _eq_approx(pos.keyframes.slice(1, 3).map((k: any) => k.time), _approx([0.9633383383383384, 2.267559225892559])),
+      _eq_approx(pos.keyframes.slice(1, 3).map((k) => k.time), _approx([0.9633383383383384, 2.267559225892559])),
     ).toBe(true);
   });
 });
@@ -548,7 +570,7 @@ describe("TestTwoDimensionalLayerZ", () => {
     pos.add_key(1.0);
     expect(
       _eq_approx(
-        _flat(pos.keyframes.map((k: any) => k.value)),
+        _flat(pos.keyframes.map((k) => k.value)),
         _approx(
           [
             [100, 100, 0],
@@ -559,13 +581,13 @@ describe("TestTwoDimensionalLayerZ", () => {
         ),
       ),
     ).toBe(true);
-    expect(_eq_approx(pos.keyframes[1]._stored_value[2], _approx(5.0005441476708805))).toBe(true);
+    expect(_eq_approx(_stored_z(pos.keyframes[1]), _approx(5.0005441476708805))).toBe(true);
     const anchor = null_.__getitem__(TG).__getitem__("ADBE Anchor Point");
     anchor.value = [30, 20, 15];
     expect(py_eq(anchor.value, [30.0, 20.0, 0.0])).toBe(true);
     const again = _reparse(app, tmp_path).__getitem__(TG);
     expect(py_eq(again.__getitem__("ADBE Anchor Point")._stored_static_value(), [30, 20, 15])).toBe(true);
-    const stored = again.__getitem__("ADBE Position").keyframes.map((k: any) => k._stored_value[2]);
+    const stored = again.__getitem__("ADBE Position").keyframes.map((k) => _stored_z(k));
     expect(_eq_approx(stored, _approx([40.0, 5.0005441476708805, -30.0]))).toBe(true);
   });
 
@@ -582,7 +604,7 @@ describe("TestAddKeyOnMixedSegment", () => {
    * side BEZIER with the segment's slope, then splits the curve. Comp
    * 1000x800, 10/11 pixel aspect, 29.97 fps. */
 
-  const _slider = (): any => {
+  const _slider = () => {
     const [_app, comp] = _comp(1000, 800, 10 / 11, 29.97);
     return _keys(_effect(_solid(comp), "ADBE Slider Control"), [
       [0, 0],
@@ -633,7 +655,7 @@ describe("TestMaskPathAddKey", () => {
   test("test_in_between_shape", () => {
     const tmp_path = make_tmp_path();
     const [app, comp] = _comp(640, 480, 1.5, 25.0);
-    const path = _solid(comp).masks.add_property("ADBE Mask Atom").__getitem__("ADBE Mask Shape");
+    const path = as_instance(_solid(comp).masks, PropertyGroup).add_property("ADBE Mask Atom").__getitem__("ADBE Mask Shape");
     _keys(path, [
       [0, new Shape([[0, 0], [100, 0], [100, 100]], undefined, undefined, { closed: true })],
       [2, new Shape([[20, 10], [150, 0], [120, 140]], undefined, undefined, { closed: true })],
@@ -641,14 +663,14 @@ describe("TestMaskPathAddKey", () => {
     path.add_key(0.7);
     const want = [[7.0, 3.5], [117.5, 0.0], [107.0, 114.0]];
     expect(_eq_approx(_verts(path.keyframes[1].value), _approx(want, 1e-3))).toBe(true);
-    const again = _reparse(app, tmp_path).masks.properties[0].__getitem__("ADBE Mask Shape");
+    const again = as_instance(getattr(_reparse(app, tmp_path).masks, "properties")[0], PropertyGroup).__getitem__("ADBE Mask Shape");
     expect(_eq_approx(_verts(again.keyframes[1].value), _approx(want, 1e-3))).toBe(true);
   });
 });
 
 const TRI0 = new Shape([[0, 0], [100, 0], [100, 100]], undefined, undefined, { closed: true });
 const TRI1 = new Shape([[20, 10], [150, 0], [120, 140]], undefined, undefined, { closed: true });
-const _T = new Map<string, number>([
+const _T = new Map<string, KIT>([
   ["L", LIN],
   ["B", BEZ],
   ["H", HOLD],
@@ -660,9 +682,9 @@ describe("TestParallelAddKeyTypes", () => {
    * not touch the neighbours. Any BEZIER makes a continuous BEZIER key with
    * speed 1 / influence 16.667 (speed 0 outside the keyed range). */
 
-  const _path = (keys: [number, any][]): any => {
+  const _path = (keys: [number, Shape][]) => {
     const [_app, comp] = _comp();
-    const path = _solid(comp).masks.add_property("ADBE Mask Atom").__getitem__("ADBE Mask Shape");
+    const path = as_instance(_solid(comp).masks, PropertyGroup).add_property("ADBE Mask Atom").__getitem__("ADBE Mask Shape");
     return _keys(path, keys);
   };
 
@@ -697,7 +719,7 @@ describe("TestParallelAddKeyTypes", () => {
     expect(k0.out_interpolation_type).toBe(getitem(_T, left_out));
     expect(k2.in_interpolation_type).toBe(getitem(_T, right_in));
     if (continuous) {
-      const data = new_._ldat_item.kf_data;
+      const data = as_instance(new_._ldat_item.kf_data, KfNoValue);
       expect(py_eq([data.in_speed, data.out_speed], [1.0, 1.0])).toBe(true);
       expect(_eq_approx(data.in_influence, _approx(1 / 6))).toBe(true);
     }
@@ -799,7 +821,7 @@ describe("TestRemoveKeyNextToRovingRun", () => {
     pos.remove_key(3);
     expect(
       _eq_approx(
-        pos.keyframes.map((k: any) => k.time),
+        pos.keyframes.map((k) => k.time),
         _approx([0.0, 1.1178515625, 2.5003125, 5.0], 1e-9),
       ),
     ).toBe(true);
@@ -811,7 +833,7 @@ describe("TestRemoveKeyNextToRovingRun", () => {
     const [_app, comp] = _comp(640, 480, 1.0, 25.0);
     const pos = _roving_run(comp);
     pos.remove_key(0);
-    expect(_eq_approx(pos.keyframes.map((k: any) => k.time), _approx([1.00984375, 2.2587109375, 3.0, 5.0], 1e-9))).toBe(true);
+    expect(_eq_approx(pos.keyframes.map((k) => k.time), _approx([1.00984375, 2.2587109375, 3.0, 5.0], 1e-9))).toBe(true);
     expect(pos.keyframes[0].roving).toBe(true);
   });
 });
@@ -908,13 +930,19 @@ describe("TestSynthesizedBoundChunks", () => {
     const [app, comp] = _comp();
     const slider = _effect(_solid(comp), "ADBE Slider Control");
     slider.value = 7;
-    const bounds = new Map<string, any>(
+    const bounds = new Map(
       slider._tdbs.chunks
-        .filter((c: any) => ["tdum", "tduM"].includes(c.chunk_type))
-        .map((c: any) => [c.chunk_type, [c.values, c.is_integer]]),
+        .filter((c) => ["tdum", "tduM"].includes(c.chunk_type))
+        .map((c): [string, [number[], boolean]] => {
+          const tdum = as_instance(c, TdumChunk);
+          return [tdum.chunk_type, [tdum.values, tdum.is_integer]];
+        }),
     );
-    expect(py_eq(bounds, new Map<string, any>([["tdum", [[0.0], false]], ["tduM", [[100.0], false]]]))).toBe(true);
-    const again = _reparse(app, tmp_path).effects.properties[0].properties[0];
+    expect(py_eq(bounds, new Map<string, [number[], boolean]>([["tdum", [[0.0], false]], ["tduM", [[100.0], false]]]))).toBe(true);
+    const again = as_instance(
+      as_instance(getattr(_reparse(app, tmp_path).effects, "properties")[0], PropertyGroup).properties[0],
+      Property,
+    );
     expect(py_eq([again.min_value, again.max_value], [-1000000, 1000000])).toBe(true);
     expect(again.value).toBe(7.0);
   });
@@ -937,7 +965,8 @@ describe("TestValidation", () => {
     const [_app, comp] = _comp();
     const rot = _solid(comp).__getitem__(TG).__getitem__("ADBE Rotate Z");
     raises(TypeError_, () => {
-      rot.value_at_time("abc" as any);
+      // @ts-expect-error a string time checks the runtime type validation
+      rot.value_at_time("abc");
     });
   });
 
@@ -955,7 +984,8 @@ describe("TestValidation", () => {
   test("test_ease_speed_none", () => {
     const ease = new KeyframeEase(1, 50);
     raises_any([TypeError_, ValueError], () => {
-      (ease as any).speed = null as any;
+      // @ts-expect-error a None speed checks the runtime type validation
+      ease.speed = null;
     });
     expect(ease.speed).toBe(1);
   });
@@ -965,7 +995,7 @@ describe("TestTemporalContinuityFlags", () => {
   /** Temporal continuity versus interpolation types and auto-bezier, as AE
    * 2026 saves the flags (read back from its file). */
 
-  const _rot = (): any => {
+  const _rot = () => {
     const [_app, comp] = _comp();
     const rot = _keys(_solid(comp).__getitem__(TG).__getitem__("ADBE Rotate Z"), [
       [0, 0],
@@ -975,7 +1005,7 @@ describe("TestTemporalContinuityFlags", () => {
     return rot.keyframes[1];
   };
 
-  const type_rows: [number, number, boolean][] = [
+  const type_rows: [KIT, KIT, boolean][] = [
     [LIN, LIN, false],
     [LIN, BEZ, true],
     [LIN, HOLD, false],
@@ -989,7 +1019,7 @@ describe("TestTemporalContinuityFlags", () => {
   test.each(type_rows)("test_types_after_continuous[%#]", (in_type, out_type, continuous) => {
     for (const first of ["temporal_continuous", "temporal_auto_bezier"]) {
       const kf = _rot();
-      kf[first] = true;
+      setattr(kf, first, true);
       _types(kf, in_type, out_type);
       expect(kf.temporal_continuous).toBe(continuous);
       expect(kf.temporal_auto_bezier).toBe(first === "temporal_auto_bezier");

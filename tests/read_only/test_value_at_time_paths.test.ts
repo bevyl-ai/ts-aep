@@ -35,7 +35,7 @@ import {
   zip,
 } from "../../src/pyrt/index.ts";
 import "../../src/py_aep/binary/_register.ts";
-import { get_comp, load_expected, parse_project } from "../helpers.ts";
+import { as_instance, get_comp, load_expected, parse_project } from "../helpers.ts";
 import { Shape } from "../../src/py_aep/models/properties/shape.ts";
 import type { Property } from "../../src/py_aep/models/properties/property.ts";
 import { _subdivision_cuts, euler_to_quaternion, interpolate_shapes, slerp_orientation } from "../../src/py_aep/resolvers/interpolation.ts";
@@ -65,8 +65,11 @@ function _find(layer: Layer, match_name: string): Property {
   return found[0];
 }
 
+/** A path value as the JSON export writes it (Python `dict`). */
+type _ExportedShape = { vertices: number[][]; inTangents: number[][]; outTangents: number[][] };
+
 /** Every number in a value, in a stable order. */
-function _flatten(value: any): number[] {
+function _flatten(value: Shape | _ExportedShape | number[] | number): number[] {
   if (value instanceof Shape) {
     const numbers: number[] = [];
     for (const points of [value.vertices, value.in_tangents, value.out_tangents]) {
@@ -78,7 +81,7 @@ function _flatten(value: any): number[] {
   // (identifier keys read by name), not Maps.
   if (typeof value === "object" && value !== null && !Array.isArray(value)) {
     const numbers: number[] = [];
-    for (const key of ["vertices", "inTangents", "outTangents"]) {
+    for (const key of ["vertices", "inTangents", "outTangents"] as const) {
       for (const point of value[key]) numbers.push(...point);
     }
     return numbers;
@@ -151,7 +154,7 @@ function _cases(): [string, string, string, string][] {
  * Looked up rather than scanned for: a scan that falls off the end
  * silently passes the case instead of reporting the missing fixture.
  */
-function _expected_frames(base: string, comp_name: string, layer_name: string, match_name: string): any[] {
+function _expected_frames(base: string, comp_name: string, layer_name: string, match_name: string) {
   const data = load_expected(VAT_DIR, `${base}_value_at_time`);
   const comp_data = data.comps.find((c: { name: string }) => c.name === comp_name);
   if (comp_data === undefined) throw new StopIteration();
@@ -165,7 +168,7 @@ function _expected_frames(base: string, comp_name: string, layer_name: string, m
     len(props) === 1,
     `${base}/${comp_name}/${layer_name}: expected 1 ${match_name}, got ${len(props)}`,
   );
-  const frames: any[] = props[0].frames;
+  const frames = props[0].frames;
   py_assert(py_bool(frames), `${base}/${comp_name}/${layer_name}/${match_name}: no frames exported`);
   return frames;
 }
@@ -214,7 +217,9 @@ class TestValueSpaces {
   static _probe_layer(name: string): Layer {
     const project = parse_project(SAMPLES_DIR.div("property_path_orientation_pin.aep"));
     const comp = get_comp(project, "vat_probe");
-    return comp.layers.find((layer) => layer.name === name)!;
+    const found = comp.layers.find((layer) => layer.name === name);
+    if (found === undefined) throw new StopIteration();
+    return found;
   }
 }
 
@@ -228,7 +233,7 @@ describe("TestValueSpaces", () => {
     const layer = TestValueSpaces._probe_layer("probe_solid");
     const prop = _find(layer, "ADBE Mask Shape");
     expect(prop._value != null).toBe(true);
-    expect((prop._value as { _layer: unknown })._layer).toBe(layer);
+    expect(as_instance(prop._value, Shape)._layer).toBe(layer);
     for (const keyframe of prop.keyframes) {
       const value = keyframe._value;
       expect(value).toBeInstanceOf(Shape);
@@ -241,8 +246,8 @@ describe("TestValueSpaces", () => {
     // the comp instead of the layer reads 2x / 3x too large.
     const prop = _find(TestValueSpaces._probe_layer("probe_solid"), "ADBE Mask Shape");
     const first = prop.keyframes[0].value;
-    expect(first instanceof Shape).toBe(true);
-    for (const [got, expected] of zip((first as any).vertices, [[20, 20], [120, 20], [120, 80], [20, 80]])) {
+    py_assert(first instanceof Shape);
+    for (const [got, expected] of zip(first.vertices, [[20, 20], [120, 20], [120, 80], [20, 80]])) {
       expect(Math.abs(got[0] - expected[0]) < 1e-4).toBe(true);
       expect(Math.abs(got[1] - expected[1]) < 1e-4).toBe(true);
     }
@@ -253,8 +258,10 @@ describe("TestValueSpaces", () => {
     // against the 200x100 layer.
     const prop = _find(TestValueSpaces._probe_layer("probe_puppet"), "ADBE FreePin3 PosPin Position");
     expect(prop.units_text).toBe("pixels");
-    for (const [got, expected] of zip(prop.keyframes[0].value as any, [50.0, 25.0])) {
-      expect(Math.abs((got as any) - (expected as any)) < 1e-6).toBe(true);
+    const value = prop.keyframes[0].value;
+    py_assert(Array.isArray(value));
+    for (const [got, expected] of zip(value, [50.0, 25.0])) {
+      expect(Math.abs(got - expected) < 1e-6).toBe(true);
     }
   });
 
@@ -263,7 +270,8 @@ describe("TestValueSpaces", () => {
     // 1-D value item shifted every ease field by one double.
     const project = parse_project(SAMPLES_DIR.div("property_path_orientation_ease.aep"));
     const comp = get_comp(project, "vat_ease");
-    const layer = comp.layers.find((ly) => ly.name === "orient_asym")!;
+    const layer = comp.layers.find((ly) => ly.name === "orient_asym");
+    if (layer === undefined) throw new StopIteration();
     const prop = _find(layer, "ADBE Orientation");
     const out_ease = prop.keyframes[0].out_temporal_ease[0];
     const in_ease = prop.keyframes[1].in_temporal_ease[0];

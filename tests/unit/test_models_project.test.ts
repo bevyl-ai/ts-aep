@@ -3,7 +3,7 @@
 import { describe, expect, test } from "bun:test";
 
 import "../../src/py_aep/binary/_register.ts";
-import { parse as parse_aep } from "../../src/py_aep/index.ts";
+import { parse as parse_aep, type Project } from "../../src/py_aep/index.ts";
 import { recursive_find } from "../../src/py_aep/binary/utils.ts";
 import { b, FileExistsError, Path, py_eq } from "../../src/pyrt/index.ts";
 import { make_tmp_path, raises } from "../../src/pyrt/pytest.ts";
@@ -19,9 +19,9 @@ const COMP_SAMPLES_DIR = new Path(import.meta.path).parent.parent.parent.div(
 );
 
 /** All ldta layer ids in the project, including viewer pseudo-layers. */
-function _all_ldta_ids(project: any): number[] {
-  return project.compositions.flatMap((comp: any) =>
-    recursive_find(comp._item_list.chunks, "ldta").map((ldta: any) => ldta.layer_id),
+function _all_ldta_ids(project: Project): number[] {
+  return project.compositions.flatMap((comp) =>
+    recursive_find(comp._item_list.chunks, "ldta").map((ldta) => ldta.layer_id),
   );
 }
 

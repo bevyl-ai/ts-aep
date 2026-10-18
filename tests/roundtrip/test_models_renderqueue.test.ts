@@ -27,10 +27,11 @@ import {
   py_or,
   repr,
   sorted,
+  StopIteration,
   PureWindowsPath,
 } from "../../src/pyrt/index.ts";
 import { approx, make_tmp_path, raises } from "../../src/pyrt/pytest.ts";
-import { parse as parse_aep } from "../../src/py_aep/index.ts";
+import { parse as parse_aep, type Application } from "../../src/py_aep/index.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { ListChunk, read_aep, write_aep } from "../../src/py_aep/binary/chunk.ts";
 import { ArsiChunk, CineonRoptChunk, JpegRoptChunk, OpenExrRoptChunk, OutputModuleSettingsItem, PngRoptChunk, ROUT_ITEMS_PER_RQ_ITEM, RenderSettingsItem, RoptChunk, RouuChunk, TargaRoptChunk, TiffRoptChunk } from "../../src/py_aep/binary/render_chunks.ts";
@@ -42,7 +43,8 @@ import { _parse_id_hex_section } from "../../src/py_aep/parsers/templates.ts";
 import type { Project } from "../../src/py_aep/models/project.ts";
 import type { OutputModule } from "../../src/py_aep/models/renderqueue/output_module.ts";
 import type { RenderQueue } from "../../src/py_aep/models/renderqueue/render_queue.ts";
-import { get_rqi } from "../helpers.ts";
+import { TiffFormatOptions } from "../../src/py_aep/models/renderqueue/format_options/tiff.ts";
+import { as_instance, get_rqi } from "../helpers.ts";
 
 const TEST_FILE = new Path(import.meta.path);
 const SAMPLES_DIR = TEST_FILE.parent.parent.parent.div("samples", "models", "renderqueue");
@@ -59,9 +61,9 @@ const OCS_SAMPLES_DIR = TEST_FILE.parent.parent.parent.div(
 
 /** `attrs.asdict(inst)` - field name to value, in field order. */
 // NOTE(port): no pyrt attrs.asdict; OutputModuleSettingsItem fields are flat (ints, bools, bytes), so Python's recursive asdict equals this shallow copy.
-function asdict(inst: any): Map<string, any> {
-  const out = new Map<string, any>();
-  for (const a of fields(inst.constructor)) out.set(a.name, inst[a.name]);
+function asdict(inst: OutputModuleSettingsItem): Map<string, unknown> {
+  const out = new Map<string, unknown>();
+  for (const a of fields(inst.constructor)) out.set(a.name, getattr(inst, a.name));
   return out;
 }
 
@@ -78,7 +80,7 @@ AE writes `ROUT_ITEMS_PER_RQ_ITEM` Rout entries per render queue item and
 the `count` field must match the number of entries. Parse/remove/duplicate
 must keep this invariant (otherwise AE reports "missing data in file").
  */
-function _assert_rout_consistent(app: any): void {
+function _assert_rout_consistent(app: Application): void {
   const rq = render_queue_of(app.project); // type: ignore[attr-defined]
   const rout = rq._rout;
   const expected = len(rq.items) * ROUT_ITEMS_PER_RQ_ITEM;
@@ -110,7 +112,8 @@ describe("TestRoundtripLogType", () => {
     const project = parse_aep(SAMPLES_DIR.div("render_settings.aep")).project;
     const rqi = get_rqi(project, "base");
     raises(ValueError, () => {
-      rqi.log_type = 9999 as any;
+      // @ts-expect-error 9999 is not a LogType; the setter must reject it at runtime
+      rqi.log_type = 9999;
     }, "Invalid value");
   });
 });
@@ -485,7 +488,8 @@ describe("TestRoundtripOutputModulePostRenderAction", () => {
     const rqi = get_rqi(project, "base");
     const om = rqi.output_modules[0];
     raises(ValueError, () => {
-      om.post_render_action = 9999 as any;
+      // @ts-expect-error 9999 is not a PostRenderAction; the setter must reject it at runtime
+      om.post_render_action = 9999;
     }, "Invalid value");
   });
 });
@@ -635,9 +639,9 @@ describe("TestRoundtripRouuFrameRateAndDepth", () => {
     // keeps the bytes when it saves.
     const body = new Uint8Array(new RouuChunk().tobytes());
     body.set(b("\xff\xe0"), 0x46);
-    const rouu = RouuChunk.frombytes(new Uint8Array(body), { chunk_type: "Roou" });
+    const rouu = as_instance(RouuChunk.frombytes(new Uint8Array(body), { chunk_type: "Roou" }), RouuChunk);
     expect(rouu instanceof RouuChunk).toBe(true);
-    expect((rouu as any).depth).toBe(OutputColorDepth.FLOATING_POINT_GRAY);
+    expect(rouu.depth).toBe(OutputColorDepth.FLOATING_POINT_GRAY);
     expect(OutputColorDepth.FLOATING_POINT_GRAY).toBe(-32);
     expect(py_eq(rouu.tobytes(), new Uint8Array(body))).toBe(true);
   });
@@ -659,10 +663,10 @@ describe("TestRoundtripRouuFrameRateAndDepth", () => {
       concat(bytes_.int_to_bytes(70000, 4, "big"), bytes_.int_to_bytes(66616, 4, "big")),
       0x22,
     );
-    const rouu = RouuChunk.frombytes(new Uint8Array(body), { chunk_type: "Roou" });
+    const rouu = as_instance(RouuChunk.frombytes(new Uint8Array(body), { chunk_type: "Roou" }), RouuChunk);
     expect(rouu instanceof RouuChunk).toBe(true);
-    expect((rouu as any).width).toBe(70000);
-    expect((rouu as any).height).toBe(66616);
+    expect(rouu.width).toBe(70000);
+    expect(rouu.height).toBe(66616);
   });
 });
 
@@ -880,7 +884,7 @@ describe("TestRoundtripSettingsBulkAssign", () => {
     const tmp_path = make_tmp_path();
     const project = parse_aep(SAMPLES_DIR.div("render_settings.aep")).project;
     const rqi = get_rqi(project, "base");
-    rqi.settings = new Map<string, any>([
+    rqi.settings = new Map<string, unknown>([
       ["Quality", RenderQuality.WIREFRAME],
       ["Resolution", [4, 4]],
       ["Skip Existing Files", true],
@@ -904,7 +908,7 @@ describe("TestRoundtripSettingsBulkAssign", () => {
     items[0].settings.__setitem__("Quality", RenderQuality.DRAFT);
     items[0].settings.__setitem__("Resolution", [2, 2]);
     const copied_settings = new Map(
-      [...items[0].settings].map((k: string) => [k, items[0].settings.__getitem__(k)] as [string, any]),
+      [...items[0].settings].map((k: string): [string, unknown] => [k, items[0].settings.__getitem__(k)]),
     );
     expect(copied_settings.has("Use comp's frame rate")).toBe(true);
     dict_pop(copied_settings, "Use comp's frame rate");
@@ -1134,7 +1138,7 @@ describe("TestRoutChunkIntegrity", () => {
     const block1 = rq.items[1]._rout_items;
     expect(len(block0)).toBe(ROUT_ITEMS_PER_RQ_ITEM);
     expect(len(block1)).toBe(ROUT_ITEMS_PER_RQ_ITEM);
-    expect(block0.some((a: any) => block1.some((b: any) => a === b))).toBe(false);
+    expect(block0.some((a) => block1.some((b) => a === b))).toBe(false);
   });
 
   test("test_remove_keeps_rout_consistent", () => {
@@ -1420,10 +1424,11 @@ describe("TestRQAddWithoutPreferences", () => {
     // hdrm, Utf8x3. The Ropt is the 602-byte TIFF format options.
     const app = parse_aep(SAMPLES_DIR.div("custom.aep"));
     const rqi = render_queue_of(app.project).add(app.project.compositions[0]);
-    const lom_types = rqi._lom.chunks.map((c: any) => py_or(getattr(c, "list_type", null), c.chunk_type));
+    const lom_types = rqi._lom.chunks.map((c) => py_or(getattr(c, "list_type", null), c.chunk_type));
     expect(contains(lom_types, "Als2")).toBe(false);
     expect(py_eq(lom_types, ["Roou", "Ropt", "hdrm", "Utf8", "Utf8", "Utf8"])).toBe(true);
-    const ropt = rqi._lom.chunks.find((c: any) => c.chunk_type === "Ropt")!;
+    const ropt = rqi._lom.chunks.find((c) => c.chunk_type === "Ropt");
+    if (ropt === undefined) throw new StopIteration();
     expect(ropt instanceof TiffRoptChunk).toBe(true);
     const buf = new BytesIO();
     ropt.write(buf);
@@ -1444,7 +1449,7 @@ describe("TestRQAddWithoutPreferences", () => {
     const app2 = parse_aep(out);
     const rq2 = render_queue_of(app2.project);
     expect(rq2.num_items).toBe(orig + 1);
-    expect(rq2.items.at(-1)!.output_modules[0].name).toBe("TIFF Sequence with Alpha");
+    expect(rq2.items[len(rq2.items) - 1].output_modules[0].name).toBe("TIFF Sequence with Alpha");
   });
 
   test("test_add_to_empty_queue_roundtrips", () => {
@@ -1545,7 +1550,7 @@ describe("TestRQAddWithoutPreferences", () => {
     // Each variant's field defaults reproduce AE's real Ropt for that
     // format: correct full length, format code, and a construct -> parse
     // round-trip back to the same variant and bytes.
-    const cases: [any, Uint8Array, number][] = [
+    const cases: [new () => RoptChunk, Uint8Array, number][] = [
       [CineonRoptChunk, b("sDPX"), 48],
       [JpegRoptChunk, b("JPEG"), 58],
       [OpenExrRoptChunk, b("oEXR"), 78],
@@ -1569,10 +1574,10 @@ describe("TestRQAddWithoutPreferences", () => {
     // items.
     const app = parse_aep(SAMPLES_DIR.div("field_render.aep"));
     const rq = render_queue_of(app.project);
-    const arsi = recursive_find(rq._lrdr.chunks, "ARsi")[0];
+    const arsi = as_instance(recursive_find(rq._lrdr.chunks, "ARsi")[0], ArsiChunk);
     expect(arsi instanceof ArsiChunk).toBe(true);
     expect(len(arsi.tobytes())).toBe(1872);
-    expect((arsi as any).queue_nonempty).toBe(rq.num_items ? 1 : 0);
+    expect(arsi.queue_nonempty).toBe(rq.num_items ? 1 : 0);
   });
 
   test("test_parse_id_hex_section_is_bounded", () => {
@@ -1698,7 +1703,7 @@ describe.skipIf(!py_bool(AE_PREFS_DIR))("TestRenderQueueAdd", () => {
     const app2 = parse_aep(tmp_path.div("out.aep"));
     const rq2 = render_queue_of(app2.project);
     expect(rq2.num_items).toBe(2);
-    expect(rq2.items.at(-1)!.comp.name).toBe(comp.name);
+    expect(rq2.items[len(rq2.items) - 1].comp.name).toBe(comp.name);
   });
 
   test("test_add_then_remove", () => {
@@ -1773,7 +1778,7 @@ describe.skipIf(!py_bool(AE_PREFS_DIR))("TestOMApplyTemplate", () => {
     const om1 = rqi.output_modules[1];
     om1.apply_template("TIFF Sequence with Alpha");
 
-    const fo = om1.format_options as any;
+    const fo = as_instance(om1.format_options, TiffFormatOptions);
     expect(fo.constructor.name).toBe("TiffFormatOptions");
     const new_value = !fo.lzw_compression;
     fo.lzw_compression = new_value;
@@ -1781,7 +1786,7 @@ describe.skipIf(!py_bool(AE_PREFS_DIR))("TestOMApplyTemplate", () => {
     const out = tmp_path.div("out.aep");
     app.project.save(out);
     const rqi2 = render_queue_of(parse_aep(out, { ae_preferences_dir: AE_PREFS_DIR }).project).items[0];
-    expect((rqi2.output_modules[1].format_options as any).lzw_compression).toBe(new_value);
+    expect(as_instance(rqi2.output_modules[1].format_options, TiffFormatOptions).lzw_compression).toBe(new_value);
   });
 });
 
@@ -1863,7 +1868,7 @@ describe("TestRenderQueueMissingScaffolding", () => {
     const [rifx, xmp] = read_aep(new BytesIO(src.read_bytes()));
     const lrdr = find_by_list_type(rifx.chunks, "LRdr");
     lrdr.chunks = lrdr.chunks.filter(
-      (c: any) =>
+      (c) =>
         c.chunk_type !== "Rout" &&
         !(c instanceof ListChunk && ["LItm", "LSIf"].includes(c.list_type)),
     );
@@ -1906,7 +1911,7 @@ describe("TestRenderQueueNoLRdr", () => {
   function _strip_lrdr(tmp_path: Path): Path {
     const src = SAMPLES_DIR.div("empty.aep");
     const [rifx, xmp] = read_aep(new BytesIO(src.read_bytes()));
-    rifx.chunks = rifx.chunks.filter((c: any) => !(c instanceof ListChunk && c.list_type === "LRdr"));
+    rifx.chunks = rifx.chunks.filter((c) => !(c instanceof ListChunk && c.list_type === "LRdr"));
     const out = tmp_path.div("no_lrdr.aep");
     const f = new BytesIO();
     write_aep(f, rifx, xmp);
@@ -2044,28 +2049,28 @@ const _AUTO = OutputAudio.AUTO;
 const _8 = AudioBitDepth.EIGHT_BIT;
 const _16 = AudioBitDepth.SIXTEEN_BIT;
 const _32 = AudioBitDepth.THIRTY_TWO_BIT;
-const _AUDIO_CHAINS = new Map<string, [string, Map<string, any>[]]>([
-  ["E0_on", ["U", [new Map<string, any>([["Output Audio", _ON]])]]],
-  ["E1_on_8", ["U", [new Map<string, any>([["Output Audio", _ON]]), new Map<string, any>([["Audio Bit Depth", _8]])]]],
-  ["E2_on_16", ["U", [new Map<string, any>([["Output Audio", _ON]]), new Map<string, any>([["Audio Bit Depth", _16]])]]],
-  ["E3_on_32", ["U", [new Map<string, any>([["Output Audio", _ON]]), new Map<string, any>([["Audio Bit Depth", _32]])]]],
+const _AUDIO_CHAINS = new Map<string, [string, Map<string, unknown>[]]>([
+  ["E0_on", ["U", [new Map<string, unknown>([["Output Audio", _ON]])]]],
+  ["E1_on_8", ["U", [new Map<string, unknown>([["Output Audio", _ON]]), new Map<string, unknown>([["Audio Bit Depth", _8]])]]],
+  ["E2_on_16", ["U", [new Map<string, unknown>([["Output Audio", _ON]]), new Map<string, unknown>([["Audio Bit Depth", _16]])]]],
+  ["E3_on_32", ["U", [new Map<string, unknown>([["Output Audio", _ON]]), new Map<string, unknown>([["Audio Bit Depth", _32]])]]],
   [
     "E5_on_mono",
-    ["U", [new Map<string, any>([["Output Audio", _ON]]), new Map<string, any>([["Audio Channels", AudioChannels.MONO]])]],
+    ["U", [new Map<string, unknown>([["Output Audio", _ON]]), new Map<string, unknown>([["Audio Channels", AudioChannels.MONO]])]],
   ],
   [
     "E7_on_rate",
-    ["U", [new Map<string, any>([["Output Audio", _ON]]), new Map<string, any>([["Audio Sample Rate", 44100]])]],
+    ["U", [new Map<string, unknown>([["Output Audio", _ON]]), new Map<string, unknown>([["Audio Sample Rate", 44100]])]],
   ],
-  ["E8_auto", ["U", [new Map<string, any>([["Output Audio", _AUTO]])]]],
+  ["E8_auto", ["U", [new Map<string, unknown>([["Output Audio", _AUTO]])]]],
   [
     "E9_on_mono_8",
     [
       "U",
       [
-        new Map<string, any>([["Output Audio", _ON]]),
-        new Map<string, any>([["Audio Channels", AudioChannels.MONO]]),
-        new Map<string, any>([["Audio Bit Depth", _8]]),
+        new Map<string, unknown>([["Output Audio", _ON]]),
+        new Map<string, unknown>([["Audio Channels", AudioChannels.MONO]]),
+        new Map<string, unknown>([["Audio Bit Depth", _8]]),
       ],
     ],
   ],
@@ -2074,9 +2079,9 @@ const _AUDIO_CHAINS = new Map<string, [string, Map<string, any>[]]>([
     [
       "U",
       [
-        new Map<string, any>([["Output Audio", _ON]]),
-        new Map<string, any>([["Audio Bit Depth", _8]]),
-        new Map<string, any>([["Audio Sample Rate", 22050]]),
+        new Map<string, unknown>([["Output Audio", _ON]]),
+        new Map<string, unknown>([["Audio Bit Depth", _8]]),
+        new Map<string, unknown>([["Audio Sample Rate", 22050]]),
       ],
     ],
   ],
@@ -2085,7 +2090,7 @@ const _AUDIO_CHAINS = new Map<string, [string, Map<string, any>[]]>([
     [
       "U",
       [
-        new Map<string, any>([
+        new Map<string, unknown>([
           ["Output Audio", _ON],
           ["Audio Bit Depth", _8],
           ["Audio Channels", AudioChannels.MONO],
@@ -2094,42 +2099,42 @@ const _AUDIO_CHAINS = new Map<string, [string, Map<string, any>[]]>([
       ],
     ],
   ],
-  ["E12_off_8", ["U", [new Map<string, any>([["Audio Bit Depth", _8]])]]],
-  ["F1_8", ["S", [new Map<string, any>([["Audio Bit Depth", _8]])]]],
-  ["F2_32", ["S", [new Map<string, any>([["Audio Bit Depth", _32]])]]],
+  ["E12_off_8", ["U", [new Map<string, unknown>([["Audio Bit Depth", _8]])]]],
+  ["F1_8", ["S", [new Map<string, unknown>([["Audio Bit Depth", _8]])]]],
+  ["F2_32", ["S", [new Map<string, unknown>([["Audio Bit Depth", _32]])]]],
   [
     "F3_32_16",
-    ["S", [new Map<string, any>([["Audio Bit Depth", _32]]), new Map<string, any>([["Audio Bit Depth", _16]])]],
+    ["S", [new Map<string, unknown>([["Audio Bit Depth", _32]]), new Map<string, unknown>([["Audio Bit Depth", _16]])]],
   ],
   [
     "F4_32_8",
-    ["S", [new Map<string, any>([["Audio Bit Depth", _32]]), new Map<string, any>([["Audio Bit Depth", _8]])]],
+    ["S", [new Map<string, unknown>([["Audio Bit Depth", _32]]), new Map<string, unknown>([["Audio Bit Depth", _8]])]],
   ],
-  ["F5_mono", ["S", [new Map<string, any>([["Audio Channels", AudioChannels.MONO]])]]],
-  ["F6_rate", ["S", [new Map<string, any>([["Audio Sample Rate", 22050]])]]],
-  ["F7_off", ["S", [new Map<string, any>([["Output Audio", _OFF]])]]],
-  ["F8_auto", ["S", [new Map<string, any>([["Output Audio", _AUTO]])]]],
+  ["F5_mono", ["S", [new Map<string, unknown>([["Audio Channels", AudioChannels.MONO]])]]],
+  ["F6_rate", ["S", [new Map<string, unknown>([["Audio Sample Rate", 22050]])]]],
+  ["F7_off", ["S", [new Map<string, unknown>([["Output Audio", _OFF]])]]],
+  ["F8_auto", ["S", [new Map<string, unknown>([["Output Audio", _AUTO]])]]],
   [
     "F9_off_on",
-    ["S", [new Map<string, any>([["Output Audio", _OFF]]), new Map<string, any>([["Output Audio", _ON]])]],
+    ["S", [new Map<string, unknown>([["Output Audio", _OFF]]), new Map<string, unknown>([["Output Audio", _ON]])]],
   ],
-  ["G4_auto_on", ["A", [new Map<string, any>([["Output Audio", _ON]])]]],
+  ["G4_auto_on", ["A", [new Map<string, unknown>([["Output Audio", _ON]])]]],
   [
     "G5_auto_off_on",
-    ["A", [new Map<string, any>([["Output Audio", _OFF]]), new Map<string, any>([["Output Audio", _ON]])]],
+    ["A", [new Map<string, unknown>([["Output Audio", _OFF]]), new Map<string, unknown>([["Output Audio", _ON]])]],
   ],
-  ["G2_offauto_on", ["Z", [new Map<string, any>([["Output Audio", _ON]])]]],
-  ["G3_offauto_auto", ["Z", [new Map<string, any>([["Output Audio", _AUTO]])]]],
+  ["G2_offauto_on", ["Z", [new Map<string, unknown>([["Output Audio", _ON]])]]],
+  ["G3_offauto_auto", ["Z", [new Map<string, unknown>([["Output Audio", _AUTO]])]]],
   // The starting states themselves, rebuilt from U.
   [
     "S",
-    ["U", [new Map<string, any>([["Output Audio", _ON]]), new Map<string, any>([["Audio Channels", AudioChannels.STEREO]])]],
+    ["U", [new Map<string, unknown>([["Output Audio", _ON]]), new Map<string, unknown>([["Audio Channels", AudioChannels.STEREO]])]],
   ],
   [
     "A",
-    ["U", [new Map<string, any>([["Output Audio", _AUTO]]), new Map<string, any>([["Audio Channels", AudioChannels.STEREO]])]],
+    ["U", [new Map<string, unknown>([["Output Audio", _AUTO]]), new Map<string, unknown>([["Audio Channels", AudioChannels.STEREO]])]],
   ],
-  ["Z", ["A", [new Map<string, any>([["Output Audio", _OFF]])]]],
+  ["Z", ["A", [new Map<string, unknown>([["Output Audio", _OFF]])]]],
 ]);
 
 function _om_by_file_stem(project: Project, stem: string): OutputModule {
@@ -2186,7 +2191,7 @@ describe("TestOutputModuleAudioMatchesAfterEffects", () => {
       om.settings.__setitem__("Audio Bit Depth", AudioBitDepth.TWENTY_FOUR_BIT);
     }, "24-bit");
     raises(ValueError, () => {
-      om.settings = new Map<string, any>([["Audio Bit Depth", AudioBitDepth.TWENTY_FOUR_BIT]]);
+      om.settings = new Map<string, unknown>([["Audio Bit Depth", AudioBitDepth.TWENTY_FOUR_BIT]]);
     }, "24-bit");
     expect(py_eq(om._roou.tobytes(), before)).toBe(true);
   });

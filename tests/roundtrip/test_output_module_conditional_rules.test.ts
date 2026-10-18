@@ -10,7 +10,12 @@ import { expect, test } from "bun:test";
 
 import { int, Path, ValueError } from "../../src/pyrt/index.ts";
 import { make_tmp_path, raises } from "../../src/pyrt/pytest.ts";
-import { parse_project_fresh } from "../helpers.ts";
+import { as_instance, parse_project_fresh } from "../helpers.ts";
+import type { Project } from "../../src/py_aep/models/project.ts";
+import type { OutputModule } from "../../src/py_aep/models/renderqueue/output_module.ts";
+import { XmlFormatOptions } from "../../src/py_aep/models/renderqueue/format_options/index.ts";
+import { RenderQueue } from "../../src/py_aep/models/renderqueue/render_queue.ts";
+import type { SettingValue } from "../../src/py_aep/models/renderqueue/settings.ts";
 import "../../src/py_aep/binary/_register.ts";
 import { AudioBitDepth, AudioChannels, OutputChannels, OutputColorDepth } from "../../src/py_aep/enums/index.ts";
 
@@ -19,11 +24,11 @@ import { AudioBitDepth, AudioChannels, OutputChannels, OutputColorDepth } from "
 const FORMAT_DIR = new Path(import.meta.dir).parent.parent.div("samples", "models", "format_options");
 const AVI_NONE_SAMPLE = FORMAT_DIR.div("avi", "video_codec_none.aep");
 
-function _om(project: any): any {
-  return project.render_queue.items[0].output_modules[0];
+function _om(project: Project): OutputModule {
+  return as_instance(project.render_queue, RenderQueue).items[0].output_modules[0];
 }
 
-const REJECTS: [string, string, unknown][] = [
+const REJECTS: [string, string, SettingValue][] = [
   // WAV: per-codec narrowing of the format-level union.
   ["wav/audio_codec_gsm_6.10", "Audio Sample Rate", 48000],
   ["wav/audio_codec_gsm_6.10", "Audio Channels", AudioChannels.STEREO],
@@ -47,7 +52,7 @@ const REJECTS: [string, string, unknown][] = [
 // pytest ids: `f"{s}-{k}-{v}"`.
 test.each(REJECTS.map(([s, k, v]) => [`${s}-${k}-${v}`, s, k, v]))(
   "test_disallowed_under_codec_context[%s]",
-  (_id: string, sample: string, key: string, value: unknown) => {
+  (_id: string, sample: string, key: string, value: SettingValue) => {
     const project = parse_project_fresh(FORMAT_DIR.div(`${sample}.aep`));
     // NOTE(port): `settings[key] = value` is Python __setitem__; called explicitly, same validation path.
     raises(ValueError, () => {
@@ -56,7 +61,7 @@ test.each(REJECTS.map(([s, k, v]) => [`${s}-${k}-${v}`, s, k, v]))(
   },
 );
 
-const ACCEPTS: [string, string, unknown][] = [
+const ACCEPTS: [string, string, SettingValue][] = [
   ["wav/audio_codec_gsm_6.10", "Audio Sample Rate", 22050],
   ["wav/base", "Audio Sample Rate", 96000], // Uncompressed keeps the union
   ["wav/base", "Audio Bit Depth", AudioBitDepth.EIGHT_BIT],
@@ -69,13 +74,13 @@ const ACCEPTS: [string, string, unknown][] = [
 // pytest ids: `f"{s}-{k}-{v}"`.
 test.each(ACCEPTS.map(([s, k, v]) => [`${s}-${k}-${v}`, s, k, v]))(
   "test_allowed_under_codec_context[%s]",
-  (_id: string, sample: string, key: string, value: unknown) => {
+  (_id: string, sample: string, key: string, value: SettingValue) => {
     const project = parse_project_fresh(FORMAT_DIR.div(`${sample}.aep`));
     const tmp_path = make_tmp_path();
     const om = _om(project);
     om.settings.__setitem__(key, value);
     project.save(tmp_path.div("out.aep"));
-    expect(_om(parse_project_fresh(tmp_path.div("out.aep"))).settings.__getitem__(key)).toBe(value as any);
+    expect(_om(parse_project_fresh(tmp_path.div("out.aep"))).settings.__getitem__(key)).toBe(value);
   },
 );
 
@@ -95,7 +100,7 @@ test("test_avi_none_codec_allows_rgba", () => {
 test("test_mp3_bitrate_change_revalidates_rate", () => {
   const project = parse_project_fresh(FORMAT_DIR.div("mp3", "base.aep"));
   const om = _om(project);
-  om.format_options.bitrate = 320;
+  as_instance(om.format_options, XmlFormatOptions).bitrate = 320;
   raises(ValueError, () => {
     om.settings.__setitem__("Audio Sample Rate", 44100);
   });
@@ -130,7 +135,7 @@ test("test_mp3_mono_rows_from_binary_evidence", () => {
  */
 test("test_modern_ae_depth_low_byte_decodes", () => {
   // Python re-imports OutputColorDepth here; the module-level import above covers it.
-  const cases: [string, string, number][] = [
+  const cases: [string, string, OutputColorDepth][] = [
     ["png", "png_rgba", OutputColorDepth.MILLIONS_OF_COLORS_PLUS],
     ["cineon", "dpx_rgba", OutputColorDepth.TRILLIONS_OF_COLORS_PLUS],
     ["openexr", "exr_rgba", OutputColorDepth.FLOATING_POINT_PLUS],
@@ -147,7 +152,7 @@ test("test_modern_ae_depth_low_byte_decodes", () => {
 test("test_dnx_alpha_type_decodes", () => {
   const qt = FORMAT_DIR.div("quicktime");
   const compressed = parse_project_fresh(qt.div("Quicktime_720p-DNxHD-HQ-10-bit_Compressed.aep"));
-  expect(_om(compressed).format_options.dnx_alpha_type).toBe(1);
+  expect(as_instance(_om(compressed).format_options, XmlFormatOptions).dnx_alpha_type).toBe(1);
   const none = parse_project_fresh(qt.div("Quicktime_720p-DNxHD-HQ-10-bit_None.aep"));
-  expect(_om(none).format_options.dnx_alpha_type == null).toBe(true);
+  expect(as_instance(_om(none).format_options, XmlFormatOptions).dnx_alpha_type == null).toBe(true);
 });

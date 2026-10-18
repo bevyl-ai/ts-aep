@@ -6,6 +6,8 @@ import { expect, test } from "bun:test";
 
 import { py_eq } from "../../src/pyrt/index.ts";
 import { PENDING_ASCENDCOUNT, alas_platform, build_als2_list } from "../../src/py_aep/binary/utils.ts";
+import { Utf8Chunk } from "../../src/py_aep/binary/scalar_chunks.ts";
+import { as_instance } from "../helpers.ts";
 import { platform_path, relative_path_counts } from "../../src/py_aep/resolvers/platform_paths.ts";
 
 const SHOT = "\\\\serge\\as_serie\\fabrication\\episodes\\e203\\final_compo\\s030";
@@ -130,7 +132,7 @@ test.each([
 ])("test_alas_platform_follows_path_style[%#]", (path: string, code: number) => {
   expect(alas_platform(path)).toBe(code);
   const alas = build_als2_list(path, { target_is_folder: false }).chunks[0];
-  const data = JSON.parse((alas as any).value); // Python: alas.value is not on the ListChunk type
+  const data = JSON.parse(as_instance(alas, Utf8Chunk).value);
   expect(data["platform"]).toBe(code);
   expect(data["ascendcount_base"]).toBe(PENDING_ASCENDCOUNT);
   expect(data["ascendcount_target"]).toBe(PENDING_ASCENDCOUNT);
