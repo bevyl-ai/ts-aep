@@ -33,7 +33,6 @@ import {
   OSError,
   ValueError,
   bytesEqual,
-  copysign,
   decode,
   fspath,
   getOrThrow,
@@ -834,7 +833,8 @@ function* _enabledInstances(descriptor: Map<string, _Value>): Generator<[string,
 function _roundAway(value: number): number {
   // The epsilon lands exact halves (a 30 degree light: sin * 11 = 5.4999...
   // in doubles) where AE does.
-  return Math.trunc(copysign(Math.floor(Math.abs(value) + 0.5 + 1e-9), value));
+  const rounded = Math.floor(Math.abs(value) + 0.5 + 1e-9);
+  return value < 0 && rounded > 0 ? -rounded : rounded;
 }
 
 function _blurReach(size: number, spread: number, precise: boolean): number {

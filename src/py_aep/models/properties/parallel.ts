@@ -13,7 +13,7 @@
  * output pairs (`aep-compare` ground-truth workflow).
  */
 
-import { NotImplementedError, instanceDict } from "../../../pyrt/index.ts";
+import { NotImplementedError, overrides } from "../../../pyrt/index.ts";
 import { type Chunk, ListChunk } from "../../binary/chunk.ts";
 import { LdatItemType, type LdatItem } from "../../binary/ldat_chunks.ts";
 import { buildParallelLdatItem, cloneChunkTree, setOrientationItemValues } from "../../binary/mutations.ts";
@@ -180,8 +180,8 @@ class _OrientationKind extends ParallelKind {
   applyModelMetadata(prop: Property): void {
     prop._propertyControlType = PropertyControlType.ANGLE;
     prop._propertyValueType = PropertyValueType.ThreeD_SPATIAL;
-    instanceDict(prop).set("dimensions", 3);
-    instanceDict(prop).set("_vector", true);
+    overrides(prop).set("dimensions", 3);
+    overrides(prop).set("_vector", true);
   }
 
   onWrap(prop: Property): void {

@@ -18,14 +18,13 @@ import {
   literal,
   setMember,
   compositeKey,
-  mappingItems,
   typeName,
 } from "../../../pyrt/index.ts";
 import type { EnumHelpers } from "../../../pyrt/enum.ts";
 import type { CompPreset } from "../../parsers/comp_presets.ts";
 import type { Preferences } from "../preferences.ts";
 
-// NOTE(port): py_enum members are plain numbers with no owning class, so
+// NOTE(port): defineEnum members are plain numbers with no owning class, so
 // `isinstance(value, IntEnum)` is unanswerable. NUMBER output is unaffected
 // (`int(member)` is the member itself); STRING output gets the label from the
 // spec's enum class in `settingsToString` instead.
@@ -222,7 +221,7 @@ export class SettingsView<V extends SettingValues = SettingValues> {
 
   equals(other: unknown): boolean {
     if (other instanceof Map || other instanceof SettingsView) {
-      return valueEquals(new Map(this.items()), new Map(mappingItems(other)));
+      return valueEquals(new Map(this.items()), new Map(other instanceof Map ? other : other.items()));
     }
     // NOTE(port): Python returns NotImplemented; no builtin reflected __eq__ ever answers True for a non-mapping, so the final `==` is False.
     return false;

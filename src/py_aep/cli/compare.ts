@@ -48,7 +48,7 @@ export function bitLength(n: number): number {
   return n === 0 ? 0 : Math.abs(n).toString(2).length;
 }
 
-// NOTE(port): f"{x:08b}" including Python's sign-inside-width rule for negatives; pyrt format() lacks `b`.
+// NOTE(port): f"{x:08b}" including Python's sign-inside-width rule for negatives.
 export function bin8(x: number): string {
   const sign = x < 0 ? "-" : "";
   return (

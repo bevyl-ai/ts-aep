@@ -31,7 +31,7 @@ export class UnicodeEncodeError extends UnicodeError {}
 export class StructError extends AepError {}
 
 /**
- * `SystemExit` (a `BaseException`, so not a `PyException`: translated
+ * `SystemExit` (a `BaseException`, so not an `AepError`: translated
  * `except Exception` handlers do not catch it). `code` is the exit status.
  */
 export class SystemExit extends Error {

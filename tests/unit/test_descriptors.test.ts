@@ -13,7 +13,7 @@ import {
   defineEnum,
   assert,
   truthy,
-  instanceDict,
+  overrides,
 } from "../../src/pyrt/index.ts";
 import type { EnumValue } from "../../src/pyrt/index.ts";
 import { boxFloat } from "../../src/pyrt/num.ts";
@@ -259,7 +259,7 @@ describe("TestChunkFieldDictOverride", () => {
   test("test_dict_override_beats_body", () => {
     const body = new _FakeBody({ width: 100 });
     const model = new _ReadOnlyModel(body);
-    instanceDict(model).set("width", 999);
+    overrides(model).set("width", 999);
     expect(model.width).toBe(999);
   });
 
@@ -267,7 +267,7 @@ describe("TestChunkFieldDictOverride", () => {
     const body = new _FakeBody({ name: "from_body" });
     new _FakeParent(body);
     const model = new _DirectModel(body);
-    instanceDict(model).set("name", "override");
+    overrides(model).set("name", "override");
     expect(model.name).toBe("override");
     const previous = materialization.allowed;
     materialization.allowed = true;
@@ -276,7 +276,7 @@ describe("TestChunkFieldDictOverride", () => {
     } finally {
       materialization.allowed = previous;
     }
-    expect(instanceDict(model).has("name")).toBe(false);
+    expect(overrides(model).has("name")).toBe(false);
     expect(model.name).toBe("written");
   });
 });
@@ -302,7 +302,7 @@ describe("TestChunkFieldDefault", () => {
       materialization.allowed = previous;
     }
     expect(model.name).toBe("stored");
-    expect(instanceDict(model).get("name")).toBe("stored");
+    expect(overrides(model).get("name")).toBe("stored");
   });
 });
 

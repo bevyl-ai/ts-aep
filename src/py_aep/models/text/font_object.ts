@@ -1,6 +1,6 @@
 /** Font object model for After Effects text layers. */
 
-import { descriptor, str, instanceDict } from "../../../pyrt/index.ts";
+import { descriptor, str, overrides } from "../../../pyrt/index.ts";
 import type { CosDict, CosNode } from "../../cos/cos.ts";
 import { CosField, type InstanceValue } from "../../cos/descriptors.ts";
 import { cosIter, cosNum } from "../../cos/kinds.ts";
@@ -82,10 +82,10 @@ export class FontObject {
     this._fontData = _fontData;
     this._fontEntry = _fontEntry;
     if (postScriptName != null) {
-      instanceDict(this).set("postScriptName", postScriptName);
+      overrides(this).set("postScriptName", postScriptName);
     }
     if (version != null) {
-      instanceDict(this).set("version", version);
+      overrides(this).set("version", version);
     }
   }
 

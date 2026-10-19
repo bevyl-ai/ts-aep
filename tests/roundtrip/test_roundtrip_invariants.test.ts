@@ -16,7 +16,7 @@ import {
   valueEquals,
   repr,
   RuntimeError,
-  instanceDict,
+  overrides,
 } from "../../src/pyrt/index.ts";
 
 import "../../src/py_aep/binary/_register.ts";
@@ -232,8 +232,8 @@ describe("TestParseTimeWriteGuard", () => {
     if (opacity == null) throw new Error("no ADBE Opacity property");
 
     runSuppressed(() => {
-      instanceDict(opacity).set("enabled", false);
-      expect(instanceDict(opacity).get("enabled")).toBe(false);
+      overrides(opacity).set("enabled", false);
+      expect(overrides(opacity).get("enabled")).toBe(false);
     });
   });
 });

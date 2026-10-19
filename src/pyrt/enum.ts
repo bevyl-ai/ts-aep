@@ -16,7 +16,7 @@
 // Class-level methods (`fromBinary`, `toBinary`, `_missing_`, ...) go in
 // `methods`; they are called with the enum object as `this`.
 //
-//   export const BlendingMode = int_enum("BlendingMode", { NORMAL: 5212, ADD: 5220 }, {
+//   export const BlendingMode = defineEnum("BlendingMode", { NORMAL: 5212, ADD: 5220 }, {
 //     from_binary(value: number): BlendingMode { return BlendingMode.of(value); },
 //   });
 //   export type BlendingMode = EnumValue<typeof BlendingMode>;

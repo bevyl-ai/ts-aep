@@ -24,14 +24,7 @@ export {
 } from "./attrs.ts";
 export { defineEnum, auto, type EnumValue } from "./enum.ts";
 export { Path, PurePath, PurePosixPath, PureWindowsPath, fspath, type PathLike } from "./pathlib.ts";
-export {
-  descriptor,
-  getDescriptor,
-  descriptorsOf,
-  instanceDict,
-  hasInstanceDict,
-  type ClassAttributes,
-} from "./dunder.ts";
+export { descriptor, getDescriptor, descriptorsOf, overrides, hasOverrides, type ClassAttributes } from "./dunder.ts";
 export * as etree from "./etree.ts";
 export { hypot } from "./math.ts";
 export {

@@ -24,7 +24,7 @@ import {
   warn,
   bytesEqual,
   descriptor,
-  instanceDict,
+  overrides,
   stringifyJson,
   parseJson,
   typeName,
@@ -712,7 +712,7 @@ export class Project {
       project,
       parentFolder: null,
     });
-    instanceDict(rootFolder).set("name", "root");
+    overrides(rootFolder).set("name", "root");
     project.items.set(0, rootFolder);
     project._activeItem = rootFolder;
 
@@ -2683,14 +2683,14 @@ function _serializeImportLayerStyles(layer: AVLayer, styles: PsdLayerStyles | nu
   // The synthesis pass stamped derived `enabled` overrides while every
   // group was still synthetic-disabled; refresh them to the written state
   // (ExtendScript semantics: container/Blend Options = any style enabled).
-  instanceDict(container).set("enabled", styled);
+  overrides(container).set("enabled", styled);
   for (const child of container.properties) {
     if (!(child instanceof PropertyGroup)) continue;
     child._ensureMaterialized();
     assert(child._tdsb != null);
     if (child.matchName === "ADBE Blend Options Group") {
       child._tdsb._enableFlags = containerFlags;
-      instanceDict(child).set("enabled", styled);
+      overrides(child).set("enabled", styled);
       for (const sub of child.properties) {
         if (sub instanceof PropertyGroup) {
           sub._ensureMaterialized();
@@ -2714,7 +2714,7 @@ function _serializeImportLayerStyles(layer: AVLayer, styles: PsdLayerStyles | nu
         flags = 2;
       }
       child._tdsb._enableFlags = flags;
-      instanceDict(child).delete("enabled");
+      overrides(child).delete("enabled");
     }
   }
   if (styles == null) return;

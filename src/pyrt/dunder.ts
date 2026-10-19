@@ -81,28 +81,28 @@ export function descriptorsOf(cls: Function): Map<string, Descriptor> {
   return out;
 }
 
-const INSTANCE_DICT: unique symbol = Symbol("instanceDict");
+const OVERRIDES: unique symbol = Symbol("overrides");
 
 /**
- * Python's `obj.__dict__`: a per-instance `Map` of attributes that bypass
- * descriptors (parse-time overrides that `ChunkField` / `CosField` read
- * first). Stored under a private symbol, non-enumerable, so `deepcopy` copies
+ * Per-instance values that take priority over a descriptor's chunk-backed value
+ * (parse-time overrides that `ChunkField` / `CosField` read first). Stored under
+ * a private symbol, non-enumerable, so `deepClone` copies
  * it with the instance while `Object.assign` / spreads and property listings
  * skip it.
  */
-export function instanceDict(obj: object): Map<string, any> {
-  if (!Object.prototype.hasOwnProperty.call(obj, INSTANCE_DICT)) {
-    Object.defineProperty(obj, INSTANCE_DICT, {
+export function overrides(obj: object): Map<string, any> {
+  if (!Object.prototype.hasOwnProperty.call(obj, OVERRIDES)) {
+    Object.defineProperty(obj, OVERRIDES, {
       value: new Map<string, unknown>(),
       enumerable: false,
       writable: true,
       configurable: true,
     });
   }
-  return Reflect.get(obj, INSTANCE_DICT);
+  return Reflect.get(obj, OVERRIDES);
 }
 
 /** Whether `obj` already holds per-instance overrides (a read never creates them). */
-export function hasInstanceDict(obj: object): boolean {
-  return Object.prototype.hasOwnProperty.call(obj, INSTANCE_DICT);
+export function hasOverrides(obj: object): boolean {
+  return Object.prototype.hasOwnProperty.call(obj, OVERRIDES);
 }

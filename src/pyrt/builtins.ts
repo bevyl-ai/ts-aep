@@ -149,7 +149,7 @@ export function getOr<K, V, D>(d: Map<K, V>, k: K, dflt: D | null = null): V | D
   return v !== undefined ? v : dflt;
 }
 
-/** `d.setdefault(k, v)` */
+/** `m.get(k)`, after setting it to `v` when `k` is absent (`Map.prototype.getOrInsert`). */
 export function getOrInsert<K, V>(d: Map<K, V>, k: K, v: V): V {
   const cur = d.get(k);
   if (cur !== undefined) return cur;
@@ -303,25 +303,10 @@ export function typeName(x: unknown): string {
   return x.constructor?.name ?? "Object";
 }
 
-/** A Python Mapping: a `Map`, an object with `items()`, or one with `keys()` + `get()`. */
-export type Mapping<K, V> = Map<K, V> | { items(): Iterable<[K, V]> } | KeyedMapping<K, V>;
 export type KeyedMapping<K, V> = { keys(): Iterable<K>; get(key: K): V };
 
 export function isKeyedMapping<K, V>(x: KeyedMapping<K, V> | Iterable<[K, V]>): x is KeyedMapping<K, V> {
   return typeof Reflect.get(x, "keys") === "function" && typeof Reflect.get(x, "get") === "function";
-}
-
-/**
- * `mapping.items()` over the Mapping protocol: a `Map`'s entries, an
- * object's own `items()`, or `keys()` + `get()`.
- */
-export function mappingItems<K, V>(m: Mapping<K, V>): [K, V][] {
-  if (m instanceof Map) return [...m.entries()];
-  if ("items" in m && typeof m.items === "function") return [...m.items()];
-  if ("keys" in m && typeof m.keys === "function" && typeof m.get === "function") {
-    return [...m.keys()].map((k): [K, V] => [k, m.get(k)]);
-  }
-  throw new TypeError(`'${typeName(m)}' object is not a mapping`);
 }
 
 /** Python `str(x)` for messages. */
@@ -337,7 +322,7 @@ export const isdigit = (s: string): boolean => s.length > 0 && /^\p{Nd}+$/u.test
 export const isspace = (s: string): boolean => s.length > 0 && /^\s+$/u.test(s);
 export const islower = (s: string): boolean => /\p{Ll}/u.test(s) && !/\p{Lu}|\p{Lt}/u.test(s);
 
-/** `copy.deepcopy`: clones arrays, Maps, Sets, bytes, plain objects and class instances (prototype kept). */
+/** A deep clone of arrays, Maps, Sets, bytes, plain objects and class instances (prototype kept). */
 export function deepClone<T>(x: T, memo?: Map<object, object>): T;
 export function deepClone(x: unknown, memo = new Map<object, object>()): unknown {
   if (x === null || typeof x !== "object") return x;

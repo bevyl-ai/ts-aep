@@ -15,7 +15,7 @@ import { RawSubpath, parsePath } from "./path_data.ts";
 import type { CubicSeg } from "./path_data.ts";
 import type { Affine } from "./transform.ts";
 import { Subpath } from "./types.ts";
-import { getMember, valueEquals, pySlice, zip } from "../../pyrt/index.ts";
+import { getMember, valueEquals, zip } from "../../pyrt/index.ts";
 
 // Control-point distance for a 90-degree circular arc as a cubic bezier.
 const _KAPPA = 0.5522847498307936;
@@ -192,7 +192,10 @@ function _ellipse(tag: string, attrs: Map<string, string>, ctx: LengthContext | 
 
 function _poly(attrs: Map<string, string>, closed: boolean): RawSubpath[] {
   const nums = Array.from((attrs.get("points") ?? "").matchAll(NUMBER_RE), (n) => Number(n[0]));
-  const pts = zip(pySlice(nums, 0, null, 2), pySlice(nums, 1, null, 2));
+  const pts = zip(
+    nums.filter((_, i) => i % 2 === 0),
+    nums.filter((_, i) => i % 2 === 1),
+  );
   if (pts.length < 2) {
     return [];
   }

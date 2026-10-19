@@ -11,7 +11,7 @@ import { validateBool, validateRgbColor } from "../validators.ts";
 // property_group.ts reaches this module only through `late` (models/late.ts), so
 // `extends PropertyGroup` evaluates after it.
 import { PropertyGroup, _insertBeforeGroupEnd } from "./property_group.ts";
-import { AttributeError, descriptor, assert, instanceDict } from "../../../pyrt/index.ts";
+import { AttributeError, descriptor, assert, overrides } from "../../../pyrt/index.ts";
 import type { Utf8Chunk } from "../../binary/scalar_chunks.ts";
 import type { Property } from "./property.ts";
 import type { Shape } from "./shape.ts";
@@ -342,15 +342,15 @@ export class MaskPropertyGroup extends PropertyGroup {
     if (existing != null) {
       // `existing.__dict__ = mask_path.__dict__`: replace, not merge - a key
       // the parsed property leaves to its class default must not keep the
-      // placeholder's value. Plain own attributes, plus the `instanceDict`
+      // placeholder's value. Plain own attributes, plus the `overrides`
       // Map (non-enumerable, so Object.assign alone would skip it).
       for (const k of Object.keys(existing)) {
         if (!Object.prototype.hasOwnProperty.call(maskPath, k)) Reflect.deleteProperty(existing, k);
       }
       Object.assign(existing, maskPath);
-      const existingDict = instanceDict(existing);
+      const existingDict = overrides(existing);
       existingDict.clear();
-      for (const [k, v] of instanceDict(maskPath)) existingDict.set(k, v);
+      for (const [k, v] of overrides(maskPath)) existingDict.set(k, v);
       if (!(existing instanceof _propertyModel.Property)) throw new AttributeError("_linkKeyframes");
       existing._linkKeyframes();
     } else {

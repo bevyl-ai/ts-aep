@@ -1489,7 +1489,7 @@ function _fragmentTotals(fp: ProbeStream, trackId: number): [number, number] {
  * @param fp - The open media file.
  * @param undecodable - Video sample-entry codes whose track AE's importer
  *   cannot decode, so it must be reported as absent (see
- *   `_MP4_UNDECODABLE_CODECS`). Keys are `bytes_.hex` of the code.
+ *   `_MP4_UNDECODABLE_CODECS`). Keys are `Bytes.toHex` of the code.
  */
 export function _probeMov(fp: ProbeStream, undecodable: ReadonlySet<string> = new Set()): MediaInfo {
   const data = _readMoov(fp);
@@ -2721,7 +2721,7 @@ export function _probeDpxCineon(fp: ProbeStream): MediaInfo {
   throw new ValueError("Not a valid DPX/Cineon file (bad magic number)");
 }
 
-/** HEIF brands `_probeHeif` accepts in `ftyp`, as `bytes_.hex` keys. */
+/** HEIF brands `_probeHeif` accepts in `ftyp`, as `Bytes.toHex` keys. */
 const _HEIF_BRANDS: ReadonlySet<string> = new Set(
   [ascii("heic"), ascii("heix"), ascii("mif1"), ascii("heif")].map((k) => Bytes.toHex(k)),
 );

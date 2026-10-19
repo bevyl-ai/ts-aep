@@ -12,7 +12,7 @@ import {
   zip,
   boxFloat,
   BoxedFloat,
-  instanceDict,
+  overrides,
 } from "../../../pyrt/index.ts";
 import { ListChunk } from "../../binary/chunk.ts";
 import type { HeadChunk } from "../../binary/item_chunks.ts";
@@ -230,8 +230,8 @@ export class TextDocument {
 
   // Python instance `__dict__`: overrides for fields without COS backing.
   // `_override` reads it directly, so it must stay separate from accessors.
-  // Shared with CosField.get via instance_dict, so CosField-backed `_fromBinary` kwargs are read back.
-  _overrides: Map<string, InstanceValue> = instanceDict(this);
+  // Shared with CosField.get through overrides(), so CosField-backed `_fromBinary` kwargs are read back.
+  _overrides: Map<string, InstanceValue> = overrides(this);
 
   // COS backing, assigned by `__init__` / `_fromBinary`. The style dicts
   // alias the first runs' styles (`null` when a run carries none); `_doc`
