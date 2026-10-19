@@ -34,7 +34,7 @@ function _hueName(hDeg: number): string {
   return "Red";
 }
 
-// NOTE(port): line-for-line copy of CPython 3.12 colorsys.rgb_to_hsv (same operation order, Python-sign mod), so floats match.
+// Line-for-line copy of CPython 3.12 colorsys.rgb_to_hsv (same operation order, Python-sign mod), so floats match.
 function _rgbToHsv(r: number, g: number, b: number): [number, number, number] {
   const maxc = Math.max(r, g, b);
   const minc = Math.min(r, g, b);

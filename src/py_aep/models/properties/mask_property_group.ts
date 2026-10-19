@@ -160,8 +160,6 @@ export class MaskPropertyGroup extends PropertyGroup {
     }
   }
 
-  // NOTE(port): Python `_new` has `# type: ignore[override]`; the `never` overload is
-  // the TS equivalent (the keyword-only signature differs from PropertyGroup._new).
   /**
    * Create a new mask atom with backing chunks, as AE writes it.
    *

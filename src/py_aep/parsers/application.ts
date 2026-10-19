@@ -1,6 +1,4 @@
 // Main entry point for parsing After Effects project files.
-// `from __future__ import annotations`, `TYPE_CHECKING` blocks and `cast(...)`
-// are dropped: annotations are types only, and `cast` becomes `as`.
 
 import type { ListChunk } from "../binary/chunk.ts";
 import { findByType } from "../binary/utils.ts";

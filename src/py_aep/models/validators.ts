@@ -43,7 +43,7 @@ type StaticSequenceKw = StaticNumberKw & { length?: number | null };
  * - `exclusiveMin`: When `true`, the value must be strictly greater than `min` (e.g. a
  *     positive-but-non-zero size).
  */
-// NOTE(port): int/float — integral values are plain numbers by design (RULEBOOK §4); error messages print whole-number bounds without Python's trailing ".0".
+// Integral floats are plain numbers (RULEBOOK §4): error messages print whole-number bounds without Python's trailing ".0".
 export function _validateNumber(kw?: StaticNumberKw): Validator;
 export function _validateNumber<O>(kw: NumberKw<O>): InstanceValidator<O>;
 export function _validateNumber<O>(kw: NumberKw<O | null> = {}): InstanceValidator<O> {
@@ -55,18 +55,18 @@ export function _validateNumber<O>(kw: NumberKw<O | null> = {}): InstanceValidat
       throw new TypeError(`expected ${typeLabel}, got ${typeName(value)}`);
     }
     if (integer && (!(typeof value === "number" && Number.isInteger(value)) || typeof value === "boolean")) {
-      // `bool` subclasses `int`, so an isinstance check alone lets
-      // `skip_frames = True` through as 1. AE rejects it outright
+      // A boolean is never an integer here (py-aep checks it explicitly, as
+      // `bool` subclasses `int`): `skipFrames = true` would pass as 1. AE rejects it outright
       // ("true is not an unsigned integer"), and so does every other
       // place in this codebase that had to hand-roll the same guard.
       // Not `type(value) is not int`: that would also reject IntEnum
       // members and numpy integers.
-      // NOTE(port): int/float — integral values are plain numbers by design (RULEBOOK §4); a float such as 2.0 is accepted here where Python rejects it.
+      // Integral floats are plain numbers (RULEBOOK §4): a float such as 2.0 is accepted here where Python rejects it.
       throw new TypeError(`expected ${typeLabel}, got ${typeName(value)}`);
     }
     if (typeof value === "number" && !Number.isFinite(value)) {
       // NaN/inf would pass any `value < min or value > max` check (those
-      // comparisons are always False for NaN) and serialize as a corrupt
+      // comparisons are always false for NaN) and serialize as a corrupt
       // IEEE special into a float32 field that AE may reject.
       throw new ValueError(`must be a finite number, got ${floatRepr(value)}`);
     }
@@ -75,10 +75,10 @@ export function _validateNumber<O>(kw: NumberKw<O | null> = {}): InstanceValidat
     if (lo == null && hi == null) {
       // Unbounded fields accept non-numeric values: complex property
       // values (Gradient, Shape, ...) flow through this validator
-      // with dynamic bounds that resolve to None.
+      // with dynamic bounds that resolve to null.
       return;
     }
-    // NOTE(port): Python `isinstance(value, (int, float))` also admits bool; mirrored here.
+    // Python `isinstance(value, (int, float))` also admits bool; mirrored here.
     if (!(typeof value === "number" || typeof value === "boolean")) {
       throw new TypeError(`expected ${typeLabel}, got ${typeName(value)}`);
     }
@@ -124,7 +124,7 @@ export function validateSequence<O>(kw: SequenceKw<O | null> = {}): InstanceVali
     }
     for (const [i, v] of items.entries()) {
       // Elements are numeric whatever the bounds are. `_validateNumber`
-      // skips its own type check once both bounds resolve to None, an
+      // skips its own type check once both bounds resolve to null, an
       // exemption for unbounded SCALAR fields carrying complex values
       // (Gradient, Shape, ...) - never for a member of a fixed-length
       // numeric sequence, which would otherwise accept a string here.
@@ -164,10 +164,9 @@ export function validateEnum(enumCls: EnumHelpers<number>): Validator {
   if (cached != null) return cached;
 
   const _validator = function (value: unknown, _instance: unknown = null): void {
-    // NOTE(port): enum members are plain numbers, so `has` also accepts member ints; Python's int branch accepts those too (enum_cls(value) succeeds), so outcomes match.
+    // Enum members are plain numbers, so `has` also accepts member ints; Python's int branch accepts those too (enum_cls(value) succeeds), so outcomes match.
     if (enumCls.has(value)) return;
-    // Before the int branch: `bool` subclasses `int`, so `om.format =
-    // True` would otherwise silently select the member whose value is 1.
+    // Before the int branch: a boolean `om.format = true` would otherwise silently select the member whose value is 1.
     if (typeof value === "boolean") {
       throw new TypeError(`expected a ${enumCls.enumName}, got ${typeName(value)}`);
     }
@@ -228,7 +227,7 @@ function _validateStr(
     const text = String(value);
     if (!allowEmpty && !text) throw new ValueError("must not be empty");
     if (!allowNull && text.includes("\x00")) throw new ValueError("must not contain null bytes");
-    // NOTE(port): Python `len` counts code points; Array.from matches that for astral text.
+    // Python `len` counts code points; Array.from matches that for astral text.
     const nChars = Array.from(text).length;
     if (maxLength != null && nChars > maxLength) {
       throw new ValueError(`must be at most ${maxLength} characters, got ${nChars}`);
@@ -389,7 +388,6 @@ export const validateCinema4dQuality = _validateNumber({ min: 1, max: 99, intege
 
 // An `[x, y]` point stored as two float32 values (shape vertices / tangents,
 // and the bounding box): a larger coordinate cannot be serialized.
-// NOTE(port): Python reads FLOAT32_MAX at import too; bin_utils imports neither this module nor anything that does, so no cycle.
 export const validateF4Point = validateSequence({ length: 2, min: -FLOAT32_MAX, max: FLOAT32_MAX });
 
 /** Validate an After Effects version string, `"{major}.{minor}x{build}"`.

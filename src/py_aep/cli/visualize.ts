@@ -229,7 +229,7 @@ export function buildPropertyNode(prop: Property): Node {
     if (Array.isArray(prop.value)) {
       if (prop.value.length <= 4) attrs.set("value", prop.value);
     } else if (typeof prop.value === "number") {
-      // NOTE(port): int/float — integral values are plain numbers by design (RULEBOOK §4); an integral Python float (100.0) displays as `100` here instead of `100.0`.
+      // Integral floats are plain numbers (RULEBOOK §4): an integral Python float (100.0) displays as `100` here instead of `100.0`.
       attrs.set("value", Number(prop.value.toFixed(2)));
     } else {
       attrs.set("value", prop.value);
@@ -336,7 +336,7 @@ export function formatText(
 
   let attrsStr = "";
   if (node.attrs?.size > 0) {
-    // Filter out None values
+    // Filter out null values
     const filtered = new Map<string, AttrValue>([...node.attrs].filter(([, v]) => v != null));
     if (filtered.size > 0) {
       attrsStr = ` {${[...filtered].map(([k, v]) => `${k}: ${literal(v)}`).join(", ")}}`;
@@ -628,5 +628,4 @@ export function main(): number {
   return 0;
 }
 
-// Python's `if __name__ == "__main__": sys.exit(main())`.
 if (import.meta.main) runMain(main);

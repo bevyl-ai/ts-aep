@@ -74,11 +74,11 @@ export function parseItem(
  * @param isRoot - Whether the folder is the root folder (ID 0).
  * @param childChunks - child chunks of the folder LIST chunk.
  * @param project - The project.
- * @param _idta - The idta chunk (None for the root folder).
+ * @param _idta - The idta chunk (null for the root folder).
  * @param _nameUtf8 - The Utf8 chunk containing the folder name.
- * @param _cmta - The cmta chunk (None if no comment).
+ * @param _cmta - The cmta chunk (null if no comment).
  * @param _itemList - The LIST chunk for creating new chunks.
- * @param _gide - The LIST chunk for guides (None if no guides).
+ * @param _gide - The LIST chunk for guides (null if no guides).
  * @param parentFolder - The folder's parent folder.
  */
 export function parseFolder(

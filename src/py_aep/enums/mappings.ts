@@ -209,7 +209,7 @@ export function mapOutputColorSpace(
  * @param ipwsEnabled - Whether the "Working Color Space" option is selected (`ipws` chunk value).
  * @param overrideProfileId - 16-byte binary profile identifier from the `apid` chunk inside
  *   `LIST:CLRS`.
- * @returns `"Working Color Space"` when `ipwsEnabled` is True, `"Embedded"` when the profile ID is
+ * @returns `"Working Color Space"` when `ipwsEnabled` is true, `"Embedded"` when the profile ID is
  *   all `0xFF` (no override), or the resolved profile name.
  */
 export function mapMediaColorSpace(ipwsEnabled: boolean, overrideProfileId: Uint8Array): string {

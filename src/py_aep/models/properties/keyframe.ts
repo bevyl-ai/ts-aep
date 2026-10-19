@@ -1038,7 +1038,7 @@ export class Keyframe<V extends PropertyValue = PropertyValue> {
   set spatialAutoBezier(value: boolean) {
     // Only spatial kf_data carries this flag. Non-spatial kinds (e.g.
     // Orientation, whose kf_data is a valueless KfNoValue) have no slot
-    // for it; the getter tolerantly reads False there, but a write must not
+    // for it; the getter tolerantly reads false there, but a write must not
     // silently vanish (ExtendScript's setSpatialAutoBezierAtKey errors).
     validateBool(value);
     const kfData = this._ldatItem.kfData;

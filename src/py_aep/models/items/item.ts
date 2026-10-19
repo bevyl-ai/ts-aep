@@ -23,9 +23,7 @@ import type { FolderItem } from "./folder.ts";
 import type { Viewer } from "../viewer/viewer.ts";
 import { late } from "../late.ts";
 
-// NOTE(port): a module-level import in Python; parsers/effect imports the item subclasses, which extend Item.
-
-// NOTE(port): list.remove shim; Python compares with `==` (Item.__eq__ is by
+// List.remove shim; Python compares with `==` (Item.__eq__ is by
 // id), so the match uses py_eq (which dispatches to __eq__) rather than identity.
 function listRemove<T>(xs: T[], x: T): void {
   const i = xs.findIndex((y) => valueEquals(y, x));
@@ -138,14 +136,11 @@ export class Item {
   }
 
   // Python `__eq__` returns NotImplemented for a non-Item; the reflected
-  // comparison then falls back to identity, which is False here.
+  // comparison then falls back to identity, which is false here.
   equals(other: unknown): boolean {
     if (!(other instanceof Item)) return false;
     return this.id === other.id;
   }
-
-  // NOTE(port): `__hash__` (hash(self.id)) is not carried over; py_aep never
-  // uses an Item as a set member or dict key (dicts are keyed by int id).
 
   /**
    * The parent folder of this item. `null` for the root folder.

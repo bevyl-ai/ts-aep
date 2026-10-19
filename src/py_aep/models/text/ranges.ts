@@ -1047,7 +1047,7 @@ export class RangeField<T extends InstanceValue> {
    * Create a RangeField for IntEnum-backed style keys. Writes reject
    * out-of-enum ints (ExtendScript parity); reads stay tolerant via
    * `fromBinary`. Without the check a stray int serializes a value
-   * that reads back as `None`/undefined.
+   * that reads back as `null`/undefined.
    */
   static enum<V extends number>(
     enumCls: CosEnum<V>,

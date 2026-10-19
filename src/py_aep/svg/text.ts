@@ -11,7 +11,7 @@
  * bidirectional text, and complex-script shaping are out of scope.
  */
 
-// TODO(port): fontTools TTFont → fontkit 2.0.4: fontkit exposes glyphs by numeric id, not glyph name, so the glyph set is keyed by id (same 1:1 mapping); fonts whose glyph metrics/outlines fontkit parses differently from fontTools (e.g. malformed hmtx/glyf tables) may give different advances or outlines.
+// TODO: fontTools TTFont → fontkit 2.0.4: fontkit exposes glyphs by numeric id, not glyph name, so the glyph set is keyed by id (same 1:1 mapping); fonts whose glyph metrics/outlines fontkit parses differently from fontTools (e.g. malformed hmtx/glyf tables) may give different advances or outlines.
 import { dep } from "../../pyrt/deps.ts";
 import * as host from "../../pyrt/host.ts";
 import { type CubicSeg, RawSubpath } from "./path_data.ts";
@@ -94,7 +94,6 @@ function _loadFont(path: Path, fontNumber = 0): FontkitFont {
   const key = `${fspath(path)}#${fontNumber}`;
   let font: FontkitFont | null = _fontCache.get(key) ?? null;
   if (font == null) {
-    // NOTE(port): lazy=True only defers table parsing (no result difference); a .ttc resolves its face through `.fonts`.
     const opened = dep("fontkit").create(host.fs.readFileSync(fspath(path)));
     font = opened.fonts ? opened.fonts[fontNumber] : opened;
     _fontCache.set(key, font);
@@ -110,7 +109,7 @@ function _loadFont(path: Path, fontNumber = 0): FontkitFont {
  * cubic segments reach `_lineTo` / `_curveToOne`.
  */
 class _CubicContourPen {
-  // NOTE(port): fontTools BasePen base class dropped. `_drawGlyph` drives these
+  // `_drawGlyph` drives these
   // methods from fontkit path commands; fontkit already emits implied on-curve
   // points and decomposes composite glyphs.
   declare contours: RawSubpath[];
@@ -171,7 +170,6 @@ class _CubicContourPen {
   }
 
   _endPath(): void {
-    // NOTE(port): fontkit never emits an end-path (glyf and CFF contours always close), so this is unreachable, as in fontTools for glyf/CFF.
     if (this._segs?.length > 0) {
       this.contours.push(new RawSubpath(this._segs, false));
     }
@@ -208,20 +206,22 @@ function _inGlyphSet(glyphSet: FontkitFont, gname: number | null): gname is numb
 }
 
 export function _glyphs(font: FontkitFont, text: string): TextGlyphs {
-  // `getBestCmap()` is None for a font with no Unicode cmap subtable (the
-  // Windows symbol faces Wingdings/Webdings/Symbol/Marlett, and similar). Treat
-  // it as empty so every char maps to no glyph and the run is dropped, matching
-  // the "unresolved font is skipped" behaviour rather than crashing read_svg.
-  // TODO(port): fontkit has no getBestCmap(); its internal cmap processor may pick a different subtable than fontTools' priority order for fonts carrying several Unicode cmaps (e.g. both format 4 and format 12, or differing platform 0/3 subtables), changing which code points map to glyphs.
-  // Its lookup returns 0 for unmapped code points, which is reported as null here.
+  // A font with no Unicode cmap subtable (the Windows symbol faces
+  // Wingdings/Webdings/Symbol/Marlett, and similar) has no cmap: every char maps
+  // to no glyph and the run is dropped, matching the "unresolved font is
+  // skipped" behaviour rather than crashing read_svg.
+  // TODO: fontkit may pick a different subtable than fontTools' priority order
+  // (py-aep) for fonts carrying several Unicode cmaps (e.g. both format 4 and
+  // format 12, or differing platform 0/3 subtables), changing which code points
+  // map to glyphs. Its lookup returns 0 for unmapped code points, reported as null here.
   let cmap: FontkitCmap | null = null;
   try {
     cmap = font._cmapProcessor;
   } catch {
-    // fontkit throws when no supported cmap subtable exists (fontTools: getBestCmap() is None).
+    // fontkit throws when no supported cmap subtable exists.
     cmap = null;
   }
-  // NOTE(port): getGlyphSet() → the fontkit font itself; glyphs are addressed by id, not name (ids are unique, same mapping as names).
+  // Glyphs are addressed by id on the fontkit font itself (ids are unique, the same mapping as fontTools' names).
   const glyphSet = font;
   const unitsPerEm = font.unitsPerEm;
   const names: (number | null)[] = [];
@@ -355,7 +355,6 @@ function _pointAt(pts: [number, number][], cum: number[], dist: number): [number
   const [x1, y1] = pts[i];
   const span = cum[i] - cum[i - 1];
   const f = span > 1e-9 ? (dist - cum[i - 1]) / span : 0.0;
-  // NOTE(port): platform libm — CPython's own math.* results vary by platform libm; V8 (fdlibm) may differ in the last ulp.
   return [x0 + (x1 - x0) * f, y0 + (y1 - y0) * f, Math.atan2(y1 - y0, x1 - x0)];
 }
 
@@ -398,7 +397,6 @@ export function outlineTextPath(
     const mid = dist + advanceUser / 2.0;
     if (gname != null && _inGlyphSet(glyphSet, gname) && 0.0 <= mid && mid <= total) {
       const [px, py, angle] = _pointAt(pts, cum, mid);
-      // NOTE(port): platform libm — CPython's own math.* results vary by platform libm; V8 (fdlibm) may differ in the last ulp.
       const cos = Math.cos(angle);
       const sin = Math.sin(angle);
       // place at path point, rotate to tangent, scale+y-flip, then shift

@@ -95,7 +95,6 @@ export class LightLayer extends Layer {
     lightType?: number;
     effectParamDefs?: EffectParamDefs | null;
   }): LightLayer {
-    // NOTE(port): Python `# type: ignore[override]` is type-only; the `never` overload above keeps Layer._new's signatures uncallable.
     const { name, layerId, duration, containingComp, lightType = 1, effectParamDefs = null } = kw;
     const nameCps = Array.from(name);
     const layerName = nameCps.length > 31 ? nameCps.slice(0, 31).join("") : name;

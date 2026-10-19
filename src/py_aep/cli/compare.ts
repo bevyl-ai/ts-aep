@@ -43,12 +43,12 @@ export function eprint(message: string): void {
   console.error(message);
 }
 
-// NOTE(port): int.bit_length(); exact for the integer inputs (xor of two bytes) used here.
+// Int.bit_length(); exact for the integer inputs (xor of two bytes) used here.
 export function bitLength(n: number): number {
   return n === 0 ? 0 : Math.abs(n).toString(2).length;
 }
 
-// NOTE(port): f"{x:08b}" including Python's sign-inside-width rule for negatives.
+// F"{x:08b}" including Python's sign-inside-width rule for negatives.
 export function bin8(x: number): string {
   const sign = x < 0 ? "-" : "";
   return (
@@ -209,7 +209,7 @@ export function _floatsClose(a: number, b_: number): boolean {
 }
 
 /**
- * Return a chunk's coordinate float fields, or None if it has none.
+ * Return a chunk's coordinate float fields, or null if it has none.
  *
  * Covers the float-bearing leaf chunks whose values AE and py_aep may
  * encode with slightly different rounding: `cdat` (doubles), `shph`
@@ -253,7 +253,7 @@ export function _withFloats(chunk: Chunk, floats: number[]): Chunk {
 export const _FLOAT_TAG_RE = /<float>([^<]*)<\/float>/g;
 
 /**
- * True when two AE `prop.map` XML strings (gradient color data) differ
+ * `true` when two AE `prop.map` XML strings (gradient color data) differ
  * ONLY in their `<float>` values within tolerance.
  *
  * Gradient colors/offsets are stored as text floats inside a `Utf8`
@@ -288,7 +288,7 @@ export function _gradientXmlOnlyFloatDiff(s1: string | String, s2: string | Stri
 }
 
 /**
- * True when `c1` and `c2` differ ONLY in float coordinates within
+ * `true` when `c1` and `c2` differ ONLY in float coordinates within
  * tolerance (so the byte difference is float-precision noise, not a real
  * change). Non-float bytes must still match exactly.
  */
@@ -311,7 +311,7 @@ export function _onlyFloatDiff(c1: Chunk, c2: Chunk): boolean {
 }
 
 /**
- * True when `path` differs only in float coordinates across every file
+ * `true` when `path` differs only in float coordinates across every file
  * that contains it (so the multi-file diff is float-precision noise). Files
  * byte-identical to the reference do not count as a difference.
  */
@@ -970,5 +970,4 @@ export function main(): number {
   return !diffs?.length && !only1?.length && !only2?.length ? 0 : 1;
 }
 
-// `if __name__ == "__main__": sys.exit(main())`
 if (import.meta.main) runMain(main);

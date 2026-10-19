@@ -51,8 +51,7 @@ const _GENERIC_FALLBACKS = new Map<string, readonly string[]>([
 ]);
 
 /**
- * NOTE(port): pytest `monkeypatch.setattr(fonts_mod, "_fontDirs"/"_index", ...)`
- * cannot rebind ESM exports; tests use these hooks instead (same effect).
+ * Test hooks: ESM exports cannot be rebound, so tests swap the font dirs and index here.
  */
 export function _setFontDirs(fn: (() => Path[]) | null): void {
   _fontDirsOverride = fn;
@@ -100,7 +99,7 @@ const NAME_KEYS = new Map<number, string>([
 
 /**
  * First non-empty name among the given name IDs, or `null`.
- * TODO(port): fontTools `getDebugName` falls back across platform/language
+ * TODO: fontTools `getDebugName` falls back across platform/language
  * name records (Windows-English, then Mac, then any); fontkit `getName(key)`
  * reads the English record only. Affects fonts whose requested ID exists only
  * under a non-English or non-primary platform record: Python finds it, TS
@@ -170,7 +169,7 @@ function* _iterFaces(path: Path): Generator<[number, fontkit.Font]> {
       }
       fonts = [...opened.fonts];
     } else {
-      // NOTE(port): TTFont(fontNumber=0) on a non-.ttc file; fontkit returns a
+      // TTFont(fontNumber=0) on a non-.ttc file; fontkit returns a
       // collection (with `.fonts`) only for collection files, so take face 0.
       fonts = [opened.fonts ? opened.fonts[0] : opened];
     }
@@ -180,7 +179,7 @@ function* _iterFaces(path: Path): Generator<[number, fontkit.Font]> {
   try {
     yield* fonts.entries();
   } finally {
-    // NOTE(port): fontkit has no close(); it reads the whole file eagerly, so
+    // Fontkit has no close(); it reads the whole file eagerly, so
     // no handle is left open and `font.close()` has nothing to release.
   }
 }

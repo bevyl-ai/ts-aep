@@ -218,7 +218,7 @@ function classifyProperty(prop: Property): number | null {
     // A slider controller is seeded from the property's current value,
     // so a value-less 1-D property (e.g. `ADBE Layer Source Alternate`)
     // cannot back one - reporting it addable made
-    // `addToMotionGraphicsTemplate` raise instead of returning False.
+    // `addToMotionGraphicsTemplate` raise instead of returning false.
     if (prop.value == null) return null;
     return CONTROLLER_SLIDER;
   }

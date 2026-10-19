@@ -1,5 +1,3 @@
-// Python: src/py_aep/models/items/footage.py (`from __future__ import annotations`: dropped)
-
 import { ListChunk, type Chunk } from "../../binary/chunk.ts";
 import { buildItemViewChunks } from "../../binary/comp_skeleton.ts";
 import { IdtaChunk, type CmtaChunk } from "../../binary/item_chunks.ts";
@@ -226,7 +224,6 @@ export class FootageItem extends AVItem {
     } else if (mainSource instanceof PlaceholderSource) {
       return "placeholder";
     } else {
-      // TODO(port): Python formats `type(src)` as `<class 'py_aep.<module>.<Name>'>`; JS has no module path, so only the bare class name is printed. Affects only this unreachable-in-practice error message.
       throw new TypeError(`Unexpected source type for ${this.name}: ${mainSource?.constructor?.name}`);
     }
   }

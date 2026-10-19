@@ -193,8 +193,8 @@ function parseRenderQueueItems(
  * @param listChunk - The LIST 'list' chunk containing OM metadata.
  * @param lomChunk - The LIST 'LOm ' chunk containing output modules.
  * @param ldatBody - The RenderSettingsItem for this item.
- * @param rcomContainer - The RCom ContainerChunk, or None if absent.
- * @param rcomUtf8 - The Utf8 chunk inside RCom, or None if absent.
+ * @param rcomContainer - The RCom ContainerChunk, or null if absent.
+ * @param rcomUtf8 - The Utf8 chunk inside RCom, or null if absent.
  * @param routItems - This item's block of RoutItems (AE writes 5 per item).
  * @param litmChunk - The LIST 'LItm' chunk.
  * @param project - The Project object, used to resolve comp references.

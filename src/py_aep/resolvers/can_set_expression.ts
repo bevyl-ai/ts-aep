@@ -44,7 +44,7 @@ import type { Property } from "../models/properties/property.ts";
 import type { Layer } from "../models/layers/layer.ts";
 import * as _avLayer from "../models/layers/av_layer.ts";
 
-// PVT sets where can_set_expression is always True / False regardless
+// PVT sets where can_set_expression is always true / false regardless
 // of other signals.
 const _PVT_ALWAYS_TRUE: ReadonlySet<number> = new Set<number>([
   PropertyValueType.TEXT_DOCUMENT,
@@ -117,7 +117,7 @@ export function resolveCanSetExpression(prop: Property): boolean {
     // Only AV layers have one.
     const layer = prop._containingLayer;
     if (!(layer instanceof _avLayer.AVLayer)) {
-      // NOTE(port): Python's `cast` reads the attribute anyway, which a non-AV layer answers by child lookup.
+      // Python's `cast` reads the attribute anyway, which a non-AV layer answers by child lookup.
       throw new AttributeError(`'${layer.constructor.name}' has no property 'timeRemapEnabled'`);
     }
     return layer.timeRemapEnabled;

@@ -27,7 +27,7 @@
  * composer itself refuses.
  */
 
-// NOTE(port): text is indexed in UTF-16 units here; Python indexes code points.
+// Text is indexed in UTF-16 units here; Python indexes code points.
 // `_checkEnvelope` refuses astral characters before any of this runs, so the
 // two agree on every text that reaches these helpers.
 
@@ -45,7 +45,7 @@ import * as tc from "./text_composition.ts";
 import { BoxAccumulator } from "./shape_bounds.ts";
 
 // A glyph's outline bounds in font units, `null` for an empty glyph.
-// NOTE(port): keyed by glyph id (HarfBuzz codepoint); Python's glyph name is order[gid], a 1:1 map, so the cache is equivalent.
+// Keyed by glyph id (HarfBuzz codepoint); Python's glyph name is order[gid], a 1:1 map, so the cache is equivalent.
 type _GlyphBounds = Map<number, [number, number, number, number] | null>;
 
 type _CharStyle = ReturnType<typeof tc._charStyles>[number];
@@ -61,7 +61,7 @@ function _isOsError(exc: Error | null): boolean {
 }
 
 function _openFace(path: string, faceIndex: number): fontkit.Font {
-  // NOTE(port): fontTools `TTFont(fontNumber=...)` picks a face of a .ttc;
+  // FontTools `TTFont(fontNumber=...)` picks a face of a .ttc;
   // fontkit exposes collection faces through `.fonts`; a plain font is its own face.
   const opened = dep("fontkit").create(host.fs.readFileSync(path));
   return opened.fonts ? opened.fonts.at(faceIndex)! : opened;
@@ -92,7 +92,7 @@ function _fontOutlines(psName: string): [fontkit.Font, boolean, _GlyphBounds] {
 
 /** fontTools `BoundsPen` for one glyph: `null` when it draws nothing. */
 function _penBounds(font: fontkit.Font, gid: number): [number, number, number, number] | null {
-  // TODO(port): fontkit vs fontTools outline decoding. fontkit's Path.bbox is
+  // TODO: fontkit vs fontTools outline decoding. fontkit's Path.bbox is
   // exact (curve extrema) like BoundsPen, but fontkit builds the path itself
   // (TrueType implied on-curve points, CFF/CFF2 charstring interpretation), so
   // a glyph whose outline fontkit decodes differently from fontTools gets

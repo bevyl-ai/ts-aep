@@ -284,7 +284,7 @@ export function _reorderAndFill(
         if (child._color !== spec.color) overrides(child).set("_color", spec.color);
         if (spec.chunkBoundsAreHints) {
           // tdum/tduM hold UI slider hints, not real bounds:
-          // the spec is authoritative (None = unbounded).
+          // the spec is authoritative (null = unbounded).
           child._minValueFallback = spec.minValue;
           child._maxValueFallback = spec.maxValue;
         } else {
@@ -450,7 +450,7 @@ export class PropertyGroup extends PropertyBase {
    * @param propertyDepth - The depth of the group in the tree.
    * @param kw - Keyword arguments:
    * - `parentProperty`: The container that owns the synthesized group.
-   * - `synthetic`: If True, mark backing chunks as synthetic (skipped during serialization).
+   * - `synthetic`: If true, mark backing chunks as synthetic (skipped during serialization).
    * - `enableFlags`: `tdsb` enable-flags byte (bit 0 enabled, bit 1 collapsed). Defaults to `1`
    *     (enabled); pass `2` for a group AE leaves disabled (e.g. an unused layer style).
    */

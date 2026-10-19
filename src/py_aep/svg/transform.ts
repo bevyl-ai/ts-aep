@@ -130,7 +130,6 @@ export function parseTransform(value: string): Affine {
  * One transform function, its name and argument count already checked
  * by `parseTransform`.
  */
-// NOTE(port): platform libm — CPython's own math.* results vary by platform libm; V8 (fdlibm) may differ in the last ulp.
 function _singleTransform(name: string, n: number[]): Affine {
   if (name === "matrix") {
     return new Affine(n[0], n[1], n[2], n[3], n[4], n[5]);

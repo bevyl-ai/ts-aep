@@ -186,7 +186,7 @@ function fmtField(fmt: string, kw: FmtFieldOptions = {}) {
       default_ = new Uint8Array(n);
     } else {
       // Coerce so constructed chunks hold the read-time type
-      // (e.g. bool_field defaults to False, not 0).
+      // (e.g. bool_field defaults to false, not 0).
       default_ = coerce != null ? coerce(0) : 0;
     }
   }
@@ -405,7 +405,7 @@ function _structInfoUncached(cls: Function): _StructInfo | null {
 
 const _STRUCT_INFO = new Map<Function, _StructInfo | null>();
 
-/** `_structInfoUncached`, cached per class (Python: `functools.lru_cache`). */
+/** `_structInfoUncached`, cached per class. */
 export function _structInfo(cls: Function): _StructInfo | null {
   let info = _STRUCT_INFO.get(cls);
   if (info === undefined) {

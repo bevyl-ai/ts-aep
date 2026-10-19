@@ -39,11 +39,11 @@ const _OM_PREFS_ITEM_SIZE = 128;
  * settings: The binary settings for this template.
  * name: The template name from the prefs spec strings section.
  * format_info: Raw bytes of the `Rouu` chunk (output format header),
- * or None if no format info was found.
+ * or null if no format info was found.
  * format_options: Raw bytes of the format-specific `Ropt` chunk (codec
  * / image-sequence options), from the "Output File Options
- * Preference Section". None if absent.
- * format_options_xml: The XML format options string, or None.
+ * Preference Section". null if absent.
+ * format_options_xml: The XML format options string, or null.
  */
 export class OutputModuleTemplate {
   settings: OutputModuleSettingsItem;
@@ -92,7 +92,7 @@ function _extractSectionValue(lines: string[], key: string): Uint8Array | null {
  *   `~/AppData/Roaming/Adobe/After Effects/25.6`).
  * @returns A tuple of (templates, default_index). Templates is a list of parsed
  *   {@link RenderSettingsItem} objects. Default_index is the index of the default render settings
- *   template in the returned list, or None if not found (or the default entry was filtered out).
+ *   template in the returned list, or null if not found (or the default entry was filtered out).
  */
 export function parseRenderTemplates(prefsDir: Path): [RenderSettingsItem[], number | null] {
   const renderFiles = prefsDir.glob("*-indep-render.txt");
@@ -127,7 +127,7 @@ export function parseRenderTemplates(prefsDir: Path): [RenderSettingsItem[], num
       continue;
     }
     // The prefs default index counts raw entries; remap it to the
-    // filtered list. A filtered-out default yields None (no default).
+    // filtered list. A filtered-out default yields null (no default).
     if (idx === rawDefaultIndex) {
       defaultIndex = templates.length;
     }
@@ -155,7 +155,7 @@ function _extractIntValue(lines: string[], key: string): number | null {
  *   `~/AppData/Roaming/Adobe/After Effects/25.6`).
  * @returns A tuple of (templates, default_index). Templates is a list of
  *   {@link OutputModuleTemplate} objects. Default_index is the index of the default output module
- *   template in the returned list, or None if not found (or the default entry was filtered out).
+ *   template in the returned list, or null if not found (or the default entry was filtered out).
  *   Templates whose name starts with `_HIDDEN` are excluded.
  */
 export function parseOutputTemplates(prefsDir: Path): [OutputModuleTemplate[], number | null] {
@@ -196,7 +196,7 @@ export function parseOutputTemplates(prefsDir: Path): [OutputModuleTemplate[], n
       continue;
     }
     // The prefs default index counts raw entries; remap it to the
-    // filtered list. A filtered-out default yields None (no default).
+    // filtered list. A filtered-out default yields null (no default).
     if (idx === rawDefaultIndex) {
       defaultIndex = templates.length;
     }

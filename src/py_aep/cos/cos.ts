@@ -591,7 +591,7 @@ export class CosParser {
       this.maxPos -= 1;
     }
     // `read(1)` gives `b""` at the end of the data. Every lexer loop stops
-    // on `None`, so passing `b""` on spun them forever on a truncated
+    // on `null`, so passing `b""` on spun them forever on a truncated
     // document (an empty byte also matched `in b".+-"` as a number start).
     const byte = this.file.readByte();
     return byte >= 0 ? byte : null;

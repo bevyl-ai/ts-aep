@@ -81,7 +81,7 @@ export const VIDEO_CODEC_NAMES: Map<string, string> = new Map<string, string>([
   ["apco", "ProRes 422 Proxy"],
 ]);
 
-// NOTE(port): local port of CPython 3.12 re._parser.parse_template for a pattern with
+// Local port of CPython 3.12 re._parser.parse_template for a pattern with
 // zero capture groups (the only use: re.sub(rf"\[{key}\]", ...)); same escapes and errors.
 function _expandTemplate(template: string, match: string): string {
   if (!template.includes("\\")) {
@@ -282,7 +282,7 @@ function formatTimecode(seconds: number, fps: number, isDuration = false): strin
  * @param fieldRender - The field render setting for `[fieldOrder]`.
  * @param pulldownPhase - The 3:2 pulldown phase for `[pulldownPhase]`.
  * @param fileExtension - The file extension for `[fileExtension]`.
- * @returns The resolved file path, or an empty string if file_template is None.
+ * @returns The resolved file path, or an empty string if file_template is null.
  */
 export function resolveOutputFilename(
   fileTemplate: string,
@@ -320,7 +320,7 @@ export function resolveOutputFilename(
   }
 
   // Build substitution map: template_key -> resolved_value
-  // Entries with None values are skipped during application
+  // Entries with null values are skipped during application
   const substitutions = new Map<string, string | null>([
     ["projectName", projectName],
     ["compName", compName],

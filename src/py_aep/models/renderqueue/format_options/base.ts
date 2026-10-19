@@ -21,7 +21,7 @@ export class FormatOptionsBase {
   /**
    * Back-reference to the owning output module. `null` while the parser
    * is building the wrapper, before `OutputModule` wires it up - which
-   * is why detachment needs its own flag rather than reusing `is None`.
+   * is why detachment needs its own flag rather than reusing `is null`.
    */
   declare _parentOm: OutputModule | null;
 

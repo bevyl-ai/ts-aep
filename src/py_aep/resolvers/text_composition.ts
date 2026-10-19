@@ -61,7 +61,7 @@ import type { TextDocument } from "../models/text/text_document.ts";
 // uharfbuzz -> harfbuzzjs. The wasm module initializes asynchronously, so it is
 // awaited once at module load and wrapped in a uharfbuzz-shaped binding
 // (`hb.Blob.from_file_path`, `hb.Face`, `hb.Font`, `hb.Buffer`, `hb.shape`).
-// NOTE(port): harfbuzzjs indexes clusters in UTF-16 units; uharfbuzz in code
+// Harfbuzzjs indexes clusters in UTF-16 units; uharfbuzz in code
 // points. Composition refuses astral text first (`_checkEnvelope`), so the
 // two agree on every text that is shaped.
 // Off Node/Bun the wasm is fetched from `hb.wasm` next to the bundle. Where
@@ -209,7 +209,7 @@ if (_harfbuzzError != null) {
 /**
  * The `except _FONT_OPEN_ERRORS` clause: Python's `OSError`, plus HarfBuzz's own
  * error when the binding exposes one.
- * NOTE(port): Node's fs failures are plain `Error`s carrying a `code`, not
+ * Node's fs failures are plain `Error`s carrying a `code`, not
  * `OSError` instances; the `code` check stands in for Python's OSError. Parse
  * failures (fontTools TTLibError / fontkit Error without `code`) propagate in both.
  */
@@ -278,7 +278,7 @@ function _ascenderRatio(psName: string): number {
   if (ratio === undefined) {
     let font: fontkit.Font;
     try {
-      // NOTE(port): fontTools TTFont(path, fontNumber=face_index, lazy=True) ->
+      // FontTools TTFont(path, fontNumber=face_index, lazy=True) ->
       // fontkit. fontkit's create returns a FontCollection for .ttc files, so the
       // face is picked with `.fonts[face_index]`.
       const opened = dep("fontkit").create(host.fs.readFileSync(path.toString()));
@@ -297,14 +297,14 @@ function _ascenderRatio(psName: string): number {
     const hhea = font.hhea;
     if (hhea == null) throw new KeyError("'hhea' table not found");
     ratio = hhea.ascent / upem;
-    // TODO(port): getBestCmap() vs fontkit's cmap subtable choice may differ on
+    // TODO: getBestCmap() vs fontkit's cmap subtable choice may differ on
     // fonts with several cmaps; 'd' absent is detected as .notdef (id 0), so a
     // font mapping 'd' explicitly to glyph 0 would be skipped here but measured
     // by Python. Also glyph.bbox (fontkit) vs BoundsPen tight bounds can differ
     // for TrueType glyphs whose glyf header yMax is not the true extremum.
     const glyph = font.glyphForCodePoint(0x64);
     if (glyph.id !== 0) {
-      // BoundsPen reports bounds None for an empty outline: keep the hhea ratio.
+      // An empty outline has no bounds: keep the hhea ratio.
       if (glyph.path.commands.length > 0) {
         ratio = glyph.bbox.maxY / upem;
       }

@@ -4,7 +4,7 @@
  * These enums match the values used in After Effects ExtendScript.
  */
 
-// NOTE(port): Python IntEnum members are plain numbers here, so instance
+// Python IntEnum members are plain numbers here, so instance
 // `@property`s (`label`, `kind`, `toFormatId`, `toBinary`) are enum methods
 // taking the member as `self`, e.g. `OutputChannels.label(member)`; same
 // values and lookups as the Python properties. Applies to every enum here.

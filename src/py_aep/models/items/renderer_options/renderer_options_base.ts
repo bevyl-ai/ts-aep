@@ -31,7 +31,7 @@ export class RendererOptionsBase extends SettingsView {
 
   constructor(kw: { body: Chunk; comp: CompItem }) {
     const { body, comp } = kw;
-    // NOTE(port): Python passes `self` as the owner; TS forbids touching `this` before super(), so the owner is patched in just below (SettingsView only stores it).
+    // The options object is its own owner, set once super() has run (SettingsView only stores it).
     super(null, new.target._SPEC);
     this._body = body;
     this._comp = comp;

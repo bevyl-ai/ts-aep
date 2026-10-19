@@ -239,7 +239,7 @@ export const _CANVARY_OVERRIDES: Map<string, boolean> = new Map<string, boolean>
 // can_set_expression overrides
 // ---------------------------------------------------------------------------
 
-// Match names where canSetExpression is always False regardless of context.
+// Match names where canSetExpression is always false regardless of context.
 export const _CANSETEXPR_FALSE_OVERRIDES: ReadonlySet<string> = new Set<string>([
   // Paint stroke properties
   "ADBE Paint Clone Time",
@@ -444,7 +444,7 @@ export const _CAMERA_NO_EXPRESSION: ReadonlySet<string> = new Set<string>([
   "ADBE Scale",
   "ADBE Opacity",
   // AE 2026 camera-options additions: ExtendScript reports
-  // canSetExpression False for both (probed camera_defaults AE26).
+  // canSetExpression false for both (probed camera_defaults AE26).
   "ADBE Camera Focus Area Width",
   "ADBE Camera Split Blur Level",
 ]);

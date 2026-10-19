@@ -710,7 +710,6 @@ function _extractEnum(body: EnumPardChunk, result: ParamDef): void {
 _pardExtractor(PropertyControlType.ENUM)(_extractEnum);
 
 /** Return integral floats as int, matching ExtendScript output. */
-// NOTE(port): Python returns int for integral floats, else the float; JS numbers carry the same value, and the int/float type is only observable via repr()/type().
 function _intify(value: number): number {
   return Number.isInteger(value) ? Math.trunc(value) : value;
 }

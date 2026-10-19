@@ -23,7 +23,7 @@ import {
   RQItemStatus,
   VideoCodec,
 } from "../../enums/index.ts";
-// NOTE(port): AudioCodec, VideoCodec, MPEGAudioFormat, MPEGAudioLayer and MPEGMultiplexer are
+// AudioCodec, VideoCodec, MPEGAudioFormat, MPEGAudioLayer and MPEGMultiplexer are
 // not imported by the Python module. They are imported here because `_rulesContext` and
 // `validateState` check `isinstance(value, IntEnum)` on values read from the XML format options,
 // and an enum-class membership test is the only way to tell a decoded member from a raw fallback.
@@ -108,7 +108,7 @@ import {
   compare,
 } from "../../../pyrt/index.ts";
 
-// NOTE(port): Python's `isinstance(x, bool) or isinstance(x, int)` accepts bools as ints.
+// Python's `isinstance(x, bool) or isinstance(x, int)` accepts bools as ints.
 // `isInt` keeps that so raw bool fields still count as ints in the checks below.
 function isInt(v: RuleValue | null): v is number | boolean {
   return (typeof v === "number" && Number.isInteger(v)) || typeof v === "boolean";
@@ -164,7 +164,7 @@ function _nameOrStr(key: string | null, v: RuleValue): string {
   return String(v);
 }
 
-// NOTE(port): `{value!r}` of an IntEnum member is `<Cls.NAME: n>` in Python but a raw int stays
+// `{value!r}` of an IntEnum member is `<Cls.NAME: n>` in Python but a raw int stays
 // `n`; both are the same number here, so a member of the key's enum always reprs as a member.
 function _valueRepr(key: string, v: RuleValue): string {
   const E = _KEY_ENUM.get(key);
@@ -1021,8 +1021,6 @@ export class OutputModule {
    * });
    * ```
    */
-  // NOTE(port): Python's `@contextmanager` + `with` has no TS equivalent; the block is passed
-  // as `body`, which runs inside the same transaction as the `with` body would.
   batchEdit(body: (om: OutputModule) => void): OutputModule {
     if (this._batchDepth) {
       this._batchDepth += 1;

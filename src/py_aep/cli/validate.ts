@@ -131,7 +131,7 @@ export function _getFieldNames(obj: object): readonly string[] | null {
   if (attrsHas(cls)) {
     for (const f of fields(cls)) names.add(f.name);
   }
-  // TODO(port): Python also collects `__annotations__` from the full MRO here. TS erases
+  // TODO: Python also collects `__annotations__` from the full MRO here. TS erases
   // type annotations at runtime, so a field that is only annotated (neither an attrs field
   // nor a chunkAttr/dictAttr descriptor) on a plain class is not enumerated.
   // Collect annotations and chunk-backed descriptors from the full MRO.
@@ -288,7 +288,7 @@ export function _toDict(obj: ToDictValue, memo: Map<object, [object, ToDictValue
         if (!(e instanceof AttributeError || e instanceof KeyError)) throw e;
         continue;
       }
-      // A missing attribute (Python AttributeError) reads as undefined here; None is null.
+      // A missing attribute (Python AttributeError) reads as undefined here; null is null.
       if (value === undefined) continue;
       result.set(name, _toDict(value, memo));
     }
@@ -336,7 +336,7 @@ export function _normalizeKeys(d: Dict): Dict {
  * @param expected - Expected value from ExtendScript JSON.
  * @param parsed - Parsed value from py_aep.
  * @param tolerance - Float comparison tolerance.
- * @returns True if values match.
+ * @returns `true` if values match.
  */
 export function compareValues(expected: ToDictValue, parsed: ToDictValue, tolerance = 0.001): boolean {
   if (expected == null && parsed == null) return true;
@@ -813,7 +813,7 @@ export function compareProperty(expectedProp: Dict, parsedProp: Dict, path: stri
   // Compare min/max values only when BOTH sides report the bound present.
   // The presence check above already flags an under-reported bound; gating
   // the value comparison on the parsed side too avoids a redundant second
-  // diff (.minValue: 0 vs None) for the same root cause.
+  // diff (.minValue: 0 vs null) for the same root cause.
   if (truthy(expectedProp.get("hasMin")) && truthy(parsedProp.get("hasMin"))) {
     if (expectedProp.has("minValue")) {
       const expMin = getOrThrow(expectedProp, "minValue");
@@ -986,7 +986,7 @@ export function compareKeyframe(expectedKf: Dict, parsedKf: Dict, path: string, 
   result.trackField("Keyframe", "inTemporalEase", expectedKf.has("inTemporalEase"));
   result.trackField("Keyframe", "outTemporalEase", expectedKf.has("outTemporalEase"));
 
-  // Compare value. The exporter writes None for a key value ExtendScript
+  // Compare value. The exporter writes null for a key value ExtendScript
   // cannot read (a Curves key's, which aborts the script).
   if (expectedKf.get("value") != null && parsedKf.get("value") != null) {
     const expVal = getOrThrow(expectedKf, "value");
@@ -1918,5 +1918,4 @@ export function main(args: string[] | null = null): number {
   return !result.differences?.length ? 0 : 1;
 }
 
-// `if __name__ == "__main__": sys.exit(main())`
 if (import.meta.main) runMain(main);

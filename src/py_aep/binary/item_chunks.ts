@@ -186,7 +186,7 @@ export class HeadChunk extends Chunk {
     this._versionWord = ((this._versionWord & ~(0x0f << 15)) | ((value & 0x0f) << 15)) >>> 0;
   }
 
-  /** Raw flag: False=beta, True=release. */
+  /** Raw flag: false=beta, true=release. */
   get aeVersionBetaFlag(): boolean {
     return ((this._versionWord >>> 9) & 1) !== 0;
   }

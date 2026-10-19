@@ -1,5 +1,3 @@
-// `from __future__ import annotations` and the `typing` imports are dropped:
-// annotations are TypeScript types only.
 import * as ET from "../../../../pyrt/etree.ts";
 import {
   KeyError,
@@ -248,7 +246,6 @@ export class ParamsDict extends Map<string, string> {
     return true;
   }
 
-  // NOTE(port): `**kwargs` has no TS equivalent; callers pass a mapping as the positional arg.
   update(...args: DictSource[]): void {
     for (const [key, value] of _dictItems(args)) {
       this.set(key, value);
@@ -458,7 +455,7 @@ export class XmlFormatOptions extends FormatOptionsBase {
   /** Set an Adobe parameter from an enum or int value. */
   _setEnumParam(key: string, value: number | null, enumCls: EnumHelpers<number> | null = null): void {
     if (value == null) return;
-    // NOTE(port): int/float — integral values are plain numbers by design (RULEBOOK §4); an integral float such as 2.0 is accepted where Python raises TypeError.
+    // Integral floats are plain numbers (RULEBOOK §4): an integral float such as 2.0 is accepted where Python raises TypeError.
     if (!((typeof value === "number" && Number.isInteger(value)) || typeof value === "boolean")) {
       throw new TypeError(`expected an int or IntEnum for ${literal(key)}, got ${typeName(value)}`);
     }
@@ -702,7 +699,7 @@ export class XmlFormatOptions extends FormatOptionsBase {
 
   /**
    * The DNxHR/DNxHD `Alpha` choice from the `ADBEDNxHDAlphaType`
-   * parameter: `1` = Compressed, `null` (param absent) = None. Only
+   * parameter: `1` = Compressed, absent = no alpha. Only
    * meaningful when `videoCodec` is `VideoCodec.DNXHR_DNXHD`.
    * (`ADBEVideoAlphaType` is unrelated - it reads `true` on every
    * sampled module.) Read / Write.

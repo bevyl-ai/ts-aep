@@ -113,7 +113,7 @@ function _splitextExt(name: string): string {
 }
 
 /**
- * Whether a caught Node `fs` error is Python's `OSError`. NOTE(port): pyrt's
+ * Whether a caught Node `fs` error is Python's `OSError`. pyrt's
  * `Path` lets raw Node errors through, which are not `OSError` instances, so
  * the `errno` check matches Python's `except OSError` for fs failures.
  */
@@ -676,7 +676,6 @@ export class FileSource extends FootageSource {
     const config = resolveOcioConfig(project.ocioConfigurationFile);
     const envelope = config == null ? null : ocioInputEnvelope(config, this._file);
     if (envelope == null) {
-      // TODO(port): Python passes stacklevel=3 so the warning is attributed to the caller of the public API (warning filename/lineno); warn(message) has no stacklevel and JS has no Python frames, so only that attribution differs, not the message text.
       warn(
         `OCIO configuration ${literal(project.ocioConfigurationFile)} not found ` +
           `or without a default color space: ${new Path(this._file).name} keeps ` +

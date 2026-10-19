@@ -42,7 +42,6 @@ type TextLayerNewKw = {
 export class TextLayer extends AVLayer {
   static _autoName: string = "Text";
 
-  // NOTE(port): Python has the same `# type: ignore[override]`; the keyword shape differs from AVLayer._new's in both.
   static _new(kw: TextLayerNewKw): TextLayer;
   static _new(...args: never[]): never;
   static _new(kw: TextLayerNewKw): TextLayer {

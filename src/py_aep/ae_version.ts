@@ -6,7 +6,7 @@
 import { AttributeError, getOrThrow, typeName } from "../pyrt/index.ts";
 
 // The After Effects majors whose saves contain each version-gated part of a
-// new project, item or layer, as `(first, last)` (`last` None: still
+// new project, item or layer, as `(first, last)` (`last` null: still
 // written). From the projects AE 15 (CC 2018) and AE 22-26 save for newly
 // created ones (samples/versions, emptier_2018.aep). AE 16-18 are not available to measure: a part AE 15
 // lacks and AE 22 writes keeps its pre-gate behaviour there (first = 16),
@@ -86,7 +86,7 @@ export function getAeVersionMajor(obj: any): number {
     return Math.trunc(Number(item._project._head.aeVersionMajor));
   }
   // Project / TextDocument -> HeadChunk (TextDocument's is wired lazily, so
-  // may be None until the document is handed out via a Property)
+  // may be null until the document is handed out via a Property)
   const head = "_head" in obj ? obj._head : null;
   if (head != null) {
     return Math.trunc(Number(head.aeVersionMajor));

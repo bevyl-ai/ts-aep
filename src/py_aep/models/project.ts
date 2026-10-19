@@ -356,7 +356,7 @@ export class Project {
   declare revision: number;
 
   /**
-   * When True, After Effects compensates for scene-referred profiles when
+   * When true, After Effects compensates for scene-referred profiles when
    * rendering.
    */
   declare compensateForSceneReferredProfiles: boolean;
@@ -423,7 +423,7 @@ export class Project {
   declare _aePreferencesDir: Path | null;
   declare _preferences: Preferences;
   declare _platform: string;
-  // ICC profile discovery for Adobe-CMS working-space writes. `None`
+  // ICC profile discovery for Adobe-CMS working-space writes. `null`
   // dirs = auto-discover the standard Adobe Color directories.
   declare _iccProfileDirs: Path[] | null;
   declare _iccLibrary: IccProfileLibrary | null;
@@ -499,7 +499,7 @@ export class Project {
     this._preferences = new Preferences(aePreferencesDir);
     // Class attribute read through the instance until `_new` assigns one.
     this._platform = this.constructor._platform;
-    // ICC profile discovery for Adobe-CMS working-space writes. `None`
+    // ICC profile discovery for Adobe-CMS working-space writes. `null`
     // dirs = auto-discover the standard Adobe Color directories.
     this._iccProfileDirs = null;
     this._iccLibrary = null;
@@ -835,7 +835,7 @@ export class Project {
   _ensureMaterialized(): void {}
 
   /**
-   * When True, linear blending is used for the project. When False,
+   * When true, linear blending is used for the project. When false,
    * the standard blending mode is used. Read / Write.
    */
   get linearBlending(): boolean {
@@ -850,7 +850,7 @@ export class Project {
   }
 
   /**
-   * When True, the working color space is linearized for blending
+   * When true, the working color space is linearized for blending
    * operations. Read / Write.
    */
   get linearizeWorkingSpace(): boolean {
@@ -903,7 +903,7 @@ export class Project {
     if (this._wsUtf8 != null) return envelopeProfileName(this._wsUtf8.value);
     if (!this._rootChunks.some((c) => c.chunkType === "pcms")) {
       // Before AE 22 the working space is the `LIST:CPPl` profile
-      // whose ICC profile id `cpid` holds (all 0xFF: None).
+      // whose ICC profile id `cpid` holds (all 0xFF: null).
       const profileId = this._cpid.data;
       const cppl = findByListType(this._rootChunks, "CPPl");
       for (const pprf of filterByType(cppl.chunks, "pprf")) {
@@ -1377,7 +1377,7 @@ export class Project {
       // and Layer Size means nothing without a chosen layer. That
       // preference only steers the interactive dialog, so honouring it
       // here would diverge from importFile rather than mirror it. An
-      // AI/PDF layer import therefore keeps None, its "document"
+      // AI/PDF layer import therefore keeps null, its "document"
       // downstream default.
       let dimensions = options.layerDimensions;
       let styles = options.layerStyles;

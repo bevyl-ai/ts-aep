@@ -174,7 +174,7 @@ function _gridRate(cdta: CdtaChunk): number {
   return timebase / unitsPerFrame;
 }
 
-// NOTE(port): exact bigint arithmetic, identical to Python's Fraction. These two helpers are the
+// Exact bigint arithmetic, identical to Python's Fraction. These two helpers are the
 // exact rational `math.ceil` / `math.floor` over `num / den` (den > 0) that the
 // Python code takes of `Fraction` expressions.
 function _ceilRatio(num: bigint, den: bigint): number {
@@ -199,7 +199,7 @@ function _floorKGrid(k: number, cdta: CdtaChunk): number {
   return _floorRatio(BigInt(k) * BigInt(timebase), BigInt(unitsPerFrame));
 }
 
-// NOTE(port): exact bigint arithmetic, identical to Python's Fraction; exact `Fraction(n, d) * k >= rhs` for d > 0.
+// Exact bigint arithmetic, identical to Python's Fraction; exact `Fraction(n, d) * k >= rhs` for d > 0.
 function _ratioScaledGe(n: number, d: number, k: number, rhs: number): boolean {
   return BigInt(n) * BigInt(k) >= BigInt(rhs) * BigInt(d);
 }
@@ -217,7 +217,7 @@ function _ratioScaledGe(n: number, d: number, k: number, rhs: number): boolean {
  */
 export function _frameNumber(cdta: CdtaChunk, dividend: number, divisor: number): number {
   const [timebase, unitsPerFrame] = _grid(cdta);
-  // NOTE(port): Python's `Fraction(dividend, divisor) * timebase / units_per_frame`,
+  // Python's `Fraction(dividend, divisor) * timebase / units_per_frame`,
   // kept exact as a bigint numerator / denominator.
   let n = BigInt(dividend) * BigInt(timebase);
   let d = BigInt(divisor) * BigInt(unitsPerFrame);
@@ -1215,7 +1215,7 @@ export class CompItem extends AVItem {
       if (idMap.has(ldta.parentId)) {
         ldta.parentId = getOrThrow(idMap, ldta.parentId);
       }
-      // matte_layer_id is absent (None) in pre-AE23 files.
+      // matte_layer_id is absent (null) in pre-AE23 files.
       const matte = ldta.matteLayerId;
       const newMatte = matte == null ? undefined : idMap.get(matte);
       if (newMatte !== undefined) {

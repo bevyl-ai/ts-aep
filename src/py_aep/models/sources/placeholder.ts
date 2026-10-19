@@ -61,7 +61,6 @@ export class PlaceholderSource extends FootageSource {
     validateFrameRate(frameRate);
     validateDuration(duration);
     if (duration <= 0.0) {
-      // NOTE(port): unreachable; validate_duration (min 1/99) already rejects duration <= 0, so the int/float repr is never shown.
       throw new ValueError(`duration must be > 0, got ${numStr(duration)}`);
     }
 

@@ -201,7 +201,7 @@ export class CosField<T extends InstanceValue, A extends string = string, O exte
       overrides(obj).set(this.publicName, value);
       return;
     }
-    // `None` clears the key (an optional field is being unset); there is
+    // `null` clears the key (an optional field is being unset); there is
     // no value to validate in that case.
     if (value == null) {
       d.delete(this.key);

@@ -381,7 +381,7 @@ export class Layer extends PropertyGroup {
 
   constructor(kw: LayerInitKw) {
     const { _ldta, _cmta, _nameUtf8, _layerList, containingComp } = kw;
-    // NOTE(port): TS cannot touch `this` before super(); the early self._ldta/_cmta/_layer_list/_essential_property_uuids assignments move below it (the base __init__ never reads them) and new.target stands in for self in the match-name lookup.
+    // `new.target` picks the match name; the chunk fields are assigned after super(), which never reads them.
 
     const layerTypeRaw = _ldta.layerType;
     const layerType = LayerType.ofOrNull(layerTypeRaw);
@@ -411,8 +411,6 @@ export class Layer extends PropertyGroup {
     this._containingComp = containingComp;
   }
 
-  /** Build a layer from a fresh ldta chunk (`Layer._new`). */
-  // Python marks this override `# type: ignore[override]`; the `never`
   // overload keeps the incompatible base signatures uncallable.
   static _new<T extends Layer>(this: new (kw: LayerInitKw) => T, kw: LayerNewKw): T;
   static _new(...args: never[]): never;
@@ -458,7 +456,6 @@ export class Layer extends PropertyGroup {
   // layers then only decodes their `ldta`, and a reader of layer
   // attributes alone (times, names, sources) never pays for the
   // properties. The first read of `_properties` builds the tree.
-  // NOTE(port): a Python class attribute, installed on the prototype below the class.
   declare _treeParamDefs: EffectParamDefs | null;
 
   /** The property tree once built (see `_properties`). */

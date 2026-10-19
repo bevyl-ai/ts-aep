@@ -337,7 +337,7 @@ function _reclassOverrideLeaves(group: PropertyGroup): void {
     if (child instanceof PropertyGroup) {
       _reclassOverrideLeaves(child);
     } else if (child.constructor === Property) {
-      // NOTE(port): setPrototypeOf is the JS twin of `child.__class__ = ...`; same semantics, only a V8 perf cost.
+      // Reclasses the child in place, keeping its identity.
       Object.setPrototypeOf(child, _EssentialOverrideProperty.prototype);
     }
   }

@@ -303,8 +303,8 @@ function _maskIds(prop: Property): number[] | null {
 }
 
 export function _validateKeyValue(prop: Property, value: PropertyValue): void {
-  // Validate a keyframe value: `_validateValue`, after refusing `None` for
-  // a numeric keyframe, which always holds a number (storing `None` only in
+  // Validate a keyframe value: `_validateValue`, after refusing `null` for
+  // a numeric keyframe, which always holds a number (storing `null` only in
   // the model left the file at whatever the slot held, 0).
   if (value == null && prop._parallelKind() == null && !prop._noValue) {
     throw new TypeError(`${literal(prop.matchName)} keyframe value cannot be null`);
@@ -327,7 +327,7 @@ function _vfTagToStr(raw: number): string | null {
   // Decode a variable-font axis tag stored as a 4CC number.
   //
   // The axis property's second dimension holds the tag packed big-endian
-  // (e.g. 2003265652.0 = 0x77676874 = `wght`). Returns `None` for values
+  // (e.g. 2003265652.0 = 0x77676874 = `wght`). Returns `null` for values
   // that do not decode to four printable ASCII characters.
   const n = Math.trunc(raw);
   if (n <= 0 || n > 0xffffffff) return null;
@@ -579,7 +579,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * `spec.value`.
    * default_value: Override for the default value. When omitted,
    * uses the spec's `defaultValue` logic.
-   * synthetic: If True, mark backing chunks as synthetic
+   * synthetic: If true, mark backing chunks as synthetic
    * (skipped during serialization).
    * control_type: Override for the property control type. When
    * omitted, defaults to `PropertyControlType.UNKNOWN`.
@@ -715,7 +715,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     }
     if (spec.chunkBoundsAreHints) {
       // tdum/tduM hold UI slider hints, not real bounds: the spec is
-      // authoritative (None = unbounded).
+      // authoritative (null = unbounded).
       prop._minValueFallback = spec.minValue;
       prop._maxValueFallback = spec.maxValue;
     } else {
@@ -933,7 +933,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     this._hintBounds = null;
     this._typesMemo = null;
     this.lastValue = null;
-    // The pard UI slider range (effect params only; None elsewhere).
+    // The pard UI slider range (effect params only; null elsewhere).
     this._sliderMin = null;
     this._sliderMax = null;
   }
@@ -1018,9 +1018,9 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * prev/next neighbours for lazy ease computation.
    */
   _linkKeyframes(): void {
-    // Assign None explicitly at the boundaries: after a removal or a
+    // Assign null explicitly at the boundaries: after a removal or a
     // reorder the previous links are stale, and boundary keyframes
-    // must read prev/next as None (ease resolution depends on it).
+    // must read prev/next as null (ease resolution depends on it).
     for (const [i, kf] of this.keyframes.entries()) {
       kf._bindProperty(this);
       kf._prev = i > 0 ? this.keyframes[i - 1] : null;
@@ -2021,7 +2021,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     // re-assigned must still be written to the cdat chunk.
     if (value == null && this._parallelKind() === SHAPE_KIND) {
       // A fresh mask caches no value, so the identity shortcut below
-      // would swallow `None` instead of rejecting it.
+      // would swallow `null` instead of rejecting it.
       _validateValue(this, value);
     }
     if (value === this._value && !(typeof value === "number" || typeof value === "boolean" || Array.isArray(value)))
@@ -2729,7 +2729,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     }
     this._expression = value;
     // Assigning an expression enables it (AE semantics): clear any stale
-    // disabled state so the cache recomputes True (mirrors _clear_expression).
+    // disabled state so the cache recomputes true (mirrors _clear_expression).
     this._expressionEnabled = null;
     if (this._tdb4 != null) {
       // AE marks an expression-bearing parameter in tdb4._pad10; the
@@ -2992,7 +2992,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     // placeholder whose stored value is a meaningless 0. AE still reports
     // the Z follower as modified on camera and light layers, which are
     // always positioned in depth (probed AE 2026: camera/light Z follower
-    // is True; regular layers are False). X/Y followers and every regular
+    // is true; regular layers are false). X/Y followers and every regular
     // layer fall through to the value/default comparison below, which
     // already matches AE for their comp-centered defaults.
     if (this.isSeparationFollower && this.separationDimension === 2) {
@@ -3036,7 +3036,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     // when they have a value - ExtendScript treats the absence of a
     // default as "always modified". LAYER_INDEX is excluded because
     // its binary default (0 = "None" layer) is not stored in pard;
-    // layer references should report False when unset.
+    // layer references should report false when unset.
     if (this.value != null && this._isInEffect() && this.propertyValueType !== PropertyValueType.LAYER_INDEX) {
       return true;
     }
@@ -3403,7 +3403,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     return comp.frameRate;
   }
 
-  /** The `LIST:list` holding the keyframe header chunks, or None. */
+  /** The `LIST:list` holding the keyframe header chunks, or null. */
   private _keyframeInner(): ListChunk | null {
     return findByListTypeOrNull(this._tdbs.chunks, "list");
   }
@@ -3417,7 +3417,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     if (wrapper != null) {
       // `_materializeParallelContainer` can adopt an arbitrary
       // sibling LIST as the wrapper, so an unknown type falls through
-      // to the match name rather than deciding the answer is None.
+      // to the match name rather than deciding the answer is null.
       const kind = _WRAPPER_KINDS.get(wrapper.listType) ?? null;
       if (kind != null) return kind;
     }
@@ -3516,8 +3516,8 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * Locate `timeUnits` among the keyframes.
    *
    * Returns `(index, exists)`: when a keyframe already sits at
-   * `timeUnits`, `exists` is True and `index` is its position;
-   * otherwise `exists` is False and `index` is the sorted insertion
+   * `timeUnits`, `exists` is true and `index` is its position;
+   * otherwise `exists` is false and `index` is the sorted insertion
    * point. Keyed on raw units rather than frame indices so two
    * sub-frame keyframes inside one frame stay distinct.
    */
@@ -4801,8 +4801,8 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     descriptor(this, "_integer", new ChunkField("_tdb4", "integer"));
     descriptor(this, "_noValue", new ChunkField("_tdb4", "noValue"));
     descriptor(this, "_vector", new ChunkField("_tdb4", "vector"));
-    // When `True`, the property's X/Y ratio is locked (the constrain
-    // proportions switch of a Scale or Mask Feather; `True` on any property
+    // When `true`, the property's X/Y ratio is locked (the constrain
+    // proportions switch of a Scale or Mask Feather; `true` on any property
     // without one). Read-only.
     descriptor(this, "lockedRatio", new ChunkField("_tdsb", "ratioUnlinked", { transform: (v) => !v, readOnly: true }));
     descriptor(this, "_isSpatialRaw", new ChunkField("_tdb4", "isSpatial"));

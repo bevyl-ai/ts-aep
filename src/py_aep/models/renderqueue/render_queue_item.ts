@@ -58,10 +58,9 @@ import type { RenderQueue } from "./render_queue.ts";
 import { OutputModule } from "./output_module.ts";
 import { parseOutputModule } from "../../parsers/output_module.ts";
 
-// NOTE(port): the epoch is a UTC `Date`; Python's naive datetime(1904, 1, 1) is the same wall-clock instant.
 const _AEP_EPOCH = new Date(Date.UTC(1904, 0, 1));
 
-/** Convert Mac HFS+ epoch timestamp to datetime, or None if 0. */
+/** Convert Mac HFS+ epoch timestamp to datetime, or null if 0. */
 function _startTimeFromBinary(value: number): Date | null {
   if (!value) return null;
   return new Date(_AEP_EPOCH.getTime() + value * 1000);
@@ -612,9 +611,9 @@ export class RenderQueueItem {
    * lead-in frames, an end before the start renders a single frame) -
    * py_aep validates the values like AE's own dialog.
    *
-   * @param value - Time in seconds, or frame count if `isFrames` is True.
+   * @param value - Time in seconds, or frame count if `isFrames` is true.
    * @param field - Either "start" or "duration".
-   * @param isFrames - When True, `value` is a frame count and is converted to seconds via the
+   * @param isFrames - When true, `value` is a frame count and is converted to seconds via the
    *   composition frame rate before writing.
    * @throws {@link ValueError} If a start is negative, if either field would leave a duration
    *   shorter than one frame (AE's own scripting bound), or if a value does not fit the stored

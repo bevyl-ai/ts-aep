@@ -104,11 +104,11 @@ type ChunkFieldEnumKw<T, O, Raw> = Omit<ChunkFieldOptions<T, O>, "transform"> & 
 
 export const _SENTINEL: unique symbol = Symbol("_SENTINEL");
 
-// While a parser runs this is set to False so that `ChunkField.set`
+// While a parser runs this is set to false so that `ChunkField.set`
 // rejects writes: parsers must not mutate chunk data through descriptors
 // (round-trip idempotency). Parsers cache values as overrides (`overrides(obj)`)
 // or the private `_cacheValue` helpers instead. Outside parsing the
-// default (True) lets end-user writes through.
+// default (true) lets end-user writes through.
 export const materialization = { allowed: true };
 
 /** Run `body` with descriptor writes forbidden; restores the previous state after. */
@@ -138,7 +138,7 @@ export function suppressingMaterialization<T, A extends unknown[], R>(
 /**
  * Whether `x` is an enum made by `defineEnum` (pyrt/enum.ts).
  */
-// NOTE(port): every defineEnum enum passes, so this also admits non-int enums; the only non-IntEnum enum in py_aep (cos.TokenType) never reaches a descriptor, so the IntEnum check matches Python.
+// Every defineEnum enum passes, so this also admits non-int enums; the only non-IntEnum enum in py_aep (cos.TokenType) never reaches a descriptor, so the IntEnum check matches Python.
 function isEnum(x: unknown): x is EnumHelpers<number> {
   return x != null && typeof x === "object" && "allMembers" in x && "has" in x && typeof x.has === "function";
 }
@@ -211,7 +211,7 @@ export function enumOrRaw<V, R>(convert: (value: V) => R): (value: V) => R | V {
  */
 function _validateEnumMember(enumCls: EnumHelpers<number>, value: unknown, publicName: string): void {
   if (enumCls.has(value)) return;
-  // NOTE(port): int/float — integral values are plain numbers by design (RULEBOOK §4); an integer-valued float such as 2.0 takes the int branch and gets the "Invalid value" message instead of "is not a valid".
+  // Integral floats are plain numbers (RULEBOOK §4): an integer-valued float such as 2.0 takes the int branch and gets the "Invalid value" message instead of "is not a valid".
   // A Python bool is an int that hashes like 0/1, so it is checked as its int value.
   if (typeof value === "boolean" || (typeof value === "number" && Number.isInteger(value))) {
     const key = typeof value === "boolean" ? Number(value) : value;

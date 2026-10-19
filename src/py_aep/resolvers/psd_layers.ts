@@ -525,7 +525,6 @@ export function readPsdLayers(file: PathLike, kw: { maskBoxes?: boolean } = {}):
   try {
     // Read only up to the Layer Info block: the layer records precede the
     // channel image data, which dominates a PSD's size.
-    // NOTE(port): Python opens the file and reads only the header and Layer Info; the whole file is read into a ByteStream here, so parsed results are identical (only peak memory differs).
     const fp = new ByteStream(new Path(file).readBytes());
     const header = fp.read(26);
     if (!bytesEqual(header.slice(0, 4), ascii("8BPS"))) {
@@ -671,7 +670,6 @@ function _userMask(mask: Uint8Array, fileName: string, layerName: string): _User
     const parameters = mask.at(pos)!;
     pos += 1;
     if (parameters & 0x03) {
-      // NOTE(port): message and category match warnings.warn; stacklevel=3 only picks the reported source location, which has no JS equivalent.
       warn(
         `${fileName}: the density / feather of layer ${literal(layerName)}'s ` +
           "mask is not modeled; its footage is sized as if unmasked",
@@ -838,7 +836,7 @@ function _unpackBits(data: Uint8Array, size: number): Uint8Array {
 function _undoPrediction(row: Uint8Array, width: number, sample: number): Uint8Array {
   if (sample === 2) {
     const values = struct.unpack(`>${width}H`, row);
-    // NOTE(port): equals struct.pack(">{width}H", *(acc & 0xFFFF)) (Python's running sum masked to u16); written via DataView because pyrt struct.pack spreads args and overflows on wide rows.
+    // Equals struct.pack(">{width}H", *(acc & 0xFFFF)) (Python's running sum masked to u16); written via DataView because pyrt struct.pack spreads args and overflows on wide rows.
     const out = new Uint8Array(2 * width);
     const dv = new DataView(out.buffer);
     let acc = 0;
@@ -996,7 +994,7 @@ function _parseLayerExtra(
   if (effects == null) {
     effects = lfxs;
   }
-  // Photoshop writes an `infx` block (False) on every ordinary layer, so
+  // Photoshop writes an `infx` block (false) on every ordinary layer, so
   // only a user deviation counts: Fill away from 100% (`iOpa` present),
   // Blend Interior checked, or a channel restriction.
   const hasBlendData = fillOpacity != null || !!blendInterior || channelRestrictions?.length > 0;
@@ -1016,7 +1014,7 @@ function _parseLayerExtra(
   ];
 }
 
-// NOTE(port): bytes.translate(table) for a 256-entry table; pyrt/bytes.ts has no translate shim.
+// Bytes.translate(table) for a 256-entry table; pyrt/bytes.ts has no translate shim.
 function translate(data: Uint8Array, table: Uint8Array): Uint8Array {
   const out = new Uint8Array(data.length);
   for (let i = 0; i < data.length; i++) out[i] = table[data[i]];
@@ -1028,7 +1026,7 @@ function strided(row: Uint8Array, start: number, step: number): Uint8Array {
   return row.filter((_, i) => i >= start && (i - start) % step === 0);
 }
 
-// NOTE(port): int.from_bytes(data, "big") as an exact bigint; pyrt's int_from_bytes returns a Number and loses bits past 2^53.
+// Int.from_bytes(data, "big") as an exact bigint; pyrt's int_from_bytes returns a Number and loses bits past 2^53.
 function intFromBytesBig(data: Uint8Array): bigint {
   return data.length ? BigInt("0x" + Bytes.toHex(data)) : 0n;
 }
@@ -1038,7 +1036,7 @@ function bitLength(x: bigint): number {
   return x.toString(2).length;
 }
 
-// NOTE(port): b"".join(parts); pyrt concat spreads its parts as call arguments and overflows with tens of thousands of rows.
+// B"".join(parts); pyrt concat spreads its parts as call arguments and overflows with tens of thousands of rows.
 function joinAll(parts: Uint8Array[]): Uint8Array {
   let n = 0;
   for (const p of parts) n += p.length;
@@ -1056,7 +1054,7 @@ function joinAll(parts: Uint8Array[]): Uint8Array {
  * at most `maxLength` bytes. Z_SYNC_FLUSH keeps a truncated stream from
  * throwing, as Python's partial decompress does.
  */
-// TODO(port): CPython's decompressobj stops inflating once max_length bytes are out, so a fault
+// TODO: CPython's decompressobj stops inflating once max_length bytes are out, so a fault
 // later in the stream goes unseen and the first max_length bytes come back. pyrt's zlib (fflate)
 // cannot stop inside a push and misreads codes split across pushes, so it inflates the whole
 // stream: such a fault raises zlib.error here, and a stream that expands far beyond max_length

@@ -210,7 +210,7 @@ export class Chunk extends AttrsBase {
           break;
         }
       }
-      // Remaining optional fields get None (absent)
+      // Remaining optional fields get null (absent)
       while (values.length < dataFields.length) values.push(null);
       itemsStart = size - remaining;
     }
@@ -244,7 +244,7 @@ export class Chunk extends AttrsBase {
     const [, dataFields, encodings, optionalStart, endians, itemsInfo, coerces, _initNames, _simple, _expected] = info;
     const mixedEndian = endians?.size > 0;
 
-    // Find last non-None optional field to determine write boundary
+    // Find last non-null optional field to determine write boundary
     let lastIdx = dataFields.length;
     if (optionalStart < dataFields.length) {
       lastIdx = optionalStart;
@@ -428,7 +428,6 @@ function _deferredChildren(listType: string, parentListType: string): ReadonlySe
  * accessed, `write()` writes the raw bytes directly (no parse needed).
  */
 export class DeferredListChunk extends ListChunk {
-  // Python `__slots__` is dropped: these are plain instance fields.
   declare _rawBody: Uint8Array;
   declare _rawCtx: ReadContext | null;
   declare _parsedChunks: Chunk[] | null;

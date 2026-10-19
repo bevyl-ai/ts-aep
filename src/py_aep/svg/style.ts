@@ -71,8 +71,6 @@ export class CssRule {
   }
 }
 
-// NOTE(port): Python `re` calls are inline JS RegExp (`matchAll` for `finditer`, `exec` for
-// `search`); patterns use only classes/`\s`/`$` where Python and JS agree (trailing `\s*` eats any "\n" before `$`).
 const _RULE_RE = /([^{}]+)\{([^{}]*)\}/g;
 
 /** Parse a `<style>` block into rules (comma groups split out).

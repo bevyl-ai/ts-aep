@@ -306,5 +306,4 @@ export function main(argv: string[] = process.argv.slice(2)): number {
   return _itemSummary(path);
 }
 
-// Python's `if __name__ == "__main__": sys.exit(main())`.
 if (import.meta.main) runMain(main);

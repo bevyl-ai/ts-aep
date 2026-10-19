@@ -430,7 +430,6 @@ export function buildShap(
   });
   const chunks: Chunk[] = [shph, inner, omtn];
   if (featherPoints != null && featherPoints.length > 0) {
-    // NOTE(port): FeatherPointItem has plain int/float fields and no converters, so a shallow copy equals attrs.evolve(fp).
     chunks.push(new Fth5Chunk({ points: featherPoints.map((fp) => copy(fp)) }));
   }
   return new ListChunk({ listType: "shap", chunks });
