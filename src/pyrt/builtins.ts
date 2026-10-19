@@ -105,35 +105,6 @@ export function at<T>(xs: ArrayLike<T>, i: number): T {
   return xs[j];
 }
 
-/** What `for item in x` yields for each kind `pyIter` accepts. */
-type IterItem<X> = X extends string | String
-  ? string
-  : X extends Uint8Array
-    ? number
-    : X extends readonly (infer T)[]
-      ? T
-      : X extends ReadonlyMap<infer K, unknown>
-        ? K
-        : X extends ReadonlySet<infer T>
-          ? T
-          : never;
-
-/**
- * Python `list(iter(x))` over dynamic data (parsed YAML/JSON): list items,
- * dict keys, set members (in insertion order; CPython's is hash order), a
- * string's characters (code points), a bytes object's ints; `TypeError` for
- * every other kind.
- */
-export function pyIter<X>(x: X): IterItem<X>[];
-export function pyIter(x: unknown): unknown[] {
-  if (Array.isArray(x)) return x;
-  if (x instanceof Map) return [...x.keys()];
-  if (x instanceof Set) return [...x];
-  if (typeof x === "string" || x instanceof String) return Array.from(String(x));
-  if (x instanceof Uint8Array) return Array.from(x);
-  throw new TypeError(`'${typeName(x)}' object is not iterable`);
-}
-
 type Sliceable = { slice(s: number, e: number): Sliceable; length: number; readonly [i: number]: unknown };
 
 /** `xs[start:end]` for arrays and strings with Python's clamping. */
@@ -367,27 +338,27 @@ export const isspace = (s: string): boolean => s.length > 0 && /^\s+$/u.test(s);
 export const islower = (s: string): boolean => /\p{Ll}/u.test(s) && !/\p{Lu}|\p{Lt}/u.test(s);
 
 /** `copy.deepcopy`: clones arrays, Maps, Sets, bytes, plain objects and class instances (prototype kept). */
-export function deepcopy<T>(x: T, memo?: Map<object, object>): T;
-export function deepcopy(x: unknown, memo = new Map<object, object>()): unknown {
+export function deepClone<T>(x: T, memo?: Map<object, object>): T;
+export function deepClone(x: unknown, memo = new Map<object, object>()): unknown {
   if (x === null || typeof x !== "object") return x;
   if (memo.has(x)) return memo.get(x);
   if (x instanceof Uint8Array) return x.slice();
   if (Array.isArray(x)) {
     const out: unknown[] = [];
     memo.set(x, out);
-    for (const v of x) out.push(deepcopy(v, memo));
+    for (const v of x) out.push(deepClone(v, memo));
     return out;
   }
   if (x instanceof Map) {
     const out = new Map();
     memo.set(x, out);
-    for (const [k, v] of x) out.set(deepcopy(k, memo), deepcopy(v, memo));
+    for (const [k, v] of x) out.set(deepClone(k, memo), deepClone(v, memo));
     return out;
   }
   if (x instanceof Set) {
     const out = new Set();
     memo.set(x, out);
-    for (const v of x) out.add(deepcopy(v, memo));
+    for (const v of x) out.add(deepClone(v, memo));
     return out;
   }
   if ("deepCopy" in x && typeof x.deepCopy === "function") return x.deepCopy(memo);
@@ -400,7 +371,7 @@ export function deepcopy(x: unknown, memo = new Map<object, object>()): unknown 
     if (x instanceof String && (k === "length" || (typeof k === "string" && /^\d+$/.test(k)))) continue;
     const d = Object.getOwnPropertyDescriptor(x, k);
     if (d === undefined) continue;
-    if ("value" in d) d.value = deepcopy(d.value, memo);
+    if ("value" in d) d.value = deepClone(d.value, memo);
     Object.defineProperty(out, k, d);
   }
   return out;

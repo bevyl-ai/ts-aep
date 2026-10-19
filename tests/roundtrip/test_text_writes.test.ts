@@ -16,7 +16,7 @@ import { parseAppFresh } from "../helpers.ts";
 import {
   AttributeError,
   getOr,
-  deepcopy,
+  deepClone,
   getMember,
   len,
   Path,
@@ -98,7 +98,7 @@ function _cosPath(node: CosNode, ...keys: (string | number)[]): CosNode {
 }
 
 function _maskedBytes(cosData: CosDict): Uint8Array {
-  const clone = deepcopy(cosData);
+  const clone = deepClone(cosData);
   for (const doc of cosIter(truthyOr(cosGetOr(cosGetOr(clone, "1", new Map<string, CosNode>()), "1", []), []))) {
     const page = cosDict(doc, "get").get("1");
     if (page instanceof Map) cosPop(page, "2");

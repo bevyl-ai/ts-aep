@@ -5,7 +5,7 @@
 import type { ListChunk } from "../binary/chunk.ts";
 import { findByType } from "../binary/utils.ts";
 import { Application } from "../models/application.ts";
-import { _suppressMaterialization } from "../models/descriptors.ts";
+import { suppressingMaterialization } from "../models/descriptors.ts";
 import { FolderItem } from "../models/items/folder.ts";
 import type { Project } from "../models/project.ts";
 import type { Viewer } from "../models/viewer/viewer.ts";
@@ -26,7 +26,7 @@ function* _collectViewers(folder: FolderItem): Generator<Viewer> {
  * @param rifx - The parsed binary RIFX root chunk.
  * @param project - The already-parsed {@link Project}.
  */
-export const parseApp = _suppressMaterialization()(function parse_app(rifx: ListChunk, project: Project): Application {
+export const parseApp = suppressingMaterialization(function parse_app(rifx: ListChunk, project: Project): Application {
   const rootChunks = rifx.chunks;
   const headChunk = findByType(rootChunks, "head");
 

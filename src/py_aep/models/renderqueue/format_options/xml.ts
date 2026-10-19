@@ -9,7 +9,6 @@ import {
   concat,
   decode,
   descriptor,
-  encode,
   getOrThrow,
   isdigit,
   literal,
@@ -546,7 +545,7 @@ export class XmlFormatOptions extends FormatOptionsBase {
     // `ET` self-closes every empty element; AE only does so when the
     // element has attributes, and expands the attribute-less ones.
     const text = text1.replace(_EMPTY_ELEMENT_RE, "<$1></$1>");
-    const xmlBytes = concat(_XML_DECLARATION, encode(text, "utf-8"), _XML_TERMINATOR);
+    const xmlBytes = concat(_XML_DECLARATION, new TextEncoder().encode(text), _XML_TERMINATOR);
     const body = new Uint8Array(concat(this._xmlHeader, xmlBytes));
     // Back-patch the two self-describing lengths AE honours (a stale one
     // silently truncates the XML). These stay here rather than becoming

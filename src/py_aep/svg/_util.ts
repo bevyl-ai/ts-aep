@@ -2,14 +2,16 @@
  * Shared low-level helpers for the SVG reader package.
  */
 
-import { patternMatch, pyRe, hypot } from "../../pyrt/index.ts";
+import { hypot } from "../../pyrt/index.ts";
 
 /** An SVG/CSS number token: optional sign, decimal or integer, optional exponent. */
-export const NUMBER_RE = pyRe(String.raw`[-+]?(?:\d*\.\d+|\d+\.?)(?:[eE][-+]?\d+)?`, 0, "g");
+export const NUMBER_RE = /[-+]?(?:\d*\.\d+|\d+\.?)(?:[eE][-+]?\d+)?/g;
+/** `NUMBER_RE` at the start of a string. */
+const _LEADING_NUMBER_RE = new RegExp(`^${NUMBER_RE.source}`);
 /** The same token allowing a trailing `%` (CSS color / ratio values). */
-export const NUMBER_PCT_RE = pyRe(String.raw`[-+]?(?:\d*\.\d+|\d+\.?)(?:[eE][-+]?\d+)?%?`, 0, "g");
+export const NUMBER_PCT_RE = /[-+]?(?:\d*\.\d+|\d+\.?)(?:[eE][-+]?\d+)?%?/g;
 /** A length: a number and an optional unit or `%`. */
-const _LENGTH_RE = pyRe(String.raw`([-+]?(?:\d*\.\d+|\d+\.?)(?:[eE][-+]?\d+)?)\s*(%|[A-Za-z]+)?`);
+const _LENGTH_RE = /^([-+]?(?:\d*\.\d+|\d+\.?)(?:[eE][-+]?\d+)?)\s*(%|[A-Za-z]+)?/;
 /** CSS absolute units in user units (px): CSS Values 3 fixes 1in = 96px. */
 const _ABSOLUTE_UNITS = new Map<string, number>([
   ["px", 1.0],
@@ -76,7 +78,7 @@ export function clamp01(value: number): number {
  */
 export function parseNumber(text: string | null, default_: number = 0.0): number {
   if (!text) return default_;
-  const m = patternMatch(NUMBER_RE, text.trim());
+  const m = _LEADING_NUMBER_RE.exec(text.trim());
   return m ? Number(m[0]) : default_;
 }
 
@@ -93,7 +95,7 @@ export function parseLength(
   fontSize: number = DEFAULT_FONT_SIZE,
 ): number {
   if (!text) return default_;
-  const m = patternMatch(_LENGTH_RE, text.trim());
+  const m = _LENGTH_RE.exec(text.trim());
   if (m == null) return default_;
   const value = Number(m[1]);
   const unit = (m[2] ?? "").toLowerCase();
@@ -116,7 +118,7 @@ export function parseLength(
 export function parseRatio(text: string | null, default_: number): number {
   if (text == null) return default_;
   text = text.trim();
-  const m = patternMatch(NUMBER_RE, text);
+  const m = _LEADING_NUMBER_RE.exec(text);
   if (m == null) return default_;
   const val = Number(m[0]);
   return clamp01(text.endsWith("%") ? val / 100.0 : val);

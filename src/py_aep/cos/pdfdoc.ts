@@ -12,7 +12,7 @@
  * so the table cannot be mangled by an editor or formatter.
  */
 
-import { decode } from "../../pyrt/index.ts";
+import { Bytes } from "../../pyrt/index.ts";
 import { CosString } from "./cos.ts";
 
 const _UNDEFINED = 0xfffd;
@@ -95,7 +95,7 @@ function _fromBytes(raw: Uint8Array): string {
   // Latin-1 maps every byte to the same code point, and `str.translate`
   // leaves the ones absent from the table alone - which is exactly the
   // passthrough the other 215 bytes need.
-  return _translate(decode(raw, "latin-1"), _OVERRIDES);
+  return _translate(Bytes.latin1Str(raw), _OVERRIDES);
 }
 
 function _translate(text: string, table: Map<number, number>): string {

@@ -1,6 +1,6 @@
 /** Import options for importing files into an After Effects project. */
 
-import { INSPECT, describe, Path, ValueError, type PathLike, pyRe } from "../../pyrt/index.ts";
+import { INSPECT, describe, Path, ValueError, type PathLike } from "../../pyrt/index.ts";
 import {
   AI_COMP_EXTENSIONS,
   COMP_CONVERSION_EXTENSIONS,
@@ -20,7 +20,7 @@ import {
 } from "./validators.ts";
 
 // Pattern to match trailing digits in a filename stem (e.g. "frame001").
-const _NUMBERED_RE = pyRe(String.raw`(\d+)$`);
+const _NUMBERED_RE = /(\d+)$/;
 
 /** Type of the `CURRENT_VALUE` sentinel. */
 export class _CurrentValue {

@@ -27,7 +27,7 @@ import {
 import { MATCH_NAME_TO_AUTO_NAME } from "../data/match_names.ts";
 import { EFFECT_PARAM_SPATIAL_FLAGS } from "../data/spatial_flags.ts";
 import { PropertyControlType, PropertyType, PropertyValueType } from "../enums/index.ts";
-import { _suppressMaterialization } from "../models/descriptors.ts";
+import { suppressingMaterialization } from "../models/descriptors.ts";
 import { _CANVARY_OVERRIDES, _PROPERTY_DEFAULTS } from "../models/properties/overrides.ts";
 import { Property } from "../models/properties/property.ts";
 import type { PropertyValue } from "../models/properties/keyframe.ts";
@@ -567,7 +567,7 @@ export function rehomeEffectDefinitions(project: Project, removed: Iterable<[str
  *   parameters. Optional: during the initial parse the layer does not exist yet and the composition
  *   stands in.
  */
-export const parseEffect = _suppressMaterialization().decorate(function parse_effect(
+export const parseEffect = suppressingMaterialization(function parse_effect(
   sspcChunk: ListChunk,
   groupMatchName: string,
   propertyDepth: number,

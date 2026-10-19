@@ -2,14 +2,14 @@
 
 import {
   INSPECT,
-  deepcopy,
+  deepClone,
   descriptor,
   floatRepr,
   getOrThrow,
   literal,
-  StopIteration,
   ValueError,
   type ClassAttributes,
+  assert,
 } from "../../../pyrt/index.ts";
 import {
   ColorDepthSetting,
@@ -445,7 +445,7 @@ export class RenderQueueItem {
         chunks: [utf8Chunk],
       });
       const idx = this._litm.chunks.findIndex((c) => c === this._listChunk);
-      if (idx === -1) throw new StopIteration();
+      assert(idx !== -1, "the render queue item's list is not in LItm");
       this._litm.chunks.splice(idx, 0, rcomChunk);
       this._rcomUtf8 = utf8Chunk;
       this._rcom = rcomChunk;
@@ -882,7 +882,7 @@ export class RenderQueueItem {
     const rq = this._parentRq;
     const idx = indexByIdentity(rq._items, this);
 
-    const newRsi = deepcopy(this._ldat);
+    const newRsi = deepClone(this._ldat);
 
     // status holds the raw binary value (ExtendScript value minus 3013),
     // so compare and assign in that encoding via to_binary().
@@ -892,7 +892,7 @@ export class RenderQueueItem {
     }
     newRsi.itemId = _nextItemId(rq);
 
-    const newRoutItems = this._routItems.map((ri) => deepcopy(ri));
+    const newRoutItems = this._routItems.map((ri) => deepClone(ri));
 
     const newListChunk = cloneChunkTree(this._listChunk);
     const newLom = cloneChunkTree(this._lom);

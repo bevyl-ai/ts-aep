@@ -2,7 +2,7 @@ import { warn } from "../../pyrt/index.ts";
 import type { ListChunk } from "../binary/chunk.ts";
 import { findByListType, findByType, findByTypeOrNull } from "../binary/utils.ts";
 import { LayerType } from "../enums/index.ts";
-import { _suppressMaterialization } from "../models/descriptors.ts";
+import { suppressingMaterialization } from "../models/descriptors.ts";
 import { AVLayer } from "../models/layers/av_layer.ts";
 import { CameraLayer } from "../models/layers/camera_layer.ts";
 import { LightLayer } from "../models/layers/light_layer.ts";
@@ -39,7 +39,7 @@ const _LAYER_CLASSES: Map<number, typeof Layer> = new Map<number, typeof Layer>(
  * @returns An {@link AVLayer} for most layers, a {@link LightLayer} for light layers, or a
  *   {@link ParametricMeshLayer} for parametric mesh layers.
  */
-export const parseLayer = _suppressMaterialization().decorate(function parse_layer(
+export const parseLayer = suppressingMaterialization(function parse_layer(
   layerChunk: ListChunk,
   composition: CompItem,
   effectParamDefs: Map<string, Map<string, ParamDef>>,

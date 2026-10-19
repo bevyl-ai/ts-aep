@@ -28,7 +28,7 @@
  */
 
 import { PREFType } from "../enums/general.ts";
-import { Bytes, decode, encode, getOrInsert, ValueError, compare } from "../../pyrt/index.ts";
+import { Bytes, decode, getOrInsert, ValueError, compare } from "../../pyrt/index.ts";
 import type { Path } from "../../pyrt/index.ts";
 
 // One glob per preference file category; file names embed the AE version.
@@ -89,7 +89,7 @@ export function parseHexValue(value: string): Uint8Array {
     if (value[i] === '"') {
       const end = value.indexOf('"', i + 1);
       if (end < 0) throw new ValueError("substring not found");
-      for (const c of encode(value.slice(i + 1, end), "ascii")) raw.push(c);
+      for (const c of new TextEncoder().encode(value.slice(i + 1, end))) raw.push(c);
       i = end + 1;
     } else if ("0123456789ABCDEFabcdef".includes(value[i])) {
       const pair = value.slice(i, i + 2);

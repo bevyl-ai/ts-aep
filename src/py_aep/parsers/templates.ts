@@ -11,10 +11,15 @@
  * Rouu chunk data (154 bytes per entry) for each output module template.
  */
 
-import { Bytes, concat, decode, assert, patternMatch, pyRe, reEscape, reMatch } from "../../pyrt/index.ts";
+import { Bytes, concat, decode, assert } from "../../pyrt/index.ts";
 import type { Path } from "../../pyrt/index.ts";
 import { OutputModuleSettingsItem, RenderSettingsItem } from "../binary/render_chunks.ts";
 import { collapseContinuationLines, parseHexValue } from "./prefs.ts";
+
+/** `text` as a literal inside a regular expression. */
+function escapeRegExp(text: string): string {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
 
 // Render settings prefs format:
 // RenderSettingsItem is 2182 bytes in prefs (2246 in AEP, difference = 64).
@@ -66,7 +71,7 @@ export class OutputModuleTemplate {
 function _extractSectionValue(lines: string[], key: string): Uint8Array | null {
   for (const [i, line] of lines.entries()) {
     if (!line.includes(key)) continue;
-    const m = reMatch(String.raw`\s*"` + reEscape(key) + String.raw`"\s*=\s*(.+)`, line);
+    const m = new RegExp(`^\\s*"${escapeRegExp(key)}"\\s*=\\s*(.+)`).exec(line);
     if (!m) continue;
     const valueParts: string[] = [m[1].trim()];
     for (let j = i + 1; j < lines.length; j++) {
@@ -135,7 +140,7 @@ export function parseRenderTemplates(prefsDir: Path): [RenderSettingsItem[], num
 /** Extract an integer value from a preference line like `"Key" = 42`. */
 function _extractIntValue(lines: string[], key: string): number | null {
   for (const line of lines) {
-    const m = reMatch(String.raw`\s*"` + reEscape(key) + String.raw`"\s*=\s*"?(\d+)"?`, line);
+    const m = new RegExp(`^\\s*"${escapeRegExp(key)}"\\s*=\\s*"?(\\d+)"?`).exec(line);
     if (m) {
       return Number.parseInt(m[1], 10);
     }
@@ -221,7 +226,7 @@ export function _parseIdHexSection(text: string, section: string, idPrefix: stri
   let currentIdx: number | null = null;
   let currentValue = "";
   let inSection = false;
-  const entryRe = pyRe(String.raw`\s*"` + reEscape(idPrefix) + String.raw` ID #\s*(\d+)"\s*=\s*(.+)`);
+  const entryRe = new RegExp(`^\\s*"${escapeRegExp(idPrefix)} ID #\\s*(\\d+)"\\s*=\\s*(.+)`);
 
   // Python `nonlocal current_idx`: the closure writes the enclosing `let`.
   function _flush(): void {
@@ -245,7 +250,7 @@ export function _parseIdHexSection(text: string, section: string, idPrefix: stri
     if (!inSection) {
       continue;
     }
-    const m = patternMatch(entryRe, stripped);
+    const m = entryRe.exec(stripped);
     if (m) {
       _flush();
       currentIdx = Number.parseInt(m[1], 10);
@@ -267,7 +272,7 @@ export function _parseIdHexSection(text: string, section: string, idPrefix: stri
 function _extractTemplateNames(lines: string[]): Map<number, string> {
   const names = new Map<number, string>();
   for (const line of lines) {
-    const m = reMatch(String.raw`\s*"Output Module Spec Strings Name #?(\d+)"\s*=\s*"(.*)"`, line);
+    const m = /^\s*"Output Module Spec Strings Name #?(\d+)"\s*=\s*"(.*)"/.exec(line);
     if (m) {
       const idx = Number.parseInt(m[1], 10);
       names.set(idx, m[2]);

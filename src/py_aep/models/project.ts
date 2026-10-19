@@ -9,7 +9,6 @@ import {
   Bytes,
   ByteStream,
   Path,
-  decode,
   fspath,
   getMember,
   setMember,
@@ -1599,7 +1598,7 @@ export class Project {
       const layer = comp.add(footage);
       // AE 2026 cuts an imported layer's name to its longest UTF-8
       // prefix of 255 bytes (a 313-byte Photoshop layer name).
-      layer.name = decode(truncateUtf8(spec.name, 255), "utf-8");
+      layer.name = new TextDecoder().decode(truncateUtf8(spec.name, 255));
       if (!spec.enabled) layer.enabled = false;
       if (spec.transform != null) {
         const [[anchorX, anchorY], [positionX, positionY]] = spec.transform;

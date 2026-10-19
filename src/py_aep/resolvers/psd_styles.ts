@@ -46,6 +46,7 @@ import {
   warn,
   type PathLike,
   ascii,
+  Bytes,
 } from "../../pyrt/index.ts";
 
 export type StyleValue = number | number[] | Gradient;
@@ -143,7 +144,7 @@ class _Reader {
 
   key(): string {
     const n = this.u4();
-    return decode(this.raw(n === 0 ? 4 : n), "latin-1");
+    return Bytes.latin1Str(this.raw(n === 0 ? 4 : n));
   }
 
   ustr(): string {
@@ -162,12 +163,12 @@ function _parseItem(reader: _Reader, osType: string): _Value {
     const out = new Map<string, _Value>([["_class", cls]]);
     for (let i = 0, n = reader.u4(); i < n; i++) {
       const key = reader.key();
-      out.set(key, _parseItem(reader, decode(reader.raw(4), "latin-1")));
+      out.set(key, _parseItem(reader, Bytes.latin1Str(reader.raw(4))));
     }
     return out;
   }
   if (osType === "VlLs") {
-    return Array.from({ length: reader.u4() }, () => _parseItem(reader, decode(reader.raw(4), "latin-1")));
+    return Array.from({ length: reader.u4() }, () => _parseItem(reader, Bytes.latin1Str(reader.raw(4))));
   }
   if (osType === "doub") {
     return struct.unpack(">d", reader.raw(8))[0];
@@ -353,12 +354,10 @@ function _subscript(obj: _Value, key: string): _Value {
   throw new TypeError(`${literal(obj)} is not subscriptable with ${literal(key)}`);
 }
 
-/** Python `for x in value` over a parsed descriptor value. */
-function _pyIter(value: _Value): _Value[] {
+/** A descriptor list (`VlLs`), such as a gradient's colour or opacity stops. */
+function _list(value: _Value): _Value[] {
   if (Array.isArray(value)) return value;
-  if (value instanceof Map) return [...value.keys()];
-  if (typeof value === "string") return Array.from(value);
-  throw new TypeError(`${literal(value)} object is not iterable`);
+  throw new UnsupportedStyleError(`expected a list, got ${literal(value)}`);
 }
 
 function _color(value: _Value): number[] {
@@ -395,7 +394,7 @@ function _gradient(value: _Value): Gradient {
   // would double every offset, and 0% would divide by zero). Smoothness
   // is left unmapped (AE's gradientSmoothness handling is unprobed).
   const colorStops: GradientColorStop[] = [];
-  for (const stop of _pyIter(getOrThrow(value, "Clrs"))) {
+  for (const stop of _list(getOrThrow(value, "Clrs"))) {
     const [red, green, blue] = _color(_subscript(stop, "Clr "));
     colorStops.push(
       new GradientColorStop(_arith(_subscript(stop, "Lctn")) / 4096.0, _arith(_subscript(stop, "Mdpn")) / 100.0, [
@@ -405,7 +404,7 @@ function _gradient(value: _Value): Gradient {
       ]),
     );
   }
-  const alphaStops = _pyIter(getOrThrow(value, "Trns")).map(
+  const alphaStops = _list(getOrThrow(value, "Trns")).map(
     (stop) =>
       new GradientAlphaStop(
         _arith(_subscript(stop, "Lctn")) / 4096.0,

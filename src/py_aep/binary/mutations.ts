@@ -3,7 +3,7 @@
 import { b64encode } from "../../pyrt/base64.ts";
 import { uuid4Bytes } from "../../pyrt/uuid.ts";
 
-import { Bytes, ByteStream, copy, encode, getOrThrow, struct, ValueError, assert } from "../../pyrt/index.ts";
+import { Bytes, ByteStream, copy, getOrThrow, struct, ValueError, assert } from "../../pyrt/index.ts";
 import { aeWrites } from "../ae_version.ts";
 import { DROPDOWN_CONTROL } from "../data/dropdown_control.ts";
 import { Chunk, ContainerChunk, ListChunk, readChunks, writeChunk } from "./chunk.ts";
@@ -1141,8 +1141,8 @@ export function buildDropdownControl(kw: {
   const matchName = "Pseudo/@@" + b64encode(uuid4Bytes()).replace(/=+$/, "");
   const partBytes = Bytes.replace(
     Bytes.fromHex(DROPDOWN_CONTROL.part),
-    encode(DROPDOWN_CONTROL.placeholder, "ascii"),
-    encode(matchName, "ascii"),
+    new TextEncoder().encode(DROPDOWN_CONTROL.placeholder),
+    new TextEncoder().encode(matchName),
   );
   return buildExpressionControl(matchName, DROPDOWN_CONTROL.name, partBytes, {
     tdsnName,

@@ -9,18 +9,7 @@
  * paths share one layout definition.
  */
 
-import {
-  Bytes,
-  concat,
-  decode,
-  define,
-  descriptor,
-  encode,
-  field,
-  OverflowError,
-  struct,
-  ascii,
-} from "../../pyrt/index.ts";
+import { Bytes, concat, define, descriptor, field, OverflowError, struct, ascii } from "../../pyrt/index.ts";
 import type { ByteStream } from "../../pyrt/index.ts";
 import { MAC_EPOCH_OFFSET, readBytes, toDividendDivisor, toFixed1616, truncateUtf8 } from "./bin_utils.ts";
 import { BitField } from "./bitfield.ts";
@@ -536,7 +525,7 @@ register("sspc")(SspcChunk);
  */
 export function buildGenericOptiData(sourceFormat: string, kw: { sequence?: boolean } = {}): Uint8Array {
   const { sequence = false } = kw;
-  const code = Bytes.padEnd(encode(sourceFormat, "ascii").slice(0, 4), 4, 0x20);
+  const code = Bytes.padEnd(new TextEncoder().encode(sourceFormat).slice(0, 4), 4, 0x20);
   let block: Uint8Array;
   if (sequence && ["IMIO", "STIL"].includes(sourceFormat)) {
     block = Bytes.repeat(new Uint8Array(1), 16);
@@ -916,7 +905,7 @@ export function buildAiLayerOptiData(
     textDocumentLayers: layerCount,
     textElementCount: 1,
     textLayerVisible: visible,
-    textLayerName: decode(truncateUtf8(layerName, 255), "utf-8"),
+    textLayerName: new TextDecoder().decode(truncateUtf8(layerName, 255)),
     textPageHeight: height,
     textPageWidth: width,
   });
@@ -956,7 +945,7 @@ export class OptiChunk extends Chunk {
     // Peek at discriminator (first 4 bytes = asset_type)
     const discRaw = readBytes(fp, 6);
     const nul = Bytes.indexOf(discRaw, new Uint8Array(1), 0, 4);
-    const assetType = decode(discRaw.slice(0, nul >= 0 ? nul : 4), "ascii");
+    const assetType = new TextDecoder().decode(discRaw.slice(0, nul >= 0 ? nul : 4));
     const assetTypeInt = struct.unpack(">H", discRaw.slice(4, 6))[0];
     fp.seek(-6, 1);
     // Placeholder: asset_type is empty but asset_type_int == 2
@@ -1110,7 +1099,7 @@ export class PsdOptiChunk extends OptiChunk {
    * Empty for a merged import, where the trailing region is all-NUL.
    */
   get psdGroupName(): string {
-    return decode(Bytes.split(this._trailing, new Uint8Array(1), 1)[0], "utf-8");
+    return new TextDecoder().decode(Bytes.split(this._trailing, new Uint8Array(1), 1)[0]);
   }
 
   set psdGroupName(value: string) {

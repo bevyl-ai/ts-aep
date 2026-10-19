@@ -12,7 +12,7 @@
 import type { EnumHelpers } from "../../pyrt/enum.ts";
 import { FLOAT32_MAX } from "../binary/bin_utils.ts";
 import { AE_VERSION_RE, FORMAT_VERSIONS } from "../binary/item_chunks.ts";
-import { Path, ValueError, encode, floatRepr, literal, FileExistsError, typeName } from "../../pyrt/index.ts";
+import { Path, ValueError, floatRepr, literal, FileExistsError, typeName } from "../../pyrt/index.ts";
 
 /**
  * `validator(value, instance=None)`: raises on an invalid `value`. `value` is
@@ -234,7 +234,7 @@ function _validateStr(
       throw new ValueError(`must be at most ${maxLength} characters, got ${nChars}`);
     }
     if (maxBytes != null) {
-      const encoded = encode(text, "utf-8").length;
+      const encoded = new TextEncoder().encode(text).length;
       if (encoded > maxBytes) {
         throw new ValueError(`must be at most ${maxBytes} UTF-8 bytes, got ${encoded}`);
       }

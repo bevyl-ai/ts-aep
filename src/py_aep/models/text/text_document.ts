@@ -3,7 +3,7 @@
  */
 
 import {
-  deepcopy,
+  deepClone,
   descriptor,
   assert,
   truthy,
@@ -486,7 +486,7 @@ export class TextDocument {
     validateText(text);
     if (boxSize != null) validateBoxSize(boxSize);
     if (lineOrientation != null) validateEnum(LineOrientation)(lineOrientation);
-    const cos = deepcopy(getCosTemplate());
+    const cos = deepClone(getCosTemplate());
     const btdk = new ListChunk({ listType: "btdk", data: serialize(cos) });
     const doc = cosAt(cosItem(cosItem(cos, "1"), "1"), 0);
     const charStyle = cosItem(cosItem(cosItem(cosAt(cosItem(cosItem(cosItem(doc, "0"), "6"), "0"), 0), "0"), "0"), "6");
@@ -649,7 +649,7 @@ export class TextDocument {
       // Keep the first run object itself: `_paraStyle` (and the
       // parser's back-references) alias its style dict.
       const template = paraRuns[0];
-      const rebuilt: CosNode[] = [template, ...parts.slice(1).map(() => deepcopy(template))];
+      const rebuilt: CosNode[] = [template, ...parts.slice(1).map(() => deepClone(template))];
       for (const [run, part] of zip(rebuilt, parts)) {
         cosSetitem(run, "1", u16Len(part) + 1);
       }

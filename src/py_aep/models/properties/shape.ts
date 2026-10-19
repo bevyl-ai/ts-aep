@@ -1,6 +1,6 @@
 /** Shape value model for mask and shape path properties. */
 
-import { AttributeError, ValueError, assert, descriptor, truediv } from "../../../pyrt/index.ts";
+import { AttributeError, ValueError, assert, descriptor } from "../../../pyrt/index.ts";
 import { ShapePoint } from "../../binary/ldat_chunks.ts";
 import { ShphChunk, TensionItem } from "../../binary/misc_chunks.ts";
 import type { FeatherPointItem, OmtnChunk } from "../../binary/misc_chunks.ts";
@@ -248,14 +248,14 @@ export class Shape {
     }
     const maskSize = this._isMask ? this._compSize : null;
     const [sx, sy] = maskSize ?? [1.0, 1.0];
-    const verts = vertices.map(([x, y]) => [truediv(x, sx), truediv(y, sy)]);
+    const verts = vertices.map(([x, y]) => [x / sx, y / sy]);
     const ins = verts.map(([vx, vy], i) => {
       const [x, y] = inTangents[i];
-      return [vx + truediv(x, sx), vy + truediv(y, sy)];
+      return [vx + x / sx, vy + y / sy];
     });
     const outs = verts.map(([vx, vy], i) => {
       const [x, y] = outTangents[i];
-      return [vx + truediv(x, sx), vy + truediv(y, sy)];
+      return [vx + x / sx, vy + y / sy];
     });
     for (const pt of [...ins, ...outs]) {
       // A vertex plus its tangent can overflow even when both fit.
@@ -344,13 +344,7 @@ export class Shape {
         tensions = Array.from({ length: vertices.length }, () => DEFAULT_TENSION);
       }
     }
-    return rotoBezierTangents(
-      vertices,
-      this.closed,
-      tensions,
-      truediv(prop._tdb4.pixelAspect, width),
-      truediv(1.0, height),
-    );
+    return rotoBezierTangents(vertices, this.closed, tensions, prop._tdb4.pixelAspect / width, 1.0 / height);
   }
 
   /** The tensions stored with this shape value (the `omtn` chunk). */
@@ -396,8 +390,8 @@ export class Shape {
     assert(shph != null);
     const dx = shph.bottomRightX - shph.topLeftX;
     const dy = shph.bottomRightY - shph.topLeftY;
-    const nx = dx !== 0 ? truediv(x - shph.topLeftX, dx) : 0.0;
-    const ny = dy !== 0 ? truediv(y - shph.topLeftY, dy) : 0.0;
+    const nx = dx !== 0 ? (x - shph.topLeftX) / dx : 0.0;
+    const ny = dy !== 0 ? (y - shph.topLeftY) / dy : 0.0;
     return [nx, ny];
   }
 

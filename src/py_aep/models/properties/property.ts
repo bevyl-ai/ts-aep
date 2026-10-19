@@ -108,7 +108,7 @@ import { PropertyBase } from "./property_base.ts";
 import { Shape } from "./shape.ts";
 import type { PropertyGroup } from "./property_group.ts";
 import {
-  deepcopy,
+  deepClone,
   getOrThrow,
   isclose,
   valueEquals,
@@ -117,7 +117,6 @@ import {
   IndexError,
   AttributeError,
   NotImplementedError,
-  StopIteration,
   assert,
   literal,
   zip,
@@ -1847,7 +1846,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     if (time <= keys[0].time) return this._keyframeCurves(keys[0]);
     if (time >= keys[keys.length - 1].time) return this._keyframeCurves(keys[keys.length - 1]);
     const previous = [...keys].reverse().find((k) => k.time <= time);
-    if (previous === undefined) throw new StopIteration();
+    assert(previous !== undefined, "a time inside the keyed range has a key at or before it");
     if (isclose(previous.time, time, 0.0, 1e-9) || previous.outInterpolationType === KeyframeInterpolationType.HOLD) {
       return this._keyframeCurves(previous);
     }
@@ -3129,7 +3128,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     // time_divisor/work_area_start_divisor/shutter_phase, so clone the host
     // cdta over it. idta/iide (the item ids) are separate chunks and stay
     // the wrapper's own.
-    const newCdta = deepcopy(host._cdta);
+    const newCdta = deepClone(host._cdta);
     const chunks = wrapper._itemList.chunks;
     // Python `chunks.index(...)` compares by attrs equality (first equal chunk).
     const cdtaIndex = chunks.findIndex((c: Chunk) => valueEquals(c, wrapper._cdta));
@@ -4198,7 +4197,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
       throw new NotImplementedError("text keyframe value is not a TextDocument");
     }
     const docArray = cosGet(template._cosData, "1", "1");
-    const newDoc = deepcopy(cosAt(docArray, nearest));
+    const newDoc = deepClone(cosAt(docArray, nearest));
 
     const ldatItem = buildParallelLdatItem(this._keyframeItemType());
     const kf = new Keyframe<KeyframeValue<V>>({ _ldatItem: ldatItem, _frameRate: frameRate });

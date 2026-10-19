@@ -925,7 +925,7 @@ function _parseLayerExtra(
   pos += 4 + struct.unpack(">I", extra.slice(pos, pos + 4))[0];
   // Legacy Pascal name, padded so (1 + length) is a multiple of 4.
   const pascalLen = extra.at(pos)!;
-  const pascal = decode(extra.slice(pos + 1, pos + 1 + pascalLen), "latin-1");
+  const pascal = Bytes.latin1Str(extra.slice(pos + 1, pos + 1 + pascalLen));
   pos += 1 + pascalLen;
   pos += (4 - ((1 + pascalLen) % 4)) % 4;
   // Remaining bytes are additional layer info blocks.

@@ -15,7 +15,7 @@ import {
   findByTypeOrNull,
 } from "../binary/utils.ts";
 import { GpuAccelType } from "../enums/index.ts";
-import { _suppressMaterialization } from "../models/descriptors.ts";
+import { suppressingMaterialization } from "../models/descriptors.ts";
 import { Project } from "../models/project.ts";
 import { parseEffectDefinitions } from "./effect.ts";
 import { parseFolder } from "./item.ts";
@@ -77,7 +77,7 @@ export function _nnhdFromNhed(nhed: NhedChunk): NnhdChunk {
  * @param file_path - Path to the `.aep` file (stored on the Project).
  * @param ae_preferences_dir - Optional path to the AE preferences directory for template lookup.
  */
-export const parseProject = _suppressMaterialization()(function parse_project(
+export const parseProject = suppressingMaterialization(function parse_project(
   rifx: ListChunk,
   xmp: string,
   filePath: string,

@@ -17,12 +17,10 @@ import {
   KeyError,
   Path,
   attrsHas,
-  decode,
   descriptorsOf,
   fields,
   getOrThrow,
   isclose,
-  len,
   truthy,
   valueEquals,
   literal,
@@ -30,7 +28,6 @@ import {
   zip,
   isReal,
   parseJson,
-  truediv,
   PureWindowsPath,
   type BoxedFloat,
   compare,
@@ -585,7 +582,7 @@ export function compareMarker(
   // Calculate time from frame_time if available
   let parsedTime: number | null = null;
   if (parsedMarker.get("frameTime") != null) {
-    parsedTime = truediv(getOrThrow(parsedMarker, "frameTime"), frameRate);
+    parsedTime = Number(getOrThrow(parsedMarker, "frameTime")) / frameRate;
   }
 
   // Compare time
@@ -781,7 +778,7 @@ export function compareProperty(expectedProp: Dict, parsedProp: Dict, path: stri
   if (expectedProp.has("numKeys")) {
     const expNumKeys = getOrThrow(expectedProp, "numKeys");
     const parsedKeyframes = parsedProp.has("keyframes") ? parsedProp.get("keyframes") : [];
-    const parsedNumKeys = truthy(parsedKeyframes) ? len(parsedKeyframes) : 0;
+    const parsedNumKeys = parsedKeyframes?.length ?? 0;
     if (expNumKeys !== parsedNumKeys) {
       result.addDiff(`${path}.numKeys`, expNumKeys, parsedNumKeys, "properties");
     }
@@ -1040,8 +1037,8 @@ export function compareKeyframe(expectedKf: Dict, parsedKf: Dict, path: string, 
     if (expectedKf.has(easeKey)) {
       const expEase = expectedKf.get(easeKey);
       const parsedEase = parsedKf.has(parsedKey) ? parsedKf.get(parsedKey) : [];
-      if (len(expEase) !== len(parsedEase)) {
-        result.addDiff(`${path}.${easeKey}.length`, len(expEase), len(parsedEase), "keyframes");
+      if (expEase.length !== parsedEase.length) {
+        result.addDiff(`${path}.${easeKey}.length`, expEase.length, parsedEase.length, "keyframes");
       }
       for (const [ei, [expE, parsedE]] of zip(expEase, parsedEase).entries()) {
         const expSpeed = expE instanceof Map ? (expE.get("speed") ?? null) : null;
@@ -1664,7 +1661,7 @@ export function validateAep(
 
   // Load expected JSON
   // Python `open(encoding="utf-8")`: bytes are decoded without dropping a BOM.
-  const loaded = parseJson(decode(jsonPath.readBytes(), "utf-8"));
+  const loaded = parseJson(new TextDecoder().decode(jsonPath.readBytes()));
   if (!(loaded instanceof Map)) throw new AttributeError(`'${typeName(loaded)}' object has no attribute 'get'`);
   const expected: Dict = loaded;
 

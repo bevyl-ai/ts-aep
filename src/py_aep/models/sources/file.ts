@@ -86,7 +86,6 @@ import {
   type PathLike,
   PurePosixPath,
   PureWindowsPath,
-  pyRe,
   compare,
   ascii,
 } from "../../../pyrt/index.ts";
@@ -535,7 +534,7 @@ const _C9_TO_LAYER_STYLES = new Map<number, string>(
 // A sequence frame number is at most the last 9 digits of the file stem; any
 // digits before them belong to the prefix (AE 2026: f_99999999998.png and
 // f_99999999999.png import as `f_99[999999998-999999999].png`).
-const _FRAME_NUMBER_RE = pyRe(String.raw`(\d{1,9})$`);
+const _FRAME_NUMBER_RE = /(\d{1,9})$/;
 
 // AE reads the `sspc` width and height as signed 16-bit values: a py_aep file
 // holding a 65535-px-wide PNG opens -1 px wide in AE 2026, and 65536 does not

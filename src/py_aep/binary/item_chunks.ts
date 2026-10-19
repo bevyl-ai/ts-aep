@@ -6,18 +6,7 @@
  * accessors. NnhdChunk uses `BitField` for scattered flag bits.
  */
 
-import {
-  Bytes,
-  decode,
-  define,
-  descriptor,
-  encode,
-  field,
-  objectSetattr,
-  literal,
-  ValueError,
-  pyRe,
-} from "../../pyrt/index.ts";
+import { Bytes, define, descriptor, field, objectSetattr, literal, ValueError } from "../../pyrt/index.ts";
 import { MAC_EPOCH_OFFSET } from "./bin_utils.ts";
 import { BitField } from "./bitfield.ts";
 import { Chunk } from "./chunk.ts";
@@ -149,7 +138,7 @@ export const FORMAT_VERSIONS: Map<number, [number, number]> = new Map<number, [n
 ]);
 
 /** An After Effects version string, `"{major}.{minor}x{build}"`. */
-export const AE_VERSION_RE = pyRe(String.raw`^(\d+)\.(\d+)x(\d+)$`);
+export const AE_VERSION_RE = /^(\d+)\.(\d+)x(\d+)$/;
 
 export class HeadChunk extends Chunk {
   declare chunkType: string;
@@ -493,12 +482,12 @@ export class CmtaChunk extends Chunk {
 
   /** Decoded comment text, LF line endings, no trailing null. */
   get value(): string {
-    return decode(this.data, "UTF-8").split("\x00")[0].replaceAll("\r\n", "\n");
+    return new TextDecoder().decode(this.data).split("\x00")[0].replaceAll("\r\n", "\n");
   }
 
   set value(text: string) {
     // AE always writes a double-null terminator inside the chunk data.
-    const encoded = encode(text.replaceAll("\n", "\r\n") + "\x00\x00", "UTF-8");
+    const encoded = new TextEncoder().encode(text.replaceAll("\n", "\r\n") + "\x00\x00");
     objectSetattr(this, "data", encoded);
   }
 }

@@ -24,7 +24,7 @@ import { parse as parseAep } from "../../src/py_aep/index.ts";
 import type { Layer } from "../../src/py_aep/models/layers/layer.ts";
 import { Property } from "../../src/py_aep/models/properties/property.ts";
 import { PropertyGroup } from "../../src/py_aep/models/properties/property_group.ts";
-import { _suppressMaterialization } from "../../src/py_aep/models/descriptors.ts";
+import { runSuppressed } from "../../src/py_aep/models/descriptors.ts";
 import { getFirstLayer } from "../helpers.ts";
 import { makeTmpPath, raises } from "../support/pytest.ts";
 
@@ -212,7 +212,7 @@ describe("TestParseTimeWriteGuard", () => {
     if (opacity == null) throw new Error("no ADBE Opacity property");
 
     // Python `with _suppress_materialization():` is `.run(() => body)`.
-    _suppressMaterialization().run(() => {
+    runSuppressed(() => {
       raises(
         RuntimeError,
         () => {
@@ -231,7 +231,7 @@ describe("TestParseTimeWriteGuard", () => {
     expect(opacity != null).toBe(true);
     if (opacity == null) throw new Error("no ADBE Opacity property");
 
-    _suppressMaterialization().run(() => {
+    runSuppressed(() => {
       instanceDict(opacity).set("enabled", false);
       expect(instanceDict(opacity).get("enabled")).toBe(false);
     });

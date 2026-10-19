@@ -11,7 +11,7 @@
 import type * as fontkit from "fontkit";
 import { dep } from "../../pyrt/deps.ts";
 import * as host from "../../pyrt/host.ts";
-import { Path, getOrInsert, StopIteration } from "../../pyrt/index.ts";
+import { Path, getOrInsert, ValueError } from "../../pyrt/index.ts";
 
 const _FONT_SUFFIXES: readonly string[] = [".ttf", ".otf", ".ttc"];
 
@@ -321,9 +321,7 @@ function _pick(styles: Map<string, [Path, number]>, bold: boolean, italic: boole
     }
   }
   const first = styles.values().next();
-  if (first.done) {
-    throw new StopIteration();
-  }
+  if (first.done) throw new ValueError("the font family has no faces");
   return first.value;
 }
 

@@ -16,12 +16,9 @@ import {
   stringifyJson,
   jsonRequire,
   parseJson,
-  patternMatch,
   assert,
   valueEquals,
-  pyRe,
   boxFloat,
-  reEscape,
   repr,
   struct,
   truediv,
@@ -35,7 +32,7 @@ import { Path } from "../../src/pyrt/pathlib.ts";
 import { fs, memfs, useHostFs, useMemoryFs } from "../../src/pyrt/host.ts";
 import { CPY } from "./cpython_fixtures.ts";
 import { raises } from "../support/pytest.ts";
-import { dict, patternFindall, StringIO } from "../support/python.ts";
+import { dict, StringIO } from "../support/python.ts";
 
 /** `float.fromhex` for the `float.hex()` strings in the fixtures. */
 function fromhex(s: string): number {
@@ -102,28 +99,6 @@ describe("num", () => {
     expect(raises(ZeroDivisionError, () => truediv(1, 0)).message).toBe("float division by zero");
     expect(raises(ZeroDivisionError, () => truediv(1, 0, "int")).message).toBe("division by zero");
     expect(raises(ZeroDivisionError, () => truediv(boxFloat(1), 0, "int")).message).toBe("float division by zero");
-  });
-});
-
-describe("re", () => {
-  test.each(CPY.re.map((r) => [...r]))("search(%j, %j, %d)", (p, s, f, exp) => {
-    const m = pyRe(p, f).exec(s);
-    const span: readonly number[] | null =
-      m == null ? null : [Array.from(s.slice(0, m.index)).length, Array.from(s.slice(0, m.index + m[0].length)).length];
-    expect(span).toEqual(exp);
-  });
-
-  test.each(CPY.re_escape.map((r) => [...r]))("escape(%j)", (s, out) => {
-    expect(reEscape(s)).toBe(out);
-    expect(patternMatch(pyRe(reEscape(s)), s)?.[0]).toBe(s);
-  });
-
-  test("findall groups", () => {
-    expect(patternFindall(pyRe(String.raw`\d+`), "a1b22")).toEqual(["1", "22"]);
-    expect(patternFindall(pyRe(String.raw`(\w)=(\d)?`), "a=1 b=")).toEqual([
-      ["a", "1"],
-      ["b", ""],
-    ]);
   });
 });
 

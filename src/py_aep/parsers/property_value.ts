@@ -4,7 +4,7 @@ import type { Chunk, ListChunk } from "../binary/chunk.ts";
 import type { TdmnChunk } from "../binary/property_chunks.ts";
 import { findByListTypeOrNull, findByType, findByTypeOrNull } from "../binary/utils.ts";
 import { PropertyValueType } from "../enums/index.ts";
-import { _suppressMaterialization } from "../models/descriptors.ts";
+import { suppressingMaterialization } from "../models/descriptors.ts";
 import { Keyframe } from "../models/properties/keyframe.ts";
 import { Property } from "../models/properties/property.ts";
 import type { CompItem } from "../models/items/composition.ts";
@@ -21,7 +21,7 @@ import type { CompItem } from "../models/items/composition.ts";
  * @param composition - The parent composition.
  * @param property_depth - The nesting depth of this property (0 = layer level).
  */
-export const parseProperty = _suppressMaterialization().decorate(function parse_property(
+export const parseProperty = suppressingMaterialization(function parse_property(
   tdbsChunk: ListChunk,
   matchName: string,
   composition: CompItem,

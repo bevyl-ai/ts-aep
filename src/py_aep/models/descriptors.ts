@@ -8,7 +8,6 @@
 
 import {
   AttributeError,
-  ContextVar,
   RuntimeError,
   ValueError,
   getMember,
@@ -108,41 +107,30 @@ export const _SENTINEL: unique symbol = Symbol("_SENTINEL");
 // (round-trip idempotency). Parsers cache values via `__dict__` overrides
 // or the private `_cacheValue` helpers instead. Outside parsing the
 // default (True) lets end-user writes through.
-export const _materializationAllowed = new ContextVar<boolean>("_materialization_allowed", {
-  default: true,
-});
+export const materialization = { allowed: true };
 
 /** Run `body` with descriptor writes forbidden; restores the previous state after. */
-function _runSuppressed<R>(body: () => R): R {
-  const token = _materializationAllowed.set(false);
+export function runSuppressed<R>(body: () => R): R {
+  const previous = materialization.allowed;
+  materialization.allowed = false;
   try {
     return body();
   } finally {
-    _materializationAllowed.reset(token);
+    materialization.allowed = previous;
   }
 }
 
 /**
- * Forbid descriptor writes for the current context.
- *
- * Parser entry points are decorated with this so any descriptor
- * write during parsing raises `RuntimeError` instead of silently
- * mutating chunk data. Usable as a decorator
- * (`@_suppress_materialization()`) or a `with` block.
- *
- * Call sites: `with _suppress_materialization(): body` becomes
- * `_suppress_materialization().run(() => body)`, and
- * `@_suppress_materialization()` becomes `.decorate(fn)`.
+ * `fn` with descriptor writes forbidden while it runs. Parser entry points are
+ * wrapped in this, so a descriptor write during parsing raises `RuntimeError`
+ * instead of silently mutating chunk data.
  */
-export function _suppressMaterialization() {
-  function decorate<T, A extends unknown[], R>(fn: (this: T, ...args: A) => R): (this: T, ...args: A) => R {
-    return function (this: T, ...args: A) {
-      return _runSuppressed(() => fn.apply(this, args));
-    };
-  }
-  // Callable (`@_suppress_materialization()` applied as `_suppress_materialization()(fn)`),
-  // and also exposes `.decorate(fn)` / `.run(body)`.
-  return Object.assign(decorate, { run: _runSuppressed, decorate });
+export function suppressingMaterialization<T, A extends unknown[], R>(
+  fn: (this: T, ...args: A) => R,
+): (this: T, ...args: A) => R {
+  return function (this: T, ...args: A) {
+    return runSuppressed(() => fn.apply(this, args));
+  };
 }
 
 /**
@@ -349,7 +337,7 @@ export class ChunkField<
         throw new AttributeError(`${literal(this.publicName)} requires AE ${this.minVersion}+ file format.`);
       }
     }
-    if (!_materializationAllowed.get()) {
+    if (!materialization.allowed) {
       throw new RuntimeError(
         `Cannot write ${literal(this.publicName)} via descriptor during ` +
           `parsing. Use instanceDict(obj).set(${literal(this.publicName)}, value) for ` +
