@@ -44,7 +44,7 @@ register("svap")(SvapChunk);
  * Working-space profile id (16 bytes): the ICC Profile ID (ISO
  * 15076-1 MD5) of the working color space, whose ICC is embedded after
  * `PwCs` (AE 22+) or kept in `LIST:CPPl` (older files). All `0xFF` when
- * the working space is None or the project uses OCIO; a new project
+ * the working space is null or the project uses OCIO; a new project
  * has no working space.
  */
 export class CpidChunk extends Chunk {

@@ -109,7 +109,7 @@ export class RouuChunk extends Chunk {
   // a few audio-config sub-bytes that vary by codec. The default is the
   // block AE writes for a fresh image-sequence output module. Older
   // writers emit only the first 114 bytes; `optional=True` keeps short
-  // bodies parseable (the field reads as None and is skipped on write,
+  // bodies parseable (the field reads as null and is skipped on write,
   // so they round-trip), while newly built chunks still write 154 bytes.
   declare _reserved72: Uint8Array | null;
 

@@ -24,7 +24,7 @@ import type { EnumHelpers } from "../../../pyrt/enum.ts";
 import type { CompPreset } from "../../parsers/comp_presets.ts";
 import type { Preferences } from "../preferences.ts";
 
-// NOTE(port): defineEnum members are plain numbers with no owning class, so
+// DefineEnum members are plain numbers with no owning class, so
 // `isinstance(value, IntEnum)` is unanswerable. NUMBER output is unaffected
 // (`int(member)` is the member itself); STRING output gets the label from the
 // spec's enum class in `settingsToString` instead.
@@ -130,7 +130,7 @@ export class SettingsView<V extends SettingValues = SettingValues> {
     return typeof key === "string" && this._specs.has(key);
   }
 
-  // -- MutableMapping mixin methods (inherited in Python) -----------------
+  // -- MutableMapping mixin methods -----------------
 
   keys(): string[] {
     return [...this._specs.keys()];
@@ -204,7 +204,6 @@ export class SettingsView<V extends SettingValues = SettingValues> {
   }
 
   clear(): void {
-    // NOTE(port): same as MutableMapping.clear(): popitem() until KeyError; popitem raises TypeError here (delete unsupported), as in Python.
     for (;;) {
       try {
         this.popitem();
@@ -223,7 +222,6 @@ export class SettingsView<V extends SettingValues = SettingValues> {
     if (other instanceof Map || other instanceof SettingsView) {
       return valueEquals(new Map(this.items()), new Map(other instanceof Map ? other : other.items()));
     }
-    // NOTE(port): Python returns NotImplemented; no builtin reflected __eq__ ever answers True for a non-mapping, so the final `==` is False.
     return false;
   }
 }
@@ -239,7 +237,7 @@ export class SettingsView<V extends SettingValues = SettingValues> {
 function _coerceEnum(enumClass: LabeledEnum, value: SettingValue | null): number {
   if (enumClass.has(value)) return value;
   if (typeof value === "boolean") {
-    // bool is int: settings["Output Audio"] = True would silently
+    // bool is int: settings["Output Audio"] = true would silently
     // coerce to OutputAudio.OFF (== 1). Reject rather than surprise.
     throw new TypeError(`Expected ${enumClass.enumName}, int, or str, got bool`);
   }
@@ -372,7 +370,6 @@ function _toStringValue(
   enumClass: LabeledEnum | null = null,
 ): string | Map<string, string> {
   if (value instanceof Map) {
-    // NOTE(port): Python annotates `-> str` and ignores the nested dict this branch returns.
     return new Map([...value.entries()].map(([k, v]): [string, string] => [k, _toStringValue(k, v, resizeMap)]));
   }
   // `isinstance(value, IntEnum)`: the spec's enum class stands in for the member's owning class.
@@ -380,7 +377,7 @@ function _toStringValue(
   if (key === "Resolution") return _RESOLUTION_STRINGS.get(_tupleKey(value)) ?? "Custom";
   if (key === "Resize to") return resizeMap.get(_tupleKey(value)) ?? "Custom";
   if (typeof value === "boolean") return String(value).toLowerCase();
-  // NOTE(port): int/float — integral values are plain numbers by design (RULEBOOK §4); a float getter value such as 30.0 (Time Span Duration, Use comp's frame rate) renders "30" here where Python gives "30.0" (returned string only, never saved).
+  // Integral floats are plain numbers (RULEBOOK §4): a float getter value such as 30.0 (Time Span Duration, Use comp's frame rate) renders "30" here where Python gives "30.0" (returned string only, never saved).
   return String(value);
 }
 

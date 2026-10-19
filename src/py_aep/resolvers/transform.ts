@@ -144,7 +144,6 @@ export class Mat4 {
     for (let r = 0; r < 3; r++) {
       for (let c = 0; c < 3; c++) absVals.push(Math.abs(s[r * 4 + c]));
     }
-    // NOTE(port): platform libm — CPython's own math.* results vary by platform libm; V8 (fdlibm) may differ in the last ulp.
     const scale = Math.max(...absVals);
     if (det === 0.0 || Math.abs(det) <= _EPSILON * 1e-2 * scale ** 3) {
       throw new ValueError("Singular matrix, cannot invert.");
@@ -207,7 +206,6 @@ function _scale(sx: number, sy: number, sz: number): Mat4 {
 
 export function _rotateX(deg: number): Mat4 {
   const r = deg * _DEG2RAD;
-  // NOTE(port): platform libm — CPython's own math.* results vary by platform libm; V8 (fdlibm) may differ in the last ulp.
   const c = Math.cos(r);
   const s = Math.sin(r);
   const m = Mat4.identity();
@@ -833,7 +831,6 @@ export function _eulerXyz(
 ): [number, number, number] {
   // Clamp to [-1, 1] for asin safety.
   const sinBeta = Math.max(-1.0, Math.min(1.0, r02));
-  // NOTE(port): platform libm — CPython's own math.* results vary by platform libm; V8 (fdlibm) may differ in the last ulp.
   const beta = Math.asin(sinBeta);
   // cos(beta) straight off the matrix. Going through `cos(asin(r02))`
   // loses most of its digits as r02 approaches 1, which matters because

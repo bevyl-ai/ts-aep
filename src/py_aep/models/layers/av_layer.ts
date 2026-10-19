@@ -154,7 +154,7 @@ type AVLayerNewKw = {
  * @see https://ae-scripting.docsforadobe.dev/layer/avlayer/
  */
 export class AVLayer extends Layer {
-  // NOTE(port): accessor stubs typed for TS only; descriptor(AVLayer, ...) below redefines both on the prototype, so these bodies never run.
+  // Accessor stubs typed for TS only; descriptor(AVLayer, ...) below redefines both on the prototype, so these bodies never run.
   /** When `true`, the layer is an adjustment layer. Read / Write. */
   get adjustmentLayer(): boolean {
     return false;
@@ -1010,10 +1010,10 @@ export class AVLayer extends Layer {
   }
 
   /**
-   * True if the layer has no expressly set name, but contains a named source.
+   * `true` if the layer has no expressly set name, but contains a named source.
    *
    * In this case, layer.name has the same value as layer.source.name.
-   * False if the layer has an expressly set name, or if the layer does not
+   * `false` if the layer has an expressly set name, or if the layer does not
    * have a source. Read-only.
    */
   get isNameFromSource(): boolean {

@@ -25,7 +25,7 @@ import * as _propertyGroup from "./property_group.ts";
 import * as _propertyValue from "../../parsers/property_value.ts";
 import { late } from "../late.ts";
 
-// NOTE(port): local twin of CPython `list.index` / `list.remove` (py_eq compare, ValueError "x is not in list"); no pyrt shim exists.
+// Local twin of CPython `list.index` / `list.remove` (py_eq compare, ValueError "x is not in list"); no pyrt shim exists.
 function listIndex<T>(xs: readonly T[], x: T): number {
   const i = xs.findIndex((y) => valueEquals(y, x));
   if (i < 0) throw new ValueError(`${literal(x)} is not in list`);
@@ -429,7 +429,7 @@ export class PropertyBase {
     // empty groups, so the only "applied" signal is the enabled
     // flag: canSetEnabled tracks it exactly (group = any style
     // enabled). Blending Options ("ADBE Blend Options Group") is
-    // excluded and always reports False.
+    // excluded and always reports false.
     if (mn === "ADBE Layer Styles" || mn.endsWith("/enabled")) return this.enabled;
     if (
       mn.startsWith("ADBE Vector") &&

@@ -15,7 +15,7 @@ import type { CompItem } from "../models/items/composition.ts";
 import type { Layer } from "../models/layers/layer.ts";
 import { late } from "../models/late.ts";
 
-// NOTE(port): eager module-level table exactly as in Python; the ESM import order (tests and py_aep/index.ts load the models first) keeps the layer classes out of the TDZ.
+// Eager module-level table exactly as in Python; the ESM import order (tests and py_aep/index.ts load the models first) keeps the layer classes out of the TDZ.
 const _LAYER_CLASSES: Map<number, typeof Layer> = new Map<number, typeof Layer>([
   [LayerType.AV, AVLayer],
   [LayerType.LIGHT, LightLayer],
@@ -55,7 +55,6 @@ export const parseLayer = suppressingMaterialization(function parse_layer(
 
   let layerCls = _LAYER_CLASSES.get(layerType);
   if (layerCls === undefined) {
-    // NOTE(port): Python passes stacklevel=2; warn() carries the message only.
     warn(`Failed to create layer type ${layerType}, falling back to AVLayer`);
     layerCls = AVLayer;
   }

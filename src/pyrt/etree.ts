@@ -5,7 +5,7 @@
 // iterfind: child, `*`, `.`, `..`, `//`, `[@a]`, `[@a='v']`, `[@a!='v']`, `[tag]`,
 // `[tag='v']`, `[.='v']`, `[n]`, `[last()]`, `[last()-n]`, `{ns}tag`, `{*}tag`, `{ns}*`).
 //
-// TODO(port): internal general entities follow expat only for plain-text replacement text.
+// TODO: internal general entities follow expat only for plain-text replacement text.
 // expat expands character references in an entity value at declaration and parses replacement
 // text holding markup (`<!ENTITY e "<a/>">`, or `"&#60;"`) as content: nested elements, else
 // "unclosed token" / "asynchronous entity"; in an attribute value such text is "not

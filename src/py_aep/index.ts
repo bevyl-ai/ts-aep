@@ -192,7 +192,7 @@ export function parse(
   kw: { aePreferencesDir?: string | PathLike | null; platform?: string | null } = {},
 ): Application {
   const { aePreferencesDir = null, platform = null } = kw;
-  // NOTE(port): py-aep defers only Layr. tdgp also covers the property trees
+  // Py-aep defers only Layr. tdgp also covers the property trees
   // of the comp-level SLay/CLay/SecL/DLay lists and effect definitions, which
   // parsing never reads.
   const _DEFERRED_LIST_TYPES: ReadonlySet<string> = new Set(["Layr", "tdgp"]);

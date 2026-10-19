@@ -126,7 +126,7 @@ export function _parseShapeShap(shapChunk: ListChunk, layer: Layer | null, maskP
   const listChunk = findByListType(shapChunk.chunks, "list");
 
   // An empty path (no vertices) carries only the lhd3 header, no ldat;
-  // treat it as zero points so the value is an empty Shape, not None.
+  // treat it as zero points so the value is an empty Shape, not null.
   const ldat = findByTypeOrNull(listChunk.chunks, "ldat");
   const points: Parameters<typeof Shape._fromBinary>[0]["_points"] = ldat === null ? [] : ldat.items;
 

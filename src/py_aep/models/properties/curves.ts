@@ -93,7 +93,6 @@ export class _NaturalSpline {
     return lo;
   }
 
-  // NOTE(port): Python `__call__`; no rulebook mapping, so callers use `.__call__(x)` explicitly.
   evaluate(x: number): number {
     const xs = this.xs;
     const ys = this.ys;
@@ -104,7 +103,6 @@ export class _NaturalSpline {
     const h = xs[i + 1] - xs[i];
     const u = (xs[i + 1] - x) / h;
     const v = 1.0 - u;
-    // NOTE(port): platform libm — CPython's own math.* results vary by platform libm; V8 (fdlibm) may differ in the last ulp.
     const cubic = (u ** 3 - u) * m[i] + (v ** 3 - v) * m[i + 1];
     return u * ys[i] + v * ys[i + 1] + (cubic * h * h) / 6.0;
   }

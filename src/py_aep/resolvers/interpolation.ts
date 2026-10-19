@@ -76,7 +76,6 @@ function _calcBezier(t: number, a1: number, a2: number): number {
  * Returns `null` when no root lands in [0, 1]. AE's result is undefined
  * there; that is a bug, not behaviour to copy.
  */
-// NOTE(port): platform libm — CPython's own math.* results vary by platform libm; V8 (fdlibm) may differ in the last ulp.
 function _solveCubic(a: number, b: number, c: number, d: number): number | null {
   let root: number;
   if (Math.abs(a) >= _EPS) {
@@ -794,7 +793,7 @@ class _ArcSpline {
   }
 }
 
-// NOTE(port): matches `functools.lru_cache(maxsize=1024)` (value-keyed via `compositeKey`, LRU eviction at 1024); pyrt `lruCache` keys by identity and would never hit.
+// Matches `functools.lru_cache(maxsize=1024)` (value-keyed via `compositeKey`, LRU eviction at 1024); pyrt `lruCache` keys by identity and would never hit.
 const _arcSplineCache = new Map<string, _ArcSpline>();
 
 /** A cached `_ArcSpline`: every evaluated frame rebuilds the same one. */
@@ -1521,7 +1520,6 @@ export function slerpOrientation(start: number[], end: number[], progress: numbe
     const blend = q0.map((a, i) => a + (q1[i] - a) * progress);
     return quaternionToEuler(blend);
   }
-  // NOTE(port): platform libm — CPython's own math.* results vary by platform libm; V8 (fdlibm) may differ in the last ulp.
   const theta = Math.acos(dot);
   const sinTheta = Math.sin(theta);
   const s0 = Math.sin((1.0 - progress) * theta) / sinTheta;

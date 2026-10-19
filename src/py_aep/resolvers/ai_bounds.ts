@@ -154,7 +154,7 @@ function _operandStr(x: CosNode): string {
  * the second is strictly smaller/larger. Math.min/Math.max would propagate NaN
  * instead, which Python never does here.
  */
-// NOTE(port): local two-operand form of Python's min(a, b)/max(a, b); same first-wins tie and NaN behavior as CPython's comparison loop.
+// Local two-operand form of Python's min(a, b)/max(a, b); same first-wins tie and NaN behavior as CPython's comparison loop.
 function _min2(a: number, b_: number): number {
   return b_ < a ? b_ : a;
 }
@@ -1245,7 +1245,6 @@ export function readAiLayerBounds(file: PathLike, data: Uint8Array | null = null
   const doc = new _Document(data, path.name);
   const pages = doc.pages();
   if (pages.length > 1) {
-    // NOTE(port): warn() carries the message, the only part observable to pytest.warns(match=); UserWarning category and stacklevel are not modeled.
     warn(
       `${path.name}: the document has ${pages.length} artboards. ` +
         "py_aep measures the first one; After Effects measures the " +

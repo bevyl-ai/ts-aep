@@ -163,10 +163,10 @@ export class SvgDrawable {
   /** Outline(s); compound paths produce multiple subpaths. */
   declare subpaths: Subpath[];
 
-  /** SolidPaint, GradientPaint, or None. */
+  /** SolidPaint, GradientPaint, or null. */
   declare fill: SolidPaint | GradientPaint | null;
 
-  /** Stroke style, or None when unstroked. */
+  /** Stroke style, or null when unstroked. */
   declare stroke: StrokeStyle | null;
 
   /**

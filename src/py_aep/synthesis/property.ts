@@ -908,7 +908,7 @@ export const _CAMERA_SPECS: PropSpec[] = [
     minValue: 0,
     minMajor: 26,
     // AE writes tdum/tduM bound chunks but ExtendScript reports no max
-    // (hasMax False): the chunk bounds are UI hints, so the spec (min 0,
+    // (hasMax false): the chunk bounds are UI hints, so the spec (min 0,
     // no max) is authoritative.
     chunkBoundsAreHints: true,
   }),
@@ -1785,7 +1785,7 @@ function _buildTextAnimatorPoolSpecs(): PropSpec[] {
         // dimensions/is_spatial/color derive from pvt (_PVT_KIND).
         minValue: e.min,
         maxValue: e.max,
-        // canVary defaults True for the pool; only record False.
+        // canVary defaults true for the pool; only record false.
         canVaryOverTime: e.cv === false ? false : null,
         unitsText: e.units,
         boundChunks: unbounded1d ? true : null,

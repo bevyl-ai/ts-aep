@@ -602,7 +602,7 @@ export const CLAMP_DEPENDENTS: Map<string, readonly string[]> = new Map<string, 
 ]);
 
 /**
- * True when every condition matches the context.
+ * `true` when every condition matches the context.
  *
  * An array condition value means "in"; a context key that is absent
  * never matches (permissive degradation).

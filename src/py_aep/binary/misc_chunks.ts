@@ -331,10 +331,10 @@ export class ShphChunk extends Chunk {
   /** Bounding-box bottom edge (y maximum). */
   declare bottomRightY: number;
   declare _reserved14: Uint8Array;
-  /** True when the ldat points are stored as `[0, 1]` fractions of the
+  /** `true` when the ldat points are stored as `[0, 1]` fractions of the
    * bounding box (AE's universal encoding). */
   declare normalized: boolean;
-  /** True when the path is open (not closed). */
+  /** `true` when the path is open (not closed). */
   declare open: boolean;
 
   static {
@@ -552,7 +552,7 @@ register("fips")(FipsChunk);
 // pard - effect property parameter definitions (variant dispatch)
 // ---------------------------------------------------------------------------
 
-// NOTE(port): Python lets a subclass attrs field replace the base property; attrs `define` assigns
+// Python lets a subclass attrs field replace the base property; attrs `define` assigns
 // with `self[name] = v`, so a writable data property on each variant prototype (applied after
 // `_PARD_VARIANTS`) gives the same behavior.
 function shadowProperty(cls: Function, name: string): void {
@@ -1128,7 +1128,7 @@ export class OtlnItem extends FmtItem {
   declare isProperty: boolean;
   declare isSubEntry: boolean;
 
-  /** True when this entry is a per-layer boundary marker. */
+  /** `true` when this entry is a per-layer boundary marker. */
   get isLayerMarker(): boolean {
     return this.entryType === 68;
   }

@@ -50,7 +50,6 @@ type ParametricMeshLayerNewKw = {
  * @see https://ae-scripting.docsforadobe.dev/layer/parametricmeshlayer/
  */
 export class ParametricMeshLayer extends AVLayer {
-  // NOTE(port): Layer.__init__ -> PropertyBase.__init__ assigns instance `_auto_name = None`, shadowing this class attribute in Python too; AVLayer.name's `self._auto_name` therefore sees None in both.
   static _autoName: string = "Mesh Layer";
 
   /** For a parametric mesh layer, its mesh type. Read / write. */
@@ -67,7 +66,6 @@ export class ParametricMeshLayer extends AVLayer {
     this._updateOptions();
   }
 
-  // Python `# type: ignore[override]`: keyword shape differs from AVLayer._new's; overloads keep the base static side assignable.
   static _new(kw: ParametricMeshLayerNewKw): ParametricMeshLayer;
   static _new(...args: never[]): never;
   static _new(kw: ParametricMeshLayerNewKw): ParametricMeshLayer {
@@ -156,7 +154,7 @@ export class ParametricMeshLayer extends AVLayer {
 }
 
 // Keyed by the raw ldta value (0-5, `ParametricMeshType.to_binary()`) so
-// unknown mesh types from newer AE versions look up as None instead of raising.
+// unknown mesh types from newer AE versions look up as null instead of raising.
 const OPTION_TYPES: Map<number, typeof ParametricMeshOptions> = new Map();
 const BEVEL_OPTION_TYPES: Map<number, typeof ParametricBevelOptions> = new Map();
 
@@ -235,11 +233,10 @@ export class ParametricMeshOptions {
 
   [INSPECT](): string {
     const result = new Map<string, number | boolean>();
-    // NOTE(port): descriptors_of walks the MRO but vars(cls) is the class's own dict; same result because no base class declares descriptors.
     for (const [name] of descriptorsOf(this.constructor)) {
       result.set(name, getMember(this, name));
     }
-    // NOTE(port): int/float — integral values are plain numbers by design (RULEBOOK §4); a float-valued option of 1.0 prints as "1" here where Python prints "1.0" (repr string only, never saved).
+    // Integral floats are plain numbers (RULEBOOK §4): a float-valued option of 1.0 prints as "1" here where Python prints "1.0" (repr string only, never saved).
     const formatted = [...result].map(([key, value]) => `${key}=${String(value)}`).join(", ");
     return `<${Object.getPrototypeOf(this.constructor).name}(${formatted})>`;
   }

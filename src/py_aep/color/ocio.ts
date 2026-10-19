@@ -11,10 +11,6 @@
  * AE's bundled `ACES 1.2` (353)), so no OCIO runtime dependency is needed.
  */
 
-// Python's `platform`, `re`, `fnmatch`, `functools`, `typing` and `pathlib`
-// imports map to `host.platform`, `RegExp`, `fnmatchcase` (below),
-// pyrt `lruCache`, plain types and pyrt `Path`.
-
 import * as host from "../../pyrt/host.ts";
 import { dep } from "../../pyrt/deps.ts";
 import type { DocumentOptions, ParseOptions, SchemaOptions, ToJSOptions } from "yaml";
@@ -76,8 +72,8 @@ function listOf(value: OcioValue | undefined): OcioValue[] {
 /**
  * Whether `value` holds a list, dict or set as a mapping key or set member.
  *
- * NOTE(port): PyYAML refuses one ("found unhashable key", a `YAMLError`), so
- * Python's `_loadConfigCached` returns `None` for such a config; `yaml`
+ * PyYAML refuses one ("found unhashable key", a `YAMLError`), so
+ * Python's `_loadConfigCached` returns `null` for such a config; `yaml`
  * (npm) builds it. `seen` guards the cycles anchors can build.
  */
 function _hasUnhashableKey(value: OcioValue, seen: Set<OcioValue> = new Set()): boolean {
@@ -102,7 +98,7 @@ function _hasUnhashableKey(value: OcioValue, seen: Set<OcioValue> = new Set()): 
  * Parses a `.ocio` file and returns its top-level mapping, or `null` if it
  * cannot be read or parsed.
  *
- * NOTE(port): pyrt `lruCache` keys object arguments by identity and never
+ * Pyrt `lruCache` keys object arguments by identity and never
  * evicts, so the cached functions in this module take primitives
  * (path string, `mtimeNs` bigint, `size`) to get real cache hits. The
  * `maxsize=8` eviction is unobservable: results are pure functions of the key.
@@ -480,7 +476,7 @@ export function ocioColorSpaceForProfileId(configPath: Path, profileId: Uint8Arr
   const stamp = _configStamp(configPath);
   if (stamp == null) return null;
   const name = _guidTableCached(configPath.path, stamp[0], stamp[1]).get(compositeKey(profileId)) ?? null;
-  // NOTE(port): Python hands back a non-string role key (`roles: {3: x}`) as
+  // Python hands back a non-string role key (`roles: {3: x}`) as
   // is; the `str`-typed `OutputModule.outputColorSpace` gets its `str()`.
   if (typeof name === "string") return name;
   return name == null ? null : String(name);
@@ -572,7 +568,7 @@ function _ruleMatches(rule: OcioNode, filePath: string): boolean {
 /**
  * `fnmatch.fnmatchcase(name, pat)`.
  *
- * NOTE(port): no pyrt shim for `fnmatch` (a shared one is proposed). This is a local translation of
+ * No pyrt shim for `fnmatch` (a shared one is proposed). This is a local translation of
  * `fnmatch.translate` (`*`, `?`, `[seq]`, `[!seq]`, everything else literal)
  * matched against the whole name (CPython 3.12 bracket handling).
  */

@@ -126,7 +126,7 @@ export function decodePrefString(raw: string): string {
 export function decodePrefNumber(raw: string): number {
   if (raw.includes('"')) return parseNumberText(decodePrefString(raw));
   const data = parseHexValue(raw);
-  // TODO(port): Python's int is exact; get_pref_as_number's public return type is number, so an
+  // TODO: Python's int is exact; get_pref_as_number's public return type is number, so an
   // unquoted hex value of 7+ significant bytes (or quoted integer text) beyond 2^53 rounds to the
   // nearest double. decode_pref_bool stays exact: no nonzero integer rounds to 0.
   return Bytes.intFromBytes(data, "big");
@@ -176,7 +176,7 @@ export class PrefsFile {
     return this.fromText(text);
   }
 
-  /** Return the raw text value for `section`/`key`, or None. */
+  /** Return the raw text value for `section`/`key`, or null. */
   getRaw(section: string, key: string): string | null {
     return (this._sections.get(section) ?? new Map<string, string>()).get(key) ?? null;
   }

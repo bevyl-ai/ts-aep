@@ -16,9 +16,9 @@ import { parseSource } from "./source.ts";
  * @param childChunks - The footage item child chunks.
  * @param _idta - The idta chunk.
  * @param _nameUtf8 - The Utf8 chunk containing the item name.
- * @param _cmta - The cmta chunk (None if no comment).
+ * @param _cmta - The cmta chunk (null if no comment).
  * @param _itemList - The LIST chunk for creating new chunks.
- * @param _gide - The LIST chunk for guides (None if no guides).
+ * @param _gide - The LIST chunk for guides (null if no guides).
  * @param project - The project.
  * @param parentFolder - The item's parent folder.
  */

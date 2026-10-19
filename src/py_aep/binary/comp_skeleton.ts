@@ -49,7 +49,7 @@ export function buildLayerViewBlock(): Chunk[] {
   return [new ListChunk({ listType: "Ewst", chunks: [] }), ...buildItemViewChunks(), ...buildItemViewChunks()];
 }
 
-// NOTE(port): the only specs in data/comp_skeleton_specs.ts are `+`/`-`/unary minus over env names and int
+// The only specs in data/comp_skeleton_specs.ts are `+`/`-`/unary minus over env names and int
 // literals (`W2 - ZV`, `-ZV`, `H2 + 5000`, `TB`); there JS doubles and CPython eval agree, so Function stands in.
 
 function _evaluate(value: SpecValue, env: Record<string, number>): SpecValue {

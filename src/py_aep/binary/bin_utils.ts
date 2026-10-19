@@ -128,8 +128,7 @@ export function readFmt(fmt: string, fp: ByteStream, endian = ">"): struct.Unpac
  *
  * Returns bytes written.
  */
-// Python's keyword-only `endian` follows `*args`; in TS it is a trailing plain
-// `{ endian }` options object (struct values are never plain objects).
+// A trailing `{ endian }` options object (struct values are never plain objects).
 export type WriteFmtOptions = { endian?: string };
 function _isWriteFmtOptions(v: struct.PackValue | WriteFmtOptions | undefined): v is WriteFmtOptions {
   return v != null && typeof v === "object" && Object.getPrototypeOf(v) === Object.prototype;

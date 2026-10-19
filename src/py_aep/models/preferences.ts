@@ -297,7 +297,7 @@ export function defaultParagraphStyle(preferences: Preferences) {
 /**
  * Parse a `"value/scale"` default-out-point preference into seconds.
  *
- * Returns None for the `0/0` factory sentinel (or a missing/malformed
+ * Returns null for the `0/0` factory sentinel (or a missing/malformed
  * value), meaning "composition duration". Semantics probed in AE 2026:
  * `75/25` gives new layers a 3-second span.
  */
@@ -338,7 +338,7 @@ export function applyTextStylePrefs(document: TextDocument, preferences: Prefere
   }
 
   function differs(current: number | null, new_: number): boolean {
-    // Absent COS keys read as None and mean the field's zero default.
+    // Absent COS keys read as null and mean the field's zero default.
     // AE writes the sheet with 6 decimals, so sub-1e-6 deltas are
     // representation rounding (e.g. 235/255 vs "0.921569"), not edits.
     return Math.abs((current != null ? current : 0.0) - new_) > 1e-6;
@@ -409,7 +409,7 @@ export function applyTextStylePrefs(document: TextDocument, preferences: Prefere
 /**
  * Default span of new still-footage layers, in seconds.
  *
- * None means "composition duration" (the factory `0/0` sentinel).
+ * `null` means "composition duration" (the factory `0/0` sentinel).
  */
 export function defaultStillOutPoint(preferences: Preferences): number | null {
   return _defaultOutPoint(preferences, "Pref_DEFAULT_STILL_OUT_POINT v2");
@@ -419,7 +419,7 @@ export function defaultStillOutPoint(preferences: Preferences): number | null {
  * Default span of new sourceless layers (solid, null, text, shape,
  * camera, light), in seconds.
  *
- * None means "composition duration" (the factory `0/0` sentinel).
+ * `null` means "composition duration" (the factory `0/0` sentinel).
  */
 export function defaultSyntheticOutPoint(preferences: Preferences): number | null {
   return _defaultOutPoint(preferences, "Pref_DEFAULT_SYNTHETIC_OUT_POINT v2");
@@ -469,7 +469,7 @@ export class Preferences {
     this._overrides = new Map();
   }
 
-  /** Lazily parse the preference file for `prefType` (None if absent). */
+  /** Lazily parse the preference file for `prefType` (null if absent). */
   private _file(prefType: PREFType): PrefsFile | null {
     if (!this._files.has(prefType)) {
       const path = this._prefsDir != null ? findPrefsFile(this._prefsDir, prefType) : null;
@@ -595,7 +595,7 @@ export class Preferences {
     }
     if (isOverride === false) return decodePrefString(value);
     if (typeof value === "boolean") return String(Number(value));
-    // NOTE(port): int/float — integral values are plain numbers by design (RULEBOOK §4); a float override such as 30.0 returns "30" where Python returns "30.0".
+    // Integral floats are plain numbers (RULEBOOK §4): a float override such as 30.0 returns "30" where Python returns "30.0".
     if (typeof value === "number") return String(value);
     return value;
   }
@@ -621,7 +621,7 @@ export class Preferences {
     validateName(sectionName);
     validateName(keyName);
     _validatePrefType(prefType);
-    // NOTE(port): matches Python: isinstance(value, (int, float)) admits bool, and so does this check.
+    // Matches Python: isinstance(value, (int, float)) admits bool, and so does this check.
     if (typeof value !== "number" && typeof value !== "boolean") {
       throw new TypeError(`expected a number, got ${typeName(value)}`);
     }
@@ -710,7 +710,7 @@ export class Preferences {
   }
 
   /**
-   * Decoded bytes of a binary preference value, or None when absent.
+   * Decoded bytes of a binary preference value, or null when absent.
    *
    * File layer only - `set_pref_as_*` overrides are not consulted
    * (binary blobs cannot be expressed through the typed setters).

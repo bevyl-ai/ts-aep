@@ -70,7 +70,6 @@ export class CameraLayer extends Layer {
     return Number(defaultCameraZoom(comp.width, comp.pixelAspect).toFixed(8));
   }
 
-  // Python `# type: ignore[override]`: keyword shape differs from Layer._new's.
   static _new(kw: {
     name: string;
     layerId: number;

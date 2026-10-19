@@ -1336,7 +1336,7 @@ function* _atoms(data: Uint8Array, start: number, end: number): Generator<[Uint8
   }
 }
 
-// TODO(port): an n == 8 field above 2^53 rounds to a double where Python's int is exact. Atom
+// TODO: an n == 8 field above 2^53 rounds to a double where Python's int is exact. Atom
 // sizes are unaffected (any size >= 2^53 exceeds the file either way); the v1 mvhd/mdhd
 // durations and elst segment duration are not: `dur / ts` can differ in the last bit, and an
 // elst value within 1024 of the 2^64-1 empty-edit sentinel reads as the sentinel. Only
@@ -2137,7 +2137,7 @@ function _probeAac(fp: ProbeStream): MediaInfo {
 // SWF - file header (AE rasterizes the movie to video)
 // ---------------------------------------------------------------------------
 
-// TODO(port): no LZMA decoder, so ZWS (LZMA) SWF files raise NotImplementedError where Python's
+// TODO: no LZMA decoder, so ZWS (LZMA) SWF files raise NotImplementedError where Python's
 // lzma.decompress(format=FORMAT_ALONE) returns the header. The pure-JS packages are a global
 // script whose decompress returns a string for UTF-8 output (lzma 2.3.2) or ship the encoder
 // with the decoder (lzma1);

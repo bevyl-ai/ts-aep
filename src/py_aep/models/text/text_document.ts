@@ -198,32 +198,32 @@ export class TextDocument {
 
   // Back-reference to the project HeadChunk for version gating. Wired
   // lazily by the owning Property when the document is handed out (and at
-  // parse time); `None` until then. Underscore-prefixed, so to_dict skips it.
+  // parse time); `null` until then. Underscore-prefixed, so to_dict skips it.
   _head: HeadChunk | null = null;
 
   // Back-reference to the project's AE preferences, wired at parse time.
   // Holds the Character/Paragraph panel defaults the reset methods restore;
-  // `None` falls back to AE's factory values.
+  // `null` falls back to AE's factory values.
   _preferences: Preferences | null = null;
 
-  // `True` for documents parsed from a layer's btdk data. The range API
+  // `true` for documents parsed from a layer's btdk data. The range API
   // (AE 24.3+) refuses documents never associated with a layer, exactly
   // as ExtendScript does for an unapplied `new TextDocument()`.
   private _associated: boolean = false;
 
-  // Set by the first layout-affecting py-side write; while `False` the
+  // Set by the first layout-affecting py-side write; while `false` the
   // persisted composed-line cache is authoritative. Underscore-prefixed,
   // so to_dict skips both.
   _layoutDirty: boolean = false;
 
   // Verdict of calibrating the composed-line resolver against this
-  // document's own AE cache: `None` = never attempted, `True` = the
+  // document's own AE cache: `null` = never attempted, `true` = the
   // composer reproduces AE for this document (post-mutation
-  // recomposition is trusted), `False` = refused or mismatched.
+  // recomposition is trusted), `false` = refused or mismatched.
   _compositionCalibrated: boolean | null = null;
 
   // Wrappers sharing this layer's btdk COS data (one per keyframe,
-  // including self); `None` for template-constructed documents. Frame
+  // including self); `null` for template-constructed documents. Frame
   // writes live in the shared layer data, so they must dirty-mark
   // every sibling, not just the document written through.
   _siblings: TextDocument[] | null = null;

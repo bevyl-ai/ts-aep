@@ -1,5 +1,3 @@
-// `from __future__ import annotations` and the `typing` imports are dropped:
-// annotations are TypeScript types only.
 import { descriptor } from "../../../../pyrt/index.ts";
 import { OpenExrCompression } from "../../../enums/index.ts";
 import { ChunkField } from "../../descriptors.ts";

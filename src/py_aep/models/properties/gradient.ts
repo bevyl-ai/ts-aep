@@ -89,7 +89,7 @@ export class GradientColorStop {
   }
 
   equals(other: unknown): boolean {
-    // Python returns NotImplemented for a foreign type; py_eq treats that as False.
+    // Python returns NotImplemented for a foreign type; py_eq treats that as false.
     if (!(other instanceof GradientColorStop)) return false;
     return this.offset === other.offset && this.midpoint === other.midpoint && valueEquals(this.color, other.color);
   }
@@ -134,7 +134,7 @@ export class GradientAlphaStop {
   }
 
   equals(other: unknown): boolean {
-    // Python returns NotImplemented for a foreign type; py_eq treats that as False.
+    // Python returns NotImplemented for a foreign type; py_eq treats that as false.
     if (!(other instanceof GradientAlphaStop)) return false;
     return this.offset === other.offset && this.midpoint === other.midpoint && this.alpha === other.alpha;
   }
@@ -351,7 +351,7 @@ export class Gradient {
   }
 
   equals(other: unknown): boolean {
-    // Python returns NotImplemented for a foreign type; py_eq treats that as False.
+    // Python returns NotImplemented for a foreign type; py_eq treats that as false.
     if (!(other instanceof Gradient)) return false;
     return (
       valueEquals(this.colorStops, other.colorStops) &&

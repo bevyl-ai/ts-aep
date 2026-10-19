@@ -1,5 +1,3 @@
-// Python: src/py_aep/models/items/av_item.py (`from __future__ import annotations`: dropped)
-
 import type { ListChunk } from "../../binary/chunk.ts";
 import { buildPinList } from "../../binary/mutations.ts";
 import type { CmtaChunk, IdtaChunk } from "../../binary/item_chunks.ts";
@@ -26,7 +24,7 @@ import { FileSource } from "../sources/file.ts";
 import { PlaceholderSource } from "../sources/placeholder.ts";
 import { SolidSource } from "../sources/solid.ts";
 
-// NOTE(port): CPython `set` iteration order. `Item.__hash__` is `hash(self.id)`, so
+// CPython `set` iteration order. `Item.__hash__` is `hash(self.id)`, so
 // `set[CompItem]` iterates in open-addressing table order (deterministic, not insertion
 // order). This emulates the 3.12 table (linear probes 9, perturb 5, resize at fill*5 >= mask*3)
 // for the add / discard / iterate surface that `AVItem._used_in` uses. Exact for ids in
@@ -184,8 +182,7 @@ export interface AVItem {
 }
 export class AVItem extends Item {
   declare ["constructor"]: ClassAttributes<typeof AVItem>;
-  // Python: annotation-only attributes, with `"""…"""` attribute docstrings.
-  // NOTE(port): subclasses (composition.ts, footage.ts) override some of these with accessors;
+  // Subclasses (composition.ts, footage.ts) override some of these with accessors;
   // `declare` emits no runtime field, so the prototype accessors apply and tsc reports no TS2610.
 
   /** The duration of the item in seconds. Still footages have a duration of 0. Read-only for a `FootageItem`, otherwise Read / Write. */
@@ -253,7 +250,7 @@ export class AVItem extends Item {
     }
     if (this._viewer != null) {
       assert(this._parentFolder != null);
-      // NOTE(port): Python `list.remove` uses `==`; `Viewer` defines no `__eq__` (viewer.py), so identity matches.
+      // Python `list.remove` uses `==`; `Viewer` defines no `__eq__` (viewer.py), so identity matches.
       const idx = this._parentFolder._viewers.indexOf(this._viewer);
       if (idx < 0) {
         throw new ValueError("list.remove(x): x not in list");
