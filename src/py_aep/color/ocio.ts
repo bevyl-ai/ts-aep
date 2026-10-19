@@ -35,7 +35,6 @@ import {
   decode,
   concat,
   Bytes,
-  reSearch,
   compare,
   ascii,
 } from "../../pyrt/index.ts";
@@ -283,7 +282,7 @@ const _builtinConfigRoots = lruCache((): Path[] => {
 
 /** Sort key for an install directory: its release year, then its name. */
 function _installYear(installDir: Path): [number, string] {
-  const match = reSearch(String.raw`(\d{4})`, installDir.name);
+  const match = /(\d{4})/.exec(installDir.name);
   return [match ? Number.parseInt(match[1], 10) : 0, installDir.name];
 }
 
@@ -555,7 +554,7 @@ function _ruleMatches(rule: OcioNode, filePath: string): boolean {
   if ((rule.get("name") ?? null) === "Default") return true;
   const regex = rule.get("regex") ?? null;
   if (typeof regex === "string") {
-    return reSearch(regex, filePath) != null;
+    return new RegExp(regex).test(filePath);
   }
   const pattern = rule.get("pattern") ?? null;
   const extension = rule.get("extension");

@@ -6,7 +6,6 @@
  * `transparent` and `currentColor`.
  */
 
-import { patternMatch, pyRe, reFlags } from "../../pyrt/index.ts";
 import { NUMBER_PCT_RE, clamp01 } from "./_util.ts";
 
 // Python: `if TYPE_CHECKING: Rgba = tuple[float, float, float, float]`.
@@ -167,8 +166,8 @@ const _NAMED = new Map<string, readonly [number, number, number]>([
   ["yellowgreen", [154, 205, 50]],
 ]);
 
-const _RGB_RE = pyRe(String.raw`rgba?\(([^)]*)\)`, reFlags.IGNORECASE);
-const _HSL_RE = pyRe(String.raw`hsla?\(([^)]*)\)`, reFlags.IGNORECASE);
+const _RGB_RE = /^rgba?\(([^)]*)\)/i;
+const _HSL_RE = /^hsla?\(([^)]*)\)/i;
 
 function _component(token: string, scale: number = 255.0): number {
   token = token.trim();
@@ -190,7 +189,7 @@ export function parseColor(value: string | null, current: Rgba = [0.0, 0.0, 0.0,
   if (v === "currentcolor") return current;
   if (v.startsWith("#")) return _parseHex(v.slice(1));
   if (v.startsWith("rgb")) {
-    const m = patternMatch(_RGB_RE, v);
+    const m = _RGB_RE.exec(v);
     if (m) {
       const parts = Array.from(m[1].matchAll(NUMBER_PCT_RE), (n) => n[0]);
       if (parts.length >= 3) {
@@ -224,7 +223,7 @@ function _parseHex(h: string): Rgba | null {
 }
 
 function _parseHsl(v: string): Rgba | null {
-  const m = patternMatch(_HSL_RE, v);
+  const m = _HSL_RE.exec(v);
   if (!m) return null;
   const parts = Array.from(m[1].matchAll(NUMBER_PCT_RE), (n) => n[0]);
   if (parts.length < 3) return null;

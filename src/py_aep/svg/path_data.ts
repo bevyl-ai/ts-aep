@@ -9,7 +9,9 @@
 
 import { NUMBER_RE } from "./_util.ts";
 import { UnsupportedSVGError } from "./errors.ts";
-import { islower, isspace, valueEquals, radians, literal, patternMatch, hypot } from "../../pyrt/index.ts";
+import { islower, isspace, valueEquals, radians, literal, hypot } from "../../pyrt/index.ts";
+/** `NUMBER_RE` anchored where the tokenizer stands (`lastIndex`). */
+const _NUMBER_AT = new RegExp(NUMBER_RE.source, "y");
 
 /** A cubic segment: start, control 1, control 2, end. */
 export type CubicSeg = [number, number, number, number, number, number, number, number];
@@ -76,7 +78,8 @@ function _tokenize(d: string): string[] {
       i += c.length;
       continue;
     }
-    const m = patternMatch(NUMBER_RE, d, i);
+    _NUMBER_AT.lastIndex = i;
+    const m = _NUMBER_AT.exec(d);
     if (m && m[0]) {
       tokens.push(m[0]);
       if (argc !== 0) arg += 1;

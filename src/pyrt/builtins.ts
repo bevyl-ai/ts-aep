@@ -105,35 +105,6 @@ export function at<T>(xs: ArrayLike<T>, i: number): T {
   return xs[j];
 }
 
-/** What `for item in x` yields for each kind `pyIter` accepts. */
-type IterItem<X> = X extends string | String
-  ? string
-  : X extends Uint8Array
-    ? number
-    : X extends readonly (infer T)[]
-      ? T
-      : X extends ReadonlyMap<infer K, unknown>
-        ? K
-        : X extends ReadonlySet<infer T>
-          ? T
-          : never;
-
-/**
- * Python `list(iter(x))` over dynamic data (parsed YAML/JSON): list items,
- * dict keys, set members (in insertion order; CPython's is hash order), a
- * string's characters (code points), a bytes object's ints; `TypeError` for
- * every other kind.
- */
-export function pyIter<X>(x: X): IterItem<X>[];
-export function pyIter(x: unknown): unknown[] {
-  if (Array.isArray(x)) return x;
-  if (x instanceof Map) return [...x.keys()];
-  if (x instanceof Set) return [...x];
-  if (typeof x === "string" || x instanceof String) return Array.from(String(x));
-  if (x instanceof Uint8Array) return Array.from(x);
-  throw new TypeError(`'${typeName(x)}' object is not iterable`);
-}
-
 type Sliceable = { slice(s: number, e: number): Sliceable; length: number; readonly [i: number]: unknown };
 
 /** `xs[start:end]` for arrays and strings with Python's clamping. */

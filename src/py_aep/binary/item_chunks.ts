@@ -16,7 +16,6 @@ import {
   objectSetattr,
   literal,
   ValueError,
-  pyRe,
 } from "../../pyrt/index.ts";
 import { MAC_EPOCH_OFFSET } from "./bin_utils.ts";
 import { BitField } from "./bitfield.ts";
@@ -149,7 +148,7 @@ export const FORMAT_VERSIONS: Map<number, [number, number]> = new Map<number, [n
 ]);
 
 /** An After Effects version string, `"{major}.{minor}x{build}"`. */
-export const AE_VERSION_RE = pyRe(String.raw`^(\d+)\.(\d+)x(\d+)$`);
+export const AE_VERSION_RE = /^(\d+)\.(\d+)x(\d+)$/;
 
 export class HeadChunk extends Chunk {
   declare chunkType: string;

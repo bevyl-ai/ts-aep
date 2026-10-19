@@ -353,12 +353,10 @@ function _subscript(obj: _Value, key: string): _Value {
   throw new TypeError(`${literal(obj)} is not subscriptable with ${literal(key)}`);
 }
 
-/** Python `for x in value` over a parsed descriptor value. */
-function _pyIter(value: _Value): _Value[] {
+/** A descriptor list (`VlLs`), such as a gradient's colour or opacity stops. */
+function _list(value: _Value): _Value[] {
   if (Array.isArray(value)) return value;
-  if (value instanceof Map) return [...value.keys()];
-  if (typeof value === "string") return Array.from(value);
-  throw new TypeError(`${literal(value)} object is not iterable`);
+  throw new UnsupportedStyleError(`expected a list, got ${literal(value)}`);
 }
 
 function _color(value: _Value): number[] {
@@ -395,7 +393,7 @@ function _gradient(value: _Value): Gradient {
   // would double every offset, and 0% would divide by zero). Smoothness
   // is left unmapped (AE's gradientSmoothness handling is unprobed).
   const colorStops: GradientColorStop[] = [];
-  for (const stop of _pyIter(getOrThrow(value, "Clrs"))) {
+  for (const stop of _list(getOrThrow(value, "Clrs"))) {
     const [red, green, blue] = _color(_subscript(stop, "Clr "));
     colorStops.push(
       new GradientColorStop(_arith(_subscript(stop, "Lctn")) / 4096.0, _arith(_subscript(stop, "Mdpn")) / 100.0, [
@@ -405,7 +403,7 @@ function _gradient(value: _Value): Gradient {
       ]),
     );
   }
-  const alphaStops = _pyIter(getOrThrow(value, "Trns")).map(
+  const alphaStops = _list(getOrThrow(value, "Trns")).map(
     (stop) =>
       new GradientAlphaStop(
         _arith(_subscript(stop, "Lctn")) / 4096.0,

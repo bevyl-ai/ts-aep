@@ -48,4 +48,3 @@ export {
   JSONDecodeError,
   type JsonValue,
 } from "./json.ts";
-export { pyRe, reSearch, reMatch, reEscape, reFlags, patternMatch } from "./re.ts";

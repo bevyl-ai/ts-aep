@@ -270,21 +270,6 @@ export function pyAnd<A, B>(a: A, b: B): A | B {
   return truthy(a) ? b : a;
 }
 
-/**
- * `pattern.findall(s)`: every non-overlapping match - the whole match when
- * the pattern has no groups, group 1 when it has one, else an array of all
- * groups (an unmatched group is "").
- */
-export function patternFindall(re: RegExp, s: string): (string | string[])[] {
-  const out: (string | string[])[] = [];
-  for (const m of s.matchAll(new RegExp(re.source, re.flags.replace("g", "") + "g"))) {
-    if (m.length === 1) out.push(m[0]);
-    else if (m.length === 2) out.push(m[1] ?? "");
-    else out.push(m.slice(1).map((g) => g ?? ""));
-  }
-  return out;
-}
-
 /** `%g` (and the bare `.Ng` spec when `keep_point_free` is false). */
 function general(a: number, prec: number, reprStyle: boolean): string {
   if (!Number.isFinite(a)) return Number.isNaN(a) ? "nan" : "inf";
