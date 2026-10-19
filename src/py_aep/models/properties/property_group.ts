@@ -11,7 +11,7 @@ import {
   getOrThrow,
   assert,
   literal,
-  instanceDict,
+  overrides,
   typeName,
 } from "../../../pyrt/index.ts";
 import { BUILTIN_EFFECTS } from "../../data/builtin_effects.ts";
@@ -281,7 +281,7 @@ export function _reorderAndFill(
       if (!(spec instanceof GroupSpec) && child instanceof Property) {
         // Only where the stored flag disagrees: an override is an
         // instance-dict key (see the class defaults of `Property`).
-        if (child._color !== spec.color) instanceDict(child).set("_color", spec.color);
+        if (child._color !== spec.color) overrides(child).set("_color", spec.color);
         if (spec.chunkBoundsAreHints) {
           // tdum/tduM hold UI slider hints, not real bounds:
           // the spec is authoritative (None = unbounded).
@@ -380,14 +380,14 @@ export function _deriveLayerStylesEnabled(
     if (child.matchName === "ADBE Blend Options Group") {
       blendOptions = child;
     } else if (child._tdsb != null && child._tdsb.synthetic) {
-      instanceDict(child).set("enabled", false);
+      overrides(child).set("enabled", false);
     } else if (child.enabled) {
       anyStyleEnabled = true;
     }
   }
   // Avoid mutating chunk fields (preserves round-trip)
-  instanceDict(group).set("enabled", anyStyleEnabled);
-  if (blendOptions != null) instanceDict(blendOptions).set("enabled", anyStyleEnabled);
+  overrides(group).set("enabled", anyStyleEnabled);
+  if (blendOptions != null) overrides(blendOptions).set("enabled", anyStyleEnabled);
 }
 
 /**

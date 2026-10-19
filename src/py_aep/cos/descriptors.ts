@@ -20,7 +20,7 @@ import {
   truthy,
   boxFloat,
   literal,
-  instanceDict,
+  overrides,
 } from "../../pyrt/index.ts";
 import type { EnumHelpers } from "../../pyrt/enum.ts";
 import { getAeVersionMajor } from "../ae_version.ts";
@@ -73,7 +73,7 @@ export type CosBacked<A extends string> = { readonly [P in A]: CosDict | null } 
  */
 export interface CosFieldOptions<T extends InstanceValue, O> {
   transform: (x: CosNode) => T;
-  /** Whether an instance override (Python `obj.__dict__[name]`) holds a `T`. */
+  /** Whether an override (see `overrides`) holds a `T`. */
   accepts: (v: InstanceValue) => v is T;
   reverse?: ((x: NonNullable<T>) => CosNode) | null;
   readOnly?: boolean;
@@ -82,7 +82,7 @@ export interface CosFieldOptions<T extends InstanceValue, O> {
   minVersion?: number | null;
 }
 
-/** A value stored in a model's instance dict (`obj.__dict__`). */
+/** A value stored in a model's overrides. */
 export type InstanceValue = string | number | boolean | object | null;
 
 /**
@@ -144,12 +144,12 @@ export class CosField<T extends InstanceValue, A extends string = string, O exte
   }
 
   /**
-   * The instance override for this field (Python `obj.__dict__[name]`):
+   * The override for this field (see `overrides`):
    * `null` when there is none. Overrides are stored by `set` (and the
    * parser's fallback kwargs) from values of the field's own type.
    */
   private _override(obj: O): { value: T } | null {
-    const idict: Map<string, InstanceValue> = instanceDict(obj);
+    const idict: Map<string, InstanceValue> = overrides(obj);
     if (!idict.has(this.publicName)) return null;
     const value = idict.get(this.publicName) ?? null;
     return this.accepts(value) ? { value } : null;
@@ -194,11 +194,11 @@ export class CosField<T extends InstanceValue, A extends string = string, O exte
   set(obj: O, value: T | null): void {
     this._checkWritable(obj);
     // Clear any instance-dict override
-    instanceDict(obj).delete(this.publicName);
+    overrides(obj).delete(this.publicName);
     const d = obj[this.dictAttr];
     if (d == null) {
       // No backing dict - store as instance override
-      instanceDict(obj).set(this.publicName, value);
+      overrides(obj).set(this.publicName, value);
       return;
     }
     // `None` clears the key (an optional field is being unset); there is

@@ -13,8 +13,8 @@ import {
   getMember,
   int,
   literal,
-  hasInstanceDict,
-  instanceDict,
+  hasOverrides,
+  overrides,
   typeName,
 } from "../../pyrt/index.ts";
 import type { EnumHelpers, EnumValue } from "../../pyrt/enum.ts";
@@ -106,7 +106,7 @@ export const _SENTINEL: unique symbol = Symbol("_SENTINEL");
 
 // While a parser runs this is set to False so that `ChunkField.set`
 // rejects writes: parsers must not mutate chunk data through descriptors
-// (round-trip idempotency). Parsers cache values via `__dict__` overrides
+// (round-trip idempotency). Parsers cache values as overrides (`overrides(obj)`)
 // or the private `_cacheValue` helpers instead. Outside parsing the
 // default (True) lets end-user writes through.
 export const materialization = { allowed: true };
@@ -307,12 +307,12 @@ export class ChunkField<
   get(obj: O | null, _objtype?: Function | null): T | ChunkField<T, O> {
     if (obj == null) return this;
     // Parse-time overrides (e.g. ExtendScript-compatible values that
-    // differ from the binary) are stored in the instance dict and take
-    // priority over the chunk body. A read never creates the dict (shaped
+    // differ from the binary) are stored as overrides and take
+    // priority over the chunk body. A read never creates them (shaped
     // for speed: every model field read lands here).
-    if (hasInstanceDict(obj)) {
-      const overrides = instanceDict(obj);
-      if (overrides.has(this.publicName)) return overrides.get(this.publicName);
+    if (hasOverrides(obj)) {
+      const own = overrides(obj);
+      if (own.has(this.publicName)) return own.get(this.publicName);
     }
     const body = getMember(obj, this.chunkAttr);
     if (body == null) {
@@ -343,7 +343,7 @@ export class ChunkField<
     if (!materialization.allowed) {
       throw new RuntimeError(
         `Cannot write ${literal(this.publicName)} via descriptor during ` +
-          `parsing. Use instanceDict(obj).set(${literal(this.publicName)}, value) for ` +
+          `parsing. Use overrides(obj).set(${literal(this.publicName)}, value) for ` +
           `parse-time overrides.`,
       );
     }
@@ -351,15 +351,15 @@ export class ChunkField<
     // synthetic chunks to real, so a rejected write that reached it
     // would mutate the tree and break the byte-identical round-trip
     // (`parse()` -> `save()`). A field with no backing chunk body must
-    // validate too, or its `__dict__` fallback below would accept a
+    // validate too, or its overrides fallback below would accept a
     // value the chunk-backed path rejects.
     if (this.validate) this.validate(value, obj);
     if (this._enumCls != null) _validateEnumMember(this._enumCls, value, this.publicName);
     if (this.preSet != null) getMember(obj, this.preSet).call(obj);
-    instanceDict(obj).delete(this.publicName);
+    overrides(obj).delete(this.publicName);
     let body = getMember(obj, this.chunkAttr);
     if (body == null) {
-      instanceDict(obj).set(this.publicName, value);
+      overrides(obj).set(this.publicName, value);
       return;
     }
     if (body.synthetic) {

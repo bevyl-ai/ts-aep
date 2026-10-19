@@ -2810,7 +2810,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * materializing a synthesized property, activating a VF axis -
    * invalidates it for free, with no invalidation hook to keep in sync.
    *
-   * The `__dict__` overrides of `_noValue` / `_color` / `_vector` /
+   * The overrides of `_noValue` / `_color` / `_vector` /
    * `dimensions` are not in the key. They are set once at parse or
    * synthesis time before any read, and `ChunkField.set` pops them
    * on a real write, so they cannot change under a live memo.
@@ -4709,7 +4709,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
    * - All others: `null`.
    */
   get _effectScale(): number[] | null {
-    // Allow explicit override via __dict__ (e.g. from tests).
+    // Allow an explicit override (e.g. from tests).
     if (this._effectScaleDict != null) {
       const result: number[] | null = this._effectScaleDict.value;
       return result;

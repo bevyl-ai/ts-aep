@@ -277,14 +277,6 @@ export function isclose(a: number | BoxedFloat, b: number | BoxedFloat, relTol =
   return diff <= Math.abs(relTol * b) || diff <= Math.abs(relTol * a) || diff <= absTol;
 }
 
-/** `math.copysign` */
-export function copysign(x: number | BoxedFloat, y: number | BoxedFloat): number {
-  x = unbox(x);
-  y = unbox(y);
-  const neg = y < 0 || Object.is(y, -0);
-  return neg ? -Math.abs(x) : Math.abs(x);
-}
-
 /** `math.radians` / `math.degrees` (CPython multiplies by pi/180 and 180/pi). */
 export const radians = (x: number): number => x * (Math.PI / 180);
 export const degrees = (x: number): number => x * (180 / Math.PI);

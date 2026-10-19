@@ -25,7 +25,7 @@ import type { Gradient } from "../models/properties/gradient.ts";
 import { parseGradientXml } from "./gradient.ts";
 import { parseProperty } from "./property_value.ts";
 import { parseBtdkCos } from "./text.ts";
-import { ByteStream, OverflowError, ValueError, warn, zip, instanceDict } from "../../pyrt/index.ts";
+import { ByteStream, OverflowError, ValueError, warn, zip, overrides } from "../../pyrt/index.ts";
 import { late } from "../models/late.ts";
 
 // `logging.getLogger(__name__)`: only the warning path is wired to pyrt `warn`.
@@ -180,7 +180,7 @@ export function parseShape(
   // Shape properties always carry a value (from omks), even though
   // tdb4 may report no_value=True (a static shape's cdat is the empty
   // 4-byte form).
-  instanceDict(prop).set("_noValue", false);
+  overrides(prop).set("_noValue", false);
 
   // Collect shape values from omks > shap LISTs
   let shapeValues: Shape[];

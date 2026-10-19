@@ -19,7 +19,6 @@ import {
   decode,
   IndexError,
   valueEquals,
-  pySlice,
   literal,
   struct,
   StructError,
@@ -1024,9 +1023,9 @@ function translate(data: Uint8Array, table: Uint8Array): Uint8Array {
   return out;
 }
 
-// NOTE(port): bytes[start::step] via py_slice (which returns a plain array for bytes), re-wrapped as Uint8Array.
+/** Every `step`th byte of `row` from `start`. */
 function strided(row: Uint8Array, start: number, step: number): Uint8Array {
-  return Uint8Array.from(pySlice(row, start, null, step));
+  return row.filter((_, i) => i >= start && (i - start) % step === 0);
 }
 
 // NOTE(port): int.from_bytes(data, "big") as an exact bigint; pyrt's int_from_bytes returns a Number and loses bits past 2^53.

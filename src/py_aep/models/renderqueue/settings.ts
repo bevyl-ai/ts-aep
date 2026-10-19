@@ -18,7 +18,6 @@ import {
   literal,
   setMember,
   compositeKey,
-  mappingItems,
   typeName,
 } from "../../../pyrt/index.ts";
 import type { EnumHelpers } from "../../../pyrt/enum.ts";
@@ -222,7 +221,7 @@ export class SettingsView<V extends SettingValues = SettingValues> {
 
   equals(other: unknown): boolean {
     if (other instanceof Map || other instanceof SettingsView) {
-      return valueEquals(new Map(this.items()), new Map(mappingItems(other)));
+      return valueEquals(new Map(this.items()), new Map(other instanceof Map ? other : other.items()));
     }
     // NOTE(port): Python returns NotImplemented; no builtin reflected __eq__ ever answers True for a non-mapping, so the final `==` is False.
     return false;

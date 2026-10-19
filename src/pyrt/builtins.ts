@@ -303,25 +303,10 @@ export function typeName(x: unknown): string {
   return x.constructor?.name ?? "Object";
 }
 
-/** A Python Mapping: a `Map`, an object with `items()`, or one with `keys()` + `get()`. */
-export type Mapping<K, V> = Map<K, V> | { items(): Iterable<[K, V]> } | KeyedMapping<K, V>;
 export type KeyedMapping<K, V> = { keys(): Iterable<K>; get(key: K): V };
 
 export function isKeyedMapping<K, V>(x: KeyedMapping<K, V> | Iterable<[K, V]>): x is KeyedMapping<K, V> {
   return typeof Reflect.get(x, "keys") === "function" && typeof Reflect.get(x, "get") === "function";
-}
-
-/**
- * `mapping.items()` over the Mapping protocol: a `Map`'s entries, an
- * object's own `items()`, or `keys()` + `get()`.
- */
-export function mappingItems<K, V>(m: Mapping<K, V>): [K, V][] {
-  if (m instanceof Map) return [...m.entries()];
-  if ("items" in m && typeof m.items === "function") return [...m.items()];
-  if ("keys" in m && typeof m.keys === "function" && typeof m.get === "function") {
-    return [...m.keys()].map((k): [K, V] => [k, m.get(k)]);
-  }
-  throw new TypeError(`'${typeName(m)}' object is not a mapping`);
 }
 
 /** Python `str(x)` for messages. */
