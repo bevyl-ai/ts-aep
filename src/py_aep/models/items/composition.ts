@@ -1780,7 +1780,7 @@ export class CompItem extends AVItem {
       throw new ValueError("rendererOptions must be a mapping of key-value pairs");
     }
     const view = this.rendererOptions;
-    for (const [key, option] of value instanceof Map ? value.entries() : value.items()) {
+    for (const [key, option] of value.entries()) {
       view.set(key, option);
     }
   }

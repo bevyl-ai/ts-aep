@@ -3,6 +3,7 @@
 // dependencies external, + dist/types (declarations from tsc, `.ts` specifiers -> `.js`).
 import * as fs from "node:fs";
 import * as path from "node:path";
+import ts from "typescript";
 
 fs.rmSync("dist", { recursive: true, force: true });
 
@@ -22,8 +23,47 @@ if (!out.success) {
   process.exit(1);
 }
 
-const tsc = Bun.spawnSync(["bunx", "tsc", "-p", "tsconfig.build.json"], { stdout: "inherit", stderr: "inherit" });
-if (tsc.exitCode !== 0) process.exit(tsc.exitCode ?? 1);
+// Declarations leave out underscore members: they are internal to the library.
+const config = ts.getParsedCommandLineOfConfigFile(
+  "tsconfig.build.json",
+  {},
+  {
+    ...ts.sys,
+    onUnRecoverableConfigFileDiagnostic: (d) => console.error(ts.flattenDiagnosticMessageText(d.messageText, "\n")),
+  },
+);
+if (!config) process.exit(1);
+const program = ts.createProgram(config.fileNames, config.options);
+const isInternal = (m: ts.ClassElement): boolean =>
+  m.name !== undefined && (ts.isIdentifier(m.name) || ts.isPrivateIdentifier(m.name)) && m.name.text.startsWith("_");
+const hideInternals: ts.TransformerFactory<ts.SourceFile | ts.Bundle> = (context) => (root) => {
+  const visit = (node: ts.Node): ts.Node => {
+    if (ts.isClassDeclaration(node)) {
+      return context.factory.updateClassDeclaration(
+        node,
+        node.modifiers,
+        node.name,
+        node.typeParameters,
+        node.heritageClauses,
+        node.members.filter((m) => !isInternal(m)),
+      );
+    }
+    return ts.visitEachChild(node, visit, context);
+  };
+  return ts.visitNode(root, visit) as ts.SourceFile | ts.Bundle;
+};
+const emitted = program.emit(undefined, undefined, undefined, true, { afterDeclarations: [hideInternals] });
+const diagnostics = [...ts.getPreEmitDiagnostics(program), ...emitted.diagnostics];
+if (diagnostics.length) {
+  console.error(
+    ts.formatDiagnostics(diagnostics, {
+      getCanonicalFileName: (f) => f,
+      getCurrentDirectory: ts.sys.getCurrentDirectory,
+      getNewLine: () => "\n",
+    }),
+  );
+  process.exit(1);
+}
 
 let rewritten = 0;
 for (const file of fs.readdirSync("dist/types", { recursive: true }) as string[]) {

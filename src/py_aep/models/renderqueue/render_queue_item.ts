@@ -81,34 +81,35 @@ function _nextItemId(rq: RenderQueue): number {
  */
 class _RenderSettingsView extends SettingsView<RenderSettingValues> {
   declare _owner: RenderQueueItem;
-  set(key: string, value: SettingValue | null): void {
+  set(key: string, value: SettingValue | null): this {
     super.set(key, value);
     this._owner._ldat.settingsWritten = 1;
+    return this;
   }
 }
 
 /** The value each render setting reads as: its {@link RenderQueueItem} attribute's type. */
 export type RenderSettingValues = SettingValues & {
-  "3:2 Pulldown": RenderQueueItem["_pulldown"];
-  "Color Depth": RenderQueueItem["_colorDepth"];
-  "Disk Cache": RenderQueueItem["_diskCache"];
-  Effects: RenderQueueItem["_effects"];
-  "Field Render": RenderQueueItem["_fieldRender"];
-  "Frame Blending": RenderQueueItem["_frameBlending"];
-  "Frame Rate": RenderQueueItem["_frameRateSetting"];
-  "Guide Layers": RenderQueueItem["_guideLayers"];
-  "Motion Blur": RenderQueueItem["_motionBlur"];
-  "Proxy Use": RenderQueueItem["_proxyUse"];
-  Quality: RenderQueueItem["_quality"];
-  Resolution: RenderQueueItem["_resolution"];
-  "Skip Existing Files": RenderQueueItem["_skipExistingFiles"];
-  "Solo Switches": RenderQueueItem["_soloSwitches"];
+  "3:2 Pulldown": PulldownSetting;
+  "Color Depth": ColorDepthSetting;
+  "Disk Cache": DiskCacheSetting;
+  Effects: EffectsSetting;
+  "Field Render": FieldRender;
+  "Frame Blending": FrameBlendingSetting;
+  "Frame Rate": FrameRateSetting;
+  "Guide Layers": GuideLayers;
+  "Motion Blur": MotionBlurSetting;
+  "Proxy Use": ProxyUseSetting;
+  Quality: RenderQuality;
+  Resolution: number[];
+  "Skip Existing Files": boolean;
+  "Solo Switches": SoloSwitchesSetting;
   "Time Span Duration": RenderQueueItem["timeSpanDuration"];
   "Time Span End": RenderQueueItem["timeSpanEnd"];
   "Time Span Start": RenderQueueItem["timeSpanStart"];
-  "Time Span": RenderQueueItem["_timeSpanSource"];
-  "Use comp's frame rate": RenderQueueItem["_compFrameRate"];
-  "Use this frame rate": RenderQueueItem["_useThisFrameRate"];
+  "Time Span": TimeSpanSource;
+  "Use comp's frame rate": number;
+  "Use this frame rate": number;
 };
 
 // ---------------------------------------------------------------------------
@@ -567,7 +568,7 @@ export class RenderQueueItem {
     }
     const view = this.settings;
     // SettingsView exposes Python's Mapping `items()` as an array of pairs; a dict is a Map.
-    const entries = value instanceof Map ? value.entries() : value.items();
+    const entries = value.entries();
     for (const [k, v] of entries) {
       view.set(k, v);
     }

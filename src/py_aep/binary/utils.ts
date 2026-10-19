@@ -2,12 +2,11 @@
 
 import { DeferredListChunk, ListChunk, Chunk } from "./chunk.ts";
 import { U4LeChunk, Utf8Chunk } from "./scalar_chunks.ts";
-import { AepError, ValueError, stringifyJson, parseJson, typeName, type JsonValue } from "../../pyrt/index.ts";
+import { NotFoundError, ValueError, stringifyJson, parseJson, typeName, type JsonValue } from "../../pyrt/index.ts";
 import type { ChunkOf } from "./chunk_types.ts";
 
-export class ChunkNotFoundError extends AepError {
-  /** Raised when a required chunk is not found in the AEP chunk tree. */
-}
+/** A required chunk is missing from the AEP chunk tree. */
+export class ChunkNotFoundError extends NotFoundError {}
 
 /** Sentinel value indicating an undefined frame number in the binary format. */
 export const UNDEFINED_FRAME = 0xffffffff;

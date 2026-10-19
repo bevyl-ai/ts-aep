@@ -149,7 +149,8 @@ export class Dumper {
     if (isContainer(value)) {
       let items: any[];
       try {
-        items = [...value];
+        // A Map-shaped view iterates entries; Python iterates a mapping by key.
+        items = typeof value.entries === "function" && typeof value.get === "function" ? [...value.keys()] : [...value];
       } catch (e) {
         this.emit(`${path}[*]`, { $err: errName(e) });
         return;

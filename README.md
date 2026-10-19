@@ -99,17 +99,22 @@ app.project.save("copy.aep");
 
 ### Errors
 
-Errors ts-aep raises extend `AepError`, and each carries the name of the
-Python exception py-aep raises in the same case (`ValueError`, `KeyError`,
-`FileNotFoundError`, ...), all exported:
+Everything ts-aep throws extends `AepError`, as one of four kinds:
+
+| Class               | Thrown when                                                     |
+| ------------------- | --------------------------------------------------------------- |
+| `InvalidValueError` | a value After Effects would refuse, or bytes that do not decode |
+| `NotFoundError`     | no item, property, key or index by that name or position        |
+| `UnsupportedError`  | the file, layer or property type does not support the operation |
+| `FileSystemError`   | a file cannot be read or written                                |
 
 ```ts
-import { AepError, FileNotFoundError, parse } from "@bevyl-ai/ts-aep";
+import { AepError, FileSystemError, parse } from "@bevyl-ai/ts-aep";
 
 try {
   parse("missing.aep");
 } catch (e) {
-  if (e instanceof FileNotFoundError) console.log("no such file");
+  if (e instanceof FileSystemError) console.log("cannot read it");
   else if (e instanceof AepError) console.log(e.name, e.message);
   else throw e;
 }

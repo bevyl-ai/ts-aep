@@ -1,34 +1,48 @@
-// Error classes named after the Python exceptions py-aep raises, so callers and the
-// py-aep differential see the same class names. Catch `AepError` for any of them.
-// Python's `TypeError` and `SyntaxError` are JS's own (built-in) errors.
+// What ts-aep throws. Catch the exported classes: `AepError` for anything, or
+// one of its five kinds. Inside the library each kind is split further by the
+// py-aep exception it mirrors (`KeyError` is a `NotFoundError`), which keeps
+// internal `catch` logic and the py-aep differential exact; `name` reports the
+// exported kind. Wrong-type arguments throw JS's own `TypeError`.
 
 export class AepError extends Error {
   constructor(message = "") {
     super(message);
-    this.name = new.target.name;
+    let kind: Function = new.target;
+    while (!PUBLIC.has(kind)) kind = Object.getPrototypeOf(kind);
+    this.name = kind.name;
   }
 }
 
-export class ValueError extends AepError {}
-export class AttributeError extends AepError {}
-export class NotImplementedError extends AepError {}
-export class RuntimeError extends AepError {}
-export class AssertionError extends AepError {}
-export class ZeroDivisionError extends AepError {}
-export class OverflowError extends AepError {}
-export class StopIteration extends AepError {}
-export class LookupError extends AepError {}
-export class KeyError extends LookupError {}
-export class IndexError extends LookupError {}
-/** Python's `OSError` (alias `IOError`). */
-export class OSError extends AepError {}
-export class FileNotFoundError extends OSError {}
-export class FileExistsError extends OSError {}
-export class UnicodeError extends ValueError {}
+/** A value outside what After Effects accepts, or bytes that do not decode. */
+export class InvalidValueError extends AepError {}
+/** No item, property, key or index by that name or position. */
+export class NotFoundError extends AepError {}
+/** Not supported for this file, layer or property type (or not ported yet). */
+export class UnsupportedError extends AepError {}
+/** A file could not be read or written. */
+export class FileSystemError extends AepError {}
+
+const PUBLIC = new Set<Function>([AepError, InvalidValueError, NotFoundError, UnsupportedError, FileSystemError]);
+
+export class ValueError extends InvalidValueError {}
+class UnicodeError extends ValueError {}
 export class UnicodeDecodeError extends UnicodeError {}
 export class UnicodeEncodeError extends UnicodeError {}
+export class OverflowError extends InvalidValueError {}
+export class ZeroDivisionError extends InvalidValueError {}
 /** `struct.error` */
-export class StructError extends AepError {}
+export class StructError extends InvalidValueError {}
+export class LookupError extends NotFoundError {}
+export class KeyError extends LookupError {}
+export class IndexError extends LookupError {}
+export class AttributeError extends NotFoundError {}
+export class NotImplementedError extends UnsupportedError {}
+export class OSError extends FileSystemError {}
+export class FileNotFoundError extends OSError {}
+export class FileExistsError extends OSError {}
+export class RuntimeError extends AepError {}
+export class AssertionError extends AepError {}
+export class StopIteration extends AepError {}
 
 /**
  * `SystemExit` (a `BaseException`, so not an `AepError`: translated

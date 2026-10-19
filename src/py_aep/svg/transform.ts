@@ -100,7 +100,7 @@ function _numbers(text: string): number[] {
  * @returns The composed transform (identity for an empty string, and for a
  *   malformed list: a known function with the wrong number of
  *   arguments or a non-finite one).
- * @throws UnsupportedSVGError For an unknown transform function.
+ * @throws InvalidValueError For an unknown transform function.
  */
 export function parseTransform(value: string): Affine {
   let result = IDENTITY;

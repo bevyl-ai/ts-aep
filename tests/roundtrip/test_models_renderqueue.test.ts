@@ -957,9 +957,7 @@ describe("TestRoundtripSettingsBulkAssign", () => {
 
     items[0].settings.set("Quality", RenderQuality.DRAFT);
     items[0].settings.set("Resolution", [2, 2]);
-    const copiedSettings = new Map(
-      [...items[0].settings].map((k: string): [string, SettingValue] => [k, items[0].settings.get(k)]),
-    );
+    const copiedSettings = new Map<string, SettingValue>(items[0].settings);
     expect(copiedSettings.has("Use comp's frame rate")).toBe(true);
     dictPop(copiedSettings, "Use comp's frame rate");
     items[1].settings = copiedSettings;

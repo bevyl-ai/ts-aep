@@ -142,7 +142,7 @@ function _orderObjectNumbers(value: CosNode, out: number[]): number[] {
  * @param file - Path to a `.ai` or `.pdf` file.
  * @param data - The file's bytes, if the caller already read them.
  *
- * @throws UnsupportedAiLayersError If the file is not a PDF-compatible document
+ * @throws InvalidValueError If the file is not a PDF-compatible document
  *     or has no Optional Content Groups (layers).
  */
 export function readAiLayerOcgs(file: PathLike, data: Uint8Array | null = null): AiLayer[] {
@@ -219,7 +219,7 @@ function isStrOrBytes(x: CosNode | undefined): x is string | CosString | Uint8Ar
  *
  * @returns Layer names in document (OCG) order, bottom layer first.
  *
- * @throws UnsupportedAiLayersError If the file is not a PDF-compatible
+ * @throws InvalidValueError If the file is not a PDF-compatible
  *     document or has no Optional Content Groups (layers).
  */
 export function readAiLayers(file: PathLike, data: Uint8Array | null = null): string[] {

@@ -281,9 +281,9 @@ export function readBounded(fp: ProbeStream, size: number): Uint8Array {
  * @param data - The file's bytes, if the caller already read them; probed
  *   in memory instead of re-reading `file`.
  *
- * @throws NotImplementedError If header probing is not implemented for the
+ * @throws UnsupportedError If header probing is not implemented for the
  *   file's extension.
- * @throws ValueError If the file is not a valid file of its format, or is
+ * @throws InvalidValueError If the file is not a valid file of its format, or is
  *   truncated or malformed.
  */
 export function probeMedia(file: Path, data: Uint8Array | null = null): MediaInfo {
@@ -1739,7 +1739,7 @@ const _MP4_UNDECODABLE_CODECS: ReadonlySet<string> = new Set([ascii("vp09"), asc
  * Media Core importer, which decodes fewer video codecs than the
  * QuickTime importer used for `.mov`/`.m4v`.
  *
- * @throws ValueError If the file has no track AE can decode. AE refuses such a
+ * @throws InvalidValueError If the file has no track AE can decode. AE refuses such a
  *   file outright ("The source compression type is not supported"),
  *   so there is no import for py-aep to reproduce.
  *
@@ -2657,7 +2657,7 @@ function _deepColorDepth(hasAlpha: boolean, bitDepth: number): number {
  * @param fp - Readable binary stream positioned at the start of the file.
  * @returns A `MediaInfo` with width, height, bit_depth, and has_alpha filled in.
  *   Duration is 0 (still frame); pixel_aspect defaults to 1.0.
- * @throws ValueError If the file is too short or has an unrecognised magic number.
+ * @throws InvalidValueError If the file is too short or has an unrecognised magic number.
  */
 export function _probeDpxCineon(fp: ProbeStream): MediaInfo {
   const header = fp.read(1408); // 768-byte file info + 640-byte image info
@@ -2734,7 +2734,7 @@ const _HEIF_BRANDS: ReadonlySet<string> = new Set(
  * `ftyp` whose major or compatible brands include `heic`, `heix`, `mif1`
  * or `heif`.
  *
- * @throws ValueError If the file is too short, has no HEIF brand, or no `ispe`.
+ * @throws InvalidValueError If the file is too short, has no HEIF brand, or no `ispe`.
  */
 export function _probeHeif(fp: ProbeStream): MediaInfo {
   const data = fp.read();

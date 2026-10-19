@@ -99,7 +99,7 @@ function _tokenize(d: string): string[] {
  * @param d - The path data string.
  * @returns Subpaths in document order; each holds cubic segments and a
  *   closed flag.
- * @throws UnsupportedSVGError For malformed data or unknown commands.
+ * @throws InvalidValueError For malformed data or unknown commands.
  */
 export function parsePath(d: string): RawSubpath[] {
   const tokens = _tokenize(d);

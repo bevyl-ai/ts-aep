@@ -44,7 +44,7 @@ export class FontDesignAxis {
  * @param fontNumber - Face index within a TrueType Collection (0 for
  *   single-face files).
  *
- * @throws ValueError If the font has no `fvar` table (not a variable font).
+ * @throws InvalidValueError If the font has no `fvar` table (not a variable font).
  */
 export function readDesignAxes(fontFile: _PathLike, fontNumber: number = 0): FontDesignAxis[] {
   const opened = dep("fontkit").create(host.fs.readFileSync(String(fontFile)));
