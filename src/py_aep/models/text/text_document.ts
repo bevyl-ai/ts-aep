@@ -230,7 +230,7 @@ export class TextDocument {
 
   // Python instance `__dict__`: overrides for fields without COS backing.
   // `_override` reads it directly, so it must stay separate from accessors.
-  // Shared with CosField.get via instance_dict, so CosField-backed `_fromBinary` kwargs are read back.
+  // Shared with CosField.get through overrides(), so CosField-backed `_fromBinary` kwargs are read back.
   _overrides: Map<string, InstanceValue> = overrides(this);
 
   // COS backing, assigned by `__init__` / `_fromBinary`. The style dicts

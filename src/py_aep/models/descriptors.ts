@@ -136,9 +136,9 @@ export function suppressingMaterialization<T, A extends unknown[], R>(
 }
 
 /**
- * Python `isinstance(x, IntEnum)` for a py_enum object (pyrt/enum.ts).
+ * Whether `x` is an enum made by `defineEnum` (pyrt/enum.ts).
  */
-// NOTE(port): int_enum === py_enum in pyrt, so this also admits non-int enums; the only non-IntEnum enum in py_aep (cos.TokenType) never reaches a descriptor, so the IntEnum check matches Python.
+// NOTE(port): every defineEnum enum passes, so this also admits non-int enums; the only non-IntEnum enum in py_aep (cos.TokenType) never reaches a descriptor, so the IntEnum check matches Python.
 function isEnum(x: unknown): x is EnumHelpers<number> {
   return x != null && typeof x === "object" && "allMembers" in x && "has" in x && typeof x.has === "function";
 }
@@ -168,7 +168,7 @@ function boundEnumMethod<V, R extends number>(
 ): (value: V) => R {
   const m = getMember(enumCls, name, dflt);
   // Python's default is the enum class itself, which is callable (`E(v)`); a
-  // py_enum object is not, so use `E.of` and keep `enumClass` for `_enumClass`.
+  // defineEnum object is not, so use `E.of` and keep `enumClass` for `_enumClass`.
   if (m === dflt) return isEnum(dflt) ? Object.assign((v: V) => dflt.of(v), { enumClass: dflt }) : dflt;
   if (typeof m !== "function") return m;
   return Object.assign(m.bind(enumCls), { enumClass: enumCls });

@@ -149,7 +149,7 @@ export function getOr<K, V, D>(d: Map<K, V>, k: K, dflt: D | null = null): V | D
   return v !== undefined ? v : dflt;
 }
 
-/** `d.setdefault(k, v)` */
+/** `m.get(k)`, after setting it to `v` when `k` is absent (`Map.prototype.getOrInsert`). */
 export function getOrInsert<K, V>(d: Map<K, V>, k: K, v: V): V {
   const cur = d.get(k);
   if (cur !== undefined) return cur;
@@ -322,7 +322,7 @@ export const isdigit = (s: string): boolean => s.length > 0 && /^\p{Nd}+$/u.test
 export const isspace = (s: string): boolean => s.length > 0 && /^\s+$/u.test(s);
 export const islower = (s: string): boolean => /\p{Ll}/u.test(s) && !/\p{Lu}|\p{Lt}/u.test(s);
 
-/** `copy.deepcopy`: clones arrays, Maps, Sets, bytes, plain objects and class instances (prototype kept). */
+/** A deep clone of arrays, Maps, Sets, bytes, plain objects and class instances (prototype kept). */
 export function deepClone<T>(x: T, memo?: Map<object, object>): T;
 export function deepClone(x: unknown, memo = new Map<object, object>()): unknown {
   if (x === null || typeof x !== "object") return x;

@@ -24,7 +24,7 @@ import type { EnumHelpers } from "../../../pyrt/enum.ts";
 import type { CompPreset } from "../../parsers/comp_presets.ts";
 import type { Preferences } from "../preferences.ts";
 
-// NOTE(port): py_enum members are plain numbers with no owning class, so
+// NOTE(port): defineEnum members are plain numbers with no owning class, so
 // `isinstance(value, IntEnum)` is unanswerable. NUMBER output is unaffected
 // (`int(member)` is the member itself); STRING output gets the label from the
 // spec's enum class in `settingsToString` instead.
