@@ -12,7 +12,7 @@ import {
   Bytes,
   contains,
   copy,
-  deepcopy,
+  deepClone,
   getMember,
   getOrThrow,
   len,
@@ -4834,7 +4834,7 @@ describe("TestSyntheticValuesAreOwned", () => {
   test("test_copies_are_plain_lists", () => {
     const project = parseProjectFresh(AEP);
     const levels = _audioLevels(project, "DropFrame_Comp");
-    for (const duplicate of [copy(levels.value), deepcopy(levels.value)]) {
+    for (const duplicate of [copy(levels.value), deepClone(levels.value)]) {
       expect(Object.getPrototypeOf(duplicate)).toBe(Array.prototype);
       duplicate[0] = 3.0;
     }

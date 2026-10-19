@@ -34,7 +34,7 @@ import {
   AttributeError,
   NotImplementedError,
   ValueError,
-  deepcopy,
+  deepClone,
   getOrThrow,
   assert,
   truthy,
@@ -648,7 +648,7 @@ export function _splitRunArray(runs: CosNode[], offsets: Set<number>): void {
       i += 1;
       continue;
     }
-    const clone = deepcopy(runs[i]);
+    const clone = deepClone(runs[i]);
     cosSetitem(runs[i], "1", pySub(cut, pos));
     cosSetitem(clone, "1", pySub(runEnd, cut));
     runs.splice(i + 1, 0, clone);
@@ -813,12 +813,12 @@ function _spliceText(
       for (const run of runs) {
         const runEnd = pyAdd(pos, _runCount(run));
         if (Number(pos) <= start && start < Number(runEnd)) {
-          donor = deepcopy(run);
+          donor = deepClone(run);
           break;
         }
         pos = runEnd;
       }
-      if (donor === undefined) donor = deepcopy(runs[runs.length - 1]);
+      if (donor === undefined) donor = deepClone(runs[runs.length - 1]);
       cosSetitem(donor, "1", insertLen);
       insertEntries = insertLen ? [donor] : [];
     } else {
@@ -874,7 +874,7 @@ function _spliceText(
       const entry = donorEntry(pos2);
       // Keep the first run's object identity when it stays first
       // (aliased by `_paraStyle`); clone everything else.
-      const clone = i === 0 && entry === paraRuns[0] ? entry : deepcopy(entry);
+      const clone = i === 0 && entry === paraRuns[0] ? entry : deepClone(entry);
       const partLen = u16Len(part) + 1;
       cosSetitem(clone, "1", partLen);
       newParaRuns.push(clone);
@@ -1464,7 +1464,7 @@ export class CharacterRange extends _TextRange {
       const overlapStart: PyNum = srcStart > Number(pos) ? srcStart : pos;
       const overlapEnd: PyNum = srcEnd < Number(runEnd) ? srcEnd : runEnd;
       if (Number(overlapEnd) > Number(overlapStart)) {
-        const clone = deepcopy(run);
+        const clone = deepClone(run);
         cosSetitem(clone, "1", pySub(overlapEnd, overlapStart));
         entries.push(clone);
       }

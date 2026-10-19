@@ -108,7 +108,7 @@ import { PropertyBase } from "./property_base.ts";
 import { Shape } from "./shape.ts";
 import type { PropertyGroup } from "./property_group.ts";
 import {
-  deepcopy,
+  deepClone,
   getOrThrow,
   isclose,
   valueEquals,
@@ -3128,7 +3128,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     // time_divisor/work_area_start_divisor/shutter_phase, so clone the host
     // cdta over it. idta/iide (the item ids) are separate chunks and stay
     // the wrapper's own.
-    const newCdta = deepcopy(host._cdta);
+    const newCdta = deepClone(host._cdta);
     const chunks = wrapper._itemList.chunks;
     // Python `chunks.index(...)` compares by attrs equality (first equal chunk).
     const cdtaIndex = chunks.findIndex((c: Chunk) => valueEquals(c, wrapper._cdta));
@@ -4197,7 +4197,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
       throw new NotImplementedError("text keyframe value is not a TextDocument");
     }
     const docArray = cosGet(template._cosData, "1", "1");
-    const newDoc = deepcopy(cosAt(docArray, nearest));
+    const newDoc = deepClone(cosAt(docArray, nearest));
 
     const ldatItem = buildParallelLdatItem(this._keyframeItemType());
     const kf = new Keyframe<KeyframeValue<V>>({ _ldatItem: ldatItem, _frameRate: frameRate });

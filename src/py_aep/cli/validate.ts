@@ -29,7 +29,6 @@ import {
   zip,
   isReal,
   parseJson,
-  truediv,
   PureWindowsPath,
   type BoxedFloat,
   compare,
@@ -584,7 +583,7 @@ export function compareMarker(
   // Calculate time from frame_time if available
   let parsedTime: number | null = null;
   if (parsedMarker.get("frameTime") != null) {
-    parsedTime = truediv(getOrThrow(parsedMarker, "frameTime"), frameRate);
+    parsedTime = Number(getOrThrow(parsedMarker, "frameTime")) / frameRate;
   }
 
   // Compare time

@@ -2,7 +2,7 @@
 
 import {
   INSPECT,
-  deepcopy,
+  deepClone,
   descriptor,
   floatRepr,
   getOrThrow,
@@ -882,7 +882,7 @@ export class RenderQueueItem {
     const rq = this._parentRq;
     const idx = indexByIdentity(rq._items, this);
 
-    const newRsi = deepcopy(this._ldat);
+    const newRsi = deepClone(this._ldat);
 
     // status holds the raw binary value (ExtendScript value minus 3013),
     // so compare and assign in that encoding via to_binary().
@@ -892,7 +892,7 @@ export class RenderQueueItem {
     }
     newRsi.itemId = _nextItemId(rq);
 
-    const newRoutItems = this._routItems.map((ri) => deepcopy(ri));
+    const newRoutItems = this._routItems.map((ri) => deepClone(ri));
 
     const newListChunk = cloneChunkTree(this._listChunk);
     const newLom = cloneChunkTree(this._lom);

@@ -28,7 +28,7 @@ import {
 import { TextDocument } from "../../src/py_aep/models/text/text_document.ts";
 import {
   ValueError,
-  deepcopy,
+  deepClone,
   descriptorsOf,
   getOr,
   getDescriptor,
@@ -116,7 +116,7 @@ describe("TestWriteEnginePrimitives", () => {
       ["99", new CosName("X")],
       ["0", [new CosString("s", { utf16: false })]],
     ]);
-    const clone = deepcopy(nested);
+    const clone = deepClone(nested);
     expect(asInstance(cosAt(cosItem(clone, "0"), 0), CosString).cosUtf16).toBe(false);
     expect(str(cosItem(clone, "99"))).toBe("X");
   });

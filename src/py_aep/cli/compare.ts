@@ -27,7 +27,7 @@ import {
   ByteStream,
   Path,
   bytesEqual,
-  deepcopy,
+  deepClone,
   getOrThrow,
   valueEquals,
   stringifyJson,
@@ -235,7 +235,7 @@ export function _chunkFloats(chunk: Chunk): number[] | null {
 
 /** Return a copy of `chunk` with its coordinate floats replaced. */
 export function _withFloats(chunk: Chunk, floats: number[]): Chunk {
-  const clone = deepcopy(chunk);
+  const clone = deepClone(chunk);
   const ct = clone.chunkType;
   if (ct === "cdat" && clone instanceof CdatChunk) {
     clone.values = [...floats];
