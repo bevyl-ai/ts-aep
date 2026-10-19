@@ -20,7 +20,12 @@ function num(x: number | bigint): any {
 }
 
 // API ts-aep adds beyond py-aep, which has nothing to compare it with.
-const TS_ONLY = new Set(["FontObject.technology", "Shape.bounds"]);
+const TS_ONLY = new Set([
+  "FontObject.technology",
+  "Shape.bounds",
+  "TextDocument.fonts",
+  "TextLayer.continuouslyRasterize",
+]);
 
 function publicNames(obj: any): string[] {
   const names = new Set<string>();

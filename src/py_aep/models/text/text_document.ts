@@ -712,6 +712,11 @@ export class TextDocument {
   // host-dependent and not decodable from the binary. Use `fontObject`.
 
   /** The Text layer's font PostScript name. Read / Write. */
+  /** Every font the document registers, in COS order. ts-aep only. Read-only. */
+  get fonts(): readonly FontObject[] {
+    return [...this._fonts];
+  }
+
   get font(): string | null {
     const override = this._overrideOf("font", isStr);
     if (override != null) return override;

@@ -50,6 +50,20 @@ export class TextLayer extends AVLayer {
     return group;
   }
 
+  /**
+   * After Effects' Continuously Rasterize switch for a text layer, stored as
+   * its collapse-transformation flag. Effects on unrasterized text ask for
+   * missing footage. AE scripting cannot set this, so `collapseTransformation`
+   * refuses it; this accessor is ts-aep only. Read / Write.
+   */
+  get continuouslyRasterize(): boolean {
+    return this._ldta.collapseTransformation;
+  }
+
+  set continuouslyRasterize(value: boolean) {
+    this._ldta.collapseTransformation = value;
+  }
+
   static _new(kw: TextLayerNewKw): TextLayer;
   static _new(...args: never[]): never;
   static _new(kw: TextLayerNewKw): TextLayer {

@@ -1,6 +1,7 @@
 /**
  * API ts-aep adds beyond py-aep: parsing bytes, importing effect
- * definitions, writable font identity and shape bounds. Each is checked through a
+ * definitions, a document's fonts and writable font identity, continuously
+ * rasterized text, and shape bounds. Each is checked through a
  * save and a parse of the saved bytes.
  */
 
@@ -66,15 +67,29 @@ describe("FontObject writes", () => {
     const document = prop.value;
     document.font = "ModernMTPro-Extended";
     prop.value = document;
-    const font = prop.value._fonts.find((entry) => entry.postScriptName === "ModernMTPro-Extended")!;
+    const font = prop.value.fonts.find((entry) => entry.postScriptName === "ModernMTPro-Extended")!;
     expect(font.technology).toBe(CTFontTechnology.CT_TRUETYPE_FONT);
     font.technology = CTFontTechnology.CT_TYPE1_FONT;
     font.designVector = [700, 87.5];
     const restored = (
       reparsed(app).compositions[0]!.layers[0]!.text!.property("ADBE Text Document") as Property
-    ).value._fonts.find((entry: { postScriptName: string }) => entry.postScriptName === "ModernMTPro-Extended");
+    ).value.fonts.find((entry: { postScriptName: string }) => entry.postScriptName === "ModernMTPro-Extended");
     expect(restored.technology).toBe(CTFontTechnology.CT_TYPE1_FONT);
     expect(restored.designVector).toEqual([700, 87.5]);
+  });
+});
+
+describe("TextLayer.continuouslyRasterize", () => {
+  test("sets the collapse switch that collapseTransformation refuses on text", () => {
+    const { app, layer } = textLayerProject();
+    expect(layer.canSetCollapseTransformation).toBe(false);
+    expect(() => {
+      layer.collapseTransformation = true;
+    }).toThrow();
+    layer.continuouslyRasterize = true;
+    const restored = reparsed(app).compositions[0]!.textLayers[0]!;
+    expect(restored.continuouslyRasterize).toBe(true);
+    expect(restored.collapseTransformation).toBe(true);
   });
 });
 
