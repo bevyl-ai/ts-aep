@@ -11,7 +11,6 @@ import {
   getOrThrow,
   int,
   defineEnum,
-  objectSetattr,
   assert,
   truthy,
   instanceDict,
@@ -36,9 +35,9 @@ class _FakeBody {
 
   constructor(kw: { synthetic?: boolean; [key: string]: unknown } = {}) {
     const { synthetic = false, ...kwargs } = kw;
-    objectSetattr(this, "synthetic", synthetic);
+    this.synthetic = synthetic;
     for (const [k, v] of Object.entries(kwargs)) {
-      objectSetattr(this, k, v);
+      Reflect.set(this, k, v);
     }
   }
 }
@@ -204,7 +203,7 @@ class _SyntheticModel {
   _ensureMaterialized(): void {
     this.materialized = true;
     assert(this._body != null);
-    objectSetattr(this._body, "synthetic", false);
+    this._body.synthetic = false;
   }
 }
 descriptor(_SyntheticModel, "value", new ChunkField<number>("_body", "value"));

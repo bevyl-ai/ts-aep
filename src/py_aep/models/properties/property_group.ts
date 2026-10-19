@@ -9,10 +9,7 @@ import {
   getOr,
   getMember,
   getOrThrow,
-  objectGetattr,
-  objectSetattr,
   assert,
-  pyClassHooks,
   literal,
   instanceDict,
   typeName,
@@ -63,6 +60,7 @@ import { _INDEXED_GROUP_MATCH_NAMES, PropertyBase } from "./property_base.ts";
 import type { MaskPropertyGroup } from "./mask_property_group.ts";
 import type { MatchNameTypes } from "./match_name_types.ts";
 import { late } from "../late.ts";
+import { CHILD_MATCH_NAMES } from "../../data/child_names.ts";
 
 // Mandatory empty subgroups AE writes inside some freshly added shape
 // elements, as (match name, tdsb lock flags, tdsb enable flags) triples. A
@@ -718,77 +716,13 @@ export class PropertyGroup extends PropertyBase {
     }
   }
 
-  /**
-   * Look up a child property by attribute access.
-   *
-   * Matches the attribute name against the camelCase display names
-   * of child properties ("Anchor Point" is `anchorPoint`).  This allows natural syntax such as:
-   *
-   * ```ts
-   * import { parse } from "@bevyl-ai/ts-aep";
-   * const layer = parse("project.aep").project.compositions[0].layers[0];
-   * layer.transform.position.value;
-   * layer.transform.opacity.value;
-   * ```
-   *
-   * **Note:** Only invoked when normal attribute lookup has already
-   * failed, so class attributes and `@property` descriptors
-   * always take priority.
-   */
-  _missingAttribute(name: string): Property | PropertyGroup {
-    // A child property is never named with a leading underscore, so a
-    // private name here is always a miss on an internal attribute
-    // (`_ldta`, `_chunk`, ...). Answering it without the child scan
-    // keeps parent-chain probes like `hasattr(node, "_ldta")` O(1)
-    // instead of deriving every sibling's display name.
-    if (name.startsWith("_")) throw new AttributeError(name);
-    // Avoid infinite recursion during __init__ (before
-    // `properties` has been set on the instance).
-    try {
-      objectGetattr(this, "_properties");
-    } catch (e) {
-      if (e instanceof AttributeError) throw new AttributeError(name);
-      throw e;
-    }
-    try {
-      return this.property(name);
-    } catch (e) {
-      if (e instanceof KeyError) {
-        throw new AttributeError(`'${this.constructor.name}' has no property '${name}'`);
-      }
-      throw e;
-    }
-  }
-
-  _assignAttribute(name: string, value: unknown): void {
-    // A name the class does not define would only become a Python
-    // attribute: nothing reaches the file, and it would shadow the child
-    // that attribute access resolves (`transform.position = [...]` leaves
-    // Position untouched and makes `transform.position` the list). Layers
-    // opt out (`Layer._assignAttribute`) to keep their own public instance
-    // attributes.
-    if (
-      !name.startsWith("_") &&
-      !(name in this.constructor.prototype) &&
-      !hasClassStatic(this.constructor, name) &&
-      !Object.prototype.hasOwnProperty.call(this, name) &&
-      !instanceDict(this).has(name)
-    ) {
-      throw new AttributeError(
-        `'${this.constructor.name}' has no attribute '${name}' to set; ` + "assign a child property's `value` instead",
-      );
-    }
-    // NOTE(port): PropertyBase defines no `__setattr__`, so Python's `super().__setattr__` is `object`'s, as here.
-    objectSetattr(this, name, value);
-  }
-
   property<K extends keyof MatchNameTypes>(key: K): MatchNameTypes[K];
   property(key: number | string): Property | PropertyGroup;
   /**
    * Look up a child property by index or name.
    *
-   * This is the canonical access method; `_missingAttribute` (
-   * attribute access) delegates here.
+   * This is the canonical access method; the attribute getters
+   * (`group.position`) delegate here.
    *
    * @example
    * ```ts
@@ -1323,23 +1257,42 @@ export class PropertyGroup extends PropertyBase {
   }
 }
 
-// `_missingAttribute` (child lookup by attribute name) and `_assignAttribute` without a proxy
-// around each group. Exact here: `_assignAttribute` (this one and `Layer`'s) passes every
-// existing attribute through and only refuses new public names.
-pyClassHooks(PropertyGroup, { setattrPassesPrivate: true });
+// Built-in children by attribute name (`layer.transform.position`): one getter per
+// camelCase display name the group class does not already define. A name with no such
+// child on a group raises AttributeError; other children (third-party effect
+// parameters) are reached with `property(name)`.
+const _RESERVED = new Set([
+  "then",
+  "toJSON",
+  "constructor",
+  "length",
+  "size",
+  "equals",
+  "has",
+  "toBoolean",
+  "deepCopy",
+]);
+for (const name of new Set([
+  ...[...MATCH_NAME_TO_AUTO_NAME.values()].map(_attrName),
+  ...Object.values(CHILD_MATCH_NAMES).flatMap((names) => Object.keys(names)),
+])) {
+  if (!/^[a-z][A-Za-z0-9]*$/.test(name) || _RESERVED.has(name) || name in PropertyGroup.prototype) continue;
+  Object.defineProperty(PropertyGroup.prototype, name, {
+    configurable: true,
+    get(this: PropertyGroup): Property | PropertyGroup {
+      try {
+        return this.property(name);
+      } catch (e) {
+        if (e instanceof KeyError) throw new AttributeError(`'${this.constructor.name}' has no property '${name}'`);
+        throw e;
+      }
+    },
+  });
+}
 
 // Python `@requires_version(26)` on `addVariableFontAxis`: the
 // decorator wraps the method once the class body has been evaluated.
 PropertyGroup.prototype.addVariableFontAxis = requiresVersion(26)(PropertyGroup.prototype.addVariableFontAxis);
-
-/** Class-level attributes (TS statics) of `ctor` and its bases, excluding Function built-ins. */
-function hasClassStatic(ctor: Function, name: string): boolean {
-  if (name === "name" || name === "length" || name === "prototype") return false;
-  for (let c = ctor; c && c !== Function.prototype; c = Object.getPrototypeOf(c)) {
-    if (Object.prototype.hasOwnProperty.call(c, name)) return true;
-  }
-  return false;
-}
 
 /** The attribute a child is reachable by: its display name in camelCase ("Anchor Point" is `anchorPoint`). */
 function _attrName(displayName: string): string {

@@ -639,23 +639,24 @@ describe("TestExpressionNul", () => {
 });
 
 describe("TestGroupAttributeWrites", () => {
-  test.each([
-    ["ADBE Transform Group", "rotoBezier", true],
-    ["ADBE Transform Group", "position", [1.0, 2.0]],
-    ["ADBE Effect Parade", "value", 42],
-  ])("test_unknown_attribute_rejected[%#]", (groupName: string, attr: string, value: unknown) => {
-    const [app, , solid] = _solidMask();
-    const group = solid.property(groupName);
-    const before = projectBytes(app.project);
-    raises(AttributeError, () => {
-      setMember(group, attr, value);
-    });
-    expect(valueEquals(projectBytes(app.project), before)).toBe(true);
-    if (attr === "position") {
-      // Attribute access still reaches the child property.
-      expect(String(asInstance(Reflect.get(group, "position"), Property).matchName)).toBe("ADBE Position");
-    }
-  });
+  // A child reached by attribute name is read-only: assigning it throws instead of shadowing the child.
+  // (An attribute no group declares is a type error; JS would add a plain property, which never reaches the file.)
+  test.each([["ADBE Transform Group", "position", [1.0, 2.0]]])(
+    "test_unknown_attribute_rejected[%#]",
+    (groupName: string, attr: string, value: unknown) => {
+      const [app, , solid] = _solidMask();
+      const group = solid.property(groupName);
+      const before = projectBytes(app.project);
+      raises(AttributeError, () => {
+        setMember(group, attr, value);
+      });
+      expect(valueEquals(projectBytes(app.project), before)).toBe(true);
+      if (attr === "position") {
+        // Attribute access still reaches the child property.
+        expect(String(asInstance(Reflect.get(group, "position"), Property).matchName)).toBe("ADBE Position");
+      }
+    },
+  );
 });
 
 describe("TestNewLayerMatchNames", () => {

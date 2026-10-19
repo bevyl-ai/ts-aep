@@ -1,8 +1,4 @@
-// Python's attribute protocol in TS: descriptors (`get` / `set` /
-// `attach`) installed with `descriptor()`, a missing-attribute fallback
-// (`_missingAttribute(name)`, Python's `__getattr__`) and an assignment hook
-// (`_assignAttribute(name, value)`, Python's `__setattr__`), both wired with
-// `pyClassHooks(Cls)`.
+// Descriptors (`get` / `set` / `attach`) installed as accessors with `descriptor()`:
 //
 //   class Layer {
 //     declare enabled: boolean;
@@ -11,9 +7,6 @@
 //     }
 //   }
 //
-// Inside `_assignAttribute`, `object.__setattr__(self, name, value)` is
-// `objectSetattr(this, name, value)`.
-
 import { AttributeError } from "./errors.ts";
 
 /**
@@ -88,136 +81,6 @@ export function descriptorsOf(cls: Function): Map<string, Descriptor> {
   return out;
 }
 
-// `pyObject` proxy -> the instance it wraps.
-const PROXY_TARGETS = new WeakMap<object, object>();
-
-function _hasGetattr(x: object): x is { _missingAttribute(name: string): unknown } {
-  return "_missingAttribute" in x && typeof x._missingAttribute === "function";
-}
-
-function _hasSetattr(x: object): x is { _assignAttribute(name: string, value: unknown): void } {
-  return "_assignAttribute" in x && typeof x._assignAttribute === "function";
-}
-
-/**
- * Wrap a freshly constructed instance so `_missingAttribute` runs for missing
- * attributes and `_assignAttribute` for every assignment, as in Python.
- */
-export function pyObject<T extends object>(self: T): T {
-  const hasGetattr = _hasGetattr(self);
-  const hasSetattr = _hasSetattr(self);
-  if (!hasGetattr && !hasSetattr) return self;
-  const proxy = new Proxy(self, {
-    get(target, key, receiver) {
-      if (typeof key === "symbol" || key in target || !hasGetattr) return Reflect.get(target, key, receiver);
-      if (key === "then" || key === "toJSON" || key === "constructor") return undefined;
-      // Python looks special methods (`__bool__`, `__eq__`, `__len__`, ...) up on the type,
-      // never through `_missingAttribute`; pyrt probes them as property reads, so a miss is undefined.
-      if (_isSpecial(key)) return undefined;
-      if (_hasGetattr(receiver)) return receiver._missingAttribute(key);
-    },
-    set(target, key, value, receiver) {
-      if (typeof key === "symbol" || !hasSetattr || inSetattr.has(target)) {
-        return Reflect.set(target, key, value, receiver);
-      }
-      if (_hasSetattr(receiver)) receiver._assignAttribute(key, value);
-      return true;
-    },
-  });
-  PROXY_TARGETS.set(proxy, self);
-  return proxy;
-}
-
-/**
- * `_missingAttribute` / `_assignAttribute` for every instance of `cls` and its
- * subclasses, without wrapping each instance in a `pyObject` proxy: one
- * proxy is spliced into the prototype chain between `cls.prototype` and its
- * base's. A read of an own field or of a member of `cls` or a subclass
- * stops before it; base-class members and misses reach it, and a miss goes
- * to `_missingAttribute`. Shaped for speed: a `pyObject` proxy traps every read
- * and write, and most traffic on these objects is own fields and their own
- * class's members.
- *
- * A write to an own field or to an accessor above the proxy skips
- * `_assignAttribute`, so this is exact only for a `_assignAttribute` that lets every
- * existing attribute through (as `object.__setattr__` would) and rules on
- * new names alone. `setattrPassesPrivate`: `_assignAttribute` (on every
- * subclass too) hands `_`-prefixed names straight to `object.__setattr__`,
- * so a constructor's private fields skip it.
- */
-export function pyClassHooks(cls: Function, kw: { setattrPassesPrivate?: boolean } = {}): void {
-  const privatePass = kw.setattrPassesPrivate ?? false;
-  // An empty target over the base prototype: the proxy then reports that prototype as its
-  // own, so `instanceof Base` still finds it in the chain.
-  const base: object = Object.create(Object.getPrototypeOf(cls.prototype));
-  const hooks = new Proxy(base, {
-    get(target, key, receiver) {
-      if (typeof key === "symbol" || key in target) return Reflect.get(target, key, receiver);
-      if (key === "then" || key === "toJSON" || key === "constructor") return undefined;
-      // Special methods are looked up on the type, never through `_missingAttribute` (see `pyObject`).
-      if (_isSpecial(key)) return undefined;
-      if (_hasGetattr(receiver)) return receiver._missingAttribute(key);
-      return undefined;
-    },
-    set(target, key, value, receiver) {
-      if (
-        typeof key === "symbol" ||
-        (privatePass && key.startsWith("_")) ||
-        receiver === setattrTarget ||
-        !_hasSetattr(receiver)
-      ) {
-        return Reflect.set(target, key, value, receiver);
-      }
-      // `_assignAttribute` passes an existing name on to `object.__setattr__`, which reports no
-      // failure (a getter-only accessor ignores the write).
-      if (key in target) Reflect.set(target, key, value, receiver);
-      else receiver._assignAttribute(key, value);
-      return true;
-    },
-  });
-  Object.setPrototypeOf(cls.prototype, hooks);
-}
-
-const inSetattr = new WeakSet<object>();
-// The object `objectSetattr` is writing to (a `pyClassHooks` instance), if any.
-let setattrTarget: object | null = null;
-
-/** The object a `pyObject` proxy wraps (`self` itself when it is not one). */
-function targetOf(self: object): object {
-  return PROXY_TARGETS.get(self) ?? self;
-}
-
-/** `object.__setattr__(self, name, value)` - bypasses `_assignAttribute`, still runs descriptors. */
-export function objectSetattr(self: object, name: string, value: unknown): void {
-  const target = targetOf(self);
-  if (target === self) {
-    // Not a `pyObject` proxy: only a `pyClassHooks` proxy can see this write.
-    const outer = setattrTarget;
-    setattrTarget = self;
-    try {
-      Reflect.set(self, name, value);
-    } finally {
-      setattrTarget = outer;
-    }
-    return;
-  }
-  inSetattr.add(target);
-  try {
-    Reflect.set(target, name, value, self);
-  } finally {
-    inSetattr.delete(target);
-  }
-}
-
-/** `object.__getattribute__(self, name)` - no `_missingAttribute` fallback. */
-export function objectGetattr(self: object, name: string): any {
-  const target = targetOf(self);
-  if (!(name in target)) {
-    throw new AttributeError(`'${target.constructor?.name}' object has no attribute '${name}'`);
-  }
-  return Reflect.get(target, name, self);
-}
-
 const INSTANCE_DICT: unique symbol = Symbol("instanceDict");
 
 /**
@@ -242,12 +105,4 @@ export function instanceDict(obj: object): Map<string, any> {
 /** Whether `obj` already holds per-instance overrides (a read never creates them). */
 export function hasInstanceDict(obj: object): boolean {
   return Object.prototype.hasOwnProperty.call(obj, INSTANCE_DICT);
-}
-
-/** The JS protocol methods pyrt's builtins probe for in place of Python's special methods. */
-const PROTOCOL = new Set(["equals", "has", "toBoolean", "deepCopy"]);
-
-/** Python looks special methods up on the type, never through `_missingAttribute`. */
-function _isSpecial(key: string): boolean {
-  return (key.length > 4 && key.startsWith("__") && key.endsWith("__")) || PROTOCOL.has(key);
 }

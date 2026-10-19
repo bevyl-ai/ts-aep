@@ -248,9 +248,10 @@ metadata=…, converter=…)` → `field({ default, repr, init, eq, metadata, co
   class, bound in a `static {}` block at the end of that class with
   `descriptor(this, "enabled", new ChunkField(...))` (pyrt `dunder.ts`), which infers the
   field's types from the class. Class-level access → `getDescriptor(Cls, "name")`.
-- A missing-attribute fallback (Python's `__getattr__`) is `_missingAttribute(name)` and an
-  assignment hook (`__setattr__`) is `_assignAttribute(name, value)`, wired with
-  `pyClassHooks(Cls)`.
+- Python's `__getattr__` child lookup is a getter per built-in child display name on
+  `PropertyGroup` (camelCase, from the match-name catalog); any other child is `property(name)`.
+  There is no `__setattr__` hook: write guards live in setters (`ChunkField` calls an owner's
+  `_checkAttached`).
   `object.__setattr__(self, k, v)` → `objectSetattr(this, k, v)`;
   `object.__getattribute__` → `objectGetattr`.
 - Other dunders: `__repr__` → `__repr__()` (also used by pyrt `repr`), `__str__` →

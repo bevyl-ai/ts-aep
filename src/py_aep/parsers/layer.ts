@@ -69,7 +69,7 @@ export const parseLayer = suppressingMaterialization(function parse_layer(
   });
   layer._tdgp = findByListType(childChunks, "tdgp");
   // The property tree is built on first access (`Layer._tree_param_defs`).
-  Reflect.deleteProperty(layer, "_properties");
+  Reflect.deleteProperty(layer, "_propertyList");
   layer._treeParamDefs = effectParamDefs;
   return layer;
 });

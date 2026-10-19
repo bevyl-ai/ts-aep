@@ -17,6 +17,7 @@ import { RayTracedRendererOptions } from "./ray_traced.ts";
 import { RendererOptionsBase } from "./renderer_options_base.ts";
 import type { Chunk } from "../../../binary/chunk.ts";
 import type { CompItem } from "../composition.ts";
+import { instanceDict } from "../../../../pyrt/index.ts";
 
 export type RendererOptions =
   | AdvancedRendererOptions
@@ -42,7 +43,11 @@ const _WRAPPERS: Map<Function, typeof RendererOptionsBase> = new Map<Function, t
  */
 export function rendererOptionsFor(body: Chunk, comp: CompItem): RendererOptions {
   const wrapperCls = _WRAPPERS.get(body.constructor) ?? RendererOptionsBase;
-  return new wrapperCls({ body, comp });
+  // Sealed: a fresh wrapper per read, so a write to an option the renderer lacks would vanish.
+  // Its instance dict (where descriptor writes without a chunk go) exists before the seal.
+  const options = new wrapperCls({ body, comp });
+  instanceDict(options);
+  return Object.seal(options);
 }
 
 export {

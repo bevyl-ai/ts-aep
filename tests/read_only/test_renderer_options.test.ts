@@ -2,7 +2,7 @@
 
 import { describe, expect, test } from "bun:test";
 
-import { AttributeError, KeyError, Path, len, assert, valueEquals } from "../../src/pyrt/index.ts";
+import { KeyError, Path, len, assert, valueEquals } from "../../src/pyrt/index.ts";
 import "../../src/py_aep/binary/_register.ts";
 import {
   AdvancedRendererOptions,
@@ -95,8 +95,8 @@ describe("TestRendererOptionsReads", () => {
     raises(KeyError, () => {
       opts.set("Quality", 1);
     });
-    raises(AttributeError, () => {
-      // @ts-expect-error a ray-traced renderer has no quality; the write must raise at runtime
+    raises(TypeError, () => {
+      // @ts-expect-error a ray-traced renderer has no quality; the sealed wrapper refuses the write
       opts.quality = 1;
     });
   });

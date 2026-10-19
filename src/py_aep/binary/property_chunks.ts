@@ -7,18 +7,7 @@
  * have variable-length or context-dependent layouts.
  */
 
-import {
-  ByteStream,
-  Factory,
-  ValueError,
-  Bytes,
-  define,
-  descriptor,
-  field,
-  objectSetattr,
-  assert,
-  struct,
-} from "../../pyrt/index.ts";
+import { ByteStream, Factory, ValueError, Bytes, define, descriptor, field, assert, struct } from "../../pyrt/index.ts";
 import { readBytes, writeBytes } from "./bin_utils.ts";
 import { BitField } from "./bitfield.ts";
 import { Chunk, ContainerChunk, type ChunkReadKwargs } from "./chunk.ts";
@@ -510,7 +499,7 @@ export class TdumChunk extends Chunk {
       isInteger,
     });
     if (trailing?.length > 0) {
-      objectSetattr(instance, "_trailing", trailing);
+      instance._trailing = trailing;
     }
     return instance;
   }
@@ -555,7 +544,7 @@ export class OtdaChunk extends Chunk {
     const trailing = raw.slice(n * 8);
     const instance = new this({ chunkType, values: vals });
     if (trailing.length > 0) {
-      objectSetattr(instance, "_trailing", trailing);
+      instance._trailing = trailing;
     }
     return instance;
   }
