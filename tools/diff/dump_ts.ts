@@ -7,6 +7,7 @@ import * as fs from "node:fs";
 import * as py_aep from "../../src/py_aep/index.ts";
 import { Path } from "../../src/pyrt/pathlib.ts";
 import { Element } from "../../src/pyrt/etree.ts";
+import { CHILD_GETTER_NAMES } from "../../src/py_aep/models/properties/property_group.ts";
 
 const MAX_DEPTH = 40;
 
@@ -25,6 +26,7 @@ function publicNames(obj: any): string[] {
   for (let p = Object.getPrototypeOf(obj); p && p !== Object.prototype; p = Object.getPrototypeOf(p)) {
     for (const [name, d] of Object.entries(Object.getOwnPropertyDescriptors(p))) {
       if (name.startsWith("_") || name === "constructor" || lenGetters.includes(name)) continue;
+      if (p === py_aep.PropertyGroup.prototype && CHILD_GETTER_NAMES.has(name)) continue;
       if (d.get) names.add(name);
     }
   }

@@ -1,4 +1,4 @@
-import { RuntimeError, objectSetattr, pyObject } from "../../../../pyrt/index.ts";
+import { RuntimeError } from "../../../../pyrt/index.ts";
 import type { OutputModule } from "../output_module.ts";
 
 /**
@@ -28,10 +28,6 @@ export class FormatOptionsBase {
   /** Set when the owning module has replaced this wrapper's chunk. */
   declare _detached: boolean;
 
-  constructor() {
-    return pyObject(this);
-  }
-
   _checkAttached(): void {
     if (this._detached) {
       throw new RuntimeError(
@@ -40,16 +36,6 @@ export class FormatOptionsBase {
           "batchEdit). Re-fetch `outputModule.formatOptions`.",
       );
     }
-  }
-
-  _assignAttribute(name: string, value: unknown): void {
-    // Public fields only: `__init__` assigns `_body` (and friends), and
-    // the detach itself writes `_detached`, both before/while there is
-    // anything to guard.
-    if (!name.startsWith("_")) {
-      this._checkAttached();
-    }
-    objectSetattr(this, name, value);
   }
 }
 

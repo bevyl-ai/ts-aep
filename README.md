@@ -84,8 +84,9 @@ const text = comp.textLayers[0].text?.sourceText.value.text;
 
 A child whose attribute name depends on the layer (`anchorPoint` on an AV
 layer is a camera's `pointOfInterest`; `rotation` becomes `zRotation` on a 3D
-layer) is reached by match name instead. Other children, such as effect
-parameters, still resolve by attribute name at runtime, untyped.
+layer) is reached by match name instead. Other built-in children resolve by
+attribute name at runtime, untyped; third-party effect parameters are reached
+with `group.property("Display Name")`.
 
 ### Node / Bun
 

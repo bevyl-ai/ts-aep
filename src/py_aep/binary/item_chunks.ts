@@ -6,7 +6,7 @@
  * accessors. NnhdChunk uses `BitField` for scattered flag bits.
  */
 
-import { Bytes, define, descriptor, field, objectSetattr, literal, ValueError } from "../../pyrt/index.ts";
+import { Bytes, define, descriptor, field, literal, ValueError } from "../../pyrt/index.ts";
 import { MAC_EPOCH_OFFSET } from "./bin_utils.ts";
 import { BitField } from "./bitfield.ts";
 import { Chunk } from "./chunk.ts";
@@ -488,7 +488,7 @@ export class CmtaChunk extends Chunk {
   set value(text: string) {
     // AE always writes a double-null terminator inside the chunk data.
     const encoded = new TextEncoder().encode(text.replaceAll("\n", "\r\n") + "\x00\x00");
-    objectSetattr(this, "data", encoded);
+    this.data = encoded;
   }
 }
 define(CmtaChunk, {

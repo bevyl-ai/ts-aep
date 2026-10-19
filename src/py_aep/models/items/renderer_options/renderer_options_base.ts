@@ -1,6 +1,6 @@
 /** Shared plumbing for the per-renderer option wrappers. */
 
-import { INSPECT, describe, AttributeError, objectSetattr, pyObject, literal } from "../../../../pyrt/index.ts";
+import { INSPECT, describe } from "../../../../pyrt/index.ts";
 import { SettingsView, type SettingsSpec } from "../../renderqueue/settings.ts";
 import type { CompItem } from "../composition.ts";
 import type { Chunk } from "../../../binary/chunk.ts";
@@ -35,22 +35,7 @@ export class RendererOptionsBase extends SettingsView {
     super(null, new.target._SPEC);
     this._body = body;
     this._comp = comp;
-    // Python's owner is the (possibly proxied) instance itself, so writes via
-    // the mapping side go through `_assignAttribute` as well.
-    const self = pyObject(this);
-    objectSetattr(self, "_owner", self);
-    return self;
-  }
-
-  _assignAttribute(name: string, value: unknown): void {
-    // A fresh wrapper is built on every `rendererOptions` access, so a
-    // write to a name with no backing descriptor would vanish with the
-    // wrapper. Reject it instead of silently dropping it.
-    // NOTE(port): `name in prototype` is `hasattr(type(self), name)`; pyrt `hasattr` would run descriptor getters on the prototype.
-    if (!name.startsWith("_") && !(name in this.constructor.prototype)) {
-      throw new AttributeError(`${this.constructor.name} has no option ${literal(name)}`);
-    }
-    objectSetattr(this, name, value);
+    this._owner = this;
   }
 
   [INSPECT](): string {

@@ -20,6 +20,7 @@ import {
   valueEquals,
   repr,
   zip,
+  getMember,
 } from "../../src/pyrt/index.ts";
 import "../../src/py_aep/binary/_register.ts";
 import {
@@ -982,17 +983,17 @@ describe("TestLayerPropertyGroupInheritance", () => {
     });
   });
 
-  /** layer.transform.position resolves via _missingAttribute. */
+  /** layer.transform.position resolves the child by attribute name. */
   test("test_getattr_single_word", () => {
     const layer = getLayer(parseProject(SAMPLES_DIR.div("layer_switches.aep")), "enabled_false");
-    const position = layer.transform._missingAttribute("position");
+    const position = getMember(layer.transform, "position");
     expect(position.matchName).toBe("ADBE Position");
   });
 
   /** layer.transform.anchorPoint resolves 'Anchor Point'. */
   test("test_getattr_multi_word", () => {
     const layer = getLayer(parseProject(SAMPLES_DIR.div("layer_switches.aep")), "enabled_false");
-    const anchor = layer.transform._missingAttribute("anchorPoint");
+    const anchor = getMember(layer.transform, "anchorPoint");
     expect(anchor.matchName).toBe("ADBE Anchor Point");
   });
 
@@ -1000,11 +1001,11 @@ describe("TestLayerPropertyGroupInheritance", () => {
   test("test_getattr_attribute_error", () => {
     const layer = getLayer(parseProject(SAMPLES_DIR.div("layer_switches.aep")), "enabled_false");
     raises(AttributeError, () => {
-      layer.transform._missingAttribute("nonexistent");
+      getMember(layer.transform, "nonexistent");
     });
   });
 
-  /** Class attributes take priority over _missingAttribute. */
+  /** Class members take priority over the child-name getters. */
   test("test_getattr_does_not_shadow_fields", () => {
     const layer = getLayer(parseProject(SAMPLES_DIR.div("layer_switches.aep")), "enabled_false");
     // 'name' is a class attribute, should NOT look in children

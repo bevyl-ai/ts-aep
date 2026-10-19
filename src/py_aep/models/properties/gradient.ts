@@ -6,10 +6,10 @@ import {
   compare,
   ValueError,
   descriptor,
-  objectGetattr,
-  objectSetattr,
   valueEquals,
   type ClassAttributes,
+  getMember,
+  setMember,
 } from "../../../pyrt/index.ts";
 import { toF4 } from "../../binary/bin_utils.ts";
 import { Utf8Chunk } from "../../binary/scalar_chunks.ts";
@@ -40,14 +40,14 @@ class _GradientField<T> {
 
   get(obj: object | null, _objtype?: Function | null): T | this {
     if (obj == null) return this;
-    const value: T = objectGetattr(obj, this._slot);
+    const value: T = getMember(obj, this._slot);
     return value;
   }
 
   set(obj: object, value: T): void {
     const validator = this.constructor._VALIDATORS.get(this._name);
     if (validator != null) validator(value, null);
-    objectSetattr(obj, this._slot, value);
+    setMember(obj, this._slot, value);
     const gradient: { _serialize?: () => void } = "_gradient" in obj ? (obj._gradient as object) : obj;
     gradient._serialize?.();
   }

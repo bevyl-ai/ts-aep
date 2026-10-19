@@ -8,7 +8,6 @@ import {
   descriptor,
   getMember,
   setMember,
-  objectSetattr,
   assert,
   truthy,
   valueEquals,
@@ -380,12 +379,6 @@ export class Layer extends PropertyGroup {
     return this === other;
   }
 
-  _assignAttribute(name: string, value: unknown): void {
-    // Layers set public instance attributes of their own, which
-    // `PropertyGroup._assignAttribute` would refuse.
-    objectSetattr(this, name, value);
-  }
-
   constructor(kw: LayerInitKw) {
     const { _ldta, _cmta, _nameUtf8, _layerList, containingComp } = kw;
     // NOTE(port): TS cannot touch `this` before super(); the early self._ldta/_cmta/_layer_list/_essential_property_uuids assignments move below it (the base __init__ never reads them) and new.target stands in for self in the match-name lookup.
@@ -464,21 +457,12 @@ export class Layer extends PropertyGroup {
   // first access, or `null` once it is built: opening a composition's
   // layers then only decodes their `ldta`, and a reader of layer
   // attributes alone (times, names, sources) never pays for the
-  // properties. Until then `_properties` is absent from the instance, so
-  // its first read lands in `_missingAttribute`; after that it is a plain
-  // attribute, with nothing to check on each access.
+  // properties. The first read of `_properties` builds the tree.
   // NOTE(port): a Python class attribute, installed on the prototype below the class.
   declare _treeParamDefs: EffectParamDefs | null;
 
-  _missingAttribute(name: string): Property | PropertyGroup {
-    // A public name may be a child looked up by attribute: build first.
-    if (this._treeParamDefs != null && (name === "_properties" || !name.startsWith("_"))) {
-      this._loadPropertyTree();
-      // NOTE(port): Python returns `getattr(self, name)`, here the `_properties` list too; the base signature only names the child case.
-      return getMember(this, name);
-    }
-    return super._missingAttribute(name);
-  }
+  /** The property tree once built (see `_properties`). */
+  declare _propertyList: (Property | PropertyGroup)[];
 
   /** Build the property tree of a parsed layer, if not built yet. */
   _loadPropertyTree(): void {
@@ -494,7 +478,7 @@ export class Layer extends PropertyGroup {
       } catch (e) {
         // Unbuilt again, so the next read raises too rather than seeing
         // a partial tree.
-        Reflect.deleteProperty(this, "_properties");
+        Reflect.deleteProperty(this, "_propertyList");
         this._treeParamDefs = effectParamDefs;
         throw e;
       }
@@ -1735,6 +1719,17 @@ export class Layer extends PropertyGroup {
   }
 }
 
-// `_tree_param_defs: ... = None` in the class body: on the prototype, so
-// `_missingAttribute` finds it before the instance sets its own.
+// On the prototype, so every layer reads `null` until a parser defers its tree.
 Layer.prototype._treeParamDefs = null;
+
+// A parsed layer builds its property tree on the first read of `_properties`.
+Object.defineProperty(Layer.prototype, "_properties", {
+  configurable: true,
+  get(this: Layer): (Property | PropertyGroup)[] {
+    if (this._treeParamDefs != null) this._loadPropertyTree();
+    return this._propertyList;
+  },
+  set(this: Layer, value: (Property | PropertyGroup)[]) {
+    this._propertyList = value;
+  },
+});

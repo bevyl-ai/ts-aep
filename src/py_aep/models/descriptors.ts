@@ -58,6 +58,8 @@ type RawField<O, A extends string, F extends string> = F extends keyof ChunkBody
  */
 export interface ChunkOwner {
   _ensureMaterialized?(): void;
+  /** Throws when the owner no longer backs the file (a replaced format-options wrapper). */
+  _checkAttached?(): void;
 }
 
 /** Effect match name → parameter match name → pard field bag. */
@@ -323,6 +325,7 @@ export class ChunkField<
 
   set(obj: O & ChunkOwner, value: T): void {
     if (this.readOnly) throw new AttributeError(`${literal(this.publicName)} is read-only.`);
+    obj._checkAttached?.();
     if (this.minVersion != null) {
       let major: number | null;
       try {
