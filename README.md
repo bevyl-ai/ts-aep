@@ -73,7 +73,10 @@ module (`readSvg`, `buildShapeLayerContents`, `parseTransform`);
 `project.addEffectDefinitions(efdg)` imports effect definitions After Effects
 saved in another project, so `addProperty` can add those effects;
 `FontObject.technology` and `designVector` are writable (a CFF font needs
-`CT_TYPE1_FONT`); `Shape.bounds` is the box a shape's points are stored in.
+`CT_TYPE1_FONT`) and `TextDocument.fonts` lists every font a document
+registers; `TextLayer.continuouslyRasterize` sets the collapse switch AE
+scripting refuses on text (effects on unrasterized text ask for missing
+footage); `Shape.bounds` is the box a shape's points are stored in.
 COS reals that `{:.10g}` would write with an exponent are written fixed-point,
 which After Effects requires.
 
