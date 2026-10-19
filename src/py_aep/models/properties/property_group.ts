@@ -1272,11 +1272,14 @@ const _RESERVED = new Set([
   "toBoolean",
   "deepCopy",
 ]);
+/** The installed child getters; Python reaches these through `__getattr__`, which `dir()` never lists. */
+export const CHILD_GETTER_NAMES = new Set<string>();
 for (const name of new Set([
   ...[...MATCH_NAME_TO_AUTO_NAME.values()].map(_attrName),
   ...Object.values(CHILD_MATCH_NAMES).flatMap((names) => Object.keys(names)),
 ])) {
   if (!/^[a-z][A-Za-z0-9]*$/.test(name) || _RESERVED.has(name) || name in PropertyGroup.prototype) continue;
+  CHILD_GETTER_NAMES.add(name);
   Object.defineProperty(PropertyGroup.prototype, name, {
     configurable: true,
     get(this: PropertyGroup): Property | PropertyGroup {
