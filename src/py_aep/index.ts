@@ -234,7 +234,7 @@ export const _DEFAULT_NEW_VERSION = "26.0x67";
  * - `aePreferencesDir`: Optional path to the AE preferences directory (e.g. `C:/Users/<user>/AppData/Roaming/Adobe/After Effects/26.0`), required only for adding items to the render queue.
  * - `platform`: The After Effects platform the project is for, as in {@link py_aep.parse | parse}. It also selects the header stamps and the GPU renderer (Metal on macOS, CUDA on Windows) a project created on that platform carries. Defaults to the running operating system.
  *
- * @throws ValueError If `version` is malformed, names a major before 26 that
+ * @throws InvalidValueError If `version` is malformed, names a major before 26 that
  *   py_aep has no file-format stamp for (before 15, or 19 to 21), or
  *   has a major or build above 255 or a minor above 15 (the head
  *   chunk's field widths).
@@ -415,25 +415,7 @@ export {
 // Workers read and write through the in-memory fs; see README "Use".
 export { memfs, useMemoryFs, useHostFs, fsBackend } from "../pyrt/host.ts";
 export { setWarningHandler } from "../pyrt/errors.ts";
-export {
-  AepError,
-  AttributeError,
-  FileExistsError,
-  FileNotFoundError,
-  IndexError,
-  KeyError,
-  LookupError,
-  NotImplementedError,
-  OSError,
-  OverflowError,
-  RuntimeError,
-  StructError,
-  UnicodeDecodeError,
-  UnicodeEncodeError,
-  UnicodeError,
-  ValueError,
-  ZeroDivisionError,
-} from "../pyrt/errors.ts";
+export { AepError, InvalidValueError, NotFoundError, UnsupportedError, FileSystemError } from "../pyrt/errors.ts";
 
 // Only the models call synthesis/core (through `late`), so load it here.
 import "./synthesis/core.ts";

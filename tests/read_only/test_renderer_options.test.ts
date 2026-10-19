@@ -80,9 +80,8 @@ describe("TestRendererOptionsReads", () => {
     const comp = parseAep(COMPOSITION_DIR.div("renderer_cinema_4d.aep")).project.compositions[0];
     const opts = comp.rendererOptions;
 
-    expect(valueEquals(dict(opts), new Map([["Quality", 25]]))).toBe(true);
-    expect(valueEquals([...opts.keys()], ["Quality"])).toBe(true);
-    expect(valueEquals(opts, new Map([["Quality", 25]]))).toBe(true);
+    expect(new Map(opts)).toEqual(new Map([["Quality", 25]]));
+    expect([...opts.keys()]).toEqual(["Quality"]);
   });
 
   /** AE 26.3 cannot author this renderer, so we do not let anyone edit it. */

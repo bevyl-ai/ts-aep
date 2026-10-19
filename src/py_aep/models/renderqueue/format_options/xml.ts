@@ -1,13 +1,11 @@
 import * as ET from "../../../../pyrt/etree.ts";
 import {
-  KeyError,
   RuntimeError,
   ValueError,
   Bytes,
   concat,
   decode,
   descriptor,
-  getOrThrow,
   isdigit,
   literal,
   typeName,
@@ -72,17 +70,6 @@ const _PARAM_RULE_KEYS = new Map<string, string>([
 ]);
 
 type ETElement = ET.Element;
-
-/** `dict(*args).items()` for `ParamsDict.update`. */
-export type DictSource = Map<string, string> | Iterable<[string, string]> | Record<string, string>;
-
-function _dictItems(args: DictSource[]): Iterable<[string, string]> {
-  if (args.length === 0) return [];
-  const src = args[0];
-  if (src instanceof Map) return src.entries();
-  if (Array.isArray(src)) return src;
-  return Object.entries(src);
-}
 
 /** Descriptor for XML enum parameters (read/write). */
 class _EnumParam {
@@ -216,21 +203,9 @@ function _tryEnumOrInt(enumCls: EnumHelpers<number>, rawStr: string): number | n
   return enumCls.ofOrNull(rawValue) ?? rawValue;
 }
 
-/**
- * Dict subclass that syncs mutations back to the XML tree.
- *
- * `dict.update` / `setdefault` / `pop` / `clear` / `popitem` / `|=` are
- * C-level and do NOT call `__setitem__` / `__delitem__`, so every one of
- * them is overridden to route through them - otherwise they would mutate
- * the dict (and so the typed accessors' reads) while leaving the XML, and
- * therefore the saved file, unchanged.
- */
+/** The XML format parameters, as a `Map` whose writes and deletes update the saved XML. */
 export class ParamsDict extends Map<string, string> {
-  /**
-   * A class default, not a bare annotation: `update` and friends below
-   * reach `self._owner` through `__setitem__`, so a `ParamsDict` built
-   * before `_owner` is assigned would raise AttributeError.
-   */
+  /** `null` while the parser fills the map, so loading does not write back. */
   _owner: XmlFormatOptions | null = null;
 
   set(key: string, value: string): this {
@@ -240,55 +215,13 @@ export class ParamsDict extends Map<string, string> {
   }
 
   delete(key: string): boolean {
-    if (!super.has(key)) throw new KeyError(literal(key));
-    super.delete(key);
+    if (!super.delete(key)) return false;
     if (this._owner != null) this._owner._onParamRemoved(key);
     return true;
   }
 
-  update(...args: DictSource[]): void {
-    for (const [key, value] of _dictItems(args)) {
-      this.set(key, value);
-    }
-  }
-
-  setdefault(key: string, default_: string = ""): string {
-    if (!this.has(key)) this.set(key, default_);
-    return getOrThrow(this, key);
-  }
-
-  pop(key: string, ...default_: string[]): string {
-    if (!this.has(key)) {
-      if (default_.length > 0) return default_[0];
-      throw new KeyError(literal(key));
-    }
-    const value = getOrThrow(this, key);
-    this.delete(key);
-    return value;
-  }
-
-  popitem(): [string, string] {
-    const keys = [...this.keys()];
-    if (keys.length === 0) throw new KeyError(literal("popitem(): dictionary is empty"));
-    const key = keys[keys.length - 1];
-    const value = getOrThrow(this, key);
-    super.delete(key);
-    if (this._owner != null) this._owner._onParamRemoved(key);
-    return [key, value];
-  }
-
   clear(): void {
-    for (const key of [...this.keys()]) {
-      this.delete(key);
-    }
-  }
-
-  // `|` (__or__) needs no override: it returns a new plain dict rather
-  // than mutating, so it cannot desync the XML. Only `|=` does.
-  /** Python `__ior__` (`|=`) */
-  merge(other: DictSource): ParamsDict {
-    this.update(other);
-    return this;
+    for (const key of [...this.keys()]) this.delete(key);
   }
 }
 
@@ -354,7 +287,7 @@ export class XmlFormatOptions extends FormatOptionsBase {
       const xmlText = decode(raw.slice(xmlStart), "utf-8", "replace").split("\x00")[0];
       const template = _parseTemplate(xmlText);
       this._template = template.tree;
-      this.params.update(template.params);
+      for (const [key, value] of template.params) this.params.set(key, value);
     }
     this.params._owner = this;
   }
@@ -674,7 +607,7 @@ export class XmlFormatOptions extends FormatOptionsBase {
   set profile(value: MPEGProfile | number) {
     validateEnum(MPEGProfile)(value);
     if (MPEGProfile.of(value) === MPEGProfile.BASELINE) {
-      this.params.pop("ADBEVideoMPEGProfile", "");
+      this.params.delete("ADBEVideoMPEGProfile");
       return;
     }
     this._setParam("ADBEVideoMPEGProfile", String(Math.trunc(value)));

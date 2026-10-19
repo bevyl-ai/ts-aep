@@ -118,7 +118,7 @@ const _URL_RE = new RegExp(`^url\\([${_PY_WS}]*#([^)${_PY_WS}]+)[${_PY_WS}]*\\)`
  *
  * @param source - Path to an `.svg` file, or its raw bytes/markup.
  * @returns The flattened document (canvas size + drawables).
- * @throws UnsupportedSVGError For SVG features py_aep cannot import, and for
+ * @throws InvalidValueError For SVG features py_aep cannot import, and for
  *   a file that is not well-formed XML.
  */
 export function readSvg(source: string | PathLike | Uint8Array): SvgDocument {

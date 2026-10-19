@@ -106,7 +106,7 @@ export type InstanceValue = string | number | boolean | object | null;
  * @param min_version - Minimum AE major version required to *set* this field. Writes to an older
  *   file raise `AttributeError`; reads are always allowed. Mirrors `models.descriptors.ChunkField`.
  */
-export class CosField<T extends InstanceValue, A extends string = string, O extends CosBacked<A> = CosBacked<A>> {
+export class CosField<T extends InstanceValue, A extends string = string, O extends object = CosBacked<A>> {
   declare dictAttr: A;
   declare key: string;
   declare transform: (x: CosNode) => T;
@@ -155,12 +155,17 @@ export class CosField<T extends InstanceValue, A extends string = string, O exte
     return this.accepts(value) ? { value } : null;
   }
 
+  /** `obj`'s COS sub-dict; the constraint stays `object` so the published types need no internal members. */
+  private _backing(obj: O): CosBacked<A> {
+    return obj as CosBacked<A>;
+  }
+
   get(obj: O | null, _objtype?: Function): T | this {
     if (obj == null) return this;
     // Instance-dict overrides (set by parser or user when no dict)
     const override = this._override(obj);
     if (override != null) return override.value;
-    const d = obj[this.dictAttr];
+    const d = this._backing(obj)[this.dictAttr];
     if (d == null) return this.default;
     return _extract(d, this.key, this.transform, this.default);
   }
@@ -195,7 +200,8 @@ export class CosField<T extends InstanceValue, A extends string = string, O exte
     this._checkWritable(obj);
     // Clear any instance-dict override
     overrides(obj).delete(this.publicName);
-    const d = obj[this.dictAttr];
+    const backing = this._backing(obj);
+    const d = backing[this.dictAttr];
     if (d == null) {
       // No backing dict - store as instance override
       overrides(obj).set(this.publicName, value);
@@ -208,7 +214,7 @@ export class CosField<T extends InstanceValue, A extends string = string, O exte
     } else {
       d.set(this.key, this._coerce(obj, value));
     }
-    obj._propagateCos?.();
+    backing._propagateCos?.();
   }
 }
 

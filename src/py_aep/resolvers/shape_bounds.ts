@@ -468,7 +468,7 @@ function _walk(
  * @param time - Composition time in seconds.
  * @param extents - `true` to include the stroke extents.
  * @returns An object with `top`, `left`, `width` and `height` keys.
- * @throws NotImplementedError For a path operation other than Trim Paths
+ * @throws UnsupportedError For a path operation other than Trim Paths
  *   and Repeater, or a polystar with a fractional number of points.
  */
 export function shapeLayerRect(

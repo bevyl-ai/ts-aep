@@ -39,6 +39,6 @@ export class RendererOptionsBase extends SettingsView {
   }
 
   [INSPECT](): string {
-    return describe(this.constructor.name, Object.fromEntries(this.items()));
+    return describe(this.constructor.name, Object.fromEntries(this.entries()));
   }
 }

@@ -234,7 +234,7 @@ export function resolveOcioConfig(config: string): Path | null {
  * @param purpose - Completes the error message, e.g.
  *   `"build the color-profile envelope for 'ACEScg'"`.
  *
- * @throws ValueError If the configuration cannot be located.
+ * @throws InvalidValueError If the configuration cannot be located.
  */
 export function requireOcioConfig(config: string | null, purpose: string): Path {
   const resolved = config != null ? resolveOcioConfig(config) : null;
@@ -395,7 +395,7 @@ function _items(x: OcioValue): [OcioValue, OcioValue][] {
  * - an alias: the alias name, `{"colorSpace1": alias, "ocioColorSpaceType": 2}`.
  * - a `display/view` pair: `{"colorSpace1": display, "colorSpace2": view, "ocioColorSpaceType": 1}`.
  *
- * @throws ValueError If `colorSpace` is not found in the config.
+ * @throws InvalidValueError If `colorSpace` is not found in the config.
  */
 function _outputEnvelope(index: _ConfigIndex, colorSpace: OcioValue): [string, string] {
   // Only a string can be a color-space or alias name; any YAML key a role.
@@ -503,7 +503,7 @@ export function ocioColorSpaceForProfileId(configPath: Path, profileId: Uint8Arr
  * @param colorSpace - The color-space, role, alias, `display/view`, or
  *   `family/color-space` name.
  *
- * @throws ValueError If `colorSpace` is not found in the config.
+ * @throws InvalidValueError If `colorSpace` is not found in the config.
  */
 export function ocioColorProfileEnvelope(configPath: Path, colorSpace: string): string {
   const index = _configIndex(configPath);
@@ -534,7 +534,7 @@ export function ocioColorProfileEnvelope(configPath: Path, colorSpace: string): 
  * @param configPath - The resolved `.ocio` config path.
  * @param colorSpace - The output color-space name to assign.
  *
- * @throws ValueError If `colorSpace` is not found in the config.
+ * @throws InvalidValueError If `colorSpace` is not found in the config.
  */
 export function ocioOutputProfileId(configPath: Path, colorSpace: string): Uint8Array {
   const [name, data] = _outputEnvelope(_configIndex(configPath), colorSpace);

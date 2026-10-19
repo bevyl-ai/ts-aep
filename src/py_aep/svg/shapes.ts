@@ -62,7 +62,7 @@ function _isAuto(raw: string | null): boolean {
  * @param ctx - The viewport and font size percentage and `em` lengths
  *   resolve against.
  *
- * @throws UnsupportedSVGError For an element that is not a basic shape.
+ * @throws InvalidValueError For an element that is not a basic shape.
  */
 export function elementSubpaths(
   tag: string,

@@ -264,33 +264,33 @@ function _setXmlParamRaw(om: OutputModule, paramKey: string, value: number): voi
 
 /** The value each output module setting reads as: its {@link OutputModule} attribute's type. */
 export type OutputModuleSettingValues = SettingValues & {
-  "Audio Bit Depth": OutputModule["_audioBitDepth"];
-  "Audio Channels": OutputModule["_audioChannels"];
-  "Audio Sample Rate": OutputModule["_audioSampleRate"];
-  Channels: OutputModule["_channels"];
-  Color: OutputModule["_colorMode"];
-  "Convert to Linear Light": OutputModule["_convertToLinearLight"];
-  "Crop Bottom": OutputModule["_cropBottom"];
-  "Crop Left": OutputModule["_cropLeft"];
-  "Crop Right": OutputModule["_cropRight"];
-  "Crop Top": OutputModule["_cropTop"];
-  Crop: OutputModule["_crop"];
-  Depth: OutputModule["_depth"];
-  Format: OutputModule["_format"];
-  "Include Project Link": OutputModule["_includeProjectLink"];
+  "Audio Bit Depth": AudioBitDepth;
+  "Audio Channels": AudioChannels;
+  "Audio Sample Rate": AudioSampleRate;
+  Channels: OutputChannels;
+  Color: OutputColorMode;
+  "Convert to Linear Light": ConvertToLinearLight;
+  "Crop Bottom": number;
+  "Crop Left": number;
+  "Crop Right": number;
+  "Crop Top": number;
+  Crop: boolean;
+  Depth: OutputColorDepth;
+  Format: OutputFormat;
+  "Include Project Link": boolean;
   "Include Source XMP Metadata": OutputModule["includeSourceXmp"];
-  "Lock Aspect Ratio": OutputModule["_lockAspectRatio"];
-  "Output Audio": OutputModule["_outputAudio"];
-  "Output File Info": OutputModule["_outputFileInfo"];
-  "Post-Render Action": OutputModule["_postRenderActionSetting"];
-  "Preserve RGB": OutputModule["_preserveRgb"];
-  "Resize Quality": OutputModule["_resizeQuality"];
-  "Resize to": OutputModule["_resizeTo"];
-  Resize: OutputModule["_resize"];
-  "Starting #": OutputModule["_startingNumber"];
-  "Use Comp Frame Number": OutputModule["_useCompFrameNumber"];
-  "Use Region of Interest": OutputModule["_useRegionOfInterest"];
-  "Video Output": OutputModule["_videoOutput"];
+  "Lock Aspect Ratio": boolean;
+  "Output Audio": OutputAudio;
+  "Output File Info": Map<string, string>;
+  "Post-Render Action": PostRenderActionSetting;
+  "Preserve RGB": boolean;
+  "Resize Quality": ResizeQuality;
+  "Resize to": [number, number];
+  Resize: boolean;
+  "Starting #": number;
+  "Use Comp Frame Number": boolean;
+  "Use Region of Interest": boolean;
+  "Video Output": boolean;
 };
 
 // ---------------------------------------------------------------------------
@@ -514,7 +514,15 @@ export class OutputModule {
     _nameUtf8: Utf8Chunk | null;
     _renderSettingsLdat: RenderSettingsItem;
     parent: RenderQueueItem;
-    formatOptions: OutputModule["_formatOptions"];
+    formatOptions:
+      | CineonFormatOptions
+      | JpegFormatOptions
+      | OpenExrFormatOptions
+      | PngFormatOptions
+      | TargaFormatOptions
+      | TiffFormatOptions
+      | XmlFormatOptions
+      | null;
   }) {
     const { _omLdat, _roou, _alasUtf8, _fileNameUtf8, _nameUtf8, _renderSettingsLdat, parent, formatOptions } = kw;
     this._omLdat = _omLdat;
@@ -679,7 +687,7 @@ export class OutputModule {
     // have moved its dependents, leaving neither the old state nor the
     // requested one.
     this.batchEdit(() => {
-      for (const [k, v] of value instanceof Map ? [...value] : value.items()) {
+      for (const [k, v] of value.entries()) {
         // A full `settings` dict includes read-only keys (e.g.
         // "Format", "Channels"); skip any key whose value is
         // unchanged so a round-tripped dict applies cleanly, while a

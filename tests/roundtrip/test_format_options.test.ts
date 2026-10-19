@@ -849,13 +849,12 @@ describe("TestRoundtripXmlParamsDict", () => {
    * they used to update the dict (and the typed accessors reading it)
    * while the saved file kept the old value.
    */
-  // `update(BitRate="192")` kwargs are passed as a plain object; ParamsDict.update accepts a Map or a record.
-  test("test_update_persists", () => {
+  test("test_set_persists", () => {
     const tmpPath = makeTmpPath();
     const [project, opts] = _parseFresh(FORMAT_DIR.div("mp3", "mp3_mono_320.aep"));
     assert(opts instanceof XmlFormatOptions);
     expect(opts.bitrate).toBe(320);
-    opts.params.update(new Map([["BitRate", "128"]]));
+    opts.params.set("BitRate", "128");
     project.save(tmpPath.div("out.aep"));
     const [, opts2] = _parseFresh(tmpPath.div("out.aep"));
     assert(opts2 instanceof XmlFormatOptions);
@@ -863,33 +862,15 @@ describe("TestRoundtripXmlParamsDict", () => {
     expect(opts2.bitrate).toBe(128);
   });
 
-  test("test_update_kwargs_persists", () => {
+  test("test_set_persists_new_key", () => {
     const tmpPath = makeTmpPath();
     const [project, opts] = _parseFresh(FORMAT_DIR.div("mp3", "mp3_mono_320.aep"));
     assert(opts instanceof XmlFormatOptions);
-    opts.params.update({ BitRate: "192" });
-    project.save(tmpPath.div("out.aep"));
-    const [, opts2] = _parseFresh(tmpPath.div("out.aep"));
-    assert(opts2 instanceof XmlFormatOptions);
-    expect(opts2.bitrate).toBe(192);
-  });
-
-  test("test_setdefault_persists_new_key", () => {
-    const tmpPath = makeTmpPath();
-    const [project, opts] = _parseFresh(FORMAT_DIR.div("mp3", "mp3_mono_320.aep"));
-    assert(opts instanceof XmlFormatOptions);
-    expect(opts.params.setdefault("ADBEUnusedParam", "7")).toBe("7");
+    opts.params.set("ADBEUnusedParam", "7");
     project.save(tmpPath.div("out.aep"));
     const [, opts2] = _parseFresh(tmpPath.div("out.aep"));
     assert(opts2 instanceof XmlFormatOptions);
     expect<string>(getOrThrow(opts2.params, "ADBEUnusedParam")).toBe("7");
-  });
-
-  test("test_setdefault_keeps_existing", () => {
-    const [, opts] = _parseFresh(FORMAT_DIR.div("mp3", "mp3_mono_320.aep"));
-    assert(opts instanceof XmlFormatOptions);
-    expect(opts.params.setdefault("BitRate", "1")).toBe("320");
-    expect(opts.bitrate).toBe(320);
   });
 });
 

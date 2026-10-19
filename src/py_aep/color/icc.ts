@@ -211,7 +211,7 @@ export class IccProfileLibrary {
   /**
    * Return the raw ICC bytes for a profile name.
    *
-   * @throws ColorProfileNotFoundError If no profile with that description is
+   * @throws NotFoundError If no profile with that description is
    *   found in the searched directories.
    */
   bytesFor(name: string): Uint8Array {
@@ -226,7 +226,7 @@ export class IccProfileLibrary {
    * Prefers the catalogued ID (no disk access needed); falls back to hashing
    * a discovered ICC file.
    *
-   * @throws ColorProfileNotFoundError If the name is neither catalogued nor
+   * @throws NotFoundError If the name is neither catalogued nor
    *   found on disk.
    */
   hashFor(name: string): Uint8Array {

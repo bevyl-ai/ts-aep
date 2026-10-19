@@ -14,7 +14,6 @@ import {
   KeyError,
   ValueError,
   getMember,
-  valueEquals,
   literal,
   setMember,
   compositeKey,
@@ -90,7 +89,7 @@ export class SettingsView<V extends SettingValues = SettingValues> {
 
   // -- writes ------------------------------------------------------------
 
-  set(key: string, value: SettingValue | null): void {
+  set(key: string, value: SettingValue | null): this {
     const spec = this._specs.get(key) ?? null;
     if (spec == null) {
       const valid = [...this._specs.keys()].sort(compare);
@@ -110,17 +109,10 @@ export class SettingsView<V extends SettingValues = SettingValues> {
       if (!(e instanceof AttributeError) && !nativeReadonly) throw e;
       throw new AttributeError(`Setting ${literal(key)} is read-only.`);
     }
-  }
-
-  delete(_key: string): void {
-    throw new TypeError("Cannot delete settings keys");
+    return this;
   }
 
   // -- iteration ---------------------------------------------------------
-
-  [Symbol.iterator](): Iterator<string> {
-    return this._specs.keys();
-  }
 
   get size(): number {
     return this._specs.size;
@@ -130,99 +122,28 @@ export class SettingsView<V extends SettingValues = SettingValues> {
     return typeof key === "string" && this._specs.has(key);
   }
 
-  // -- MutableMapping mixin methods -----------------
-
-  keys(): string[] {
-    return [...this._specs.keys()];
+  keys(): IterableIterator<string> {
+    return this._specs.keys();
   }
 
-  items(): Array<[string, SettingValue]> {
-    return [...this._specs.keys()].map((key): [string, SettingValue] => [key, this.get(key)]);
+  *values(): IterableIterator<SettingValue> {
+    for (const key of this._specs.keys()) yield this.get(key);
   }
 
-  values(): SettingValue[] {
-    return this.items().map(([, v]) => v);
+  *entries(): IterableIterator<[string, SettingValue]> {
+    for (const key of this._specs.keys()) yield [key, this.get(key)];
   }
 
-  getOr(key: string): SettingValue | null;
-  getOr<D>(key: string, default_: D): SettingValue | D;
-  getOr<D>(key: string, default_: D | null = null): SettingValue | D | null {
-    try {
-      return this.get(key);
-    } catch (e) {
-      if (!(e instanceof KeyError)) throw e;
-      return default_;
-    }
+  [Symbol.iterator](): IterableIterator<[string, SettingValue]> {
+    return this.entries();
   }
 
-  update(
-    other: Map<string, SettingValue> | SettingsView<SettingValues> | Iterable<[string, SettingValue]> = [],
-    kwargs: Record<string, SettingValue> = {},
-  ): void {
-    if (other instanceof Map || other instanceof SettingsView) {
-      for (const [k, v] of other instanceof Map ? [...other.entries()] : other.items()) this.set(k, v);
-    } else {
-      for (const [k, v] of other) this.set(k, v);
-    }
-    for (const [k, v] of Object.entries(kwargs)) this.set(k, v);
-  }
-
-  setdefault(key: string): SettingValue | null;
-  setdefault<D extends SettingValue>(key: string, default_: D): SettingValue | D;
-  setdefault<D extends SettingValue>(key: string, default_: D | null = null): SettingValue | D | null {
-    try {
-      return this.get(key);
-    } catch (e) {
-      if (!(e instanceof KeyError)) throw e;
-      this.set(key, default_);
-      return default_;
-    }
-  }
-
-  pop(key: string): SettingValue;
-  pop<D>(key: string, default_: D): SettingValue | D;
-  pop<D>(key: string, ...default_: [D?]): SettingValue | D | undefined {
-    let value: SettingValue;
-    try {
-      value = this.get(key);
-    } catch (e) {
-      if (!(e instanceof KeyError)) throw e;
-      if (default_.length) return default_[0];
-      throw e;
-    }
-    this.delete(key);
-    return value;
-  }
-
-  popitem(): [string, SettingValue] {
-    const it = this._specs.keys().next();
-    if (it.done) throw new KeyError("");
-    const key = it.value;
-    const value = this.get(key);
-    this.delete(key);
-    return [key, value];
-  }
-
-  clear(): void {
-    for (;;) {
-      try {
-        this.popitem();
-      } catch (e) {
-        if (e instanceof KeyError) return;
-        throw e;
-      }
-    }
+  forEach(callback: (value: SettingValue, key: string, view: this) => void): void {
+    for (const [key, value] of this.entries()) callback(value, key, this);
   }
 
   [INSPECT](): string {
-    return describe("SettingsView", Object.fromEntries(this.items()));
-  }
-
-  equals(other: unknown): boolean {
-    if (other instanceof Map || other instanceof SettingsView) {
-      return valueEquals(new Map(this.items()), new Map(other instanceof Map ? other : other.items()));
-    }
-    return false;
+    return describe("SettingsView", Object.fromEntries(this.entries()));
   }
 }
 
@@ -381,11 +302,11 @@ function _toStringValue(
   return String(value);
 }
 
-/** `settings.items()` of a dict or a settings view. */
+/** `settings.entries()` of a dict or a settings view. */
 function _settingItems(
   settings: Map<string, SettingValue> | SettingsView<SettingValues>,
 ): Array<[string, SettingValue]> {
-  return settings instanceof Map ? [...settings.entries()] : settings.items();
+  return [...settings.entries()];
 }
 
 /**

@@ -205,7 +205,7 @@ function _justifiedOrigin(justification: ParagraphJustification, width: number, 
 /**
  * `sourceRectAtTime` of a text layer's document (see module rules).
  *
- * @throws NotImplementedError Outside the measured envelope (module
+ * @throws UnsupportedError Outside the measured envelope (module
  *   docstring), or when a font is not installed.
  */
 export function textInkRect(doc: TextDocument): { top: number; left: number; width: number; height: number } {
