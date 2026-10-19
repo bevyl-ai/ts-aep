@@ -22,7 +22,7 @@ import { boxFloat } from "../../src/pyrt/num.ts";
 import type { CosDict, CosNode } from "../../src/py_aep/cos/cos.ts";
 import { CosField } from "../../src/py_aep/cos/descriptors.ts";
 import { cosFloat } from "../../src/py_aep/cos/kinds.ts";
-import { ChunkField, _materializationAllowed, _suppressMaterialization } from "../../src/py_aep/models/descriptors.ts";
+import { ChunkField, materialization, runSuppressed } from "../../src/py_aep/models/descriptors.ts";
 import { raises } from "../support/pytest.ts";
 
 // ---------------------------------------------------------------------------
@@ -85,11 +85,12 @@ describe("TestChunkFieldScalarReverse", () => {
     const body = new _FakeBody({ quality: 0 });
     new _FakeParent(body);
     const model = new _ScalarModel(body);
-    const token = _materializationAllowed.set(true);
+    const previous = materialization.allowed;
+    materialization.allowed = true;
     try {
       model.quality = 5;
     } finally {
-      _materializationAllowed.reset(token);
+      materialization.allowed = previous;
     }
     expect(body.quality).toBe(5);
   });
@@ -98,11 +99,12 @@ describe("TestChunkFieldScalarReverse", () => {
     const body = new _FakeBody({ quality: 0, other: 99 });
     new _FakeParent(body);
     const model = new _ScalarModel(body);
-    const token = _materializationAllowed.set(true);
+    const previous = materialization.allowed;
+    materialization.allowed = true;
     try {
       model.quality = 10;
     } finally {
-      _materializationAllowed.reset(token);
+      materialization.allowed = previous;
     }
     expect(body.other).toBe(99);
   });
@@ -113,11 +115,12 @@ describe("TestChunkFieldDirectWrite", () => {
     const body = new _FakeBody({ name: "old" });
     new _FakeParent(body);
     const model = new _DirectModel(body);
-    const token = _materializationAllowed.set(true);
+    const previous = materialization.allowed;
+    materialization.allowed = true;
     try {
       model.name = "new";
     } finally {
-      _materializationAllowed.reset(token);
+      materialization.allowed = previous;
     }
     expect(body.name).toBe("new");
   });
@@ -267,11 +270,12 @@ describe("TestChunkFieldDictOverride", () => {
     const model = new _DirectModel(body);
     instanceDict(model).set("name", "override");
     expect(model.name).toBe("override");
-    const token = _materializationAllowed.set(true);
+    const previous = materialization.allowed;
+    materialization.allowed = true;
     try {
       model.name = "written";
     } finally {
-      _materializationAllowed.reset(token);
+      materialization.allowed = previous;
     }
     expect(instanceDict(model).has("name")).toBe(false);
     expect(model.name).toBe("written");
@@ -291,11 +295,12 @@ describe("TestChunkFieldDefault", () => {
 
   test("test_write_to_none_body_stores_in_dict", () => {
     const model = new _DirectModel(null);
-    const token = _materializationAllowed.set(true);
+    const previous = materialization.allowed;
+    materialization.allowed = true;
     try {
       model.name = "stored";
     } finally {
-      _materializationAllowed.reset(token);
+      materialization.allowed = previous;
     }
     expect(model.name).toBe("stored");
     expect(instanceDict(model).get("name")).toBe("stored");
@@ -327,7 +332,7 @@ describe("TestChunkFieldSuppressMaterialization", () => {
     const body = new _FakeBody({ name: "old" });
     new _FakeParent(body);
     const model = new _DirectModel(body);
-    _suppressMaterialization().run(() => {
+    runSuppressed(() => {
       raises(
         RuntimeError,
         () => {
@@ -345,11 +350,12 @@ describe("TestChunkFieldSyntheticMaterialization", () => {
     const body = new _FakeBody({ synthetic: true, value: 0 });
     new _FakeParent(body);
     const model = new _SyntheticModel(body);
-    const token = _materializationAllowed.set(true);
+    const previous = materialization.allowed;
+    materialization.allowed = true;
     try {
       model.value = 42;
     } finally {
-      _materializationAllowed.reset(token);
+      materialization.allowed = previous;
     }
     expect(model.materialized).toBe(true);
     expect(body.synthetic).toBe(false);
@@ -360,11 +366,12 @@ describe("TestChunkFieldSyntheticMaterialization", () => {
     const body = new _FakeBody({ synthetic: false, value: 0 });
     new _FakeParent(body);
     const model = new _SyntheticModel(body);
-    const token = _materializationAllowed.set(true);
+    const previous = materialization.allowed;
+    materialization.allowed = true;
     try {
       model.value = 7;
     } finally {
-      _materializationAllowed.reset(token);
+      materialization.allowed = previous;
     }
     expect(model.materialized).toBe(false);
     expect(body.value).toBe(7);
@@ -376,11 +383,12 @@ describe("TestChunkFieldPostSet", () => {
     const body = new _FakeBody({ mode: 0 });
     new _FakeParent(body);
     const model = new _PostSetModel(body);
-    const token = _materializationAllowed.set(true);
+    const previous = materialization.allowed;
+    materialization.allowed = true;
     try {
       model.mode = 3;
     } finally {
-      _materializationAllowed.reset(token);
+      materialization.allowed = previous;
     }
     expect(model.post_called).toBe(true);
     expect(body.mode).toBe(3);
@@ -392,7 +400,8 @@ describe("TestChunkFieldValidation", () => {
     const body = new _FakeBody({ count: 0 });
     new _FakeParent(body);
     const model = new _ValidateModel(body);
-    const token = _materializationAllowed.set(true);
+    const previous = materialization.allowed;
+    materialization.allowed = true;
     try {
       raises(
         ValueError,
@@ -402,7 +411,7 @@ describe("TestChunkFieldValidation", () => {
         "must be positive",
       );
     } finally {
-      _materializationAllowed.reset(token);
+      materialization.allowed = previous;
     }
   });
 
@@ -410,11 +419,12 @@ describe("TestChunkFieldValidation", () => {
     const body = new _FakeBody({ count: 0 });
     new _FakeParent(body);
     const model = new _ValidateModel(body);
-    const token = _materializationAllowed.set(true);
+    const previous = materialization.allowed;
+    materialization.allowed = true;
     try {
       model.count = 5;
     } finally {
-      _materializationAllowed.reset(token);
+      materialization.allowed = previous;
     }
     expect(body.count).toBe(5);
   });
@@ -425,7 +435,8 @@ describe("TestChunkFieldEnumValidation", () => {
     const body = new _FakeBody({ mode: 0 });
     new _FakeParent(body);
     const model = new _EnumModel(body);
-    const token = _materializationAllowed.set(true);
+    const previous = materialization.allowed;
+    materialization.allowed = true;
     try {
       raises(
         ValueError,
@@ -435,7 +446,7 @@ describe("TestChunkFieldEnumValidation", () => {
         "Invalid value 99",
       );
     } finally {
-      _materializationAllowed.reset(token);
+      materialization.allowed = previous;
     }
   });
 
@@ -443,11 +454,12 @@ describe("TestChunkFieldEnumValidation", () => {
     const body = new _FakeBody({ mode: 0 });
     new _FakeParent(body);
     const model = new _EnumModel(body);
-    const token = _materializationAllowed.set(true);
+    const previous = materialization.allowed;
+    materialization.allowed = true;
     try {
       model.mode = _MyEnum.ON;
     } finally {
-      _materializationAllowed.reset(token);
+      materialization.allowed = previous;
     }
     expect(body.mode).toBe(1);
   });
@@ -456,11 +468,12 @@ describe("TestChunkFieldEnumValidation", () => {
     const body = new _FakeBody({ mode: 0 });
     new _FakeParent(body);
     const model = new _EnumModel(body);
-    const token = _materializationAllowed.set(true);
+    const previous = materialization.allowed;
+    materialization.allowed = true;
     try {
       model.mode = 2;
     } finally {
-      _materializationAllowed.reset(token);
+      materialization.allowed = previous;
     }
     expect(body.mode).toBe(2);
   });
@@ -488,13 +501,14 @@ describe("TestChunkFieldEnumAllowOutOfEnumValues", () => {
     const body = new _FakeBody({ mode: 0 });
     new _FakeParent(body);
     const model = new _ForgivingEnumModel(body);
-    const token = _materializationAllowed.set(true);
+    const previous = materialization.allowed;
+    materialization.allowed = true;
     try {
       raises(ValueError, () => {
         model.mode = 99;
       });
     } finally {
-      _materializationAllowed.reset(token);
+      materialization.allowed = previous;
     }
     expect(body.mode).toBe(0);
   });
@@ -503,11 +517,12 @@ describe("TestChunkFieldEnumAllowOutOfEnumValues", () => {
     const body = new _FakeBody({ mode: 0 });
     new _FakeParent(body);
     const model = new _ForgivingEnumModel(body);
-    const token = _materializationAllowed.set(true);
+    const previous = materialization.allowed;
+    materialization.allowed = true;
     try {
       model.mode = _MyEnum.AUTO;
     } finally {
-      _materializationAllowed.reset(token);
+      materialization.allowed = previous;
     }
     expect(body.mode).toBe(2);
   });
@@ -542,7 +557,8 @@ describe("TestChunkFieldBool", () => {
     const body = new _FakeBody({ flag: false });
     new _FakeParent(body);
     const model = new _BoolModel(body);
-    const token = _materializationAllowed.set(true);
+    const previous = materialization.allowed;
+    materialization.allowed = true;
     try {
       raises(
         TypeError,
@@ -553,7 +569,7 @@ describe("TestChunkFieldBool", () => {
         "expected a bool",
       );
     } finally {
-      _materializationAllowed.reset(token);
+      materialization.allowed = previous;
     }
     expect(body.flag).toBe(false);
   });
@@ -562,11 +578,12 @@ describe("TestChunkFieldBool", () => {
     const body = new _FakeBody({ flag: !value });
     new _FakeParent(body);
     const model = new _BoolModel(body);
-    const token = _materializationAllowed.set(true);
+    const previous = materialization.allowed;
+    materialization.allowed = true;
     try {
       model.flag = value;
     } finally {
-      _materializationAllowed.reset(token);
+      materialization.allowed = previous;
     }
     expect(body.flag).toBe(value);
   });

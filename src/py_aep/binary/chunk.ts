@@ -10,7 +10,6 @@ import {
   describe,
   AttrsBase,
   ByteStream,
-  ContextVar,
   Factory,
   NO_INIT,
   OSError,
@@ -571,7 +570,7 @@ export class ContainerChunk extends Chunk {
   }
 
   write(fp: ByteStream): number {
-    if (this.data?.length > 0 || (_legacyNames.get() && _LEGACY_NAME_TYPES.has(this.chunkType))) {
+    if (this.data?.length > 0 || (legacyNames.active && _LEGACY_NAME_TYPES.has(this.chunkType))) {
       return writeBytes(fp, this._legacyBody());
     }
     let written = 0;
@@ -638,7 +637,8 @@ export const LEGACY_NAME_FORMAT = 92;
  * 92.14).
  */
 
-const _legacyNames = new ContextVar<boolean>("_legacy_names", { default: false });
+/** Whether the file being written predates Utf8 names (set by `writeAep`). */
+const legacyNames = { active: false };
 /**
  * Set by `writeAep` while writing a project older than `LEGACY_NAME_FORMAT`,
  * so name containers py_aep built are written as bare strings too.
@@ -928,12 +928,13 @@ export function readAep(
 export function writeAep(fp: ByteStream, rifx: ListChunk, xmp: string): number {
   const head = rifx.chunks.find((c): c is HeadChunk => c.chunkType === "head");
   if (head == null) throw new StopIteration();
-  const token = _legacyNames.set(head.fileFormatVersion < LEGACY_NAME_FORMAT);
+  const previous = legacyNames.active;
+  legacyNames.active = head.fileFormatVersion < LEGACY_NAME_FORMAT;
   let written: number;
   try {
     written = writeChunk(fp, rifx);
   } finally {
-    _legacyNames.reset(token);
+    legacyNames.active = previous;
   }
   const xmpBytes = encode(xmp, "UTF-8");
   written += writeBytes(fp, xmpBytes);

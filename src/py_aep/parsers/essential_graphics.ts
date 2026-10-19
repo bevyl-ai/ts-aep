@@ -3,7 +3,7 @@
 import { filterByListType, filterByType, findByListType, findByListTypeOrNull, findByType } from "../binary/utils.ts";
 import type { Utf8Chunk } from "../binary/scalar_chunks.ts";
 import type { Chunk, ListChunk } from "../binary/chunk.ts";
-import { _suppressMaterialization } from "../models/descriptors.ts";
+import { suppressingMaterialization } from "../models/descriptors.ts";
 import { EssentialGraphicsController, SourcePropertyRef } from "../models/essential_graphics.ts";
 import { jsonGet, jsonRequire, parseJson, typeName } from "../../pyrt/index.ts";
 
@@ -97,7 +97,7 @@ function _parseController(cctlChunk: ListChunk): EssentialGraphicsController {
  * @returns A tuple of (template_name_utf8_chunk, controllers) if an Essential Graphics container is
  *   found, otherwise `null`.
  */
-export const parseEssentialGraphics = _suppressMaterialization().decorate(function parse_essential_graphics(
+export const parseEssentialGraphics = suppressingMaterialization(function parse_essential_graphics(
   childChunks: Chunk[],
 ): [Utf8Chunk, EssentialGraphicsController[]] | null {
   let cif: ListChunk | null = null;

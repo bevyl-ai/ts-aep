@@ -14,7 +14,7 @@ import {
   findByTypeOrNull,
 } from "../binary/utils.ts";
 import { VF_AXIS_PREFIX } from "../data/match_names.ts";
-import { _suppressMaterialization } from "../models/descriptors.ts";
+import { suppressingMaterialization } from "../models/descriptors.ts";
 import { MaskPropertyGroup } from "../models/properties/mask_property_group.ts";
 import { PropertyGroup } from "../models/properties/property_group.ts";
 import type { CompItem } from "../models/items/composition.ts";
@@ -359,7 +359,7 @@ function _reclassOverrideLeaves(group: PropertyGroup): void {
  * @param composition - The parent composition.
  * @param tdmn - The TDMN chunk for this property group.
  */
-export const parsePropertyGroup = _suppressMaterialization().decorate(function parse_property_group(
+export const parsePropertyGroup = suppressingMaterialization(function parse_property_group(
   tdgpChunk: ListChunk,
   groupMatchName: string,
   propertyDepth: number,
@@ -418,7 +418,7 @@ export const parsePropertyGroup = _suppressMaterialization().decorate(function p
  * @param composition - The parent composition.
  * @param tdmn - The TDMN chunk for this mask atom.
  */
-export const _parseMaskAtom = _suppressMaterialization().decorate(function _parse_mask_atom(
+export const _parseMaskAtom = suppressingMaterialization(function _parse_mask_atom(
   tdgpChunk: ListChunk,
   mkifChunk: MkifChunk,
   propertyDepth: number,

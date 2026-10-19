@@ -52,7 +52,7 @@ import {
   squarePixels,
   stripOrientation,
 } from "../../resolvers/transform.ts";
-import { ChunkField, _suppressMaterialization, type EffectParamDefs } from "../descriptors.ts";
+import { ChunkField, runSuppressed, type EffectParamDefs } from "../descriptors.ts";
 import { autoName } from "../naming.ts";
 import { Property } from "../properties/property.ts";
 import type { PropertyBase } from "../properties/property_base.ts";
@@ -482,7 +482,7 @@ export class Layer extends PropertyGroup {
 
   /** Build the property tree of a parsed layer, if not built yet. */
   _loadPropertyTree(): void {
-    _suppressMaterialization().run(() => {
+    runSuppressed(() => {
       const effectParamDefs = this._treeParamDefs;
       if (effectParamDefs == null) return;
       // Cleared first, with an empty tree in place as during an eager

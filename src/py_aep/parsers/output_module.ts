@@ -1,6 +1,6 @@
 import type { Utf8Chunk } from "../binary/scalar_chunks.ts";
 import { filterByType, findByListTypeOrNull, findByType, findByTypeOrNull } from "../binary/utils.ts";
-import { _suppressMaterialization } from "../models/descriptors.ts";
+import { suppressingMaterialization } from "../models/descriptors.ts";
 import { OutputModule } from "../models/renderqueue/output_module.ts";
 import type { RenderQueueItem } from "../models/renderqueue/render_queue_item.ts";
 import { parseFormatOptions } from "./format_options.ts";
@@ -31,7 +31,7 @@ import type { OutputModuleSettingsItem } from "../binary/render_chunks.ts";
  * @param render_queue_item - The parent render queue item.
  * @returns OutputModule with parsed attributes.
  */
-export const parseOutputModule = _suppressMaterialization().decorate(function parse_output_module(
+export const parseOutputModule = suppressingMaterialization(function parse_output_module(
   chunks: Chunk[],
   omLdatData: OutputModuleSettingsItem,
   renderQueueItem: RenderQueueItem,

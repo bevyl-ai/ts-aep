@@ -10,7 +10,6 @@ export { ascii, ascii as b, concat, equals as bytesEqual } from "./bytes.ts";
 export { decode, encode, ord } from "./codecs.ts";
 export { ByteStream, FileStream, openFile } from "./bytesio.ts";
 export { Fraction } from "./fraction.ts";
-export { ContextVar } from "./contextvar.ts";
 export {
   define,
   field,
