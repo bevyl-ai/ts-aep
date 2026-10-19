@@ -35,7 +35,7 @@
 
 import * as host from "../../pyrt/host.ts";
 import * as unicodedata from "../../pyrt/unicodedata.ts";
-import type * as fontkit from "fontkit";
+import type * as fontkit from "../../pyrt/fontkit.ts";
 import { dep } from "../../pyrt/deps.ts";
 import type { Path } from "../../pyrt/index.ts";
 import {

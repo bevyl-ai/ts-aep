@@ -106,11 +106,18 @@ function _writeValue(buf: ByteStream, value: CosNode, kw: { topLevel?: boolean }
  *
  * Whole-valued floats keep a trailing `.0` (AE writes `0.0` / `9.0`,
  * not `0` / `9`), which distinguishes them from COS integers and keeps
- * the serialized blob byte-faithful.
+ * the serialized blob byte-faithful. Unlike py-aep, values `{:.10g}` would
+ * write with an exponent are written fixed-point to 10 decimals.
  */
 function _formatFloat(value: number): Uint8Array {
   let text = String(Number(value.toPrecision(10)));
-  // no '.', exponent, 'nan'/'inf'
+  if (text.includes("e")) {
+    // AE's COS reader has no exponent syntax: a noise value like 3.6e-15
+    // makes the whole text layer unreadable. Write such reals fixed-point.
+    text = value.toFixed(10).replace(/\.?0+$/, "");
+    if (text === "-0") text = "0";
+  }
+  // no '.', 'nan'/'inf'
   if (![".", "e", "E", "n", "i"].some((c) => text.includes(c))) text += ".0";
   // AE omits the leading zero for |v| < 1 (".5", "-.5") but keeps "0.0".
   if (text.startsWith("0.") && text !== "0.0") {

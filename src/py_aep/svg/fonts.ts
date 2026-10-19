@@ -8,7 +8,7 @@
  * Fonts are not bundled.
  */
 
-import type * as fontkit from "fontkit";
+import type * as fontkit from "../../pyrt/fontkit.ts";
 import { dep } from "../../pyrt/deps.ts";
 import * as host from "../../pyrt/host.ts";
 import { Path, getOrInsert, ValueError } from "../../pyrt/index.ts";

@@ -497,7 +497,7 @@ export class TextDocument {
       const fontEntry = cosItem(entry, "0");
       const fontData = cosItem(fontEntry, "0");
       assert(fontEntry instanceof Map && fontData instanceof Map);
-      return new FontObject({ _fontData: fontData, _fontEntry: fontEntry });
+      return new FontObject({ _fontData: fontData, _fontEntry: fontEntry, _document: this });
     });
     this._charStyle = charStyle;
     this._paraStyle = paraStyle;

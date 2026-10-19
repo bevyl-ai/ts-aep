@@ -1,26 +1,28 @@
-// Build the published package: dist/index.js (Node, Bun) and dist/browser.js
-// (bundled hosts, which import fontkit/yaml up front), sharing one chunk, with
+// Build the published package: dist/index.js (Node, Bun), dist/browser.js
+// (bundled hosts, which import fontkit/yaml up front) and dist/svg.js, sharing one chunk, with
 // dependencies external, + dist/types (declarations from tsc, `.ts` specifiers -> `.js`).
 import * as fs from "node:fs";
 import * as path from "node:path";
 
+import * as esbuild from "esbuild";
+
 fs.rmSync("dist", { recursive: true, force: true });
 
-// `splitting` is missing from this bun-types release; spread, it skips the excess-property check.
-const splitting = { splitting: true };
-const out = await Bun.build({
-  entrypoints: ["src/py_aep/index.ts", "src/py_aep/browser.ts"],
+// esbuild, not Bun.build: Bun renames the classes a shared chunk exports
+// (`ValueError2`), and the library prints constructor names.
+const out = await esbuild.build({
+  entryPoints: ["src/py_aep/index.ts", "src/py_aep/browser.ts", "src/py_aep/svg.ts"],
   outdir: "dist",
-  ...splitting,
+  bundle: true,
+  splitting: true,
   format: "esm",
-  target: "browser",
+  platform: "neutral",
   packages: "external",
+  keepNames: true,
   sourcemap: "linked",
+  logLevel: "warning",
 });
-if (!out.success) {
-  for (const log of out.logs) console.error(log);
-  process.exit(1);
-}
+if (out.errors.length > 0) process.exit(1);
 
 const tsc = Bun.spawnSync(["bunx", "tsc", "-p", "tsconfig.build.json"], { stdout: "inherit", stderr: "inherit" });
 if (tsc.exitCode !== 0) process.exit(tsc.exitCode ?? 1);
@@ -39,20 +41,22 @@ for (const file of fs.readdirSync("dist/types", { recursive: true }) as string[]
     rewritten++;
   }
 }
-// Ambient declarations for untyped dependencies (fontkit, harfbuzzjs) ship with the types.
+// Ambient declarations for untyped dependencies ship with the types; fontkit's
+// stays source-only, as consumers may declare fontkit themselves.
 fs.mkdirSync("dist/types/types", { recursive: true });
-for (const f of fs.readdirSync("src/types")) {
+for (const f of fs.readdirSync("src/types").filter((f) => f !== "fontkit.d.ts")) {
   const src = fs.readFileSync(path.join("src/types", f), "utf8");
   fs.writeFileSync(
     path.join("dist/types/types", f),
     src.replace(/(import\(\s*)(["'])(\.{1,2}\/[^"']+)\.ts\2/g, (_, pre, q, spec) => `${pre}${q}${spec}.js${q}`),
   );
 }
-const entry = "dist/types/py_aep/index.d.ts";
 const refs = fs
   .readdirSync("dist/types/types")
   .map((f) => `/// <reference path="../types/${f}" />`)
   .join("\n");
-fs.writeFileSync(entry, `${refs}\n${fs.readFileSync(entry, "utf8")}`);
+for (const entry of ["dist/types/py_aep/index.d.ts", "dist/types/py_aep/svg.d.ts"]) {
+  fs.writeFileSync(entry, `${refs}\n${fs.readFileSync(entry, "utf8")}`);
+}
 
 console.log(`dist/index.js + dist/types (${rewritten} declaration files rewritten to .js specifiers)`);

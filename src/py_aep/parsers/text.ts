@@ -172,5 +172,7 @@ function parseTextDocuments(cosData: CosDict, fonts: FontObject[], btdkBody: Lis
 export function parseBtdkCos(cosData: CosDict, btdkBody: ListChunk): [TextDocument[], FontObject[]] {
   const fonts = parseFonts(cosData);
   const documents = parseTextDocuments(cosData, fonts, btdkBody);
+  // Every keyframe's document serializes the same COS into the same btdk.
+  for (const font of fonts) font._document = documents[0] ?? null;
   return [documents, fonts];
 }

@@ -396,6 +396,16 @@ export class Shape {
   }
 
   /**
+   * The box After Effects normalizes this shape's points in, as
+   * `[left, top, right, bottom]`. `null` only for a shape without a
+   * stored header.
+   */
+  get bounds(): [number, number, number, number] | null {
+    const shph = this._shph;
+    return shph == null ? null : [shph.topLeftX, shph.topLeftY, shph.bottomRightX, shph.bottomRightY];
+  }
+
+  /**
    * The anchor points of the shape. Specify each point as an array of two
    * floating-point values, and collect the point pairs into an array for the
    * complete set of points.

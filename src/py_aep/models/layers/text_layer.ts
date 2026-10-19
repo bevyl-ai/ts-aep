@@ -1,6 +1,6 @@
 // Port of py_aep/models/layers/text_layer.py
 
-import { getOrThrow } from "../../../pyrt/index.ts";
+import { assert, getOrThrow } from "../../../pyrt/index.ts";
 import { ListChunk } from "../../binary/chunk.ts";
 import { TdmnChunk, TdsbChunk, TdsnChunk } from "../../binary/property_chunks.ts";
 import { LayerType } from "../../enums/index.ts";
@@ -8,6 +8,7 @@ import { labelIndex } from "../preferences.ts";
 import { AVLayer } from "./av_layer.ts";
 import type { CompItem } from "../items/composition.ts";
 import type { EffectParamDefs } from "../descriptors.ts";
+import type { MatchNameTypes } from "../properties/match_name_types.ts";
 
 type TextLayerNewKw = {
   name: string;
@@ -41,6 +42,13 @@ type TextLayerNewKw = {
  */
 export class TextLayer extends AVLayer {
   static _autoName: string = "Text";
+
+  /** The layer's Text group (Source Text, Path Options, More Options, Animators). */
+  override get text(): MatchNameTypes["ADBE Text Properties"] {
+    const group = super.text;
+    assert(group !== null);
+    return group;
+  }
 
   static _new(kw: TextLayerNewKw): TextLayer;
   static _new(...args: never[]): never;

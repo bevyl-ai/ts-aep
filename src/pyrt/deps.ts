@@ -3,10 +3,10 @@
 // through `require`; bundled hosts (browsers, Workers) import them statically
 // in `py_aep/browser.ts` and hand them over with `provideDep`.
 
-import type * as Fontkit from "fontkit";
+import type { Fontkit } from "./fontkit.ts";
 import type * as Yaml from "yaml";
 
-type Deps = { fontkit: typeof Fontkit; yaml: typeof Yaml };
+type Deps = { fontkit: Fontkit; yaml: typeof Yaml };
 
 const loaded: Partial<Deps> = {};
 
