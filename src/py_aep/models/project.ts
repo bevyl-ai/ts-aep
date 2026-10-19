@@ -40,7 +40,7 @@ import { uuid4 } from "../../pyrt/uuid.ts";
 import { fromstring, tostring } from "../../pyrt/etree.ts";
 import { aeWrites, requiresVersion } from "../ae_version.ts";
 import { toF4, truncateUtf8 } from "../binary/bin_utils.ts";
-import { Chunk, ListChunk, writeAep as _writeAep } from "../binary/chunk.ts";
+import { Chunk, ListChunk, readChunks, writeAep as _writeAep } from "../binary/chunk.ts";
 import { buildAiLayerOptiData, buildPsdFlattenedOptiData, buildTextOptiData } from "../binary/footage_chunks.ts";
 import { HeadChunk, NhedChunk, NnhdChunk, TimeDisplayPrefItem } from "../binary/item_chunks.ts";
 import { DwgaChunk } from "../binary/misc_chunks.ts";
@@ -49,6 +49,7 @@ import { F8Chunk, U1Chunk, U2Chunk, U4Chunk, U4LeChunk, Utf8Chunk } from "../bin
 import {
   alasFullpath,
   dumpAlas,
+  filterByListType,
   filterByType,
   findByListType,
   findByListTypeOrNull,
@@ -525,6 +526,43 @@ export class Project {
       this._effectDefinitionsCache = effectDefinitionEntries(this._rifx.chunks);
     }
     return this._effectDefinitionsCache;
+  }
+
+  /**
+   * Add effect definitions After Effects saved in another project, so their
+   * effects can be added with `addProperty` like ones already used here.
+   *
+   * Definitions whose match names this project already has are skipped.
+   * The project keeps the definitions it is given, as After Effects does for
+   * the effects a project uses.
+   *
+   * @param efdg - A serialized `LIST:EfdG` chunk: a project's effect definitions.
+   * @throws ValueError When `efdg` is not an `EfdG` list.
+   */
+  addEffectDefinitions(efdg: Uint8Array): void {
+    const [incoming] = readChunks(new ByteStream(efdg), efdg.length);
+    if (!(incoming instanceof ListChunk) || incoming.listType !== "EfdG") {
+      throw new ValueError("Effect definitions must be a LIST:EfdG chunk");
+    }
+    const chunks = this._rifx.chunks;
+    const existing = findByListTypeOrNull(chunks, "EfdG");
+    if (existing === null) {
+      // AE reads effect definitions before any layer, right after Pefl.
+      const pefl = chunks.findIndex((chunk) => chunk instanceof ListChunk && chunk.listType === "Pefl");
+      chunks.splice(pefl + 1, 0, incoming);
+    } else {
+      const known = new Set(this._effectDefinitions().map(([matchName]) => matchName));
+      const added = filterByListType(incoming.chunks, "EfDf").filter(
+        (definition) => !known.has(findByType(definition.chunks, "tdmn").value),
+      );
+      existing.chunks.push(...added);
+      const count = existing.chunks.find((chunk) => chunk.chunkType === "EfDC");
+      if (count != null) {
+        count.data = new Uint8Array(4);
+        new DataView(count.data.buffer).setUint32(0, filterByListType(existing.chunks, "EfDf").length, true);
+      }
+    }
+    this._effectDefinitionsCache = null;
   }
 
   /**

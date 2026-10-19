@@ -39,6 +39,7 @@ import {
 import { ChunkField, type EffectParamDefs } from "../descriptors.ts";
 import type { Chunk } from "../../binary/chunk.ts";
 import type { CompItem } from "../items/composition.ts";
+import type { PropertyGroup } from "../properties/property_group.ts";
 import { Property } from "../properties/property.ts";
 import {
   validateBool,
@@ -154,6 +155,20 @@ type AVLayerNewKw = {
  * @see https://ae-scripting.docsforadobe.dev/layer/avlayer/
  */
 export class AVLayer extends Layer {
+  /** The layer's Effects group; every AV layer has one. */
+  override get effects(): PropertyGroup {
+    const group = super.effects;
+    assert(group !== null);
+    return group;
+  }
+
+  /** The layer's Masks group; every AV layer has one. */
+  override get masks(): PropertyGroup {
+    const group = super.masks;
+    assert(group !== null);
+    return group;
+  }
+
   // Accessor stubs typed for TS only; descriptor(AVLayer, ...) below redefines both on the prototype, so these bodies never run.
   /** When `true`, the layer is an adjustment layer. Read / Write. */
   get adjustmentLayer(): boolean {

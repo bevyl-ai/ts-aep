@@ -173,7 +173,8 @@ export const version: string = packageJson.version;
  * {@link Application.project | project} attribute
  * holds the full project tree.
  *
- * @param aepFilePath - Path to the `.aep` file.
+ * @param source - Path to the `.aep` file, or its bytes. A project read from
+ *   bytes has an empty {@link Project.file | file}.
  * @param kw - Options:
  * - `aePreferencesDir`: Optional path to the AE preferences directory (e.g. `C:/Users/<user>/AppData/Roaming/Adobe/After Effects/25.6`). When provided, render settings and output module templates are parsed lazily when needed.
  * - `platform`: The After Effects platform the project is for: `"windows"` or `"macos"`. Footage and render output paths py_aep writes are stored in that platform's style (`C:\\x` \<-\> `/x`, see {@link py_aep.resolvers.platform_paths.platform_path | platform_path}), and imported footage is recorded the way After Effects on that platform records it: BMP and GIF files take the platform's importer code (After Effects on the other platform refuses an image sequence tagged for it), and on Windows a HEIC file has no alpha channel. Defaults to the running operating system.
@@ -188,7 +189,7 @@ export const version: string = packageJson.version;
  * ```
  */
 export function parse(
-  aepFilePath: string | PathLike,
+  source: string | PathLike | Uint8Array,
   kw: { aePreferencesDir?: string | PathLike | null; platform?: string | null } = {},
 ): Application {
   const { aePreferencesDir = null, platform = null } = kw;
@@ -200,10 +201,9 @@ export function parse(
   if (platform != null) {
     validatePlatform(platform);
   }
-  const filePath = fspath(aepFilePath);
+  const filePath = source instanceof Uint8Array ? "" : fspath(source);
   const prefsPath = aePreferencesDir ? new Path(aePreferencesDir) : null;
-  // `with open(file_path, "rb") as f:`
-  const f = new ByteStream(new Path(filePath).readBytes());
+  const f = new ByteStream(source instanceof Uint8Array ? source : new Path(filePath).readBytes());
   const [rifx, xmp] = readAep(f, { deferListTypes: _DEFERRED_LIST_TYPES });
   const project = parseProject(rifx, xmp, filePath, prefsPath);
   if (platform != null) {

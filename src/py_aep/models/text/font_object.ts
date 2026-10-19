@@ -3,7 +3,8 @@
 import { descriptor, str, overrides } from "../../../pyrt/index.ts";
 import type { CosDict, CosNode } from "../../cos/cos.ts";
 import { CosField, type InstanceValue } from "../../cos/descriptors.ts";
-import { cosIter, cosNum } from "../../cos/kinds.ts";
+import { cosInt, cosIter, cosNum } from "../../cos/kinds.ts";
+import { CTFontTechnology } from "../../enums/index.ts";
 
 /** Decode the COS design vector (16.16 fixed-point ints) to floats. */
 function _designVectorFromCos(raw: CosNode): number[] {
@@ -11,6 +12,7 @@ function _designVectorFromCos(raw: CosNode): number[] {
 }
 
 const isString = (v: InstanceValue): v is string => typeof v === "string";
+const isTechnology = (v: InstanceValue): v is CTFontTechnology => CTFontTechnology.has(v);
 const isStringOrNull = (v: InstanceValue): v is string | null => v == null || typeof v === "string";
 const isNumberList = (v: InstanceValue): v is number[] | null =>
   v == null || (Array.isArray(v) && v.every((x) => typeof x === "number"));
@@ -50,12 +52,28 @@ export class FontObject {
    * fonts. Read-only.
    *
    * Stored in the file as 16.16 fixed-point integers; exposed as floats
-   * (e.g. `[700.0, 87.5]`).
+   * (e.g. `[700.0, 87.5]`). Writable, to pin the instance a new font
+   * resolves to; written values round to 1/65536.
    */
   declare designVector: number[] | null;
 
+  /**
+   * The outline technology CoolType resolves this entry to:
+   * `CT_TYPE1_FONT` for PostScript (CFF) outlines, `CT_TRUETYPE_FONT` for
+   * TrueType. A font registered by a write starts as TrueType; set this
+   * for a CFF font, which After Effects otherwise does not resolve.
+   */
+  declare technology: CTFontTechnology;
+
   declare _fontData: CosDict;
   declare _fontEntry: CosDict | null;
+  /** The text document whose serialized COS holds `_fontData`. */
+  declare _document: { _propagateCos(): void } | null;
+
+  /** Re-serialize the owning document after a field write. */
+  _propagateCos(): void {
+    this._document?._propagateCos();
+  }
 
   /** Returns `true` if the font is a variable font. Read-only. */
   get hasDesignAxes(): boolean {
@@ -75,12 +93,14 @@ export class FontObject {
   constructor(kw: {
     _fontData: CosDict;
     _fontEntry?: CosDict | null;
+    _document?: { _propagateCos(): void } | null;
     postScriptName?: string | null;
     version?: string | null;
   }) {
-    const { _fontData, _fontEntry = null, postScriptName = null, version = null } = kw;
+    const { _fontData, _fontEntry = null, _document = null, postScriptName = null, version = null } = kw;
     this._fontData = _fontData;
     this._fontEntry = _fontEntry;
+    this._document = _document;
     if (postScriptName != null) {
       overrides(this).set("postScriptName", postScriptName);
     }
@@ -116,8 +136,18 @@ export class FontObject {
       new CosField<number[] | null, "_fontData", FontObject>("_fontData", "4", {
         transform: _designVectorFromCos,
         accepts: isNumberList,
-        readOnly: true,
+        reverse: (vector: number[]) => vector.map((value) => Math.round(value * 65536)),
         default: null,
+      }),
+    );
+    descriptor(
+      this,
+      "technology",
+      new CosField<CTFontTechnology, "_fontData", FontObject>("_fontData", "2", {
+        transform: (raw) => CTFontTechnology.of(cosInt(raw)),
+        accepts: isTechnology,
+        reverse: (technology: CTFontTechnology) => technology,
+        default: CTFontTechnology.CT_TRUETYPE_FONT,
       }),
     );
   }

@@ -1,6 +1,6 @@
 {
   "name": "@bevyl-ai/ts-aep",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "1:1 TypeScript port of py-aep: read and write Adobe After Effects .aep projects (Node, Bun, browsers, Workers)",
   "keywords": [
     "adobe",
@@ -38,6 +38,11 @@
       "import": "./dist/index.js",
       "default": "./dist/index.js"
     },
+    "./svg": {
+      "types": "./dist/types/py_aep/svg.d.ts",
+      "import": "./dist/svg.js",
+      "default": "./dist/svg.js"
+    },
     "./package.json": "./package.json"
   },
   "publishConfig": {
@@ -64,6 +69,7 @@
   "devDependencies": {
     "@microsoft/tsdoc": "0.15.1",
     "@types/bun": "1.2.21",
+    "esbuild": "0.25.10",
     "knip": "6.42.0",
     "lefthook": "2.1.4",
     "oxfmt": "0.71.0",

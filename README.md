@@ -56,7 +56,7 @@ The library runs unchanged in Node 22.3+, Bun, browsers and Cloudflare Workers.
 Node and Bun load fontkit and yaml (text metrics, OCIO configs) on first use;
 bundlers and Workers resolve the `browser` / `workerd` export, which imports them
 up front.
-`parse(path)` and `project.save(path)` take paths. All
+`parse` takes a path or the file's bytes; `project.save(path)` takes a path. All
 host access goes through `src/pyrt/host.ts`: Node and Bun use their own
 `node:fs`, `node:path` and `node:os` (via `process.getBuiltinModule`); hosts
 without them get an in-memory file system and POSIX paths.
@@ -67,6 +67,15 @@ decoded the first time one is read. A script that reads layer attributes only
 (names, times, labels, switches, sources) never builds a property. Reading an
 attribute a layer does not have (`source` on a camera) looks it up among its
 properties, which builds them; test the layer's type instead.
+
+Beyond py-aep's API: `@bevyl-ai/ts-aep/svg` exports py-aep's public `svg`
+module (`readSvg`, `buildShapeLayerContents`, `parseTransform`);
+`project.addEffectDefinitions(efdg)` imports effect definitions After Effects
+saved in another project, so `addProperty` can add those effects;
+`FontObject.technology` and `designVector` are writable (a CFF font needs
+`CT_TYPE1_FONT`); `Shape.bounds` is the box a shape's points are stored in.
+COS reals that `{:.10g}` would write with an exponent are written fixed-point,
+which After Effects requires.
 
 ### Types
 

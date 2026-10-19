@@ -471,7 +471,7 @@ export function _registerFontAt(
       }
     }
   }
-  doc._fonts.splice(index, 0, new FontObject({ _fontData: fontData, _fontEntry: fontEntry }));
+  doc._fonts.splice(index, 0, new FontObject({ _fontData: fontData, _fontEntry: fontEntry, _document: doc }));
   return index;
 }
 

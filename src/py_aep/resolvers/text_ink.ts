@@ -31,7 +31,7 @@
 // `_checkEnvelope` refuses astral characters before any of this runs, so the
 // two agree on every text that reaches these helpers.
 
-import type * as fontkit from "fontkit";
+import type * as fontkit from "../../pyrt/fontkit.ts";
 import { dep } from "../../pyrt/deps.ts";
 import * as host from "../../pyrt/host.ts";
 import { NotImplementedError, truthy, truthyOr, literal, compositeKey, zip } from "../../pyrt/index.ts";
