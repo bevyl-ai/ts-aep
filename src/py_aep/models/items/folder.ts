@@ -10,7 +10,7 @@ import { FootageItem } from "./footage.ts";
 import { Item } from "./item.ts";
 import type { Project } from "../project.ts";
 import type { Viewer } from "../viewer/viewer.ts";
-import { ValueError, StopIteration, compare, literal } from "../../../pyrt/index.ts";
+import { ValueError, compare, literal, assert } from "../../../pyrt/index.ts";
 import { CompItem } from "./composition.ts";
 
 /**
@@ -352,10 +352,7 @@ export class FolderItem extends Item {
   _repositionChildSorted(item: Item): void {
     const [header, blocks] = this._childChunkBlocks();
     const moved = blocks.find((b) => b[0] === item);
-    // Python's `next()` without a default raises StopIteration on a miss.
-    if (moved == null) {
-      throw new StopIteration();
-    }
+    assert(moved != null, "the item is not a child of this folder");
     blocks.splice(blocks.indexOf(moved), 1);
     const key = item.name.toLowerCase();
     let pos = blocks.findIndex((b) => compare(b[0].name.toLowerCase(), key) > 0);

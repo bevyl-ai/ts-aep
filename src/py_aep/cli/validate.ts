@@ -22,7 +22,6 @@ import {
   fields,
   getOrThrow,
   isclose,
-  len,
   truthy,
   valueEquals,
   literal,
@@ -781,7 +780,7 @@ export function compareProperty(expectedProp: Dict, parsedProp: Dict, path: stri
   if (expectedProp.has("numKeys")) {
     const expNumKeys = getOrThrow(expectedProp, "numKeys");
     const parsedKeyframes = parsedProp.has("keyframes") ? parsedProp.get("keyframes") : [];
-    const parsedNumKeys = truthy(parsedKeyframes) ? len(parsedKeyframes) : 0;
+    const parsedNumKeys = parsedKeyframes?.length ?? 0;
     if (expNumKeys !== parsedNumKeys) {
       result.addDiff(`${path}.numKeys`, expNumKeys, parsedNumKeys, "properties");
     }
@@ -1040,8 +1039,8 @@ export function compareKeyframe(expectedKf: Dict, parsedKf: Dict, path: string, 
     if (expectedKf.has(easeKey)) {
       const expEase = expectedKf.get(easeKey);
       const parsedEase = parsedKf.has(parsedKey) ? parsedKf.get(parsedKey) : [];
-      if (len(expEase) !== len(parsedEase)) {
-        result.addDiff(`${path}.${easeKey}.length`, len(expEase), len(parsedEase), "keyframes");
+      if (expEase.length !== parsedEase.length) {
+        result.addDiff(`${path}.${easeKey}.length`, expEase.length, parsedEase.length, "keyframes");
       }
       for (const [ei, [expE, parsedE]] of zip(expEase, parsedEase).entries()) {
         const expSpeed = expE instanceof Map ? (expE.get("speed") ?? null) : null;

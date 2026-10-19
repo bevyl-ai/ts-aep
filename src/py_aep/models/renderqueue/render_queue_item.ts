@@ -7,9 +7,9 @@ import {
   floatRepr,
   getOrThrow,
   literal,
-  StopIteration,
   ValueError,
   type ClassAttributes,
+  assert,
 } from "../../../pyrt/index.ts";
 import {
   ColorDepthSetting,
@@ -445,7 +445,7 @@ export class RenderQueueItem {
         chunks: [utf8Chunk],
       });
       const idx = this._litm.chunks.findIndex((c) => c === this._listChunk);
-      if (idx === -1) throw new StopIteration();
+      assert(idx !== -1, "the render queue item's list is not in LItm");
       this._litm.chunks.splice(idx, 0, rcomChunk);
       this._rcomUtf8 = utf8Chunk;
       this._rcom = rcomChunk;

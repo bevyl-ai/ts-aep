@@ -26,7 +26,6 @@ import {
   ValueError,
   getOrThrow,
   truthy,
-  pyIter,
   typeName,
   truthyOr,
   compositeKey,
@@ -71,6 +70,11 @@ type OcioValue = string | number | boolean | null | Date | Uint8Array | OcioValu
 
 /** An OCIO mapping. Its keys are YAML values too (`3: x`, `~: x`), not only strings. */
 interface OcioNode extends Map<OcioValue, OcioValue> {}
+
+/** A YAML list field (`colorspaces`, `aliases`, `file_rules`, ...); anything else reads as empty. */
+function listOf(value: OcioValue | undefined): OcioValue[] {
+  return Array.isArray(value) ? value : [];
+}
 
 /**
  * Whether `value` holds a list, dict or set as a mapping key or set member.
@@ -174,7 +178,7 @@ export function listConfigColorSpaces(configPath: Path): string[] {
   if (doc == null) return [];
   const names: string[] = [];
   for (const key of ["colorspaces", "display_colorspaces"] as const) {
-    for (const entry of pyIter(truthyOr(doc.get(key), []))) {
+    for (const entry of listOf(doc.get(key))) {
       if (entry instanceof Map) {
         const name = entry.get("name") ?? null;
         if (typeof name === "string") names.push(name);
@@ -183,7 +187,7 @@ export function listConfigColorSpaces(configPath: Path): string[] {
   }
   // `set(...)`: a list, dict or set member is unhashable.
   const inactive = new Set<OcioValue>();
-  for (const n of pyIter(truthyOr(doc.get("inactive_colorspaces"), []))) {
+  for (const n of listOf(doc.get("inactive_colorspaces"))) {
     if (Array.isArray(n) || n instanceof Map || n instanceof Set) {
       throw new TypeError(`unhashable type: '${typeName(n)}'`);
     }
@@ -343,13 +347,13 @@ const _configIndexCached = lruCache((configPath: string, mtimeNs: bigint, size: 
   const families = new Map<string, OcioValue>();
   const aliases = new Map<string, OcioValue>();
   for (const key of ["colorspaces", "display_colorspaces"] as const) {
-    for (const cs of pyIter(truthyOr(doc.get(key), []))) {
+    for (const cs of listOf(doc.get(key))) {
       if (!(cs instanceof Map)) continue;
       const name = cs.get("name");
       if (typeof name === "string") {
         const family = truthyOr(cs.get("family"), "");
         families.set(name, family);
-        for (const alias of pyIter(truthyOr(cs.get("aliases"), []))) {
+        for (const alias of listOf(cs.get("aliases"))) {
           if (typeof alias === "string") aliases.set(alias, family);
         }
       }
@@ -362,7 +366,7 @@ const _configIndexCached = lruCache((configPath: string, mtimeNs: bigint, size: 
   const displays = new Map<OcioValue, string[]>();
   for (const [display, items] of _items(truthyOr(doc.get("displays"), new Map<OcioValue, OcioValue>()))) {
     const views: string[] = [];
-    for (const item of pyIter(truthyOr(items, []))) {
+    for (const item of listOf(items)) {
       // `!<Views> [name, ..]` (shared views) or `!<View> {name: ..}`; the
       // OCIO loader strips the tags to a list or a dict respectively.
       if (Array.isArray(item)) {
@@ -654,7 +658,7 @@ export function ocioInputEnvelope(configPath: Path, filePath: string): string | 
   const index = _configIndex(configPath);
   const rules = doc.get("file_rules") ?? null;
   if (truthy(rules)) {
-    for (const rule of pyIter(rules)) {
+    for (const rule of listOf(rules)) {
       if (!(rule instanceof Map) || !_ruleMatches(rule, filePath)) continue;
       const colorSpace = rule.get("colorspace") ?? null;
       if (typeof colorSpace !== "string") return null;

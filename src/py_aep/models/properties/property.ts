@@ -117,7 +117,6 @@ import {
   IndexError,
   AttributeError,
   NotImplementedError,
-  StopIteration,
   assert,
   literal,
   zip,
@@ -1847,7 +1846,7 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     if (time <= keys[0].time) return this._keyframeCurves(keys[0]);
     if (time >= keys[keys.length - 1].time) return this._keyframeCurves(keys[keys.length - 1]);
     const previous = [...keys].reverse().find((k) => k.time <= time);
-    if (previous === undefined) throw new StopIteration();
+    assert(previous !== undefined, "a time inside the keyed range has a key at or before it");
     if (isclose(previous.time, time, 0.0, 1e-9) || previous.outInterpolationType === KeyframeInterpolationType.HOLD) {
       return this._keyframeCurves(previous);
     }

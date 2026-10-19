@@ -13,7 +13,6 @@ import {
   Factory,
   NO_INIT,
   OSError,
-  StopIteration,
   ValueError,
   attrsEq,
   Bytes,
@@ -927,7 +926,7 @@ export function readAep(
 /** Write an AEP file: RIFX root chunk + trailing XMP packet. */
 export function writeAep(fp: ByteStream, rifx: ListChunk, xmp: string): number {
   const head = rifx.chunks.find((c): c is HeadChunk => c.chunkType === "head");
-  if (head == null) throw new StopIteration();
+  if (head == null) throw new ValueError("the RIFX root has no head chunk");
   const previous = legacyNames.active;
   legacyNames.active = head.fileFormatVersion < LEGACY_NAME_FORMAT;
   let written: number;
