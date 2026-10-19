@@ -182,7 +182,7 @@ export function writeBytes(fp: ByteStream, data: Uint8Array): number {
  * AEP name fields.
  */
 export function truncateUtf8(value: string, maxBytes: number): Uint8Array {
-  return encode(decode(encode(value, "utf-8").slice(0, maxBytes), "utf-8", "ignore"), "utf-8");
+  return encode(decode(new TextEncoder().encode(value).slice(0, maxBytes), "utf-8", "ignore"), "utf-8");
 }
 
 /** Check if `size` bytes can be read without consuming them. */

@@ -6,18 +6,7 @@
  * RoutChunk uses `itemsField()` for repeating render-flag entries.
  */
 
-import {
-  Bytes,
-  decode,
-  define,
-  descriptor,
-  fields,
-  getMember,
-  assert,
-  truthy,
-  setMember,
-  ascii,
-} from "../../pyrt/index.ts";
+import { Bytes, define, descriptor, fields, getMember, assert, truthy, setMember, ascii } from "../../pyrt/index.ts";
 import type { ClassAttributes, ByteStream } from "../../pyrt/index.ts";
 import { readBytes, toDividendDivisor, toFixed1616 } from "./bin_utils.ts";
 import { BitField } from "./bitfield.ts";
@@ -197,7 +186,7 @@ export class RoptChunk extends Chunk {
   /** Format code from the first 4 bytes of raw data (for fallback chunks). */
   get formatCode(): string {
     const data = "data" in this ? this.data : new Uint8Array();
-    if (data.length >= 4) return decode(data.slice(0, 4), "ascii");
+    if (data.length >= 4) return new TextDecoder().decode(data.slice(0, 4));
     return "";
   }
 
@@ -212,7 +201,7 @@ export class RoptChunk extends Chunk {
     if (size < 4) return new this({ chunkType, data: readBytes(fp, size) });
     // Peek at discriminator (first 4 bytes = format_code)
     const discRaw = readBytes(fp, 4);
-    const formatCode = decode(discRaw, "ascii");
+    const formatCode = new TextDecoder().decode(discRaw);
     fp.seek(-4, 1);
     const variantCls = _ROPT_VARIANTS.get(formatCode) ?? RoptChunk;
     if (variantCls === RoptChunk) return new this({ chunkType, data: readBytes(fp, size) });

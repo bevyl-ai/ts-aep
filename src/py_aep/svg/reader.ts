@@ -41,7 +41,7 @@ import {
   type GradientPaint,
   type Subpath,
 } from "./types.ts";
-import { Path, encode, fspath, isdigit, warn, zip, type PathLike } from "../../pyrt/index.ts";
+import { Path, fspath, isdigit, warn, zip, type PathLike } from "../../pyrt/index.ts";
 
 import { Element, ParseError, fromstring } from "../../pyrt/etree.ts";
 
@@ -126,7 +126,7 @@ export function readSvg(source: string | PathLike | Uint8Array): SvgDocument {
   if (source instanceof Uint8Array) {
     data = source.slice();
   } else if (typeof source === "string" && source.trimStart().startsWith("<")) {
-    data = encode(source, "utf-8");
+    data = new TextEncoder().encode(source);
   } else {
     data = new Path(fspath(source)).readBytes();
   }

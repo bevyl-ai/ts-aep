@@ -69,7 +69,7 @@ function _writeValue(buf: ByteStream, value: CosNode, kw: { topLevel?: boolean }
   } else if (typeof value === "number" && Number.isInteger(value) && !Object.is(value, -0)) {
     // A plain integral JS number is a Python int; a Python float reaches here boxed as `BoxedFloat`.
     _space(buf);
-    buf.write(encode(String(value), "ascii"));
+    buf.write(new TextEncoder().encode(String(value)));
   } else if (typeof value === "number" || value instanceof BoxedFloat) {
     _space(buf);
     buf.write(_formatFloat(unbox(value)));
@@ -118,7 +118,7 @@ function _formatFloat(value: number): Uint8Array {
   } else if (text.startsWith("-0.") && text !== "-0.0") {
     text = "-" + text.slice(2);
   }
-  return encode(text, "ascii");
+  return new TextEncoder().encode(text);
 }
 
 /** Write a COS dictionary: `<< /key value /key value >>`. */
@@ -161,7 +161,7 @@ const IDENTIFIER_ESCAPED = /[()[\]<>{}/%#]/;
 function _writeIdentifier(buf: ByteStream, name: string): void {
   buf.write(SLASH);
   if (PRINTABLE_ASCII.test(name) && !IDENTIFIER_ESCAPED.test(name)) {
-    buf.write(encode(name, "ascii"));
+    buf.write(new TextEncoder().encode(name));
     return;
   }
   let escaped = "";
@@ -173,7 +173,7 @@ function _writeIdentifier(buf: ByteStream, name: string): void {
       escaped += ch;
     }
   }
-  buf.write(encode(escaped, "ascii"));
+  buf.write(new TextEncoder().encode(escaped));
 }
 
 /**
@@ -189,7 +189,7 @@ function _writeString(buf: ByteStream, s: string | CosString): void {
   if (!(s instanceof CosString) || s.cosUtf16) {
     raw = concat(Uint8Array.of(0xfe, 0xff), encode(String(s), "utf-16-be"));
   } else {
-    raw = encode(String(s), "utf-8");
+    raw = new TextEncoder().encode(String(s));
   }
   buf.write(LPAREN);
   buf.write(_escapeString(raw));
@@ -220,15 +220,15 @@ function _escapeString(raw: Uint8Array): Uint8Array {
 /** Write a COS hex string: `<hexdata>`. */
 function _writeHexString(buf: ByteStream, data: Uint8Array): void {
   buf.write(ascii("<"));
-  buf.write(encode(Bytes.toHex(data), "ascii"));
+  buf.write(new TextEncoder().encode(Bytes.toHex(data)));
   buf.write(ascii(">"));
 }
 
 /** Write `N G obj <data> endobj`. */
 function _writeIndirectObject(buf: ByteStream, obj: IndirectObject): void {
-  buf.write(encode(`${obj.objectNumber}`, "ascii"));
+  buf.write(new TextEncoder().encode(`${obj.objectNumber}`));
   buf.write(ascii(" "));
-  buf.write(encode(`${obj.generationNumber}`, "ascii"));
+  buf.write(new TextEncoder().encode(`${obj.generationNumber}`));
   buf.write(ascii(" obj"));
   _writeValue(buf, obj.data);
   buf.write(ascii(" endobj"));
@@ -236,9 +236,9 @@ function _writeIndirectObject(buf: ByteStream, obj: IndirectObject): void {
 
 /** Write `N G R`. */
 function _writeIndirectReference(buf: ByteStream, ref: IndirectReference): void {
-  buf.write(encode(`${ref.objectNumber}`, "ascii"));
+  buf.write(new TextEncoder().encode(`${ref.objectNumber}`));
   buf.write(ascii(" "));
-  buf.write(encode(`${ref.generationNumber}`, "ascii"));
+  buf.write(new TextEncoder().encode(`${ref.generationNumber}`));
   buf.write(ascii(" R"));
 }
 

@@ -2359,8 +2359,8 @@ export function _probeHdr(fp: ProbeStream): MediaInfo {
   const parts = Bytes.split(fp.readline());
   if (parts.length < 4) throw new ValueError("Cannot parse HDR resolution line");
   const dims = new Map<string, number>();
-  dims.set(Bytes.toHex(parts[0].slice(-1)), Number.parseInt(decode(parts[1], "ascii"), 10));
-  dims.set(Bytes.toHex(parts[2].slice(-1)), Number.parseInt(decode(parts[3], "ascii"), 10));
+  dims.set(Bytes.toHex(parts[0].slice(-1)), Number.parseInt(new TextDecoder().decode(parts[1]), 10));
+  dims.set(Bytes.toHex(parts[2].slice(-1)), Number.parseInt(new TextDecoder().decode(parts[3]), 10));
   const X = Bytes.toHex(ascii("X"));
   const Y = Bytes.toHex(ascii("Y"));
   if (!dims.has(X) || !dims.has(Y)) {
@@ -2460,7 +2460,7 @@ function _probeEps(fp: ProbeStream): MediaInfo {
     if (Bytes.startsWith(line, ascii("%%HiResBoundingBox:"))) {
       const nums = Bytes.split(Bytes.split(line, ascii(":"), 1)[1]);
       if (nums.length >= 4) {
-        const [llx, lly, urx, ury] = nums.slice(0, 4).map((n) => Number(decode(n, "ascii")));
+        const [llx, lly, urx, ury] = nums.slice(0, 4).map((n) => Number(new TextDecoder().decode(n)));
         width = Math.round(urx - llx) + 0;
         height = Math.round(ury - lly) + 0;
         hires = true;
@@ -2470,7 +2470,7 @@ function _probeEps(fp: ProbeStream): MediaInfo {
       if (!bytesEqual(rest, ascii("(atend)"))) {
         const nums = Bytes.split(rest);
         if (nums.length >= 4) {
-          const [llx, lly, urx, ury] = nums.slice(0, 4).map((n) => Number(decode(n, "ascii")));
+          const [llx, lly, urx, ury] = nums.slice(0, 4).map((n) => Number(new TextDecoder().decode(n)));
           width = Math.round(urx - llx) + 0;
           height = Math.round(ury - lly) + 0;
         }

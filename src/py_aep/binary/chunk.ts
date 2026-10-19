@@ -458,7 +458,7 @@ export class DeferredListChunk extends ListChunk {
   }
 
   write(fp: ByteStream): number {
-    let written = writeBytes(fp, encode(this.listType, "ASCII"));
+    let written = writeBytes(fp, new TextEncoder().encode(this.listType));
     if (this._parsedChunks == null) {
       // Never accessed - write raw bytes directly (fast path).
       written += writeBytes(fp, this._rawBody);
@@ -796,7 +796,7 @@ const _TYPE_BYTES = new Map<string, Uint8Array>();
 /** A chunk or LIST type's ASCII bytes, encoded once per type (read-only: `write` copies them). */
 function _typeBytes(type: string): Uint8Array {
   let bytes = _TYPE_BYTES.get(type);
-  if (bytes === undefined) _TYPE_BYTES.set(type, (bytes = encode(type, "ASCII")));
+  if (bytes === undefined) _TYPE_BYTES.set(type, (bytes = new TextEncoder().encode(type)));
   return bytes;
 }
 const _LEN_BODY = new struct.Struct(">I");
@@ -818,7 +818,7 @@ export function readHeader(fp: ByteStream): [string, number] {
 function _typeName(code: number): string {
   let name = _TYPE_NAMES.get(code);
   if (name === undefined) {
-    name = decode(struct.pack(">I", code), "ASCII");
+    name = new TextDecoder().decode(struct.pack(">I", code));
     // Reuse the registered literal: Map lookups and `===` against literals
     // compare atomized strings by identity, decoded ones by content.
     for (const registered of CHUNK_TYPES.keys()) {
@@ -910,7 +910,7 @@ export function readAep(
 ): [ListChunk, string] {
   const { deferListTypes = null } = kwargs;
   const rawType = readBytes(fp, 4);
-  const chunkType = decode(rawType, "ASCII");
+  const chunkType = new TextDecoder().decode(rawType);
   if (chunkType !== "RIFX") {
     throw new ValueError(`Expected RIFX, got ${literal(chunkType)}`);
   }
@@ -919,7 +919,7 @@ export function readAep(
     chunkType: "RIFX",
     deferListTypes,
   });
-  const xmp = decode(fp.read(), "UTF-8");
+  const xmp = new TextDecoder().decode(fp.read());
   return [rifx, xmp];
 }
 
@@ -935,7 +935,7 @@ export function writeAep(fp: ByteStream, rifx: ListChunk, xmp: string): number {
   } finally {
     legacyNames.active = previous;
   }
-  const xmpBytes = encode(xmp, "UTF-8");
+  const xmpBytes = new TextEncoder().encode(xmp);
   written += writeBytes(fp, xmpBytes);
   return written;
 }

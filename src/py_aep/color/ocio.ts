@@ -31,8 +31,6 @@ import {
   compositeKey,
   getOrInsert,
   literal,
-  encode,
-  decode,
   concat,
   Bytes,
   compare,
@@ -112,7 +110,7 @@ function _hasUnhashableKey(value: OcioValue, seen: Set<OcioValue> = new Set()): 
 const _loadConfigCached = lruCache((configPath: string, _mtimeNs: bigint, _size: number): OcioNode | null => {
   let doc: OcioValue;
   try {
-    doc = dep("yaml").parse(decode(new Path(configPath).readBytes(), "utf-8"), {
+    doc = dep("yaml").parse(new TextDecoder().decode(new Path(configPath).readBytes()), {
       ..._OcioLoader.options,
     });
   } catch (e) {
@@ -300,7 +298,9 @@ const _OCIO_PROFILE_TYPE = 3;
  * @param profileData - The `colorProfileData` JSON (e.g. `{"colorSpace1":"ACEScg yo"}`).
  */
 function _colorSpaceGuid(profileName: string, profileData: string): Uint8Array {
-  const inner = aeGuid(concat(ascii("DVAColorProfile"), encode(profileName, "utf-8"), encode(profileData, "utf-8")));
+  const inner = aeGuid(
+    concat(ascii("DVAColorProfile"), new TextEncoder().encode(profileName), new TextEncoder().encode(profileData)),
+  );
   return aeGuid(
     concat(ascii("DVAColorSpace"), inner, Bytes.intToBytes(_OCIO_PROFILE_TYPE, 4, "little"), new Uint8Array(1)),
   );

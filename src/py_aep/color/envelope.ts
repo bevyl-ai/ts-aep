@@ -23,7 +23,7 @@
  * order; reproducing it exactly is required for byte-identical output.
  */
 
-import { encode, stringifyJson, jsonGet, jsonRequire, parseJson, typeName, type JsonValue } from "../../pyrt/index.ts";
+import { stringifyJson, jsonGet, jsonRequire, parseJson, typeName, type JsonValue } from "../../pyrt/index.ts";
 import { b64decode, b64encode } from "../../pyrt/base64.ts";
 /** Adobe ICC profile; `colorProfileData` is raw ICC bytes. */
 export const PROFILE_TYPE_ICC = 2;
@@ -49,7 +49,7 @@ export function _compact(obj: object): string {
 }
 
 function _b64(text: string): string {
-  return b64encode(encode(text, "utf-8"));
+  return b64encode(new TextEncoder().encode(text));
 }
 
 /**

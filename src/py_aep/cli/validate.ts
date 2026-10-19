@@ -17,7 +17,6 @@ import {
   KeyError,
   Path,
   attrsHas,
-  decode,
   descriptorsOf,
   fields,
   getOrThrow,
@@ -1662,7 +1661,7 @@ export function validateAep(
 
   // Load expected JSON
   // Python `open(encoding="utf-8")`: bytes are decoded without dropping a BOM.
-  const loaded = parseJson(decode(jsonPath.readBytes(), "utf-8"));
+  const loaded = parseJson(new TextDecoder().decode(jsonPath.readBytes()));
   if (!(loaded instanceof Map)) throw new AttributeError(`'${typeName(loaded)}' object has no attribute 'get'`);
   const expected: Dict = loaded;
 

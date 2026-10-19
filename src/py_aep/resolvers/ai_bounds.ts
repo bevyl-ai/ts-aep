@@ -43,7 +43,6 @@ import {
   ValueError,
   Bytes,
   bytesEqual,
-  decode,
   getOrThrow,
   numStr,
   truthyOr,
@@ -421,7 +420,7 @@ class _Document {
    */
   catalog(): CosDict {
     if (this._catalog !== null) return this._catalog;
-    const numbers = [...decode(this._data, "latin-1").matchAll(_ROOT_RE)].map((m) => Number.parseInt(m[1], 10));
+    const numbers = [...Bytes.latin1Str(this._data).matchAll(_ROOT_RE)].map((m) => Number.parseInt(m[1], 10));
     // The last trailer wins: an incrementally updated file supersedes the
     // /Root of every earlier revision.
     numbers.reverse();
@@ -504,7 +503,7 @@ function* _tokenize(
         if (Bytes.includes(_WHITESPACE, nxt) || Bytes.includes(_DELIMITERS, nxt)) break;
         end += 1;
       }
-      yield ["name", decode(data.subarray(pos + 1, end), "latin-1")];
+      yield ["name", Bytes.latin1Str(data.subarray(pos + 1, end))];
       pos = end;
       continue;
     }
@@ -541,7 +540,7 @@ function* _tokenize(
     if (Bytes.includes(_NUMBER_START, char)) {
       let end = pos;
       while (end < size && Bytes.includes(NUMBER_CHARS, data.subarray(end, end + 1))) end += 1;
-      const parsed = Number(decode(data.subarray(pos, end), "latin-1"));
+      const parsed = Number(Bytes.latin1Str(data.subarray(pos, end)));
       const value = Number.isNaN(parsed) ? 0.0 : parsed;
       yield ["num", value];
       pos = end;
@@ -554,14 +553,14 @@ function* _tokenize(
       end += 1;
     }
     if (end === pos) end += 1;
-    const operator = decode(data.subarray(pos, end), "latin-1");
+    const operator = Bytes.latin1Str(data.subarray(pos, end));
     pos = end;
     if (operator === "BI") {
       // An inline image's binary body is not tokenizable: skip to `EI`
       // and report the whole thing as one operator, so the measurer can
       // still take its box.
       _INLINE_IMAGE_END.lastIndex = pos;
-      const match = _INLINE_IMAGE_END.exec(decode(data, "latin-1"));
+      const match = _INLINE_IMAGE_END.exec(Bytes.latin1Str(data));
       pos = match ? match.index + match[0].length : size;
       yield ["op", "BI"];
       continue;
@@ -631,7 +630,7 @@ function _readLiteralString(data: Uint8Array, pos: number): [Uint8Array, number]
 function _readHexString(data: Uint8Array, pos: number): [Uint8Array, number] | null {
   const end = Bytes.indexOf(data, GT, pos);
   if (end < 0) return null;
-  let digits = decode(data.subarray(pos + 1, end), "latin-1").replace(/[^0-9A-Fa-f]/g, "");
+  let digits = Bytes.latin1Str(data.subarray(pos + 1, end)).replace(/[^0-9A-Fa-f]/g, "");
   if (digits.length % 2) digits += "0";
   return [Bytes.fromHex(digits), end + 1];
 }
@@ -691,7 +690,7 @@ function _nextSimple(data: Uint8Array, pos: number): [CosNode, number] | null {
       if (Bytes.includes(_WHITESPACE, nxt) || Bytes.includes(_DELIMITERS, nxt)) break;
       end += 1;
     }
-    return [decode(data.subarray(pos + 1, end), "latin-1"), end];
+    return [Bytes.latin1Str(data.subarray(pos + 1, end)), end];
   }
   if (bytesEqual(char, LPAREN)) return _readLiteralString(data, pos);
   if (bytesEqual(char, LBRACKET)) return _readArray(data, pos);
@@ -702,7 +701,7 @@ function _nextSimple(data: Uint8Array, pos: number): [CosNode, number] | null {
   if (Bytes.includes(_NUMBER_START, char)) {
     let end = pos;
     while (end < size && Bytes.includes(NUMBER_CHARS, data.subarray(end, end + 1))) end += 1;
-    const parsed = Number(decode(data.subarray(pos, end), "latin-1"));
+    const parsed = Number(Bytes.latin1Str(data.subarray(pos, end)));
     return [Number.isNaN(parsed) ? 0.0 : parsed, end];
   }
   let end = pos;
@@ -712,7 +711,7 @@ function _nextSimple(data: Uint8Array, pos: number): [CosNode, number] | null {
     end += 1;
   }
   if (end === pos) end += 1;
-  const word = decode(data.subarray(pos, end), "latin-1");
+  const word = Bytes.latin1Str(data.subarray(pos, end));
   if (word === "true") return [true, end];
   if (word === "false") return [false, end];
   return [null, end];
@@ -1292,7 +1291,7 @@ export function readAiIccProfile(file: PathLike, data: Uint8Array | null = null)
     const page = doc.pages()[0];
     const content = doc.pageContent(page);
     const spaces = doc.get(doc.get(page, "Resources"), "ColorSpace");
-    for (const match of decode(content, "latin-1").matchAll(_COLOR_SPACE_OP_RE)) {
+    for (const match of Bytes.latin1Str(content).matchAll(_COLOR_SPACE_OP_RE)) {
       const space = doc.get(spaces, match[1]);
       if (Array.isArray(space) && space.length === 2 && String(space[0]) === "ICCBased") {
         const profile = doc.stream(space[1]);

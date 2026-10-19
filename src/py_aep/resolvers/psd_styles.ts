@@ -46,6 +46,7 @@ import {
   warn,
   type PathLike,
   ascii,
+  Bytes,
 } from "../../pyrt/index.ts";
 
 export type StyleValue = number | number[] | Gradient;
@@ -143,7 +144,7 @@ class _Reader {
 
   key(): string {
     const n = this.u4();
-    return decode(this.raw(n === 0 ? 4 : n), "latin-1");
+    return Bytes.latin1Str(this.raw(n === 0 ? 4 : n));
   }
 
   ustr(): string {
@@ -162,12 +163,12 @@ function _parseItem(reader: _Reader, osType: string): _Value {
     const out = new Map<string, _Value>([["_class", cls]]);
     for (let i = 0, n = reader.u4(); i < n; i++) {
       const key = reader.key();
-      out.set(key, _parseItem(reader, decode(reader.raw(4), "latin-1")));
+      out.set(key, _parseItem(reader, Bytes.latin1Str(reader.raw(4))));
     }
     return out;
   }
   if (osType === "VlLs") {
-    return Array.from({ length: reader.u4() }, () => _parseItem(reader, decode(reader.raw(4), "latin-1")));
+    return Array.from({ length: reader.u4() }, () => _parseItem(reader, Bytes.latin1Str(reader.raw(4))));
   }
   if (osType === "doub") {
     return struct.unpack(">d", reader.raw(8))[0];

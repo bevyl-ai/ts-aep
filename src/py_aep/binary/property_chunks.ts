@@ -12,10 +12,8 @@ import {
   Factory,
   ValueError,
   Bytes,
-  decode,
   define,
   descriptor,
-  encode,
   field,
   objectSetattr,
   assert,
@@ -589,11 +587,11 @@ export class TdmnChunk extends _StringChunkBase {
   static read(fp: ByteStream, size: number, kw: ChunkReadKwargs = {}): TdmnChunk {
     const { chunkType = "" } = kw;
     const raw = readBytes(fp, size);
-    return new this({ chunkType, value: decode(Bytes.trimEnd(raw, new Uint8Array(1)), "UTF-8") });
+    return new this({ chunkType, value: new TextDecoder().decode(Bytes.trimEnd(raw, new Uint8Array(1))) });
   }
 
   write(fp: ByteStream): number {
-    const encoded = encode(this.value, "UTF-8").slice(0, 40);
+    const encoded = new TextEncoder().encode(this.value).slice(0, 40);
     const padded = Bytes.padEnd(encoded, 40);
     return writeBytes(fp, padded);
   }
