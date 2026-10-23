@@ -76,7 +76,10 @@ saved in another project, so `addProperty` can add those effects;
 `CT_TYPE1_FONT`) and `TextDocument.fonts` lists every font a document
 registers; `TextLayer.continuouslyRasterize` sets the collapse switch AE
 scripting refuses on text (effects on unrasterized text ask for missing
-footage); `Shape.bounds` is the box a shape's points are stored in.
+footage); `Property.arbitraryData` reads and writes the effect data AE keeps
+beside a parameter (Hue/Saturation's masters live there, not in their
+sliders); `FeatherPoint.of` builds a mask feather point; `Shape.bounds` is the
+box a shape's points are stored in.
 COS reals that `{:.10g}` would write with an exponent are written fixed-point,
 which After Effects requires.
 
