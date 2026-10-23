@@ -30,12 +30,13 @@ const TS_ONLY = new Set([
 
 function publicNames(obj: any): string[] {
   const names = new Set<string>();
-  const tsOnly = (name: string) => TS_ONLY.has(`${obj.constructor?.name}.${name}`);
+  // Keyed by the class that defines the getter, so subclasses inherit the exemption.
+  const tsOnly = (owner: any, name: string) => TS_ONLY.has(`${owner.constructor?.name}.${name}`);
   // A container's `length` / `size` getter is the JS spelling of Python's `len()`, not an attribute.
   const lenGetters = typeof obj[Symbol.iterator] === "function" ? ["length", "size"] : [];
   for (let p = Object.getPrototypeOf(obj); p && p !== Object.prototype; p = Object.getPrototypeOf(p)) {
     for (const [name, d] of Object.entries(Object.getOwnPropertyDescriptors(p))) {
-      if (name.startsWith("_") || name === "constructor" || lenGetters.includes(name) || tsOnly(name)) continue;
+      if (name.startsWith("_") || name === "constructor" || lenGetters.includes(name) || tsOnly(p, name)) continue;
       if (p === py_aep.PropertyGroup.prototype && CHILD_GETTER_NAMES.has(name)) continue;
       if (d.get) names.add(name);
     }
