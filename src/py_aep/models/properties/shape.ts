@@ -2,8 +2,8 @@
 
 import { AttributeError, ValueError, assert, descriptor } from "../../../pyrt/index.ts";
 import { ShapePoint } from "../../binary/ldat_chunks.ts";
-import { ShphChunk, TensionItem } from "../../binary/misc_chunks.ts";
-import type { FeatherPointItem, OmtnChunk } from "../../binary/misc_chunks.ts";
+import { FeatherPointItem, ShphChunk, TensionItem } from "../../binary/misc_chunks.ts";
+import type { OmtnChunk } from "../../binary/misc_chunks.ts";
 import { DEFAULT_TENSION, rotoBezierTangents } from "../../resolvers/roto_bezier.ts";
 import { ChunkField } from "../descriptors.ts";
 import { validateBool, validateF4Point, validateNormalizedFloat, validatePositiveInt } from "../validators.ts";
@@ -74,6 +74,25 @@ export class FeatherPoint {
   constructor(kw: { _fp: FeatherPointItem }) {
     const { _fp } = kw;
     this._fp = _fp;
+  }
+
+  /** A feather point from its attributes, to pass to a new {@link Shape}. ts-aep only. */
+  static of(fields: {
+    segLoc: number;
+    relSegLoc: number;
+    radius: number;
+    interp?: number;
+    tension?: number;
+    relCornerAngle?: number;
+  }): FeatherPoint {
+    const point = new FeatherPoint({ _fp: new FeatherPointItem({ segLoc: 0, interpRaw: 0 }) });
+    point.segLoc = fields.segLoc;
+    point.relSegLoc = fields.relSegLoc;
+    point.radius = fields.radius;
+    point.interp = fields.interp ?? 0;
+    point.tension = fields.tension ?? 0;
+    point.relCornerAngle = fields.relCornerAngle ?? 0;
+    return point;
   }
 
   /**

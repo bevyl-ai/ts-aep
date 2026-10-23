@@ -1867,6 +1867,33 @@ export class Property<V extends PropertyValue = any> extends PropertyBase {
     }
   }
 
+  /**
+   * The effect's arbitrary data stored with this parameter: the aRbp in the
+   * LIST:aRbs After Effects writes after its tdbs (Hue/Saturation keeps its
+   * master hue, saturation and lightness there, not in their sliders), or
+   * `null` when it has none. A copy; assign to replace it. ts-aep only.
+   * Read / Write.
+   */
+  get arbitraryData(): Uint8Array | null {
+    return this._arbitraryDataChunk()?.data.slice() ?? null;
+  }
+
+  set arbitraryData(value: Uint8Array) {
+    this._rejectCurvesWrite();
+    const arbp = this._arbitraryDataChunk();
+    if (arbp == null) {
+      throw new ValueError(`${literal(this.matchName)} has no arbitrary data`);
+    }
+    arbp.data = Uint8Array.from(value);
+  }
+
+  private _arbitraryDataChunk(): Chunk | null {
+    const siblings = this._parentProperty?._tdgp?.chunks ?? [];
+    const index = siblings.indexOf(this._tdbs);
+    const next = index < 0 ? undefined : siblings[index + 1];
+    return next instanceof ListChunk && next.listType === "aRbs" ? (next.chunks[0] ?? null) : null;
+  }
+
   /** The default value of the property. */
   get defaultValue(): V | null {
     if (this._defaultValueSource != null) return this._defaultValueSource();

@@ -22,6 +22,7 @@ function num(x: number | bigint): any {
 // API ts-aep adds beyond py-aep, which has nothing to compare it with.
 const TS_ONLY = new Set([
   "FontObject.technology",
+  "Property.arbitraryData",
   "Shape.bounds",
   "TextDocument.fonts",
   "TextLayer.continuouslyRasterize",
